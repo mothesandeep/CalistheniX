@@ -1,12 +1,15 @@
 """
-seed.py — Populate the exercises table with placeholder data for the 5-day split.
+seed.py — Populate the exercises table with real calisthenics progression data.
 
-Run once from the backend/ directory (with venv active):
+Run from backend/ with venv active:
     python seed.py
 
-Safe to re-run: skips any exercise whose name already exists.
-Swap placeholder names for your real exercise names before the first real
-gym session.
+Idempotent: clears and re-seeds exercises on every run.
+Also clears logs (FK dependency) — don't run this after you have real log data.
+
+Chain structure (prerequisite_id / next_id) is set after initial insert
+so IDs are known. Each exercise's predecessor gets next_id pointing forward,
+and each successor gets prerequisite_id pointing back.
 """
 
 import sqlite3
@@ -15,62 +18,72 @@ import os
 DB_PATH = 'tracker.db'
 
 # ---------------------------------------------------------------------------
-# Exercise definitions
-# Each entry: (name, day, type)
-# type: 'reps' or 'duration'
-# prerequisite_id and next_id left NULL — Phase 3 scope, not MVP.
+# Data definitions
+# Each chain is an ordered list: index 0 = base of progression.
+# prerequisite_id = None for first in chain, next_id = None for last.
+# Standalone entries (Active Recovery) are single-element lists.
 # ---------------------------------------------------------------------------
 
-EXERCISES = [
-    # ── Push Day ────────────────────────────────────────────────────────────
-    # Hold-based (duration)
-    ('Planche Lean Hold',             'Push', 'duration'),
-    ('Pseudo Planche Push-up Hold',   'Push', 'duration'),
-    # Rep-based
-    ('Pike Push-up',                  'Push', 'reps'),
-    ('Dip',                           'Push', 'reps'),
-    ('Diamond Push-up',               'Push', 'reps'),
-    ('Tricep Extension',              'Push', 'reps'),
+CHAINS = {
 
-    # ── Pull Day ────────────────────────────────────────────────────────────
-    # Hold-based (duration)
-    ('Dead Hang',                     'Pull', 'duration'),
-    ('Tuck Front Lever Hold',         'Pull', 'duration'),
-    ('Scapular Pull-up Hold',         'Pull', 'duration'),
-    # Rep-based
-    ('Pull-up',                       'Pull', 'reps'),
-    ('Archer Pull-up',                'Pull', 'reps'),
-    ('Bicep Curl',                    'Pull', 'reps'),
+    # ── Push Day ─────────────────────────────────────────────────────────────
+    'Push': [
+        ('Incline Push-up',              'reps'),
+        ('Push-up',                      'reps'),
+        ('Pike Push-up',                 'reps'),
+        ('Diamond Push-up',              'reps'),
+        ('Pseudo Planche Push-up',       'reps'),
+        ('Archer Push-up',               'reps'),
+        ('Planche Lean',                 'duration'),
+        ('Tuck Planche',                 'duration'),
+        ('Advanced Tuck Planche',        'duration'),
+        ('Straddle Planche',             'duration'),
+    ],
 
-    # ── Legs Day ────────────────────────────────────────────────────────────
-    # Hold-based (duration)
-    ('L-sit Hold',                    'Legs', 'duration'),
-    ('Wall Sit',                      'Legs', 'duration'),
-    # Rep-based
-    ('Squat',                         'Legs', 'reps'),
-    ('Bulgarian Split Squat',         'Legs', 'reps'),
-    ('Nordic Hamstring Curl',         'Legs', 'reps'),
-    ('Calf Raise',                    'Legs', 'reps'),
+    # ── Pull Day ─────────────────────────────────────────────────────────────
+    'Pull': [
+        ('Dead Hang',                    'duration'),
+        ('Scapular Pull-up',             'reps'),
+        ('Negative Pull-up',             'reps'),
+        ('Pull-up',                      'reps'),
+        ('Chin-up',                      'reps'),
+        ('Archer Pull-up',               'reps'),
+        ('Tuck Front Lever',             'duration'),
+        ('Advanced Tuck Front Lever',    'duration'),
+        ('Straddle Front Lever',         'duration'),
+        ('Full Front Lever',             'duration'),
+    ],
 
-    # ── Full Body Day ────────────────────────────────────────────────────────
-    # Hold-based (duration)
-    ('Handstand Wall Hold',           'Full Body', 'duration'),
-    ('Tuck Planche Hold',             'Full Body', 'duration'),
-    # Rep-based
-    ('Muscle-up',                     'Full Body', 'reps'),
-    ('Front Lever Row',               'Full Body', 'reps'),
-    ('Pistol Squat',                  'Full Body', 'reps'),
-    ('Dragon Flag',                   'Full Body', 'reps'),
+    # ── Legs Day ─────────────────────────────────────────────────────────────
+    'Legs': [
+        ('Bodyweight Squat',             'reps'),
+        ('Split Squat',                  'reps'),
+        ('Bulgarian Split Squat',        'reps'),
+        ('Assisted Pistol Squat',        'reps'),
+        ('Pistol Squat',                 'reps'),
+        ('Shrimp Squat',                 'reps'),
+        ('Calf Raise',                   'reps'),
+        ('Nordic Curl Negative',         'reps'),
+    ],
 
-    # ── Active Recovery Day ─────────────────────────────────────────────────
-    # Hold-based (duration)
-    ('Pancake Stretch Hold',          'Active Recovery', 'duration'),
-    ('Hip Flexor Stretch Hold',       'Active Recovery', 'duration'),
-    # Rep-based
-    ('Band Pull-apart',               'Active Recovery', 'reps'),
-    ('Scapular Retraction',           'Active Recovery', 'reps'),
-    ('Face Pull',                     'Active Recovery', 'reps'),
-]
+    # ── Full Body / Core ─────────────────────────────────────────────────────
+    'Full Body': [
+        ('Plank',                                'duration'),
+        ('Hollow Body Hold',                     'duration'),
+        ('L-sit',                                'duration'),
+        ('V-sit',                                'duration'),
+        ('Handstand Hold against Wall',          'duration'),
+        ('Freestanding Handstand',               'duration'),
+    ],
+
+    # ── Active Recovery — no chains, standalone entries ───────────────────
+    'Active Recovery': [
+        [('Shoulder Dislocate Stretch',  'duration')],
+        [('Hip Flexor Stretch',          'duration')],
+        [('Thoracic Spine Stretch',      'duration')],
+    ],
+}
+
 
 def seed():
     if not os.path.exists(DB_PATH):
@@ -80,29 +93,66 @@ def seed():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
-    # Fetch existing names so re-runs are safe
-    cursor.execute('SELECT name FROM exercises')
-    existing = {row[0] for row in cursor.fetchall()}
+    # Clear existing data (logs first — FK dependency on exercises)
+    print("Clearing existing logs and exercises...")
+    cursor.execute('DELETE FROM logs')
+    cursor.execute('DELETE FROM exercises')
+    cursor.execute('DELETE FROM sqlite_sequence WHERE name IN ("exercises", "logs")')
+    conn.commit()
 
-    inserted = 0
-    skipped = 0
-    for name, day, ex_type in EXERCISES:
-        if name in existing:
-            print(f"  SKIP  {name!r} (already exists)")
-            skipped += 1
+    # ── Pass 1: insert all exercises without chain IDs ────────────────────
+    # Returns a mapping: name -> db_id
+    name_to_id = {}
+
+    def insert(name, day, ex_type):
+        cursor.execute(
+            'INSERT INTO exercises (name, day, type, prerequisite_id, next_id) '
+            'VALUES (?, ?, ?, NULL, NULL)',
+            (name, day, ex_type)
+        )
+        row_id = cursor.lastrowid
+        name_to_id[name] = row_id
+        print(f"  INSERT {ex_type:8s}  [{day}]  {name!r}")
+        return row_id
+
+    for day, chains in CHAINS.items():
+        if day == 'Active Recovery':
+            # Each element is already a single-item list (standalone)
+            for standalone in chains:
+                name, ex_type = standalone[0]
+                insert(name, day, ex_type)
         else:
+            for name, ex_type in chains:
+                insert(name, day, ex_type)
+
+    conn.commit()
+
+    # ── Pass 2: set prerequisite_id and next_id along each chain ─────────
+    print("\nLinking progression chains...")
+    for day, chains in CHAINS.items():
+        if day == 'Active Recovery':
+            continue  # standalone — no links needed
+
+        for i, (name, _) in enumerate(chains):
+            ex_id = name_to_id[name]
+            prereq_id = name_to_id[chains[i - 1][0]] if i > 0 else None
+            next_id   = name_to_id[chains[i + 1][0]] if i < len(chains) - 1 else None
+
             cursor.execute(
-                'INSERT INTO exercises (name, day, type, prerequisite_id, next_id) VALUES (?, ?, ?, NULL, NULL)',
-                (name, day, ex_type)
+                'UPDATE exercises SET prerequisite_id = ?, next_id = ? WHERE id = ?',
+                (prereq_id, next_id, ex_id)
             )
-            print(f"  INSERT {ex_type:8s}  [{day}]  {name!r}")
-            inserted += 1
+            chain_pos = f"{'START' if prereq_id is None else '     '} → {name!r} → {'END' if next_id is None else '...'}"
+            print(f"  [{day}]  {chain_pos}")
 
     conn.commit()
     conn.close()
 
-    print(f"\nDone. {inserted} inserted, {skipped} skipped.")
-    print("Swap placeholder names in seed.py for your real exercise list, then re-run.")
+    total = len(name_to_id)
+    print(f"\nDone. {total} exercises seeded across 5 days.")
+    print("prerequisite_id / next_id chains written for Push, Pull, Legs, Full Body.")
+    print("Active Recovery entries left unlinked (standalone, as intended).")
+
 
 if __name__ == '__main__':
     seed()
