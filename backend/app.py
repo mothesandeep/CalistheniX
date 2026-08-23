@@ -200,5 +200,92 @@ def add_level_exercise(level_id):
     return jsonify(dict(row)), 201
 
 
+@app.route('/routine_levels', methods=['POST'])
+def create_routine_level():
+    """Create a new (routine_name, level) pair. Idempotent: returns existing row on conflict."""
+    body = request.get_json(silent=True)
+    if not body:
+        return jsonify({'error': 'JSON body required'}), 400
+
+    routine_name = body.get('routine_name')
+    level = body.get('level')
+    if not routine_name or level is None:
+        return jsonify({'error': 'routine_name and level are required'}), 400
+
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO routine_levels (routine_name, level) VALUES (?, ?)',
+            (routine_name, level)
+        )
+        conn.commit()
+        new_id = cursor.lastrowid
+    except sqlite3.IntegrityError:
+        # UNIQUE(routine_name, level) conflict — return the existing row
+        row = conn.execute(
+            'SELECT * FROM routine_levels WHERE routine_name = ? AND level = ?',
+            (routine_name, level)
+        ).fetchone()
+        conn.close()
+        return jsonify(dict(row)), 200
+
+    row = conn.execute('SELECT * FROM routine_levels WHERE id = ?', (new_id,)).fetchone()
+    conn.close()
+    return jsonify(dict(row)), 201
+
+
+@app.route('/level_exercises/<int:le_id>', methods=['PUT'])
+def update_level_exercise(le_id):
+    """Update any subset of fields on a level_exercise row."""
+    body = request.get_json(silent=True)
+    if not body:
+        return jsonify({'error': 'JSON body required'}), 400
+
+    conn = get_db_connection()
+    row = conn.execute('SELECT * FROM level_exercises WHERE id = ?', (le_id,)).fetchone()
+    if row is None:
+        conn.close()
+        return jsonify({'error': f'level_exercise {le_id} not found'}), 404
+
+    # Merge incoming fields onto existing values
+    updated = dict(row)
+    mutable = ['exercise_id', 'order_index', 'sets', 'reps', 'duration_sec',
+               'tempo', 'rest_sec', 'superset_group']
+    for field in mutable:
+        if field in body:
+            updated[field] = body[field]
+
+    conn.execute(
+        '''UPDATE level_exercises
+           SET exercise_id = ?, order_index = ?, sets = ?,
+               reps = ?, duration_sec = ?, tempo = ?,
+               rest_sec = ?, superset_group = ?
+           WHERE id = ?''',
+        (updated['exercise_id'], updated['order_index'], updated['sets'],
+         updated['reps'], updated['duration_sec'], updated['tempo'],
+         updated['rest_sec'], updated['superset_group'], le_id)
+    )
+    conn.commit()
+    row = conn.execute('SELECT * FROM level_exercises WHERE id = ?', (le_id,)).fetchone()
+    conn.close()
+    return jsonify(dict(row))
+
+
+@app.route('/level_exercises/<int:le_id>', methods=['DELETE'])
+def delete_level_exercise(le_id):
+    """Remove a single level_exercise row."""
+    conn = get_db_connection()
+    row = conn.execute('SELECT id FROM level_exercises WHERE id = ?', (le_id,)).fetchone()
+    if row is None:
+        conn.close()
+        return jsonify({'error': f'level_exercise {le_id} not found'}), 404
+
+    conn.execute('DELETE FROM level_exercises WHERE id = ?', (le_id,))
+    conn.commit()
+    conn.close()
+    return '', 204
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
