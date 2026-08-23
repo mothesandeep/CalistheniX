@@ -10,25 +10,55 @@
 
 const API_BASE = 'http://127.0.0.1:5001';
 
-const ROUTINES = ['Push', 'Pull', 'Legs', 'Full Body', 'Active Recovery'];
+const ROUTINES = ['Push A', 'Push B', 'Pull A', 'Pull B', 'Legs A', 'Legs B'];
 const LEVELS   = [1, 2, 3, 4, 5];
 
-// Day-of-week → split day mapping (0 = Sunday).
-// Hardcoded for now, editable in Phase 2.
-const SPLIT_MAP = {
-  0: 'Active Recovery',  // Sunday
-  1: 'Push',             // Monday
-  2: 'Pull',             // Tuesday
-  3: 'Legs',             // Wednesday
-  4: 'Full Body',        // Thursday
-  5: 'Active Recovery',  // Friday
-  6: 'Push',             // Saturday — restart cycle
-};
+// ─── Rolling 7-day cycle (not tied to weekday) ────────────────────────────────
+// Day 1: Push A | Day 2: Pull A | Day 3: Legs A
+// Day 4: Push B | Day 5: Pull B | Day 6: Legs B | Day 7: Rest
+const CYCLE = [
+  'Push A',  // day 1
+  'Pull A',  // day 2
+  'Legs A',  // day 3
+  'Push B',  // day 4
+  'Pull B',  // day 5
+  'Legs B',  // day 6
+  'Rest',    // day 7
+];
+
+const LS_CYCLE_KEY = 'cx_cycle_start';
+
+// Return today's ISO date string (YYYY-MM-DD, local calendar day).
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+// Get or initialise the cycle start date in localStorage.
+function getCycleStart() {
+  let start = localStorage.getItem(LS_CYCLE_KEY);
+  if (!start) {
+    start = todayISO();
+    localStorage.setItem(LS_CYCLE_KEY, start);
+  }
+  return start;
+}
+
+// Days elapsed between two ISO date strings (today minus startDate, floored).
+function daysBetween(startISO, endISO) {
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.floor((new Date(endISO).getTime() - new Date(startISO).getTime()) / msPerDay);
+}
+
+// Returns the current cycle day's split name (e.g. 'Push A' or 'Rest').
+function getTodayDay() {
+  const cycleDay = daysBetween(getCycleStart(), todayISO()) % 7;
+  return CYCLE[cycleDay];
+}
 
 const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-function getTodayDay()    { return SPLIT_MAP[new Date().getDay()]; }
 function getTodayLabel()  {
   const d = new Date();
   return `${DAY_NAMES[d.getDay()]} · ${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
@@ -36,13 +66,15 @@ function getTodayLabel()  {
 
 // ─── Application state ───────────────────────────────────────────────────────
 const state = {
-  view:            'home',   // 'home' | 'routine' | 'edit' | 'log' | 'history'
-  routine:         'Push',
+  view:            'dashboard', // 'dashboard' | 'home' | 'routine' | 'edit' | 'log' | 'history'
+  routine:         'Push A',
   level:           1,
   exercises:       [],       // all exercises from GET /exercises
   levelId:         null,     // current routine_level.id (null = not yet created)
   levelExercises:  [],       // level_exercises joined with exercise data
   editingId:       null,     // id of level_exercise being edited (null = none)
+  // Dashboard view
+  dashboardSummary: null,    // { streak_days, week_sessions, week_sets, top_movers }
   // Screen 1: Today's Day
   todayLogs:       {},       // { exercise_id: last_log | null }
   // Screen 2: Log Entry
@@ -116,10 +148,21 @@ async function loadExercises() {
   state.exercises = await api('GET', '/exercises');
 }
 
+async function loadDashboardSummary() {
+  try {
+    state.dashboardSummary = await api('GET', '/dashboard/summary');
+  } catch (e) {
+    state.dashboardSummary = { streak_days: 0, week_sessions: 0, week_sets: 0, top_movers: [] };
+  }
+}
+
 // Fetch the last log for every exercise in today's day.
 // Runs N parallel requests; each is allowed to fail silently.
+// On Rest day there are no exercises — this becomes a no-op.
 async function loadTodayLogs() {
-  const dayExercises = state.exercises.filter(e => e.day === getTodayDay());
+  const todayDay = getTodayDay();
+  if (todayDay === 'Rest') { state.todayLogs = {}; return; }
+  const dayExercises = state.exercises.filter(e => e.day === todayDay);
   const results = await Promise.allSettled(
     dayExercises.map(ex =>
       api('GET', `/exercises/${ex.id}/logs`)
@@ -548,9 +591,107 @@ function renderTodayView() {
     </div>`;
 }
 
+// ─── Screen 0: Dashboard view ────────────────────────────────────────────────
+function renderDashboardView() {
+  const summary = state.dashboardSummary || {
+    streak_days: 0,
+    week_sessions: 0,
+    week_sets: 0,
+    top_movers: []
+  };
+
+  const day   = getTodayDay();
+  const label = getTodayLabel();
+
+  // Dashboard today card: rest day variant
+  const isRest = (day === 'Rest');
+  const todayCard = isRest
+    ? `<div class="dashboard-today-card">
+        <div class="dashboard-today-link" style="cursor:default;">
+          <div class="dashboard-today-info">
+            <span class="dashboard-today-tag">Today</span>
+            <span class="dashboard-today-name">Rest Day</span>
+            <span class="dashboard-today-date">${label}</span>
+          </div>
+        </div>
+      </div>`
+    : `<div class="dashboard-today-card">
+        <a href="#home" class="dashboard-today-link" onclick="switchView('home')">
+          <div class="dashboard-today-info">
+            <span class="dashboard-today-tag">Today's Split</span>
+            <span class="dashboard-today-name">${day}</span>
+            <span class="dashboard-today-date">${label}</span>
+          </div>
+          <span class="dashboard-today-action">Start Workout →</span>
+        </a>
+      </div>`;
+
+  let moversBody = '';
+  if (!summary.top_movers || summary.top_movers.length === 0) {
+    moversBody = `<p class="dashboard-empty-text">Log a few more sessions to see trends here.</p>`;
+  } else {
+    moversBody = `
+      <div class="mover-list">
+        ${summary.top_movers.map(m => `
+          <div class="mover-row" onclick="openHistoryView(${m.exercise_id})" role="button" tabindex="0">
+            <span class="mover-name">${m.exercise_name}</span>
+            <span class="mover-pct mono ${m.pct_change >= 0 ? 'stat-up' : 'stat-neutral'}">
+              ${m.pct_change >= 0 ? '+' : ''}${m.pct_change}%
+            </span>
+          </div>
+        `).join('')}
+      </div>`;
+  }
+
+  return `
+    <div class="dashboard-screen">
+      <div class="dashboard-streak-card">
+        <div class="dashboard-streak-num mono">${summary.streak_days}</div>
+        <div class="dashboard-streak-label">day streak</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-item">
+          <span class="stat-label">Week Sessions</span>
+          <span class="stat-value mono">${summary.week_sessions}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Week Sets</span>
+          <span class="stat-value mono">${summary.week_sets}</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Top Movers</span>
+        </div>
+        <div class="card-body">
+          ${moversBody}
+        </div>
+      </div>
+
+      ${todayCard}
+    </div>`;
+}
+
 // ─── Screen 1: Today's Day view ──────────────────────────────────────────────
 function renderHomeView() {
   const day       = getTodayDay();
+
+  // Rest day — no exercise list; muted text only (design.md: no illustration).
+  if (day === 'Rest') {
+    return `
+      <div class="home-screen">
+        <div class="home-header">
+          <h1 class="home-day-name">Rest Day</h1>
+          <span class="home-date">${getTodayLabel()}</span>
+        </div>
+        <div class="card">
+          <p class="dashboard-empty-text" style="padding: 32px 20px;">Today is a rest day. Come back tomorrow.</p>
+        </div>
+      </div>`;
+  }
+
   const exercises = state.exercises.filter(e => e.day === day);
 
   const rows = exercises.map(ex => {
@@ -873,11 +1014,13 @@ function render() {
 
   const root = document.getElementById('app-root');
   switch (state.view) {
-    case 'home':    root.innerHTML = renderHomeView();    break;
-    case 'routine': root.innerHTML = renderTodayView();   break;
-    case 'edit':    root.innerHTML = renderEditView();    break;
-    case 'log':     root.innerHTML = renderLogView();     break;
-    default:        root.innerHTML = renderHomeView();
+    case 'dashboard': root.innerHTML = renderDashboardView(); break;
+    case 'home':      root.innerHTML = renderHomeView();      break;
+    case 'routine':   root.innerHTML = renderTodayView();     break;
+    case 'edit':      root.innerHTML = renderEditView();      break;
+    case 'log':       root.innerHTML = renderLogView();       break;
+    case 'history':   root.innerHTML = renderHistoryView();   break;
+    default:          root.innerHTML = renderDashboardView();
   }
   if (state.view === 'log') buildRpeRow();
 }
@@ -903,6 +1046,9 @@ function switchView(view) {
   state.editingId = null;
   stopTimer();
   window.location.hash = view;
+  if (view === 'dashboard') {
+    loadDashboardSummary().then(render);
+  }
   render();
 }
 
@@ -1027,7 +1173,7 @@ function showToast(msg, isError = false) {
 
 // ─── Hash-based routing ───────────────────────────────────────────────────────
 function applyHash() {
-  const hash = window.location.hash.replace('#', '') || 'home';
+  const hash = window.location.hash.replace('#', '') || 'dashboard';
   if (hash.startsWith('log-')) {
     const id = parseInt(hash.replace('log-', ''), 10);
     if (!isNaN(id)) { state.view = 'log'; state.logExerciseId = id; return; }
@@ -1043,13 +1189,16 @@ function applyHash() {
       return;
     }
   }
-  const validViews = ['home', 'routine', 'edit', 'log', 'history'];
-  state.view = validViews.includes(hash) ? hash : 'home';
+  const validViews = ['dashboard', 'home', 'routine', 'edit', 'log', 'history'];
+  state.view = validViews.includes(hash) ? hash : 'dashboard';
 }
 
 window.addEventListener('hashchange', async () => {
   applyHash();
   state.editingId = null;
+  if (state.view === 'dashboard') {
+    loadDashboardSummary().then(render);
+  }
   render();
 });
 
@@ -1059,7 +1208,7 @@ async function init() {
   // startSyncLoop() is wired in Step 5 (offline sync).
   try {
     await loadExercises();
-    await Promise.all([ loadTodayLogs(), loadLevel() ]);
+    await Promise.all([ loadTodayLogs(), loadLevel(), loadDashboardSummary() ]);
     render();
   } catch (e) {
     document.getElementById('app-root').innerHTML = `

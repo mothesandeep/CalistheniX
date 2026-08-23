@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime, timedelta, timezone
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import os
@@ -53,7 +54,7 @@ def init_db():
 
     # ── Routine / level tables ────────────────────────────────────────────────
 
-    # One row per (routine_name, level) pair — e.g. ('Push', 1), ('Pull', 3)
+    # One row per (routine_name, level) pair — e.g. ('Push A', 1)
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS routine_levels (
         id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,6 +67,7 @@ def init_db():
     # One row per exercise slot within a level.
     # exercises sharing a non-null superset_group value in the same level
     # are treated as a superset in the UI; null = standalone.
+    # notes: short per-exercise annotation, e.g. "Your strong point — track progress".
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS level_exercises (
         id                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -78,6 +80,7 @@ def init_db():
         tempo             TEXT,
         rest_sec          INTEGER NOT NULL,
         superset_group    INTEGER,
+        notes             TEXT,
         FOREIGN KEY(routine_level_id) REFERENCES routine_levels(id),
         FOREIGN KEY(exercise_id)      REFERENCES exercises(id)
     )
@@ -86,10 +89,150 @@ def init_db():
     conn.commit()
     conn.close()
 
+    # Add notes column if it was missing from an older schema (safe on re-run).
+    _migrate_notes_column()
+
+
+def _migrate_notes_column():
+    """Add `notes` TEXT nullable column to level_exercises if not already present."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cols = [row[1] for row in cursor.execute('PRAGMA table_info(level_exercises)').fetchall()]
+    if 'notes' not in cols:
+        cursor.execute('ALTER TABLE level_exercises ADD COLUMN notes TEXT')
+        conn.commit()
+    conn.close()
+
+
+# ── PPL A/B seed data ─────────────────────────────────────────────────────────
+# Structured as a list of (routine_name, exercises_list) where each exercise is:
+#   (name, ex_type, sets, reps_or_none, duration_sec_or_none, rest_sec, notes_or_none)
+# All levels are 1 (no L1-L5 progression tiers in this plan).
+
+_SEED_VERSION = 'ppl-ab-v1'  # bump to re-seed without deleting the DB
+
+_SEED = [
+    ('Push A', [
+        ('Diamond Push-ups',      'reps',     4, 15, None, 90, 'Your strong point — track progress'),
+        ('Wide Push-ups',         'reps',     3, 15, None, 90, 'Chest width'),
+        ('Decline Push-ups',      'reps',     3, 12, None, 90, 'Upper chest, feet elevated'),
+        ('Pike Push-ups',         'reps',     3, 10, None, 90, 'Front delt'),
+        ('Triceps Dips',          'reps',     3, 15, None, 90, 'Arm definition'),
+        ('Plank to Push-up',      'reps',     3, 10, None, 90, 'Core + shoulder stability'),
+    ]),
+    ('Push B', [
+        ('Pike Push-ups Elevated',         'reps', 4, 12, None, 90, 'Side/front delt, feet elevated'),
+        ('Handstand Push-up Progression',  'reps', 3,  8, None, 90, 'Wall-assisted, build carefully'),
+        ('Diamond Push-ups',               'reps', 3, 12, None, 90, 'Triceps'),
+        ('Archer Push-ups',                'reps', 3,  8, None, 90, 'Unilateral + chest detail'),
+        ('Lateral Raise',                  'reps', 3, 15, None, 90, 'Water bottles, key for V-taper'),
+        ('Triceps Dips',                   'reps', 3, 15, None, 90, None),
+    ]),
+    ('Pull A', [
+        ('Dead Hang',          'duration', 2, None, 45, 90, 'Warm-up, grip + shoulder health'),
+        ('Pull-ups Wide Grip', 'reps',     4,    6, None, 90, 'Primary width builder'),
+        ('Chin-ups',           'reps',     3, None, None, 90, 'Bicep + lat'),
+        ('Negative Pull-ups',  'reps',     3,    5, None, 90, 'Slow 5-sec descent, after max sets'),
+        ('Scapular Pulls',     'reps',     3,   10, None, 90, 'Pull-up strength foundation'),
+        ('Superman Hold',      'duration', 3, None, 20,  90, 'Lower back/posture'),
+    ]),
+    ('Pull B', [
+        ('Pull-ups Close Grip', 'reps',     4, None, None, 90, 'Thickness focus'),
+        ('Commando Pull-ups',   'reps',     3,    8, None, 90, 'Side-to-side, lat variation'),
+        ('L-sit Hang',          'duration', 3, None, 20,  90, 'Or tucked knees; core + grip + shoulder'),
+        ('Face Pulls',          'reps',     3,   15, None, 90, 'Band/towel-resisted, critical for posture, don\'t skip'),
+        ('Prone Y-raises',      'reps',     3,   15, None, 90, 'Face down, arms in Y; rear delt + upper back'),
+        ('Wall Angels',         'reps',     3,   12, None, 90, 'Posture correction drill'),
+    ]),
+    ('Legs A', [
+        ('Bulgarian Split Squats',    'reps',     3, 12, None, 90, 'Chair support; quad + glute'),
+        ('Walking Lunges',            'reps',     3, 16, None, 90, None),
+        ('Glute Bridges Single Leg',  'reps',     3, 15, None, 90, 'Posterior chain'),
+        ('Calf Raises',               'reps',     4, 20, None, 90, 'Slow tempo'),
+        ('Hanging Knee Raises',       'reps',     3, 15, None, 90, 'Loft slab; core + hip flexor'),
+        ('Plank',                     'duration', 3, None, 45, 90, None),
+    ]),
+    ('Legs B', [
+        ('Pistol Squat Progression',      'reps',     3,  8, None, 90, 'Assisted/box; bottleneck exercise, priority'),
+        ('Jump Squats',                   'reps',     3, 15, None, 90, 'Explosive/power element'),
+        ('Single-leg Glute Bridge Hold',  'duration', 3, None, 20, 90, 'Isometric variation'),
+        ('Wall Sit',                      'duration', 3, None, 40, 90, 'Quad endurance'),
+        ('Hanging Leg Raises',            'reps',     3, 12, None, 90, 'Straight leg, loft slab; harder than knee raises'),
+        ('Side Plank',                    'duration', 3, None, 30, 90, 'Obliques'),
+    ]),
+]
+
+
+def reseed_data():
+    """Clear exercises/routine_levels/level_exercises and repopulate with _SEED.
+    Logs are NOT touched. Idempotent: checks seed version stored in DB first."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute('PRAGMA foreign_keys = OFF')  # allow truncation with FKs
+
+    # Use progressions table as a simple key-value store for the seed version tag.
+    cursor.execute('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)')
+    row = cursor.execute("SELECT value FROM meta WHERE key = 'seed_version'").fetchone()
+    if row and row['value'] == _SEED_VERSION:
+        conn.close()
+        return  # already at current seed — skip
+
+    # ── Clear dependent tables in safe order ──────────────────────────────────
+    cursor.execute('DELETE FROM level_exercises')
+    cursor.execute('DELETE FROM routine_levels')
+    cursor.execute('DELETE FROM exercises')
+    # Reset autoincrement counters so IDs start fresh
+    cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('exercises','routine_levels','level_exercises')")
+
+    # ── Insert exercises (deduplicate by name — Push B reuses some from Push A) ─
+    ex_id_by_name = {}
+    for routine_name, exercises in _SEED:
+        for (name, ex_type, sets, reps, dur, rest, notes) in exercises:
+            if name not in ex_id_by_name:
+                cursor.execute(
+                    'INSERT INTO exercises (name, day, type) VALUES (?, ?, ?)',
+                    (name, routine_name, ex_type)
+                )
+                ex_id_by_name[name] = cursor.lastrowid
+            else:
+                # Exercise already inserted (shared across days).
+                # Update day to the first occurrence; backend can serve cross-day.
+                pass
+
+    # ── Insert routine_levels and level_exercises ─────────────────────────────
+    for routine_name, exercises in _SEED:
+        cursor.execute(
+            'INSERT INTO routine_levels (routine_name, level) VALUES (?, 1)',
+            (routine_name,)
+        )
+        rl_id = cursor.lastrowid
+        for idx, (name, ex_type, sets, reps, dur, rest, notes) in enumerate(exercises, start=1):
+            ex_id = ex_id_by_name[name]
+            cursor.execute(
+                '''INSERT INTO level_exercises
+                       (routine_level_id, exercise_id, order_index, sets,
+                        reps, duration_sec, tempo, rest_sec, superset_group, notes)
+                   VALUES (?, ?, ?, ?, ?, ?, NULL, ?, NULL, ?)''',
+                (rl_id, ex_id, idx, sets, reps, dur, rest, notes)
+            )
+
+    # ── Stamp seed version ────────────────────────────────────────────────────
+    cursor.execute(
+        "INSERT OR REPLACE INTO meta (key, value) VALUES ('seed_version', ?)",
+        (_SEED_VERSION,)
+    )
+
+    cursor.execute('PRAGMA foreign_keys = ON')
+    conn.commit()
+    conn.close()
+
+
 # Always run init_db — all statements use CREATE TABLE IF NOT EXISTS,
 # so this is safe against an already-initialised DB and picks up new tables
 # without requiring a manual migration step.
 init_db()
+reseed_data()
 
 
 def get_db_connection():
@@ -401,6 +544,139 @@ def export_all_logs():
     ).fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
+
+
+# ── Dashboard aggregation helpers ────────────────────────────────────────────
+
+def compute_exercise_progress(ex_type, logs):
+    """Group raw log rows by calendar day and compute daily progress metric."""
+    if not logs:
+        return []
+
+    by_date = {}
+    for log in logs:
+        ts = log.get('timestamp') or ''
+        date_str = str(ts)[:10]
+        if not date_str:
+            continue
+        if date_str not in by_date:
+            by_date[date_str] = []
+        by_date[date_str].append(log)
+
+    sorted_dates = sorted(by_date.keys())
+    points = []
+    for d in sorted_dates:
+        day_logs = by_date[d]
+        if ex_type == 'duration':
+            metric = max((l.get('duration_sec') or 0) for l in day_logs)
+        else:
+            metric = sum(
+                ((l.get('reps') or 0) * l['weight_kg']) if l.get('weight_kg') else (l.get('reps') or 0)
+                for l in day_logs
+            )
+        points.append({'date': d, 'metric': metric})
+    return points
+
+
+def compute_exercise_stats(points, today):
+    """Compute current, 2wk_ago, and pct_change for an exercise.
+    Requires at least 2 logged sessions in the last 2 weeks (or comparing against <= 14d ago)."""
+    if not points or len(points) < 2:
+        return None
+
+    cutoff_14 = (today - timedelta(days=14)).isoformat()
+    points_in_2wk = [p for p in points if p['date'] >= cutoff_14]
+    past_points = [p for p in points if p['date'] <= cutoff_14]
+
+    if past_points:
+        past = past_points[-1]['metric']
+    elif len(points_in_2wk) >= 2:
+        past = points_in_2wk[0]['metric']
+    else:
+        return None
+
+    current = points[-1]['metric']
+
+    if past is not None and past > 0:
+        pct = round((current - past) / past * 100)
+        return {
+            'current': current,
+            'past': past,
+            'pct': pct
+        }
+    return None
+
+
+@app.route('/dashboard/summary', methods=['GET'])
+def get_dashboard_summary():
+    """Return summary statistics for the dashboard view."""
+    conn = get_db_connection()
+    logs = conn.execute('SELECT * FROM logs ORDER BY timestamp ASC').fetchall()
+    exercises = conn.execute('SELECT * FROM exercises').fetchall()
+    conn.close()
+
+    logs_list = [dict(r) for r in logs]
+    ex_map = {e['id']: dict(e) for e in exercises}
+
+    today = datetime.now(timezone.utc).date()
+    today_str = today.isoformat()
+
+    # Collect all distinct dates with at least one log
+    logged_dates = set()
+    for l in logs_list:
+        ts = str(l.get('timestamp') or '')
+        if len(ts) >= 10:
+            logged_dates.add(ts[:10])
+
+    # 1. streak_days: count consecutive calendar days (up to today) with >=1 log entry.
+    # Break on first day with zero logs going backwards from today.
+    streak_days = 0
+    curr = today
+    while curr.isoformat() in logged_dates:
+        streak_days += 1
+        curr -= timedelta(days=1)
+
+    # 2. week_sessions: count distinct calendar days with >=1 log in last 7 days (today - 6 days to today)
+    cutoff_7 = (today - timedelta(days=6)).isoformat()
+    week_sessions = len([d for d in logged_dates if cutoff_7 <= d <= today_str])
+
+    # 3. week_sets: total count of log rows in last 7 days
+    week_sets = sum(1 for l in logs_list if cutoff_7 <= str(l.get('timestamp') or '')[:10] <= today_str)
+
+    # 4. top_movers: array of up to 3 objects { exercise_id, exercise_name, metric_current, metric_2wk_ago, pct_change }
+    logs_by_ex = {}
+    for l in logs_list:
+        eid = l['exercise_id']
+        if eid not in logs_by_ex:
+            logs_by_ex[eid] = []
+        logs_by_ex[eid].append(l)
+
+    movers = []
+    for eid, ex_logs in logs_by_ex.items():
+        ex = ex_map.get(eid)
+        if not ex:
+            continue
+        points = compute_exercise_progress(ex['type'], ex_logs)
+        stats = compute_exercise_stats(points, today)
+        if stats and stats['pct'] is not None:
+            movers.append({
+                'exercise_id': eid,
+                'exercise_name': ex['name'],
+                'metric_current': stats['current'],
+                'metric_2wk_ago': stats['past'],
+                'pct_change': stats['pct']
+            })
+
+    # Sort by absolute pct_change descending
+    movers.sort(key=lambda m: abs(m['pct_change']), reverse=True)
+    top_movers = movers[:3]
+
+    return jsonify({
+        'streak_days': streak_days,
+        'week_sessions': week_sessions,
+        'week_sets': week_sets,
+        'top_movers': top_movers
+    })
 
 
 if __name__ == '__main__':

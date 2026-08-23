@@ -841,3 +841,135 @@ body {
   transition: opacity var(--transition);
 }
 .btn-history-link:hover { opacity: 1; }
+
+/* ── Screen 0: Dashboard ───────────────────────────────────────────────────── */
+.dashboard-screen {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.dashboard-streak-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px 24px;
+  margin-bottom: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.dashboard-streak-num {
+  font-size: 72px;
+  font-weight: 600;
+  letter-spacing: -2px;
+  color: var(--text);
+  line-height: 1;
+  user-select: none;
+}
+
+.dashboard-streak-label {
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.dashboard-empty-text {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.mover-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.mover-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: opacity var(--transition);
+}
+.mover-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.mover-row:first-child {
+  padding-top: 0;
+}
+.mover-row:hover {
+  opacity: 0.85;
+}
+
+.mover-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.mover-pct {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dashboard-today-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-top: 20px;
+  transition: border-color var(--transition);
+}
+.dashboard-today-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dashboard-today-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.dashboard-today-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dashboard-today-tag {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.dashboard-today-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+.dashboard-today-date {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dashboard-today-action {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
