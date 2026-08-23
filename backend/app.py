@@ -287,5 +287,70 @@ def delete_level_exercise(le_id):
     return '', 204
 
 
+@app.route('/exercises/<int:exercise_id>/logs', methods=['GET'])
+def get_exercise_logs(exercise_id):
+    """Return all logs for a given exercise, newest first."""
+    conn = get_db_connection()
+    ex = conn.execute('SELECT id FROM exercises WHERE id = ?', (exercise_id,)).fetchone()
+    if ex is None:
+        conn.close()
+        return jsonify({'error': f'exercise {exercise_id} not found'}), 404
+
+    rows = conn.execute(
+        'SELECT * FROM logs WHERE exercise_id = ? ORDER BY timestamp DESC',
+        (exercise_id,)
+    ).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/logs', methods=['POST'])
+def create_log():
+    """Persist a single log entry. client_uuid is a UNIQUE constraint —
+    sending the same uuid twice is safe and returns the existing row (idempotent)."""
+    body = request.get_json(silent=True)
+    if not body:
+        return jsonify({'error': 'JSON body required'}), 400
+
+    required = ['exercise_id', 'timestamp', 'client_uuid']
+    missing  = [f for f in required if not body.get(f)]
+    if missing:
+        return jsonify({'error': f'Missing required fields: {missing}'}), 400
+
+    if body.get('reps') is None and body.get('duration_sec') is None:
+        return jsonify({'error': 'Provide either reps or duration_sec'}), 400
+
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            '''INSERT INTO logs
+                   (exercise_id, timestamp, reps, weight_kg, duration_sec, rpe, client_uuid)
+               VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            (
+                body['exercise_id'],
+                body['timestamp'],
+                body.get('reps'),
+                body.get('weight_kg'),
+                body.get('duration_sec'),
+                body.get('rpe'),
+                body['client_uuid'],
+            )
+        )
+        conn.commit()
+        new_id = cursor.lastrowid
+    except sqlite3.IntegrityError:
+        # client_uuid already exists — return the existing row (idempotent replay)
+        row = conn.execute(
+            'SELECT * FROM logs WHERE client_uuid = ?', (body['client_uuid'],)
+        ).fetchone()
+        conn.close()
+        return jsonify(dict(row)), 200
+
+    row = conn.execute('SELECT * FROM logs WHERE id = ?', (new_id,)).fetchone()
+    conn.close()
+    return jsonify(dict(row)), 201
+
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)

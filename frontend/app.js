@@ -1,23 +1,27 @@
 /* ============================================================
    app.js — CalistheniX Routine Builder
-   Two views: Edit Routine Levels (CRUD) + Today's Routine (read-only)
+   Views: edit | today | log
    All functions in global scope for inline event handlers.
    ============================================================ */
 
-const API_BASE = 'http://127.0.0.1:5000';
+const API_BASE = 'http://127.0.0.1:5001';
 
 const ROUTINES = ['Push', 'Pull', 'Legs', 'Full Body', 'Active Recovery'];
 const LEVELS   = [1, 2, 3, 4, 5];
 
 // ─── Application state ───────────────────────────────────────────────────────
 const state = {
-  view:            'edit',   // 'edit' | 'today'
+  view:            'edit',   // 'edit' | 'today' | 'log'
   routine:         'Push',
   level:           1,
   exercises:       [],       // all exercises from GET /exercises
   levelId:         null,     // current routine_level.id (null = not yet created)
   levelExercises:  [],       // level_exercises joined with exercise data
   editingId:       null,     // id of level_exercise being edited (null = none)
+  // log view
+  logExerciseId:   null,     // exercise.id being logged
+  logTimer:        null,     // { startedAt: ms, intervalId } | null
+  logElapsed:      0,        // seconds displayed on timer
 };
 
 // ─── API helper ───────────────────────────────────────────────────────────────
@@ -29,6 +33,51 @@ async function api(method, path, body = null) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
+}
+
+// ─── UUID generator (crypto.randomUUID with fallback) ─────────────────────────
+function newUUID() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+// ─── localStorage-first sync (architecture.md §3) ────────────────────────────
+// Key prefix for pending (unsynced) log entries.
+const LS_PREFIX = 'cx_pending_';
+
+// Write a log entry to localStorage immediately.
+// Returns the client_uuid so the caller can track it.
+function lsWriteLog(entry) {
+  const uuid = entry.client_uuid || newUUID();
+  const record = { ...entry, client_uuid: uuid, synced: false };
+  localStorage.setItem(`${LS_PREFIX}${uuid}`, JSON.stringify(record));
+  return uuid;
+}
+
+// Push all unsynced entries to POST /logs. On success, mark each synced.
+async function lsSyncPending() {
+  const keys = Object.keys(localStorage).filter(k => k.startsWith(LS_PREFIX));
+  for (const key of keys) {
+    let record;
+    try { record = JSON.parse(localStorage.getItem(key)); } catch { continue; }
+    if (record.synced) { localStorage.removeItem(key); continue; }
+    try {
+      await api('POST', '/logs', record);
+      localStorage.removeItem(key); // clean up confirmed entries
+    } catch {
+      // Network unavailable — leave in localStorage, will retry on next sync.
+    }
+  }
+}
+
+// Schedule background sync: on load, on tab focus, every 30 s.
+function startSyncLoop() {
+  lsSyncPending();
+  window.addEventListener('focus', lsSyncPending);
+  setInterval(lsSyncPending, 30_000);
 }
 
 // ─── Data loading ─────────────────────────────────────────────────────────────
@@ -328,14 +377,17 @@ function renderEditView() {
 
 function renderTodayRow(le, idx) {
   const ex = getExercise(le.exercise_id);
+  // Tapping anywhere on the row opens the log screen for this exercise.
   return `
-    <div class="today-ex-row">
+    <div class="today-ex-row today-ex-clickable" onclick="openLogView(${le.exercise_id})"
+         role="button" tabindex="0"
+         onkeydown="if(event.key==='Enter')openLogView(${le.exercise_id})">
       <span class="today-order mono">${String(idx).padStart(2,'0')}</span>
       <span class="today-name">${le.exercise_name ?? ex?.name ?? '?'} ${badge(ex?.type)}</span>
       <span class="today-sets mono">${le.sets}</span>
       <span class="today-target mono">${fmtTarget(le)}</span>
       <span class="today-tempo mono">${fmtTempo(le.tempo)}</span>
-      <span class="today-rest mono">${fmtRest(le.rest_sec)}</span>
+      <span class="today-rest mono">${fmtRest(le.rest_sec)} <span class="log-arrow">→</span></span>
     </div>`;
 }
 
@@ -384,15 +436,141 @@ function renderTodayView() {
     </div>`;
 }
 
+// ─── Log view ─────────────────────────────────────────────────────────────────
+// Navigate to the log screen for a specific exercise.
+function openLogView(exerciseId) {
+  stopTimer();                      // clear any running timer from a previous visit
+  state.logExerciseId = exerciseId;
+  state.logElapsed    = 0;
+  state.view          = 'log';
+  window.location.hash = `log-${exerciseId}`;
+  render();
+}
+
+// ── Timer helpers ────────────────────────────────────────────────────────────
+function startTimer() {
+  if (state.logTimer) return;       // already running
+  const startedAt = Date.now() - state.logElapsed * 1000;
+  const intervalId = setInterval(() => {
+    state.logElapsed = Math.floor((Date.now() - startedAt) / 1000);
+    const el = document.getElementById('timer-display');
+    if (el) el.textContent = fmtSecs(state.logElapsed);
+  }, 200);
+  state.logTimer = { startedAt, intervalId };
+  const btn = document.getElementById('timer-btn');
+  if (btn) { btn.textContent = 'Stop'; btn.classList.add('timer-btn-running'); }
+}
+
+function stopTimer() {
+  if (!state.logTimer) return;
+  clearInterval(state.logTimer.intervalId);
+  state.logTimer = null;
+  const btn = document.getElementById('timer-btn');
+  if (btn) { btn.textContent = 'Start'; btn.classList.remove('timer-btn-running'); }
+}
+
+function fmtSecs(s) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+
+function toggleTimer() {
+  if (state.logTimer) {
+    stopTimer();
+    // Auto-save the duration when the user stops the timer
+    if (state.logElapsed > 0) saveLog({ duration_sec: state.logElapsed });
+  } else {
+    startTimer();
+  }
+}
+
+// ── Save log ─────────────────────────────────────────────────────────────────
+function saveLog(extra = {}) {
+  const entry = {
+    exercise_id:  state.logExerciseId,
+    timestamp:    new Date().toISOString(),
+    client_uuid:  newUUID(),
+    ...extra,
+  };
+  lsWriteLog(entry);          // writes to localStorage immediately
+  lsSyncPending();            // attempt immediate sync; ok if offline
+  showToast('Set saved ✓');
+  // Reset form / timer display without leaving the screen
+  state.logElapsed = 0;
+  stopTimer();
+  render();
+}
+
+function handleSaveReps(event) {
+  event.preventDefault();
+  const form = event.target;
+  const reps      = parseInt(form.reps.value, 10) || null;
+  const weight_kg = parseFloat(form.weight_kg?.value) || null;
+  const rpe       = parseInt(form.rpe?.value, 10) || null;
+  if (!reps) { showToast('Enter reps first', true); return; }
+  saveLog({ reps, weight_kg, rpe });
+  form.reset();
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderLogView() {
+  const ex     = getExercise(state.logExerciseId);
+  const isHold = ex?.type === 'duration';
+  const back   = `<button class="btn-back" onclick="goBack()">← Back</button>`;
+
+  const logBody = isHold ? `
+    <!-- Duration / timer logging -->
+    <div class="log-timer-wrap">
+      <div id="timer-display" class="timer-display mono">${fmtSecs(state.logElapsed)}</div>
+      <button id="timer-btn" class="timer-btn" onclick="toggleTimer()">Start</button>
+      <p class="timer-hint">Timer saves automatically when you tap Stop.</p>
+    </div>` : `
+    <!-- Rep-based logging -->
+    <form class="log-reps-form" onsubmit="handleSaveReps(event)">
+      <div class="log-field">
+        <label class="log-label">Reps</label>
+        <input id="log-reps" class="log-input mono" type="number" name="reps" min="1"
+               placeholder="0" inputmode="numeric" autofocus required>
+      </div>
+      <div class="log-field">
+        <label class="log-label">Weight (kg) <span class="opt">opt</span></label>
+        <input class="log-input mono" type="number" name="weight_kg" min="0" step="0.5"
+               placeholder="0" inputmode="decimal">
+      </div>
+      <div class="log-field">
+        <label class="log-label">RPE <span class="opt">opt · 1–10</span></label>
+        <div class="rpe-row" id="rpe-row"></div>
+        <input type="hidden" name="rpe" id="rpe-hidden">
+      </div>
+      <button class="btn btn-save" type="submit">Save Set</button>
+    </form>`;
+
+  return `
+    <div class="log-screen">
+      <div class="log-topbar">${back}</div>
+      <div class="log-header">
+        <h1 class="log-exercise-name">${ex?.name ?? '?'}</h1>
+        <span class="log-type-badge">${badge(ex?.type)}</span>
+      </div>
+      ${logBody}
+    </div>`;
+}
+
 // ─── Main render ─────────────────────────────────────────────────────────────
 function render() {
-  // Sync active nav link
+  // Sync active nav link (log view has no nav tab)
   document.querySelectorAll('.nav-link').forEach(a =>
     a.classList.toggle('active', a.dataset.view === state.view)
   );
 
   const root = document.getElementById('app-root');
-  root.innerHTML = state.view === 'edit' ? renderEditView() : renderTodayView();
+  if (state.view === 'log')   root.innerHTML = renderLogView();
+  else if (state.view === 'today') root.innerHTML = renderTodayView();
+  else root.innerHTML = renderEditView();
+
+  // Build RPE stepper after render (reps view only)
+  if (state.view === 'log') buildRpeRow();
 }
 
 // ─── Event handlers (global — called from inline html) ─────────────────────
@@ -414,8 +592,36 @@ async function onLevelChange(value) {
 function switchView(view) {
   state.view      = view;
   state.editingId = null;
+  stopTimer();
   window.location.hash = view;
   render();
+}
+
+// Navigate back from log screen to Today's Routine.
+function goBack() {
+  stopTimer();
+  state.view = 'today';
+  window.location.hash = 'today';
+  render();
+}
+
+// Build the RPE 1-10 tap buttons after the log form is in the DOM.
+function buildRpeRow() {
+  const row    = document.getElementById('rpe-row');
+  const hidden = document.getElementById('rpe-hidden');
+  if (!row || !hidden) return;
+  for (let i = 1; i <= 10; i++) {
+    const btn = document.createElement('button');
+    btn.type      = 'button';
+    btn.className = 'rpe-btn';
+    btn.textContent = i;
+    btn.onclick = () => {
+      hidden.value = i;
+      row.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('rpe-active'));
+      btn.classList.add('rpe-active');
+    };
+    row.appendChild(btn);
+  }
 }
 
 function startEdit(leId) {
@@ -511,7 +717,11 @@ function showToast(msg, isError = false) {
 // ─── Hash-based routing ───────────────────────────────────────────────────────
 function applyHash() {
   const hash = window.location.hash.replace('#', '') || 'edit';
-  state.view = ['edit', 'today'].includes(hash) ? hash : 'edit';
+  if (hash.startsWith('log-')) {
+    const id = parseInt(hash.replace('log-', ''), 10);
+    if (!isNaN(id)) { state.view = 'log'; state.logExerciseId = id; return; }
+  }
+  state.view = ['edit', 'today', 'log'].includes(hash) ? hash : 'edit';
 }
 
 window.addEventListener('hashchange', async () => {
@@ -523,6 +733,7 @@ window.addEventListener('hashchange', async () => {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   applyHash();
+  startSyncLoop();             // begin background sync loop
   try {
     await loadExercises();
     await loadLevel();

@@ -452,3 +452,205 @@ body {
 
 /* ── Misc utilities ────────────────────────────────────────────────────────── */
 .mono { font-family: var(--mono) !important; }
+
+/* ── Today's Routine — clickable rows ──────────────────────────────────────── */
+.today-ex-clickable {
+  cursor: pointer;
+  transition: background var(--transition), border-left var(--transition);
+}
+.today-ex-clickable:hover {
+  background: var(--accent-dim);
+  border-left: 3px solid var(--accent);
+  padding-left: 15px; /* compensate for border */
+}
+.today-ex-clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.log-arrow {
+  color: var(--accent);
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+.today-ex-clickable:hover .log-arrow { opacity: 1; }
+
+/* ── Log screen ────────────────────────────────────────────────────────────── */
+.log-screen {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.log-topbar {
+  margin-bottom: 24px;
+}
+
+.btn-back {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.btn-back:hover { background: var(--surface-2); color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+.log-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 36px;
+}
+.log-exercise-name {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+.log-type-badge { flex-shrink: 0; }
+
+/* Timer (duration exercises) */
+.log-timer-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.timer-display {
+  font-size: 72px;
+  font-weight: 600;
+  letter-spacing: -2px;
+  color: var(--text);
+  line-height: 1;
+  user-select: none;
+}
+
+.timer-btn {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 26px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 0 0 0 var(--accent-glow);
+  transition: background var(--transition), box-shadow var(--transition), transform 100ms;
+  letter-spacing: -0.5px;
+}
+.timer-btn:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 0 32px var(--accent-glow);
+}
+.timer-btn:active { transform: scale(0.96); }
+.timer-btn-running {
+  background: var(--danger);
+  box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.35);
+  animation: pulse-ring 1.4s ease-out infinite;
+}
+.timer-btn-running:hover { background: #f87171; }
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0   rgba(244, 63, 94, 0.4); }
+  70%  { box-shadow: 0 0 0 20px rgba(244, 63, 94, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(244, 63, 94, 0); }
+}
+
+.timer-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Reps form */
+.log-reps-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.log-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.log-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+.log-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 40px;
+  font-weight: 600;
+  padding: 14px 18px;
+  width: 100%;
+  text-align: center;
+  transition: border-color var(--transition);
+  -webkit-appearance: none;
+}
+.log-input:focus { outline: none; border-color: var(--border-focus); }
+.log-input::placeholder { color: var(--text-dim); }
+
+/* RPE stepper */
+.rpe-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.rpe-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.rpe-btn:hover { background: var(--accent-dim); color: var(--text); border-color: var(--accent); }
+.rpe-btn.rpe-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Save button */
+.btn-save {
+  width: 100%;
+  padding: 18px;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: -0.2px;
+  box-shadow: 0 0 0 0 var(--accent-glow);
+  transition: background var(--transition), box-shadow var(--transition), transform 100ms;
+}
+.btn-save:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 0 24px var(--accent-glow);
+}
+.btn-save:active { transform: scale(0.98); }
+
