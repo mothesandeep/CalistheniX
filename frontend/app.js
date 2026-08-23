@@ -1,6 +1,10 @@
 /* ============================================================
-   app.js — CalistheniX Routine Builder
-   Views: edit | today | log
+   app.js — CalistheniX
+   Views: home | edit | routine | log
+   home    = Screen 1: Today's Day (default landing)
+   routine = Today's Routine level view
+   edit    = Edit Routine Levels
+   log     = Screen 2: Log Entry
    All functions in global scope for inline event handlers.
    ============================================================ */
 
@@ -9,17 +13,41 @@ const API_BASE = 'http://127.0.0.1:5001';
 const ROUTINES = ['Push', 'Pull', 'Legs', 'Full Body', 'Active Recovery'];
 const LEVELS   = [1, 2, 3, 4, 5];
 
+// Day-of-week → split day mapping (0 = Sunday).
+// Hardcoded for now, editable in Phase 2.
+const SPLIT_MAP = {
+  0: 'Active Recovery',  // Sunday
+  1: 'Push',             // Monday
+  2: 'Pull',             // Tuesday
+  3: 'Legs',             // Wednesday
+  4: 'Full Body',        // Thursday
+  5: 'Active Recovery',  // Friday
+  6: 'Push',             // Saturday — restart cycle
+};
+
+const DAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function getTodayDay()    { return SPLIT_MAP[new Date().getDay()]; }
+function getTodayLabel()  {
+  const d = new Date();
+  return `${DAY_NAMES[d.getDay()]} · ${d.getDate()} ${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 // ─── Application state ───────────────────────────────────────────────────────
 const state = {
-  view:            'edit',   // 'edit' | 'today' | 'log'
+  view:            'home',   // 'home' | 'routine' | 'edit' | 'log'
   routine:         'Push',
   level:           1,
   exercises:       [],       // all exercises from GET /exercises
   levelId:         null,     // current routine_level.id (null = not yet created)
   levelExercises:  [],       // level_exercises joined with exercise data
   editingId:       null,     // id of level_exercise being edited (null = none)
-  // log view
+  // Screen 1: Today's Day
+  todayLogs:       {},       // { exercise_id: last_log | null }
+  // Screen 2: Log Entry
   logExerciseId:   null,     // exercise.id being logged
+  logReturnView:   'home',   // view to return to on goBack()
   logTimer:        null,     // { startedAt: ms, intervalId } | null
   logElapsed:      0,        // seconds displayed on timer
 };
@@ -83,6 +111,22 @@ function startSyncLoop() {
 // ─── Data loading ─────────────────────────────────────────────────────────────
 async function loadExercises() {
   state.exercises = await api('GET', '/exercises');
+}
+
+// Fetch the last log for every exercise in today's day.
+// Runs N parallel requests; each is allowed to fail silently.
+async function loadTodayLogs() {
+  const dayExercises = state.exercises.filter(e => e.day === getTodayDay());
+  const results = await Promise.allSettled(
+    dayExercises.map(ex =>
+      api('GET', `/exercises/${ex.id}/logs`)
+        .then(logs => ({ id: ex.id, log: logs.length ? logs[logs.length - 1] : null }))
+    )
+  );
+  state.todayLogs = {};
+  for (const r of results) {
+    if (r.status === 'fulfilled') state.todayLogs[r.value.id] = r.value.log;
+  }
 }
 
 async function loadLevel() {
@@ -151,6 +195,15 @@ function badge(type)  {
   return type === 'duration'
     ? '<span class="badge badge-hold">hold</span>'
     : '<span class="badge badge-reps">reps</span>';
+}
+
+// Format the last log entry for a given exercise (Screen 1 row display).
+// Matches design.md examples: "last: 42s" / "last: 8 reps @ 0kg".
+function fmtLastLog(ex, log) {
+  if (!log) return null;
+  if (ex.type === 'duration') return `last: ${log.duration_sec}s`;
+  const base = `last: ${log.reps} reps`;
+  return log.weight_kg != null ? `${base} @ ${log.weight_kg}kg` : base;
 }
 
 // Parse a <form> into a payload object, coercing numeric fields and
@@ -379,9 +432,9 @@ function renderTodayRow(le, idx) {
   const ex = getExercise(le.exercise_id);
   // Tapping anywhere on the row opens the log screen for this exercise.
   return `
-    <div class="today-ex-row today-ex-clickable" onclick="openLogView(${le.exercise_id})"
+    <div class="today-ex-row today-ex-clickable" onclick="openLogView(${le.exercise_id}, 'routine')"
          role="button" tabindex="0"
-         onkeydown="if(event.key==='Enter')openLogView(${le.exercise_id})">
+         onkeydown="if(event.key==='Enter')openLogView(${le.exercise_id}, 'routine')">
       <span class="today-order mono">${String(idx).padStart(2,'0')}</span>
       <span class="today-name">${le.exercise_name ?? ex?.name ?? '?'} ${badge(ex?.type)}</span>
       <span class="today-sets mono">${le.sets}</span>
@@ -436,11 +489,46 @@ function renderTodayView() {
     </div>`;
 }
 
-// ─── Log view ─────────────────────────────────────────────────────────────────
-// Navigate to the log screen for a specific exercise.
-function openLogView(exerciseId) {
-  stopTimer();                      // clear any running timer from a previous visit
+// ─── Screen 1: Today's Day view ──────────────────────────────────────────────
+function renderHomeView() {
+  const day       = getTodayDay();
+  const exercises = state.exercises.filter(e => e.day === day);
+
+  const rows = exercises.map(ex => {
+    const log    = state.todayLogs[ex.id] ?? null;
+    const last   = fmtLastLog(ex, log);
+    const lastHtml = last
+      ? `<span class="home-last mono">${last}</span>`
+      : `<span class="home-last home-last-empty">—</span>`;
+
+    return `
+      <button class="home-ex-row" id="home-ex-${ex.id}"
+              onclick="openLogView(${ex.id}, 'home')">
+        <span class="home-ex-name">${ex.name}</span>
+        ${lastHtml}
+      </button>`;
+  }).join('');
+
+  return `
+    <div class="home-screen">
+      <div class="home-header">
+        <h1 class="home-day-name">${day}</h1>
+        <span class="home-date">${getTodayLabel()}</span>
+      </div>
+      <div class="card">
+        ${exercises.length > 0
+          ? `<div class="home-ex-list">${rows}</div>`
+          : `<div class="empty-state">No exercises seeded for ${day} day.</div>`
+        }
+      </div>
+    </div>`;
+}
+
+// Navigate to the log screen, tracking which view to return to.
+function openLogView(exerciseId, returnView = 'home') {
+  stopTimer();
   state.logExerciseId = exerciseId;
+  state.logReturnView = returnView;
   state.logElapsed    = 0;
   state.view          = 'log';
   window.location.hash = `log-${exerciseId}`;
@@ -559,17 +647,19 @@ function renderLogView() {
 
 // ─── Main render ─────────────────────────────────────────────────────────────
 function render() {
-  // Sync active nav link (log view has no nav tab)
+  // Sync active nav link (log view has no tab)
   document.querySelectorAll('.nav-link').forEach(a =>
     a.classList.toggle('active', a.dataset.view === state.view)
   );
 
   const root = document.getElementById('app-root');
-  if (state.view === 'log')   root.innerHTML = renderLogView();
-  else if (state.view === 'today') root.innerHTML = renderTodayView();
-  else root.innerHTML = renderEditView();
-
-  // Build RPE stepper after render (reps view only)
+  switch (state.view) {
+    case 'home':    root.innerHTML = renderHomeView();    break;
+    case 'routine': root.innerHTML = renderTodayView();   break;
+    case 'edit':    root.innerHTML = renderEditView();    break;
+    case 'log':     root.innerHTML = renderLogView();     break;
+    default:        root.innerHTML = renderHomeView();
+  }
   if (state.view === 'log') buildRpeRow();
 }
 
@@ -597,11 +687,13 @@ function switchView(view) {
   render();
 }
 
-// Navigate back from log screen to Today's Routine.
-function goBack() {
+// Navigate back from log screen; refresh today's last-log values if returning home.
+async function goBack() {
   stopTimer();
-  state.view = 'today';
-  window.location.hash = 'today';
+  const to = state.logReturnView || 'home';
+  state.view = to;
+  window.location.hash = to;
+  if (to === 'home') await loadTodayLogs(); // pull fresh last-log after saving a set
   render();
 }
 
@@ -716,12 +808,13 @@ function showToast(msg, isError = false) {
 
 // ─── Hash-based routing ───────────────────────────────────────────────────────
 function applyHash() {
-  const hash = window.location.hash.replace('#', '') || 'edit';
+  const hash = window.location.hash.replace('#', '') || 'home';
   if (hash.startsWith('log-')) {
     const id = parseInt(hash.replace('log-', ''), 10);
     if (!isNaN(id)) { state.view = 'log'; state.logExerciseId = id; return; }
   }
-  state.view = ['edit', 'today', 'log'].includes(hash) ? hash : 'edit';
+  const validViews = ['home', 'routine', 'edit', 'log'];
+  state.view = validViews.includes(hash) ? hash : 'home';
 }
 
 window.addEventListener('hashchange', async () => {
@@ -733,16 +826,17 @@ window.addEventListener('hashchange', async () => {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   applyHash();
-  startSyncLoop();             // begin background sync loop
+  startSyncLoop();
   try {
     await loadExercises();
-    await loadLevel();
+    // Load today's last-log values and routine level in parallel
+    await Promise.all([ loadTodayLogs(), loadLevel() ]);
     render();
   } catch (e) {
     document.getElementById('app-root').innerHTML = `
       <div class="error-banner">
         ⚠ Could not reach the backend at <code>${API_BASE}</code>.<br>
-        Start Flask first: <code>cd backend && python app.py</code>
+        Start Flask first: <code>cd backend &amp;&amp; python app.py</code>
       </div>`;
   }
 }
