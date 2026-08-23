@@ -574,6 +574,8 @@ function toggleTimer() {
 }
 
 // ── Save log ─────────────────────────────────────────────────────────────────
+// Writes to localStorage only — no backend call.
+// Sync is wired separately (Step 5) via lsSyncPending() / startSyncLoop().
 function saveLog(extra = {}) {
   const entry = {
     exercise_id:  state.logExerciseId,
@@ -581,10 +583,8 @@ function saveLog(extra = {}) {
     client_uuid:  newUUID(),
     ...extra,
   };
-  lsWriteLog(entry);          // writes to localStorage immediately
-  lsSyncPending();            // attempt immediate sync; ok if offline
-  showToast('Set saved ✓');
-  // Reset form / timer display without leaving the screen
+  lsWriteLog(entry);          // immediate localStorage write
+  showToast('✓');             // optimistic checkmark — no spinner, no dialog
   state.logElapsed = 0;
   stopTimer();
   render();
@@ -826,10 +826,9 @@ window.addEventListener('hashchange', async () => {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   applyHash();
-  startSyncLoop();
+  // startSyncLoop() is wired in Step 5 (offline sync).
   try {
     await loadExercises();
-    // Load today's last-log values and routine level in parallel
     await Promise.all([ loadTodayLogs(), loadLevel() ]);
     render();
   } catch (e) {
