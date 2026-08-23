@@ -734,3 +734,110 @@ body {
   color: var(--text-dim);
   font-size: 15px;
 }
+
+/* ── Screen 3: History / Chart ─────────────────────────────────────────────── */
+.history-screen {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.history-header {
+  margin-bottom: 20px;
+}
+
+.history-ex-name {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+}
+
+.history-metric-label {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+/* Stat row: current | 2-week | % change ─ the answer to "is this working" */
+.stat-row {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border-right: 1px solid var(--border);
+}
+.stat-item:last-child { border-right: none; }
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+
+.stat-up      { color: var(--success); }
+.stat-down    { color: var(--danger);  }
+.stat-neutral { color: var(--text-muted); }
+
+/* Chart container: explicit height so Chart.js can size correctly */
+.chart-wrap {
+  position: relative;
+  height: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 8px 8px;
+}
+
+.history-loading {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+/* History → button on log screen topbar */
+.log-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.btn-history-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 0;
+  opacity: 0.85;
+  transition: opacity var(--transition);
+}
+.btn-history-link:hover { opacity: 1; }

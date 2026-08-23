@@ -36,7 +36,7 @@ function getTodayLabel()  {
 
 // ─── Application state ───────────────────────────────────────────────────────
 const state = {
-  view:            'home',   // 'home' | 'routine' | 'edit' | 'log'
+  view:            'home',   // 'home' | 'routine' | 'edit' | 'log' | 'history'
   routine:         'Push',
   level:           1,
   exercises:       [],       // all exercises from GET /exercises
@@ -48,6 +48,9 @@ const state = {
   // Screen 2: Log Entry
   logExerciseId:   null,     // exercise.id being logged
   logReturnView:   'home',   // view to return to on goBack()
+  // Screen 3: History / Chart
+  historyExerciseId: null,   // exercise.id whose chart is shown
+  historyLogs:       null,   // null = loading | [] = no data | [...] = loaded
   logTimer:        null,     // { startedAt: ms, intervalId } | null
   logElapsed:      0,        // seconds displayed on timer
 };
@@ -204,6 +207,62 @@ function fmtLastLog(ex, log) {
   if (ex.type === 'duration') return `last: ${log.duration_sec}s`;
   const base = `last: ${log.reps} reps`;
   return log.weight_kg != null ? `${base} @ ${log.weight_kg}kg` : base;
+}
+
+// ─── Screen 3: progress aggregation ──────────────────────────────────────────
+// Single named function per architecture.md §4 — tweak the definition of
+// "progress" here without touching the chart/stat rendering code.
+//
+// Returns array of { date: 'YYYY-MM-DD', metric: number }, one point per
+// calendar day, sorted oldest → newest.
+function computeProgress(ex, logs) {
+  if (!ex || !logs || !logs.length) return [];
+
+  // Group raw log rows by calendar day (ISO timestamp, slice to YYYY-MM-DD)
+  const byDate = {};
+  for (const log of logs) {
+    const date = (log.timestamp || '').slice(0, 10);
+    if (!date) continue;
+    if (!byDate[date]) byDate[date] = [];
+    byDate[date].push(log);
+  }
+
+  return Object.entries(byDate)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, dayLogs]) => {
+      let metric;
+      if (ex.type === 'duration') {
+        // Best (max) hold duration in the session, in seconds.
+        metric = Math.max(...dayLogs.map(l => l.duration_sec ?? 0));
+      } else {
+        // Estimated volume: sum of reps × weight_kg across all sets.
+        // For bodyweight sets (weight_kg null/0) use reps as a relative signal.
+        metric = dayLogs.reduce((sum, l) => {
+          const vol = l.weight_kg ? (l.reps || 0) * l.weight_kg : (l.reps || 0);
+          return sum + vol;
+        }, 0);
+      }
+      return { date, metric };
+    });
+}
+
+// Derive the three numbers shown in the stat row above the chart.
+function computeStats(points) {
+  if (!points.length) return null;
+
+  const current = points[points.length - 1].metric;
+
+  // Value from the session closest to (but not after) 14 days ago.
+  const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+    .toISOString().slice(0, 10);
+  const pastPoints = points.filter(p => p.date <= cutoff);
+  const past = pastPoints.length ? pastPoints[pastPoints.length - 1].metric : null;
+
+  const pct = (past !== null && past > 0)
+    ? Math.round((current - past) / past * 100)
+    : null;
+
+  return { current, past, pct };
 }
 
 // Parse a <form> into a payload object, coercing numeric fields and
@@ -606,6 +665,8 @@ function renderLogView() {
   const ex     = getExercise(state.logExerciseId);
   const isHold = ex?.type === 'duration';
   const back   = `<button class="btn-back" onclick="goBack()">← Back</button>`;
+  // Small secondary link to jump to the history chart for this exercise
+  const histLink = `<button class="btn-history-link" onclick="openHistoryView(${state.logExerciseId})">History →</button>`;
 
   const logBody = isHold ? `
     <!-- Duration / timer logging -->
@@ -636,12 +697,170 @@ function renderLogView() {
 
   return `
     <div class="log-screen">
-      <div class="log-topbar">${back}</div>
+      <div class="log-topbar">${back}${histLink}</div>
       <div class="log-header">
         <h1 class="log-exercise-name">${ex?.name ?? '?'}</h1>
         <span class="log-type-badge">${badge(ex?.type)}</span>
       </div>
       ${logBody}
+    </div>`;
+}
+
+// ─── Screen 3: History / Chart ────────────────────────────────────────────────
+
+// Navigate to history for a specific exercise; fetch logs then render.
+function openHistoryView(exerciseId) {
+  state.historyExerciseId = exerciseId;
+  state.historyLogs       = null; // null = loading
+  state.view              = 'history';
+  window.location.hash    = `history-${exerciseId}`;
+  render(); // show skeleton immediately
+  api('GET', `/exercises/${exerciseId}/logs`)
+    .then(logs => { state.historyLogs = logs; render(); })
+    .catch(()  => { state.historyLogs = [];   render(); });
+}
+
+function goBackFromHistory() {
+  // Return to the log screen for the same exercise so the user can keep logging.
+  state.view = 'log';
+  window.location.hash = `log-${state.historyExerciseId}`;
+  render();
+}
+
+// ── Chart.js chart ────────────────────────────────────────────────────────────
+let _chartInstance = null;
+
+function buildHistoryChart() {
+  const canvas = document.getElementById('history-canvas');
+  if (!canvas || !window.Chart) return;
+
+  if (_chartInstance) { _chartInstance.destroy(); _chartInstance = null; }
+
+  const ex     = getExercise(state.historyExerciseId);
+  const points = computeProgress(ex, state.historyLogs || []);
+  if (!points.length) return;
+
+  const unit = ex?.type === 'duration' ? 's' : '';
+
+  const labels = points.map(p => {
+    const d = new Date(p.date + 'T12:00:00'); // noon avoids tz-boundary shift
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  });
+
+  _chartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data:            points.map(p => p.metric),
+        borderColor:     '#7c6af7',
+        backgroundColor: 'rgba(124, 106, 247, 0.08)',
+        borderWidth:     2,
+        pointRadius:     4,
+        pointBackgroundColor: '#7c6af7',
+        pointBorderColor:     '#0d0d0f',
+        pointBorderWidth:     1,
+        fill:            true,
+        tension:         0.35,
+      }],
+    },
+    options: {
+      responsive:          true,
+      maintainAspectRatio: false,
+      animation:           { duration: 400 },
+      plugins: {
+        legend:  { display: false },
+        tooltip: {
+          backgroundColor: '#1c1c24',
+          borderColor:     '#7c6af7',
+          borderWidth:     1,
+          titleColor:      '#6b6b90',
+          bodyColor:       '#e4e4f0',
+          bodyFont:        { family: "'JetBrains Mono', monospace", size: 13 },
+          callbacks: { label: ctx => `${ctx.parsed.y}${unit}` },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: '#6b6b90', font: { family: "'Inter',sans-serif", size: 11 } },
+          grid:  { color: 'rgba(255,255,255,0.05)' },
+          border:{ dash: [3,3] },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: '#6b6b90',
+            font:  { family: "'JetBrains Mono',monospace", size: 11 },
+            callback: v => `${v}${unit}`,
+          },
+          grid:  { color: 'rgba(255,255,255,0.05)' },
+          border:{ dash: [3,3] },
+        },
+      },
+    },
+  });
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderHistoryView() {
+  const ex = getExercise(state.historyExerciseId);
+
+  // Loading skeleton
+  if (state.historyLogs === null) {
+    return `
+      <div class="history-screen">
+        <div class="log-topbar"><button class="btn-back" onclick="goBackFromHistory()">← Back</button></div>
+        <div class="history-header">
+          <h1 class="history-ex-name">${ex?.name ?? '?'}</h1>
+        </div>
+        <div class="history-loading">Loading…</div>
+      </div>`;
+  }
+
+  const points = computeProgress(ex, state.historyLogs);
+  const stats  = computeStats(points);
+  const unit   = ex?.type === 'duration' ? 's' : '';
+
+  // ── Stat row (design.md: show the answer, not just the chart) ────────────
+  let statHtml = '';
+  if (stats) {
+    const { current, past, pct } = stats;
+    const pctHtml = pct === null
+      ? `<span class="stat-value mono stat-neutral">—</span>`
+      : `<span class="stat-value mono ${pct >= 0 ? 'stat-up' : 'stat-down'}">${pct >= 0 ? '+' : ''}${pct}%</span>`;
+
+    statHtml = `
+      <div class="stat-row">
+        <div class="stat-item">
+          <span class="stat-label">Current</span>
+          <span class="stat-value mono">${current}${unit}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">2 wks ago</span>
+          <span class="stat-value mono">${past !== null ? past + unit : '—'}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Change</span>
+          ${pctHtml}
+        </div>
+      </div>`;
+  }
+
+  const bodyHtml = points.length
+    ? `<div class="chart-wrap"><canvas id="history-canvas"></canvas></div>`
+    : `<div class="empty-state">No logs yet — tap an exercise on Today's screen to start logging.</div>`;
+
+  return `
+    <div class="history-screen">
+      <div class="log-topbar">
+        <button class="btn-back" onclick="goBackFromHistory()">← Back</button>
+      </div>
+      <div class="history-header">
+        <h1 class="history-ex-name">${ex?.name ?? '?'}</h1>
+        <span class="history-metric-label">${ex?.type === 'duration' ? 'Best hold / session' : 'Est. volume / session'}</span>
+      </div>
+      ${statHtml}
+      ${bodyHtml}
     </div>`;
 }
 
@@ -813,7 +1032,18 @@ function applyHash() {
     const id = parseInt(hash.replace('log-', ''), 10);
     if (!isNaN(id)) { state.view = 'log'; state.logExerciseId = id; return; }
   }
-  const validViews = ['home', 'routine', 'edit', 'log'];
+  if (hash.startsWith('history-')) {
+    const id = parseInt(hash.replace('history-', ''), 10);
+    if (!isNaN(id)) {
+      state.view = 'history';
+      state.historyExerciseId = id;
+      // Logs are fetched lazily in openHistoryView; if landing directly via
+      // hash, trigger the fetch here so the chart populates.
+      if (state.exercises.length) openHistoryView(id);
+      return;
+    }
+  }
+  const validViews = ['home', 'routine', 'edit', 'log', 'history'];
   state.view = validViews.includes(hash) ? hash : 'home';
 }
 
