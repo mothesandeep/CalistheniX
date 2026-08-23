@@ -289,7 +289,8 @@ def delete_level_exercise(le_id):
 
 @app.route('/exercises/<int:exercise_id>/logs', methods=['GET'])
 def get_exercise_logs(exercise_id):
-    """Return all logs for a given exercise, newest first."""
+    """Return all raw log rows for one exercise, ordered by timestamp ascending
+    (oldest first — convenient for trend charting on the client)."""
     conn = get_db_connection()
     ex = conn.execute('SELECT id FROM exercises WHERE id = ?', (exercise_id,)).fetchone()
     if ex is None:
@@ -297,7 +298,7 @@ def get_exercise_logs(exercise_id):
         return jsonify({'error': f'exercise {exercise_id} not found'}), 404
 
     rows = conn.execute(
-        'SELECT * FROM logs WHERE exercise_id = ? ORDER BY timestamp DESC',
+        'SELECT * FROM logs WHERE exercise_id = ? ORDER BY timestamp ASC',
         (exercise_id,)
     ).fetchall()
     conn.close()
@@ -306,8 +307,15 @@ def get_exercise_logs(exercise_id):
 
 @app.route('/logs', methods=['POST'])
 def create_log():
-    """Persist a single log entry. client_uuid is a UNIQUE constraint —
-    sending the same uuid twice is safe and returns the existing row (idempotent)."""
+    """Persist a single log entry.
+
+    Required fields: exercise_id, timestamp, client_uuid.
+    Type-aware field requirement:
+      - exercises.type = 'reps'     → reps must be provided
+      - exercises.type = 'duration' → duration_sec must be provided
+    client_uuid is UNIQUE — duplicate submissions are silently ignored
+    and the existing row is returned (idempotent offline-sync replay).
+    """
     body = request.get_json(silent=True)
     if not body:
         return jsonify({'error': 'JSON body required'}), 400
@@ -317,10 +325,24 @@ def create_log():
     if missing:
         return jsonify({'error': f'Missing required fields: {missing}'}), 400
 
-    if body.get('reps') is None and body.get('duration_sec') is None:
-        return jsonify({'error': 'Provide either reps or duration_sec'}), 400
-
     conn = get_db_connection()
+
+    # Look up exercise to enforce type-aware field requirement
+    ex = conn.execute(
+        'SELECT type FROM exercises WHERE id = ?', (body['exercise_id'],)
+    ).fetchone()
+    if ex is None:
+        conn.close()
+        return jsonify({'error': f"exercise {body['exercise_id']} not found"}), 404
+
+    ex_type = ex['type']
+    if ex_type == 'duration' and body.get('duration_sec') is None:
+        conn.close()
+        return jsonify({'error': 'duration_sec is required for duration-type exercises'}), 400
+    if ex_type == 'reps' and body.get('reps') is None:
+        conn.close()
+        return jsonify({'error': 'reps is required for reps-type exercises'}), 400
+
     try:
         cursor = conn.cursor()
         cursor.execute(
@@ -340,7 +362,7 @@ def create_log():
         conn.commit()
         new_id = cursor.lastrowid
     except sqlite3.IntegrityError:
-        # client_uuid already exists — return the existing row (idempotent replay)
+        # client_uuid already exists — silent no-op, return existing row
         row = conn.execute(
             'SELECT * FROM logs WHERE client_uuid = ?', (body['client_uuid'],)
         ).fetchone()
@@ -350,6 +372,35 @@ def create_log():
     row = conn.execute('SELECT * FROM logs WHERE id = ?', (new_id,)).fetchone()
     conn.close()
     return jsonify(dict(row)), 201
+
+
+@app.route('/export', methods=['GET'])
+def export_all_logs():
+    """Full JSON dump of all logs joined with exercise name and type.
+    Ordered by exercise name then timestamp for readable output.
+    This is the backup safety net from architecture.md §1 — keep it simple."""
+    conn = get_db_connection()
+    rows = conn.execute(
+        '''
+        SELECT
+            l.id,
+            l.client_uuid,
+            l.timestamp,
+            l.reps,
+            l.weight_kg,
+            l.duration_sec,
+            l.rpe,
+            e.id          AS exercise_id,
+            e.name        AS exercise_name,
+            e.type        AS exercise_type,
+            e.day         AS exercise_day
+        FROM   logs l
+        JOIN   exercises e ON e.id = l.exercise_id
+        ORDER  BY e.name ASC, l.timestamp ASC
+        '''
+    ).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
 
 
 if __name__ == '__main__':
