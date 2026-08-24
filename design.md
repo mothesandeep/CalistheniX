@@ -2,9 +2,9 @@
 
 ## 1. Design Philosophy
 
-- **Gym-Usable Ergonomics**: One-handed operation, massive tap targets, high-contrast dark theme, and minimal screen time per set.
-- **Data-Dense, Zero Fluff**: Structured statistics, tabular numbers, and clean visual progress bars instead of marketing prose or unnecessary illustrations.
-- **Dark Aesthetic Default**: Deep dark theme (`#0a0a0f`) with electric purple accents (`#7c5cfc`) designed for harsh gym lighting and reduced OLED battery consumption.
+- **Gym-Usable Ergonomics**: One-handed operation, massive tap targets (min 44×44px), high-contrast dark theme, and minimal screen time per set.
+- **Data-Dense, Zero Fluff**: Structured statistics, tabular monospace numbers, and clean visual progress bars instead of marketing prose or unnecessary illustrations.
+- **Dark Aesthetic Default**: Deep dark canvas (`#0a0a0f`) with electric purple accents (`#7c5cfc`) designed for harsh gym lighting and reduced OLED battery consumption.
 
 ---
 
@@ -33,34 +33,42 @@
 
 ## 3. Core Screens & Navigation Hierarchy
 
-### 1. Dashboard View (`#dashboard`)
-- **Top Metrics Row**: Consecutive streak counter, weekly completed workouts, and weekly total volume.
+### Screen 0: Dashboard View (`#dashboard`)
+- **Top Metrics Row**: Consecutive streak counter, weekly completed workouts, and weekly total sets.
 - **Top Movers Section**: Exercises showing greatest 2-week performance gains with positive delta badges (`+15%`).
-- **Today Split Launchpad**: Clean split card displaying current cycle day (`Push A`, `Pull B`, etc.) with one-tap link to start.
+- **Personal Records (PRs) Card**: All-time maximum reps, hold duration, and added weight badges.
+- **4-Week Consistency Heatmap**: 28-cell visual activity calendar showing workout frequency and intensity.
+- **Today Split Card**: Live split card displaying current cycle day (`Push A`, `Pull B`, etc.) with one-tap link to start or continue workout.
+- **Backup & Restore Actions**: One-click JSON backup export and snapshot restore file picker.
 
-### 2. Today's Day View (`#home`)
+### Screen 1: Today's Split (`#home`)
 - **Split Header**: Active split name, calendar date, and cycle tag.
 - **Exercise Card List**: Chronological list of today's target exercises showing last logged numbers (e.g. `last: 4 × 15 reps` or `last: 32s`).
-- **One-Tap Quick Logging**: Directly opens the focused log entry screen for that exercise.
+- **Start Workout Button**: Direct one-tap launcher for the active workout session.
 
-### 3. Routine View (`#routine`)
+### Screen 2: Routine View (`#routine`)
 - **Routine & Level Selector**: Dropdowns for selecting split names (`Push A`, `Pull A`, `Legs A`, etc.) and Levels (1–5).
 - **Workout Blueprint Table**: Displays exercise sequence, target sets, target reps/duration, tempo notation (e.g. `2010`), rest periods, and superset groupings.
 - **Superset Brackets**: Visual enclosure for exercises sharing a superset group (`SS1`, `SS2`) with explicit *no rest between exercises* indicators.
 
-### 4. Routine Editor (`#edit`)
+### Screen 3: Routine & Catalog Editor (`#edit`)
 - **Interactive Exercise Management**: Add exercises to routine levels, edit parameters inline, adjust tempo/rest, or remove slots.
-- **Form Controls**: Dedicated numerical steppers for sets, reps, duration, and superset assignment.
+- **Custom Exercise Creator**: Inline form for registering brand-new movements in the global catalog with progression target thresholds.
 
-### 5. Log Entry & Guided Workout Screen (`#log-<id>`)
+### Screen 4: Active Workout Runner (`#workout`)
+- **Session Topbar**: Real-time duration timer (`MM:SS`), Leave button, and Finish Workout button.
+- **Dynamic Progress Bar**: Live set completion ratio (`X / Y Sets Completed`) with percentage fill.
+- **Target vs. Actual Matrix**: Individual set rows with editable actual reps/duration input, optional weight, and completion checkboxes.
+
+### Screen 5: Log Entry & Guided Workout Screen (`#log-<id>`)
 - **Repetition Logging**: Large numerical rep keypad, optional weight input, and 1–10 RPE segmented control.
 - **Isometric Hold Timer**: Giant start/stop timer widget displaying elapsed seconds in high-contrast monospace numerals.
-- **Guided Set Progress**: Visual set progress indicator (`Set 2 of 4`) with progress pips.
-- **Rest Countdown**: Automated rest timer screen with remaining seconds countdown, audio ticks during the final 3 seconds, and a "Skip Rest" button.
+- **Rest Countdown**: Automated rest timer screen with remaining seconds countdown and audio/haptic cues.
 
-### 6. Exercise History & Chart View (`#history-<id>`)
+### Screen 6: Exercise History & Chart View (`#history-<id>`)
 - **Performance Chart**: Interactive line chart (Chart.js) rendering historical progress over time.
-- **Delta Analysis**: Surfaces 2-week rolling performance comparisons (`+12.5% vs 2 weeks ago`).
+- **Metric Mode Switch**: Toggle between **[Best Set / Max Hold]** and **[Total Volume / Total Duration]**.
+- **Progression Banner & Promotion**: Surfaces 2-week rolling performance comparisons and a one-tap **"Promote 🚀"** button when targets are achieved.
 
 ---
 

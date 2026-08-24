@@ -2,7 +2,7 @@
 
 ## 1. Project Identity & Purpose
 
-**CalistheniX** is a local-first, aesthetic calisthenics progression tracker specifically built for bodyweight skill work and progressive overload. Unlike traditional lifting apps that model only `weight × reps`, CalistheniX natively tracks isometric hold duration, movement tempo (e.g., `3010`), rest intervals, superset pairings, and multi-tier routine levels.
+**CalistheniX** is a local-first, aesthetic calisthenics progression tracker and live workout runner specifically built for bodyweight skill work and progressive overload. Unlike traditional lifting apps that model only `weight × reps`, CalistheniX natively tracks isometric hold duration, movement tempo (e.g., `3010`), rest intervals, superset pairings, multi-tier routine levels, live active workout sessions, all-time personal records (PRs), and training consistency heatmaps.
 
 ---
 
@@ -14,6 +14,7 @@
 │  - Vanilla HTML5 / CSS3 / ES6+ JavaScript (Zero bundle step)│
 │  - Chart.js for data visualization                          │
 │  - Web Audio API (synthetic oscillators) + Vibration API    │
+│  - PWA Service Worker (sw.js) for full offline caching      │
 │  - Local-first optimistic persistence (localStorage)        │
 └──────────────────────────────┬──────────────────────────────┘
                                │ HTTP JSON REST
@@ -21,7 +22,7 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                 Backend — Flask REST API                     │
 │  - Python 3.10+ / Flask / Flask-CORS (Port 5001)            │
-│  - SQLite3 database (tracker.db) with FK enforcement        │
+│  - SQLite3 database (backend/tracker.db) with FK enforcement│
 │  - Idempotent log creation via client UUID deduplication    │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -72,13 +73,13 @@ Ordered exercise configuration per routine level.
 
 ## 5. Development Milestones & Status
 
-| Milestone | Scope | Status |
-|:---|:---|:---|
-| **Phase 0** | Schema, seed data, initial shell | ✅ Complete |
-| **Phase 1** | Core logging, hold timer, Chart.js history, JSON backup export, offline sync | ✅ Complete (v1.1) |
-| **Phase 2** | Custom exercises, metric toggle, progression banner, PWA manifest & service worker, routines & levels | ✅ Complete (v1.2) |
-| **Phase 3** | Active workout execution runner, live target vs. actual reps tracking, auto progression | ✅ Complete (v1.3) |
-| **Phase 4** | Database snapshot import/restore, PRs hub, and 4-week training consistency heatmap | ✅ Complete (v1.4) |
+| Milestone | Scope | Status | Release Tag |
+|:---|:---|:---|:---|
+| **Phase 0** | Schema, seed data, initial shell | ✅ Complete | `v1.0.0` |
+| **Phase 1** | Core logging, hold timer, Chart.js history, JSON backup export, offline sync | ✅ Complete | `v1.1` |
+| **Phase 2** | Multi-level routines, supersets, rolling 7-day PPL A/B split, dashboard, sensory cues, PWA | ✅ Complete | `v1.2` |
+| **Phase 3** | Active workout execution runner, live target vs. actual reps tracking, auto progression | ✅ Complete | `v1.3` |
+| **Phase 4** | Database snapshot import/restore, PRs hub, and 4-week training consistency heatmap | ✅ Complete | `v1.4` |
 
 ---
 
@@ -87,3 +88,4 @@ Ordered exercise configuration per routine level.
 - **Skill Tree Refinement**: The complex SVG skill tree was removed in favor of clean Routine & Level management and an automated backend progression readiness engine (`/exercises/:id/progression-status`).
 - **Rolling Split Anchor**: The 7-day rolling cycle (`Push A` → `Pull A` → `Legs A` → `Push B` → `Pull B` → `Legs B` → `Rest`) is calculated from `cx_cycle_start` in `localStorage`.
 - **Idempotency Guarantee**: Submitting the same `client_uuid` multiple times returns HTTP 201 with the existing record, avoiding duplicate log rows during spotty network conditions.
+- **Database Location Robustness**: `DB_PATH` is anchored to `os.path.dirname(os.path.abspath(__file__))` to guarantee connection to `backend/tracker.db` regardless of execution cwd.

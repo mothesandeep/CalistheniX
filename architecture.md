@@ -1,4 +1,4 @@
-# Architecture — CalistheniX
+# Architecture & Technical Design — CalistheniX
 
 ## 1. System Overview
 
@@ -10,6 +10,7 @@ CalistheniX uses a lightweight, decoupled local-first architecture designed for 
 │  - Vanilla HTML5 / CSS3 / ES6+ JavaScript                   │
 │  - Chart.js for data visualization                          │
 │  - Web Audio API (synthetic beeps) & Vibration API          │
+│  - PWA Service Worker (sw.js) for full offline caching      │
 │  - Optimistic Local-First writes (localStorage)             │
 │  - Idempotent background sync queue                         │
 └──────────────────────────────┬──────────────────────────────┘
@@ -17,9 +18,10 @@ CalistheniX uses a lightweight, decoupled local-first architecture designed for 
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                 Backend — Flask REST API                    │
-│  - Python 3.10+ / Flask / Flask-CORS                        │
+│  - Python 3.10+ / Flask / Flask-CORS (Port 5001)            │
 │  - Endpoints:                                               │
 │    • GET  /exercises                                        │
+│    • POST /exercises                                        │
 │    • GET  /exercises/:id/logs                               │
 │    • POST /logs                                             │
 │    • GET  /exercises/:id/progression-status                 │
@@ -27,16 +29,18 @@ CalistheniX uses a lightweight, decoupled local-first architecture designed for 
 │    • GET  /routines/:name/levels                            │
 │    • POST /routines/:name/levels                            │
 │    • POST /routines/:name/levels/:level/exercises           │
-│    • PUT  /level-exercises/:id                              │
-│    • DELETE /level-exercises/:id                            │
+│    • PUT  /level_exercises/:id                              │
+│    • DELETE /level_exercises/:id                            │
 │    • GET  /dashboard/summary                                │
+│    • GET  /dashboard/records                                │
+│    • GET  /dashboard/activity                               │
 │    • GET  /export                                           │
+│    • POST /import                                           │
 └──────────────────────────────┬──────────────────────────────┘
-                               │ SQLite3 Connection
+                               │ SQLite3 Connection (PRAGMA foreign_keys = ON)
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 Database — SQLite (tracker.db)              │
-│  - PRAGMA foreign_keys = ON                                 │
+│                 Database — SQLite (backend/tracker.db)      │
 │  - Tables: exercises, logs, routine_levels, level_exercises │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -52,7 +56,7 @@ Defines the global catalog of calisthenics exercises and their progression chain
 |:---|:---|:---|:---|
 | `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Unique exercise identifier |
 | `name` | `TEXT` | `NOT NULL` | Exercise name (e.g. "Diamond Push-ups") |
-| `day` | `TEXT` | `NOT NULL` | Associated split category (`Push`, `Pull`, `Legs`, etc.) |
+| `day` | `TEXT` | `NOT NULL` | Associated split category (`Push A`, `Pull A`, `Legs A`, etc.) |
 | `type` | `TEXT` | `NOT NULL` | `reps` or `duration` |
 | `prerequisite_id` | `INTEGER` | `FOREIGN KEY → exercises.id` | Previous progression step |
 | `next_id` | `INTEGER` | `FOREIGN KEY → exercises.id` | Next progression step |
@@ -97,7 +101,7 @@ Defines ordered exercise configurations within a routine level.
 | `reps` | `INTEGER` | `NULLABLE` | Target rep count per set |
 | `duration_sec` | `INTEGER` | `NULLABLE` | Target hold duration per set |
 | `tempo` | `TEXT` | `NULLABLE` | Movement cadence (e.g. `3010`) |
-| `rest_sec` | `INTEGER` | `NULLABLE DEFAULT 90` | Rest countdown timer in seconds |
+| `rest_sec` | `INTEGER` | `NOT NULL DEFAULT 90` | Rest countdown timer in seconds |
 | `superset_group` | `INTEGER` | `NULLABLE` | Superset identifier (`1`, `2`, null for standalone) |
 | `notes` | `TEXT` | `NULLABLE` | Short tactical cues or notes |
 
@@ -106,17 +110,17 @@ Defines ordered exercise configurations within a routine level.
 ## 3. Local-First Synchronization Engine
 
 ```
-[ User Logs Set ]
-       │
-       ▼
-[ localStorage: Append entry & mark synced=false ] ──> (UI instantly shows success checkmark)
-       │
-       ▼ (Immediate sync + 30s background timer + tab focus trigger)
+[ User Logs Set / Finishes Workout ]
+                │
+                ▼
+[ localStorage: Append entry & mark synced=false ] ──> (UI updates instantly)
+                │
+                ▼ (Immediate sync + 30s background timer + tab focus trigger)
 [ POST /logs with client_uuid ]
-       │
-   ┌───┴──────────────┐
-   ▼ (Success)        ▼ (Network Error / Offline)
-[ Mark synced=true ]  [ Keep in localStorage queue for retry ]
+                │
+        ┌───────┴──────────────┐
+        ▼ (Success)            ▼ (Network Error / Offline)
+[ Mark synced=true ]    [ Retain in localStorage queue for retry ]
 ```
 
 ### Key Guarantees:
@@ -126,7 +130,23 @@ Defines ordered exercise configurations within a routine level.
 
 ---
 
-## 4. Audio & Haptic Feedback Architecture
+## 4. Active Workout Runner Lifecycle
+
+1. **Start Workout**:
+   - Fetches configured routine exercises and initializes an active session object in `localStorage` (`cx_active_session`).
+   - Starts live duration timer.
+2. **Set Execution**:
+   - User inputs actual reps/duration independently from the target.
+   - User toggles completion status; audio/vibration cues trigger on completion.
+   - Progress bar updates dynamically.
+3. **Finish Flow**:
+   - Calculates total volume and sets.
+   - Flushes all completed sets into `lsWriteLog` and triggers idempotent sync.
+   - Clears active session and updates streak metrics.
+
+---
+
+## 5. Audio & Haptic Feedback Architecture
 CalistheniX incorporates non-visual gym feedback cues:
 - **Web Audio API**: Synthetic audio oscillators generate short, crisp beeps at defined frequencies (440Hz, 880Hz, 1200Hz) without requiring external audio files.
 - **Navigator Vibration API**: Patterned haptic vibrations (`[80, 50, 80]` ms) alert the athlete when hold durations finish or rest timers hit zero.
@@ -134,7 +154,6 @@ CalistheniX incorporates non-visual gym feedback cues:
 
 ---
 
-## 5. Security & Deployment Profile
-- **Deployment**: Pure static frontend served by any web server (Python `http.server`, Nginx, Caddy) + Flask backend.
-- **Network Surface**: Single-user design; intended for local machine usage or private home/tailscale network access.
-- **Backup**: One-click JSON serialization exports the entire database state directly to the user's local filesystem.
+## 6. Progressive Web App (PWA) & Backup Architecture
+- **PWA Service Worker (`sw.js`)**: Caches static assets (HTML, CSS, JS, fonts, Chart.js) with a cache-first strategy for instant loading.
+- **Data Portability**: Full JSON export (`GET /export`) and idempotent restore (`POST /import`) ensure zero vendor lock-in and seamless device migrations.
