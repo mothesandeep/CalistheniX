@@ -77,7 +77,7 @@ Ordered exercise configuration per routine level.
 | **Phase 0** | Schema, seed data, initial shell | ✅ Complete |
 | **Phase 1** | Core logging, hold timer, Chart.js history, JSON backup export, offline sync | ✅ Complete (v1.1) |
 | **Phase 2** | Custom exercises, metric toggle, progression banner, PWA manifest & service worker, routines & levels | ✅ Complete (v1.2) |
-| **Phase 3** | Active workout execution runner, live target vs. actual reps tracking, auto progression | ⏳ Next |
+| **Phase 3** | Active workout execution runner, live target vs. actual reps tracking, auto progression | ✅ Complete (v1.3) |
 | **Phase 4** | Cloud multi-device backup sync | 🔮 Future |
 
 ---

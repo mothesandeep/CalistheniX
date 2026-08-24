@@ -50,15 +50,15 @@ Phase 4: PWA Packaging, Service Worker & Cloud Sync (Future)
 - **Sensory Gym Feedback**: Synthetic Web Audio beeps + Vibration API haptic pulses for hold start, hold save, rest tick, and rest completion.
 - **Progression Readiness Engine**: Backend logic (`/exercises/:id/progression-status`) evaluating consecutive sessions at target performance.
 
-### ⏳ Phase 3 — Active Workout Execution System (Next Milestone)
-- **Active Workout Runner**: Live interactive session screen launched from Routine or Today.
-- **Live Set Tracking**: Side-by-side Target vs. Actual reps/duration entry per set.
-- **Session Lifecycle**: Real-time duration timer, completed sets progress bar, and session summary.
+### ✅ Phase 3 — Active Workout Execution System (Completed)
+- **Active Workout Runner**: Live interactive session screen launched from Routine, Today, or Dashboard.
+- **Live Set Tracking**: Side-by-side Target vs. Actual reps/duration entry per set (independent inputs).
+- **Session Lifecycle**: Real-time duration timer, completed sets progress bar, set completion audio/vibration cues, and finish flow.
 - **Automated Progression Promotion**: One-tap advancement to next exercise tier upon hitting progression criteria.
 
-### 🔮 Phase 4 — PWA & Cloud Backup (Future Milestone)
-- **Offline PWA Shell**: Service worker caching for 100% offline standalone mobile install.
+### 🔮 Phase 4 — Cloud Backup & Multi-Device Sync (Future Milestone)
 - **Encrypted Cloud Sync**: Optional multi-device backup sync.
+- **Advanced Training Analytics**: Multi-year progression heatmaps and volume load distribution.
 
 ---
 
@@ -68,6 +68,6 @@ Phase 4: PWA Packaging, Service Worker & Cloud Sync (Future)
 |:---|:---|:---|:---|
 | **Phase 0** | Setup, Schema & Seeds | ✅ Complete | Clean local execution |
 | **Phase 1** | MVP Logging & Charts | ✅ Complete | <10s set logging, local-first writes |
-| **Phase 2** | Routines, Dashboard & Cues | ✅ Complete | Full PPL A/B split, levels, rest cues |
-| **Phase 3** | Active Workout Execution | ⏳ In Progress | Live session runner & actual rep tracking |
-| **Phase 4** | PWA & Cloud Backup | 🔮 Future | Full offline install & sync |
+| **Phase 2** | Routines, Dashboard & PWA | ✅ Complete | Full PPL A/B split, levels, rest cues |
+| **Phase 3** | Active Workout Execution | ✅ Complete | Live session runner & actual rep tracking |
+| **Phase 4** | Cloud Sync & Multi-Device | 🔮 Future | Multi-device encrypted sync |

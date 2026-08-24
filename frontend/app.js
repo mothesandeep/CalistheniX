@@ -95,6 +95,8 @@ const state = {
   historyProgression:null,   // progression readiness status from /progression-status
   logTimer:        null,     // { startedAt: ms, intervalId } | null
   logElapsed:      0,        // seconds displayed on timer
+  // Phase 3: Active Workout Execution Runner
+  activeSession:   null,     // in-progress workout session object
 };
 
 // ─── API helper ───────────────────────────────────────────────────────────────
@@ -732,6 +734,9 @@ function renderTodayView() {
   const groups = groupExercises(state.levelExercises);
   let idx = 1;
 
+  const active = getActiveSession();
+  const isThisActive = active && active.status === 'in_progress' && active.routine === state.routine && active.level === state.level;
+
   const bodyHtml = groups.length === 0
     ? `<div class="empty-state">
          Nothing here yet.
@@ -754,8 +759,16 @@ function renderTodayView() {
 
   return `
     <div class="view-header">
-      <h1 class="view-title">Today's Routine</h1>
-      <p class="view-subtitle">Read-only. Exercises sharing a superset group are bracketed together.</p>
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+        <div>
+          <h1 class="view-title">Today's Routine</h1>
+          <p class="view-subtitle">Read-only. Exercises sharing a superset group are bracketed together.</p>
+        </div>
+        ${state.levelExercises.length > 0 ? `
+          <button class="btn btn-primary" onclick="startWorkoutSession('${state.routine}', ${state.level})">
+            ${isThisActive ? '⚡ Continue Workout ➔' : '⚡ Start Workout ➔'}
+          </button>` : ''}
+      </div>
     </div>
     ${renderSelectors()}
 
@@ -787,6 +800,9 @@ function renderDashboardView() {
 
   // Dashboard today card: rest day variant
   const isRest = (day === 'Rest');
+  const active = getActiveSession();
+  const isAnyActive = active && active.status === 'in_progress';
+
   const todayCard = isRest
     ? `<div class="dashboard-today-card">
         <div class="dashboard-today-link" style="cursor:default;">
@@ -797,14 +813,14 @@ function renderDashboardView() {
           </div>
         </div>
       </div>`
-    : `<div class="dashboard-today-card">
-        <a href="#home" class="dashboard-today-link" onclick="switchView('home')">
+    : `<div class="dashboard-today-card ${isAnyActive ? 'dashboard-today-card-active' : ''}">
+        <a href="#workout" class="dashboard-today-link" onclick="${isAnyActive ? 'openWorkoutView()' : `startWorkoutSession('${day}', 1)`}; return false;">
           <div class="dashboard-today-info">
-            <span class="dashboard-today-tag">Today's Split</span>
-            <span class="dashboard-today-name">${day}</span>
+            <span class="dashboard-today-tag">${isAnyActive ? '⚡ Active Workout in Progress' : "Today's Split"}</span>
+            <span class="dashboard-today-name">${isAnyActive ? `${active.routine} · Level ${active.level}` : day}</span>
             <span class="dashboard-today-date">${label}</span>
           </div>
-          <span class="dashboard-today-action">Start Workout →</span>
+          <span class="dashboard-today-action">${isAnyActive ? 'Continue Workout ➔' : 'Start Workout ➔'}</span>
         </a>
       </div>`;
 
@@ -881,6 +897,8 @@ function renderHomeView() {
   }
 
   const exercises = state.exercises.filter(e => e.day === day);
+  const active = getActiveSession();
+  const isThisActive = active && active.status === 'in_progress' && active.routine === day;
 
   const rows = exercises.map(ex => {
     const log    = state.todayLogs[ex.id] ?? null;
@@ -899,9 +917,14 @@ function renderHomeView() {
 
   return `
     <div class="home-screen">
-      <div class="home-header">
-        <h1 class="home-day-name">${day}</h1>
-        <span class="home-date">${getTodayLabel()}</span>
+      <div class="home-header" style="display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap;">
+        <div>
+          <h1 class="home-day-name">${day}</h1>
+          <span class="home-date">${getTodayLabel()}</span>
+        </div>
+        <button class="btn btn-primary" onclick="startWorkoutSession('${day}', 1)">
+          ${isThisActive ? '⚡ Continue Workout ➔' : '⚡ Start Workout ➔'}
+        </button>
       </div>
       <div class="card">
         ${exercises.length > 0
@@ -1322,6 +1345,10 @@ function renderHistoryView() {
             <span class="prog-title">Ready to Progress!${nextName}</span>
             <span class="prog-desc">Target achieved in ${p.sessions_at_target}/${p.sessions_needed} consecutive sessions.</span>
           </div>
+          ${p.next_exercise ? `
+            <button class="btn btn-sm btn-primary" style="margin-left:auto;" onclick="promoteProgression(${state.historyExerciseId}, ${p.next_exercise.id})">
+              Promote 🚀
+            </button>` : ''}
         </div>`;
     } else if (!p.no_target) {
       progBannerHtml = `
@@ -1357,6 +1384,350 @@ function renderHistoryView() {
 
 
 
+// ─── Phase 3: Active Workout Execution Runner ──────────────────────────────
+const LS_ACTIVE_SESSION = 'cx_active_session';
+
+function getActiveSession() {
+  if (state.activeSession) return state.activeSession;
+  try {
+    const raw = localStorage.getItem(LS_ACTIVE_SESSION);
+    if (raw) {
+      state.activeSession = JSON.parse(raw);
+      return state.activeSession;
+    }
+  } catch {}
+  return null;
+}
+
+function saveActiveSession(session) {
+  state.activeSession = session;
+  if (session) {
+    localStorage.setItem(LS_ACTIVE_SESSION, JSON.stringify(session));
+  } else {
+    localStorage.removeItem(LS_ACTIVE_SESSION);
+  }
+}
+
+async function startWorkoutSession(routineName, levelNum = 1) {
+  const active = getActiveSession();
+  if (active && active.status === 'in_progress' && active.routine === routineName && active.level === levelNum) {
+    openWorkoutView();
+    return;
+  }
+
+  let exercises = [];
+  try {
+    const levels = await api('GET', `/routines/${encodeURIComponent(routineName)}/levels`);
+    const lvl = levels.find(l => l.level === levelNum) || levels[0];
+    if (lvl) exercises = lvl.exercises;
+  } catch (e) {
+    showToast(`Failed to load routine: ${e.message}`, true);
+    return;
+  }
+
+  if (!exercises.length) {
+    showToast(`No exercises configured in ${routineName} Level ${levelNum}`, true);
+    return;
+  }
+
+  const session = {
+    id: newUUID(),
+    date: todayISO(),
+    routine: routineName,
+    level: levelNum,
+    startTime: Date.now(),
+    endTime: null,
+    status: 'in_progress',
+    exercises: exercises.map(le => {
+      const ex = getExercise(le.exercise_id);
+      const isHold = (le.exercise_type || ex?.type) === 'duration';
+      const targetVal = isHold ? (le.duration_sec || 30) : (le.reps || 10);
+      const setCount = le.sets || 3;
+      const sets = [];
+      for (let s = 1; s <= setCount; s++) {
+        sets.push({
+          set_num: s,
+          target_val: targetVal,
+          actual_val: targetVal,
+          completed: false,
+          weight_kg: null,
+          rpe: null,
+          completed_at: null,
+        });
+      }
+      return {
+        id: le.id,
+        exercise_id: le.exercise_id,
+        exercise_name: le.exercise_name || ex?.name || 'Exercise',
+        exercise_type: isHold ? 'duration' : 'reps',
+        tempo: le.tempo,
+        rest_sec: le.rest_sec || 90,
+        superset_group: le.superset_group,
+        notes: le.notes,
+        sets,
+      };
+    }),
+  };
+
+  saveActiveSession(session);
+  startWorkoutDurationTimer();
+  openWorkoutView();
+}
+
+function openWorkoutView() {
+  state.view = 'workout';
+  window.location.hash = 'workout';
+  startWorkoutDurationTimer();
+  render();
+}
+
+let _workoutTimerInterval = null;
+function startWorkoutDurationTimer() {
+  if (_workoutTimerInterval) clearInterval(_workoutTimerInterval);
+  _workoutTimerInterval = setInterval(() => {
+    if (state.view === 'workout') {
+      const timerEl = document.getElementById('workout-elapsed-time');
+      const session = getActiveSession();
+      if (timerEl && session && session.startTime) {
+        const elapsedSec = Math.floor((Date.now() - session.startTime) / 1000);
+        timerEl.textContent = fmtSecs(elapsedSec);
+      }
+    }
+  }, 1000);
+}
+
+function updateWorkoutSetActual(exIdx, setIdx, val) {
+  const session = getActiveSession();
+  if (!session || !session.exercises[exIdx] || !session.exercises[exIdx].sets[setIdx]) return;
+  const num = parseInt(val, 10);
+  session.exercises[exIdx].sets[setIdx].actual_val = isNaN(num) ? 0 : num;
+  saveActiveSession(session);
+}
+
+function updateWorkoutSetWeight(exIdx, setIdx, val) {
+  const session = getActiveSession();
+  if (!session || !session.exercises[exIdx] || !session.exercises[exIdx].sets[setIdx]) return;
+  const num = parseFloat(val);
+  session.exercises[exIdx].sets[setIdx].weight_kg = isNaN(num) || num <= 0 ? null : num;
+  saveActiveSession(session);
+}
+
+function toggleWorkoutSet(exIdx, setIdx) {
+  const session = getActiveSession();
+  if (!session || !session.exercises[exIdx] || !session.exercises[exIdx].sets[setIdx]) return;
+  const set = session.exercises[exIdx].sets[setIdx];
+  set.completed = !set.completed;
+  set.completed_at = set.completed ? new Date().toISOString() : null;
+  saveActiveSession(session);
+
+  if (set.completed) {
+    cueRestEnd(); // audio/vibration feedback
+  }
+  render();
+}
+
+async function finishWorkoutSession() {
+  const session = getActiveSession();
+  if (!session) return;
+
+  let totalSets = 0;
+  let completedSets = 0;
+  let totalReps = 0;
+  let totalHoldSec = 0;
+
+  session.endTime = Date.now();
+  session.status = 'completed';
+  const durationSec = Math.floor((session.endTime - session.startTime) / 1000);
+
+  for (const ex of session.exercises) {
+    const isHold = ex.exercise_type === 'duration';
+    for (const set of ex.sets) {
+      totalSets++;
+      if (set.completed) {
+        completedSets++;
+        if (isHold) {
+          totalHoldSec += (set.actual_val || 0);
+          lsWriteLog({
+            exercise_id: ex.exercise_id,
+            timestamp: set.completed_at || new Date().toISOString(),
+            duration_sec: set.actual_val,
+            rpe: set.rpe,
+            weight_kg: set.weight_kg,
+            client_uuid: newUUID(),
+          });
+        } else {
+          totalReps += (set.actual_val || 0);
+          lsWriteLog({
+            exercise_id: ex.exercise_id,
+            timestamp: set.completed_at || new Date().toISOString(),
+            reps: set.actual_val,
+            weight_kg: set.weight_kg,
+            rpe: set.rpe,
+            client_uuid: newUUID(),
+          });
+        }
+      }
+    }
+  }
+
+  lsSyncPending();
+  saveActiveSession(null);
+  if (_workoutTimerInterval) {
+    clearInterval(_workoutTimerInterval);
+    _workoutTimerInterval = null;
+  }
+
+  showToast(`Workout Complete! 🎉 ${completedSets}/${totalSets} sets done (${Math.round(durationSec / 60)}m)`);
+  state.view = 'dashboard';
+  window.location.hash = 'dashboard';
+  await loadDashboardSummary();
+  render();
+}
+
+function cancelWorkoutSession() {
+  if (confirm("Are you sure you want to discard this workout session?")) {
+    saveActiveSession(null);
+    if (_workoutTimerInterval) {
+      clearInterval(_workoutTimerInterval);
+      _workoutTimerInterval = null;
+    }
+    showToast("Workout cancelled");
+    state.view = 'dashboard';
+    window.location.hash = 'dashboard';
+    render();
+  }
+}
+
+async function promoteProgression(exerciseId, nextId) {
+  if (!confirm('Advance this exercise to the next progression tier in your routine levels?')) return;
+  const leRows = state.levelExercises.filter(le => le.exercise_id === exerciseId);
+  try {
+    for (const le of leRows) {
+      await api('PUT', `/level_exercises/${le.id}`, { exercise_id: nextId });
+    }
+    await loadLevel();
+    await loadExercises();
+    showToast('Progression advanced in Routine! 🚀');
+    render();
+  } catch (e) {
+    showToast(`Promotion error: ${e.message}`, true);
+  }
+}
+
+function renderActiveWorkoutView() {
+  const session = getActiveSession();
+  if (!session || session.status !== 'in_progress') {
+    return `
+      <div class="workout-screen">
+        <div class="log-topbar">
+          <button class="btn-back" onclick="switchView('dashboard')">← Dashboard</button>
+        </div>
+        <div class="empty-state" style="padding:48px 0;">
+          <p>No active workout session running.</p>
+          <div style="margin-top:16px;">
+            <button class="btn btn-primary" onclick="startWorkoutSession('${getTodayDay() === 'Rest' ? 'Push A' : getTodayDay()}', 1)">Start Today's Workout ➔</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  let totalSets = 0;
+  let completedSets = 0;
+  session.exercises.forEach(ex => {
+    ex.sets.forEach(s => {
+      totalSets++;
+      if (s.completed) completedSets++;
+    });
+  });
+  const pct = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
+  const elapsedSec = Math.floor((Date.now() - session.startTime) / 1000);
+
+  const exCardsHtml = session.exercises.map((ex, exIdx) => {
+    const isHold = ex.exercise_type === 'duration';
+    const isExDone = ex.sets.length > 0 && ex.sets.every(s => s.completed);
+    const ssTag = ex.superset_group ? `<span class="ss-badge">SS${ex.superset_group}</span>` : '';
+
+    const setRowsHtml = ex.sets.map((set, sIdx) => {
+      return `
+        <div class="workout-set-row ${set.completed ? 'workout-set-row-done' : ''}">
+          <span class="workout-set-num mono">Set ${set.set_num}</span>
+          <span class="workout-set-target mono">${set.target_val}${isHold ? 's' : 'r'}</span>
+          <div class="workout-set-input-wrap">
+            <input class="workout-set-input mono ${set.completed ? 'workout-set-input-done' : ''}" type="number" min="0"
+                   value="${set.actual_val}"
+                   placeholder="0"
+                   onchange="updateWorkoutSetActual(${exIdx}, ${sIdx}, this.value)">
+          </div>
+          <div class="workout-set-input-wrap">
+            <input class="workout-set-input mono" type="number" min="0" step="0.5"
+                   value="${set.weight_kg != null ? set.weight_kg : ''}"
+                   placeholder="kg"
+                   onchange="updateWorkoutSetWeight(${exIdx}, ${sIdx}, this.value)" style="width:60px;">
+          </div>
+          <button class="workout-check-btn ${set.completed ? 'workout-check-btn-done' : ''}"
+                  onclick="toggleWorkoutSet(${exIdx}, ${sIdx})">
+            ${set.completed ? '✓ Done' : 'Check'}
+          </button>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="workout-ex-card ${isExDone ? 'workout-ex-card-done' : ''}">
+        <div class="workout-ex-header">
+          <div class="workout-ex-title-wrap">
+            <h2 class="workout-ex-name">${ex.exercise_name} ${badge(ex.exercise_type)} ${ssTag}</h2>
+            <span class="workout-ex-target-label mono">Target: ${ex.sets.length} × ${ex.sets[0]?.target_val}${isHold ? 's' : ' reps'}</span>
+          </div>
+          ${isExDone ? `<span class="workout-done-badge">✓ Done</span>` : ''}
+        </div>
+        ${ex.notes ? `<div class="workout-ex-notes">${ex.notes}</div>` : ''}
+        <div class="workout-sets-header">
+          <span>Set</span><span>Target</span><span>Actual</span><span>+Kg (opt)</span><span>Status</span>
+        </div>
+        <div class="workout-sets-list">
+          ${setRowsHtml}
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="workout-screen">
+      <div class="workout-topbar">
+        <button class="btn-back" onclick="switchView('dashboard')">← Leave</button>
+        <div class="workout-timer-badge mono" id="workout-elapsed-time">${fmtSecs(elapsedSec)}</div>
+        <button class="btn btn-sm btn-primary" onclick="finishWorkoutSession()">Finish 🏁</button>
+      </div>
+
+      <div class="workout-header">
+        <span class="workout-routine-tag">${session.routine} · Level ${session.level}</span>
+        <h1 class="workout-title">Active Session</h1>
+      </div>
+
+      <div class="workout-progress-wrap">
+        <div class="workout-progress-text">
+          <span class="mono">${completedSets} / ${totalSets} Sets Completed</span>
+          <span class="mono">${pct}%</span>
+        </div>
+        <div class="workout-progress-bar">
+          <div class="workout-progress-fill" style="width: ${pct}%;"></div>
+        </div>
+      </div>
+
+      <div class="workout-exercises-list">
+        ${exCardsHtml}
+      </div>
+
+      <div class="workout-bottom-actions">
+        <button class="btn btn-save" style="width:100%; justify-content:center; padding:16px; font-size:16px;" onclick="finishWorkoutSession()">
+          Finish Workout 🏁
+        </button>
+        <button class="btn-cancel-link" onclick="cancelWorkoutSession()">
+          Discard / Cancel Workout
+        </button>
+      </div>
+    </div>`;
+}
+
 // ─── Main render ─────────────────────────────────────────────────────────────
 function render() {
   // Sync active nav link (log view has no tab)
@@ -1372,6 +1743,7 @@ function render() {
     case 'edit':      root.innerHTML = renderEditView();      break;
     case 'log':       root.innerHTML = renderLogView();       break;
     case 'history':   root.innerHTML = renderHistoryView();   break;
+    case 'workout':   root.innerHTML = renderActiveWorkoutView(); break;
     default:          root.innerHTML = renderDashboardView();
   }
   if (state.view === 'log' && !state.restActive) buildRpeRow();
@@ -1565,7 +1937,7 @@ function applyHash() {
       return;
     }
   }
-  const validViews = ['dashboard', 'home', 'routine', 'edit', 'log', 'history'];
+  const validViews = ['dashboard', 'home', 'routine', 'edit', 'log', 'history', 'workout'];
   state.view = validViews.includes(hash) ? hash : 'dashboard';
 }
 
@@ -1629,6 +2001,8 @@ async function handleCreateCustomExercise(event) {
 async function init() {
   applyHash();
   startSyncLoop();
+  getActiveSession();
+  if (state.view === 'workout') startWorkoutDurationTimer();
 
   // PWA Service Worker Registration
   if ('serviceWorker' in navigator) {
