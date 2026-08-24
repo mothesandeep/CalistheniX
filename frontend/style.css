@@ -1022,6 +1022,115 @@ body {
   font-weight: 600;
 }
 
+/* ── Personal Records (PRs) List ───────────────────────────────────────────── */
+.pr-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.pr-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: opacity var(--transition);
+}
+
+.pr-row:last-child {
+  border-bottom: none;
+}
+
+.pr-row:hover {
+  opacity: 0.85;
+}
+
+.pr-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pr-trophy {
+  font-size: 14px;
+}
+
+.pr-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.pr-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ── Activity Heatmap (4 Weeks) ───────────────────────────────────────────── */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.heatmap-cell {
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: transform 100ms, filter 100ms;
+  cursor: pointer;
+}
+
+.heatmap-cell:hover {
+  transform: scale(1.15);
+  filter: brightness(1.2);
+}
+
+.heatmap-0 {
+  background: var(--surface-2);
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+.heatmap-1 {
+  background: rgba(124, 92, 252, 0.35);
+  border-color: rgba(124, 92, 252, 0.5);
+}
+
+.heatmap-2 {
+  background: rgba(124, 92, 252, 0.75);
+  border-color: #7c5cfc;
+}
+
+.heatmap-3 {
+  background: var(--success);
+  border-color: var(--success);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+}
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.heatmap-legend-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+}
+
+.heatmap-legend .heatmap-cell {
+  width: 12px;
+  height: 12px;
+}
+
 .dashboard-today-card {
   background: var(--surface);
   border: 1px solid var(--border);

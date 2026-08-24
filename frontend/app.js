@@ -95,8 +95,10 @@ const state = {
   historyProgression:null,   // progression readiness status from /progression-status
   logTimer:        null,     // { startedAt: ms, intervalId } | null
   logElapsed:      0,        // seconds displayed on timer
-  // Phase 3: Active Workout Execution Runner
-  activeSession:   null,     // in-progress workout session object
+  // Phase 3 & 4: Active Workout & Analytics
+  activeSession:     null,   // in-progress workout session object
+  dashboardRecords:  [],     // personal records from /dashboard/records
+  dashboardActivity: [],     // 30-day activity logs from /dashboard/activity
 };
 
 // ─── API helper ───────────────────────────────────────────────────────────────
@@ -243,9 +245,18 @@ async function loadExercises() {
 
 async function loadDashboardSummary() {
   try {
-    state.dashboardSummary = await api('GET', '/dashboard/summary');
+    const [sum, rec, act] = await Promise.allSettled([
+      api('GET', '/dashboard/summary'),
+      api('GET', '/dashboard/records'),
+      api('GET', '/dashboard/activity')
+    ]);
+    state.dashboardSummary  = sum.status === 'fulfilled' ? sum.value : { streak_days: 0, week_sessions: 0, week_sets: 0, top_movers: [] };
+    state.dashboardRecords  = rec.status === 'fulfilled' ? rec.value : [];
+    state.dashboardActivity = act.status === 'fulfilled' ? act.value : [];
   } catch (e) {
-    state.dashboardSummary = { streak_days: 0, week_sessions: 0, week_sets: 0, top_movers: [] };
+    state.dashboardSummary  = { streak_days: 0, week_sessions: 0, week_sets: 0, top_movers: [] };
+    state.dashboardRecords  = [];
+    state.dashboardActivity = [];
   }
 }
 
@@ -868,14 +879,107 @@ function renderDashboardView() {
         </div>
       </div>
 
+      ${renderPersonalRecordsCard(state.dashboardRecords)}
+
+      ${renderActivityHeatmap(state.dashboardActivity)}
+
       ${todayCard}
 
       <div class="dashboard-footer-actions">
         <button class="btn-export-backup" onclick="exportData()">
-          <span>💾</span> Export All Logs (JSON)
+          <span>💾</span> Export Backup (JSON)
         </button>
+        <label class="btn-export-backup" style="cursor:pointer;">
+          <span>📂</span> Restore Backup (JSON)
+          <input type="file" accept=".json" style="display:none;" onchange="importData(this)">
+        </label>
       </div>
     </div>`;
+}
+
+// ─── Phase 4: Consistency Heatmap & PRs Cards ──────────────────────────────
+function renderActivityHeatmap(activityList = []) {
+  const map = {};
+  activityList.forEach(a => { map[a.date] = a.total_sets; });
+  const cells = [];
+  const now = new Date();
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+    const iso = d.toISOString().slice(0, 10);
+    const sets = map[iso] || 0;
+    const label = `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}: ${sets} sets`;
+    const levelClass = sets === 0 ? 'heatmap-0' : sets <= 3 ? 'heatmap-1' : sets <= 6 ? 'heatmap-2' : 'heatmap-3';
+    cells.push(`<div class="heatmap-cell ${levelClass}" title="${label}"></div>`);
+  }
+  return `
+    <div class="card" style="margin-top: 20px;">
+      <div class="card-header">
+        <span class="card-title">Training Consistency (4 Weeks)</span>
+        <span class="card-count mono">${activityList.length} active day${activityList.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="card-body">
+        <div class="heatmap-grid">
+          ${cells.join('')}
+        </div>
+        <div class="heatmap-legend">
+          <span class="heatmap-legend-label">Less</span>
+          <div class="heatmap-cell heatmap-0"></div>
+          <div class="heatmap-cell heatmap-1"></div>
+          <div class="heatmap-cell heatmap-2"></div>
+          <div class="heatmap-cell heatmap-3"></div>
+          <span class="heatmap-legend-label">More</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderPersonalRecordsCard(records = []) {
+  if (!records || !records.length) return '';
+  const topRecords = records.slice(0, 5);
+  const rows = topRecords.map(r => {
+    const isHold = r.exercise_type === 'duration';
+    const bestVal = isHold
+      ? `${r.max_duration_sec}s`
+      : `${r.max_reps} reps${r.max_weight_kg ? ` @ +${r.max_weight_kg}kg` : ''}`;
+    return `
+      <div class="pr-row" onclick="openHistoryView(${r.exercise_id})" role="button" tabindex="0">
+        <div class="pr-info">
+          <span class="pr-trophy">🏆</span>
+          <span class="pr-name">${r.exercise_name}</span>
+        </div>
+        <span class="pr-value mono">${bestVal}</span>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="card" style="margin-top: 20px;">
+      <div class="card-header">
+        <span class="card-title">All-Time Personal Records (PRs)</span>
+        <span class="card-count mono">${records.length} exercises</span>
+      </div>
+      <div class="card-body" style="padding: 6px 18px;">
+        <div class="pr-list">
+          ${rows}
+        </div>
+      </div>
+    </div>`;
+}
+
+async function importData(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const json = JSON.parse(text);
+    const result = await api('POST', '/import', json);
+    showToast(`Restored: ${result.imported} logs imported (${result.skipped} existing) ✓`);
+    input.value = '';
+    await loadDashboardSummary();
+    await loadTodayLogs();
+    render();
+  } catch (e) {
+    showToast(`Restore error: ${e.message}`, true);
+  }
 }
 
 // ─── Screen 1: Today's Day view ──────────────────────────────────────────────

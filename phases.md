@@ -56,9 +56,10 @@ Phase 4: PWA Packaging, Service Worker & Cloud Sync (Future)
 - **Session Lifecycle**: Real-time duration timer, completed sets progress bar, set completion audio/vibration cues, and finish flow.
 - **Automated Progression Promotion**: One-tap advancement to next exercise tier upon hitting progression criteria.
 
-### 🔮 Phase 4 — Cloud Backup & Multi-Device Sync (Future Milestone)
-- **Encrypted Cloud Sync**: Optional multi-device backup sync.
-- **Advanced Training Analytics**: Multi-year progression heatmaps and volume load distribution.
+### ✅ Phase 4 — Cloud Backup, Snapshot Restore & Advanced Analytics (Completed)
+- **Database Backup & Snapshot Restore**: Full JSON database export and idempotent backup restoration (`POST /import`).
+- **Personal Records (PRs) Hub**: All-time maximum reps, hold duration, and added weight badges per exercise (`GET /dashboard/records`).
+- **Training Consistency Heatmap**: 4-week activity grid tracking session frequency and density (`GET /dashboard/activity`).
 
 ---
 
@@ -70,4 +71,4 @@ Phase 4: PWA Packaging, Service Worker & Cloud Sync (Future)
 | **Phase 1** | MVP Logging & Charts | ✅ Complete | <10s set logging, local-first writes |
 | **Phase 2** | Routines, Dashboard & PWA | ✅ Complete | Full PPL A/B split, levels, rest cues |
 | **Phase 3** | Active Workout Execution | ✅ Complete | Live session runner & actual rep tracking |
-| **Phase 4** | Cloud Sync & Multi-Device | 🔮 Future | Multi-device encrypted sync |
+| **Phase 4** | Backup Restore & Analytics | ✅ Complete | Snapshot import, PRs & activity heatmap |

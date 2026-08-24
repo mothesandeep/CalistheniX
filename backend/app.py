@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-DB_PATH = 'tracker.db'
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tracker.db')
 
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -812,8 +812,105 @@ def get_progression_status(ex_id):
         if next_ex:
             result['next_exercise'] = dict(next_ex)
 
+@app.route('/import', methods=['POST'])
+def import_logs():
+    """Import and merge a JSON backup dump.
+    Idempotent: uses client_uuid to skip already-existing log entries.
+    """
+    body = request.get_json(silent=True)
+    if not body:
+        return jsonify({'error': 'JSON body required'}), 400
+
+    items = body if isinstance(body, list) else body.get('logs', [])
+    if not isinstance(items, list):
+        return jsonify({'error': 'Expected a JSON array of log records'}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    imported = 0
+    skipped = 0
+
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        ex_id     = item.get('exercise_id')
+        ts        = item.get('timestamp')
+        uuid_str  = item.get('client_uuid') or item.get('uuid')
+
+        if not ex_id or not ts or not uuid_str:
+            continue
+
+        try:
+            cursor.execute(
+                '''INSERT INTO logs (exercise_id, timestamp, reps, weight_kg, duration_sec, rpe, client_uuid)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                (
+                    ex_id,
+                    ts,
+                    item.get('reps'),
+                    item.get('weight_kg'),
+                    item.get('duration_sec'),
+                    item.get('rpe'),
+                    uuid_str
+                )
+            )
+            imported += 1
+        except sqlite3.IntegrityError:
+            skipped += 1
+
+    conn.commit()
     conn.close()
-    return jsonify(result)
+    return jsonify({
+        'status': 'success',
+        'imported': imported,
+        'skipped': skipped,
+        'total_processed': len(items)
+    }), 200
+
+
+@app.route('/dashboard/records', methods=['GET'])
+def get_personal_records():
+    """Return all-time Personal Records (PRs) across all exercises."""
+    conn = get_db_connection()
+    rows = conn.execute(
+        '''
+        SELECT
+            e.id                AS exercise_id,
+            e.name              AS exercise_name,
+            e.type              AS exercise_type,
+            MAX(l.reps)         AS max_reps,
+            MAX(l.duration_sec) AS max_duration_sec,
+            MAX(l.weight_kg)    AS max_weight_kg,
+            COUNT(l.id)         AS total_logs
+        FROM exercises e
+        JOIN logs l ON l.exercise_id = e.id
+        GROUP BY e.id, e.name, e.type
+        ORDER BY total_logs DESC
+        '''
+    ).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route('/dashboard/activity', methods=['GET'])
+def get_activity_heatmap():
+    """Return day-by-day training volume and sets for the last 30 days."""
+    conn = get_db_connection()
+    rows = conn.execute(
+        '''
+        SELECT
+            SUBSTR(timestamp, 1, 10) AS date,
+            COUNT(id)                AS total_sets,
+            SUM(COALESCE(reps, 0))   AS total_reps,
+            SUM(COALESCE(duration_sec, 0)) AS total_duration_sec
+        FROM logs
+        WHERE timestamp >= date('now', '-30 days')
+        GROUP BY SUBSTR(timestamp, 1, 10)
+        ORDER BY date ASC
+        '''
+    ).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
 
 
 if __name__ == '__main__':
