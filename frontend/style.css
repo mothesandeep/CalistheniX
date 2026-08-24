@@ -802,6 +802,86 @@ body {
 .stat-down    { color: var(--danger);  }
 .stat-neutral { color: var(--text-muted); }
 
+/* ── Progression status banner ─────────────────────────────────────────────── */
+.progression-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.progression-banner-ready {
+  border-color: rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.progression-banner-progress {
+  border-color: rgba(124, 92, 252, 0.3);
+  background: rgba(124, 92, 252, 0.06);
+}
+
+.prog-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.prog-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.prog-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.prog-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Metric toggle buttons ─────────────────────────────────────────────────── */
+.metric-toggle-group {
+  display: flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  margin-bottom: 16px;
+  gap: 4px;
+}
+
+.metric-toggle-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 2px);
+  padding: 8px 12px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  text-align: center;
+}
+
+.metric-toggle-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.metric-toggle-btn:hover:not(.active) {
+  color: var(--text);
+}
+
 /* Chart container: explicit height so Chart.js can size correctly */
 .chart-wrap {
   position: relative;

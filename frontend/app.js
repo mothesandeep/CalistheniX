@@ -91,6 +91,8 @@ const state = {
   // Screen 3: History / Chart
   historyExerciseId: null,   // exercise.id whose chart is shown
   historyLogs:       null,   // null = loading | [] = no data | [...] = loaded
+  historyMetricMode: 'best', // 'best' (max set) | 'volume' (sum/total)
+  historyProgression:null,   // progression readiness status from /progression-status
   logTimer:        null,     // { startedAt: ms, intervalId } | null
   logElapsed:      0,        // seconds displayed on timer
 };
@@ -347,7 +349,7 @@ function fmtLastLog(ex, log) {
 //
 // Returns array of { date: 'YYYY-MM-DD', metric: number }, one point per
 // calendar day, sorted oldest → newest.
-function computeProgress(ex, logs) {
+function computeProgress(ex, logs, mode = 'best') {
   if (!ex || !logs || !logs.length) return [];
 
   // Group raw log rows by calendar day (ISO timestamp, slice to YYYY-MM-DD)
@@ -364,15 +366,24 @@ function computeProgress(ex, logs) {
     .map(([date, dayLogs]) => {
       let metric;
       if (ex.type === 'duration') {
-        // Best (max) hold duration in the session, in seconds.
-        metric = Math.max(...dayLogs.map(l => l.duration_sec ?? 0));
+        if (mode === 'volume') {
+          // Total hold duration in the session (sum in seconds)
+          metric = dayLogs.reduce((sum, l) => sum + (l.duration_sec || 0), 0);
+        } else {
+          // Best (max) hold duration in the session, in seconds.
+          metric = Math.max(...dayLogs.map(l => l.duration_sec ?? 0));
+        }
       } else {
-        // Estimated volume: sum of reps × weight_kg across all sets.
-        // For bodyweight sets (weight_kg null/0) use reps as a relative signal.
-        metric = dayLogs.reduce((sum, l) => {
-          const vol = l.weight_kg ? (l.reps || 0) * l.weight_kg : (l.reps || 0);
-          return sum + vol;
-        }, 0);
+        if (mode === 'volume') {
+          // Estimated volume: sum of reps × weight_kg across all sets (or reps if bodyweight)
+          metric = dayLogs.reduce((sum, l) => {
+            const vol = l.weight_kg ? (l.reps || 0) * l.weight_kg : (l.reps || 0);
+            return sum + vol;
+          }, 0);
+        } else {
+          // Best set: max reps in the session
+          metric = Math.max(...dayLogs.map(l => l.reps ?? 0));
+        }
       }
       return { date, metric };
     });
@@ -580,6 +591,53 @@ function renderAddForm() {
     </form>`;
 }
 
+function renderCustomExerciseCard() {
+  const dayOpts = ROUTINES.map(r => `<option value="${r}" ${r === state.routine ? 'selected' : ''}>${r}</option>`).join('');
+
+  return `
+    <div class="card" style="margin-top: 24px;">
+      <div class="card-header">
+        <span class="card-title">Create Custom Exercise (Catalog)</span>
+      </div>
+      <div class="card-body">
+        <form class="add-form" id="custom-ex-form" onsubmit="handleCreateCustomExercise(event)">
+          <div class="form-row">
+            <div class="form-group form-group-wide">
+              <label class="form-label">Exercise Name</label>
+              <input class="form-input" type="text" name="name" placeholder="e.g. Archer Push-ups" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Split Day</label>
+              <select class="form-input form-select" name="day" required>
+                ${dayOpts}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Type</label>
+              <select class="form-input form-select" name="type" id="custom-ex-type" onchange="onCustomTypeChange(this)" required>
+                <option value="reps">Reps</option>
+                <option value="duration">Hold Duration</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group" id="custom-prog-target-group">
+              <label class="form-label" id="custom-prog-target-label">Progression Target Reps <span class="opt">opt</span></label>
+              <input class="form-input mono" type="number" id="custom-prog-target-input" name="progression_target_reps" min="1" placeholder="e.g. 15" style="width:140px">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Sessions Needed</label>
+              <input class="form-input mono" type="number" name="progression_sessions_needed" min="1" max="10" value="2" required style="width:100px">
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-secondary" type="submit">+ Create in Catalog</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+}
+
 function renderEditView() {
   const hasRows = state.levelExercises.length > 0;
 
@@ -614,7 +672,9 @@ function renderEditView() {
       <div class="card-body">
         ${renderAddForm()}
       </div>
-    </div>`;
+    </div>
+
+    ${renderCustomExerciseCard()}`;
 }
 
 // ─── Today's Routine view rendering ──────────────────────────────────────────
@@ -1079,16 +1139,29 @@ function renderLogView() {
 
 // ─── Screen 3: History / Chart ────────────────────────────────────────────────
 
-// Navigate to history for a specific exercise; fetch logs then render.
+// Navigate to history for a specific exercise; fetch logs & progression status then render.
 function openHistoryView(exerciseId) {
-  state.historyExerciseId = exerciseId;
-  state.historyLogs       = null; // null = loading
-  state.view              = 'history';
-  window.location.hash    = `history-${exerciseId}`;
+  state.historyExerciseId  = exerciseId;
+  state.historyLogs        = null; // null = loading
+  state.historyProgression = null;
+  state.historyMetricMode  = state.historyMetricMode || 'best';
+  state.view               = 'history';
+  window.location.hash     = `history-${exerciseId}`;
   render(); // show skeleton immediately
-  api('GET', `/exercises/${exerciseId}/logs`)
-    .then(logs => { state.historyLogs = logs; render(); })
-    .catch(()  => { state.historyLogs = [];   render(); });
+
+  Promise.allSettled([
+    api('GET', `/exercises/${exerciseId}/logs`),
+    api('GET', `/exercises/${exerciseId}/progression-status`)
+  ]).then(([logsRes, progRes]) => {
+    state.historyLogs        = logsRes.status === 'fulfilled' ? logsRes.value : [];
+    state.historyProgression = progRes.status === 'fulfilled' ? progRes.value : null;
+    render();
+  });
+}
+
+function setHistoryMetricMode(mode) {
+  state.historyMetricMode = mode;
+  render();
 }
 
 function goBackFromHistory() {
@@ -1108,10 +1181,12 @@ function buildHistoryChart() {
   if (_chartInstance) { _chartInstance.destroy(); _chartInstance = null; }
 
   const ex     = getExercise(state.historyExerciseId);
-  const points = computeProgress(ex, state.historyLogs || []);
+  const mode   = state.historyMetricMode || 'best';
+  const points = computeProgress(ex, state.historyLogs || [], mode);
   if (!points.length) return;
 
-  const unit = ex?.type === 'duration' ? 's' : '';
+  const isHold = ex?.type === 'duration';
+  const unit   = isHold ? 's' : (mode === 'volume' ? ' vol' : ' reps');
 
   const labels = points.map(p => {
     const d = new Date(p.date + 'T12:00:00'); // noon avoids tz-boundary shift
@@ -1188,9 +1263,15 @@ function renderHistoryView() {
       </div>`;
   }
 
-  const points = computeProgress(ex, state.historyLogs);
+  const mode   = state.historyMetricMode || 'best';
+  const points = computeProgress(ex, state.historyLogs, mode);
   const stats  = computeStats(points);
-  const unit   = ex?.type === 'duration' ? 's' : '';
+  const isHold = ex?.type === 'duration';
+  const unit   = isHold ? 's' : (mode === 'volume' ? ' vol' : ' reps');
+
+  const metricLabel = isHold
+    ? (mode === 'best' ? 'Best Hold / Session (s)' : 'Total Hold Time (s)')
+    : (mode === 'best' ? 'Best Set (Max Reps)' : 'Total Estimated Volume');
 
   // ── Stat row (design.md: show the answer, not just the chart) ────────────
   let statHtml = '';
@@ -1217,6 +1298,43 @@ function renderHistoryView() {
       </div>`;
   }
 
+  // ── Metric toggle buttons ────────────
+  const toggleHtml = `
+    <div class="metric-toggle-group">
+      <button class="metric-toggle-btn ${mode === 'best' ? 'active' : ''}" onclick="setHistoryMetricMode('best')">
+        ${isHold ? 'Best Hold' : 'Best Set'}
+      </button>
+      <button class="metric-toggle-btn ${mode === 'volume' ? 'active' : ''}" onclick="setHistoryMetricMode('volume')">
+        ${isHold ? 'Total Hold Time' : 'Total Volume'}
+      </button>
+    </div>`;
+
+  // ── Progression status banner ────────────
+  let progBannerHtml = '';
+  if (state.historyProgression) {
+    const p = state.historyProgression;
+    if (p.ready) {
+      const nextName = p.next_exercise?.name ? ` → ${p.next_exercise.name}` : '';
+      progBannerHtml = `
+        <div class="progression-banner progression-banner-ready">
+          <span class="prog-icon">🏆</span>
+          <div class="prog-info">
+            <span class="prog-title">Ready to Progress!${nextName}</span>
+            <span class="prog-desc">Target achieved in ${p.sessions_at_target}/${p.sessions_needed} consecutive sessions.</span>
+          </div>
+        </div>`;
+    } else if (!p.no_target) {
+      progBannerHtml = `
+        <div class="progression-banner progression-banner-progress">
+          <span class="prog-icon">🎯</span>
+          <div class="prog-info">
+            <span class="prog-title">Progression Tracking</span>
+            <span class="prog-desc">${p.sessions_at_target} of ${p.sessions_needed} target sessions achieved.</span>
+          </div>
+        </div>`;
+    }
+  }
+
   const bodyHtml = points.length
     ? `<div class="chart-wrap"><canvas id="history-canvas"></canvas></div>`
     : `<div class="empty-state">No logs yet — tap an exercise on Today's screen to start logging.</div>`;
@@ -1228,8 +1346,10 @@ function renderHistoryView() {
       </div>
       <div class="history-header">
         <h1 class="history-ex-name">${ex?.name ?? '?'}</h1>
-        <span class="history-metric-label">${ex?.type === 'duration' ? 'Best hold / session' : 'Est. volume / session'}</span>
+        <span class="history-metric-label">${metricLabel}</span>
       </div>
+      ${progBannerHtml}
+      ${toggleHtml}
       ${statHtml}
       ${bodyHtml}
     </div>`;
@@ -1458,10 +1578,63 @@ window.addEventListener('hashchange', async () => {
   render();
 });
 
+// Updates the reps/duration field in the custom exercise creation form.
+function onCustomTypeChange(sel) {
+  const isHold = sel.value === 'duration';
+  const label = document.getElementById('custom-prog-target-label');
+  const input = document.getElementById('custom-prog-target-input');
+  if (!label || !input) return;
+  if (isHold) {
+    label.innerHTML   = 'Progression Target Hold (sec) <span class="opt">opt</span>';
+    input.name        = 'progression_target_duration';
+    input.placeholder = 'e.g. 30';
+  } else {
+    label.innerHTML   = 'Progression Target Reps <span class="opt">opt</span>';
+    input.name        = 'progression_target_reps';
+    input.placeholder = 'e.g. 15';
+  }
+}
+
+async function handleCreateCustomExercise(event) {
+  event.preventDefault();
+  const form = event.target;
+  const data = new FormData(form);
+  const type = data.get('type');
+  const payload = {
+    name: (data.get('name') || '').trim(),
+    day:  data.get('day'),
+    type: type,
+    progression_sessions_needed: parseInt(data.get('progression_sessions_needed'), 10) || 2,
+  };
+  if (type === 'duration') {
+    const dur = parseInt(data.get('progression_target_duration'), 10);
+    if (!isNaN(dur)) payload.progression_target_duration = dur;
+  } else {
+    const reps = parseInt(data.get('progression_target_reps'), 10);
+    if (!isNaN(reps)) payload.progression_target_reps = reps;
+  }
+
+  try {
+    const newEx = await api('POST', '/exercises', payload);
+    await loadExercises();
+    showToast(`Created "${newEx.name}" ✓`);
+    form.reset();
+    render();
+  } catch (e) {
+    showToast(`Error: ${e.message}`, true);
+  }
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   applyHash();
   startSyncLoop();
+
+  // PWA Service Worker Registration
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
   try {
     await loadExercises();
     await Promise.all([ loadTodayLogs(), loadLevel(), loadDashboardSummary() ]);

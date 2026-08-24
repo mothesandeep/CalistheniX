@@ -271,6 +271,46 @@ def get_exercises():
     return jsonify([dict(r) for r in rows])
 
 
+@app.route('/exercises', methods=['POST'])
+def create_exercise():
+    """Create a new custom exercise in the global catalog."""
+    body = request.get_json(silent=True)
+    if not body:
+        return jsonify({'error': 'JSON body required'}), 400
+
+    name    = body.get('name')
+    day     = body.get('day')
+    ex_type = body.get('type')
+
+    if not name or not day or not ex_type:
+        return jsonify({'error': 'name, day, and type are required'}), 400
+    if ex_type not in ('reps', 'duration'):
+        return jsonify({'error': "type must be 'reps' or 'duration'"}), 400
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        '''INSERT INTO exercises
+               (name, day, type, prerequisite_id, next_id, progression_target_reps, progression_target_duration, progression_sessions_needed)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+        (
+            name.strip(),
+            day.strip(),
+            ex_type.strip(),
+            body.get('prerequisite_id'),
+            body.get('next_id'),
+            body.get('progression_target_reps'),
+            body.get('progression_target_duration'),
+            body.get('progression_sessions_needed', 2)
+        )
+    )
+    new_id = cursor.lastrowid
+    conn.commit()
+    row = conn.execute('SELECT * FROM exercises WHERE id = ?', (new_id,)).fetchone()
+    conn.close()
+    return jsonify(dict(row)), 201
+
+
 # ── New endpoints ─────────────────────────────────────────────────────────────
 
 @app.route('/routines/<string:name>/levels', methods=['GET'])
