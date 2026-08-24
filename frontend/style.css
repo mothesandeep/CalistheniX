@@ -828,6 +828,13 @@ body {
   margin-bottom: 24px;
 }
 
+/* Right-side topbar group: History link + mute button */
+.log-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .btn-history-link {
   background: none;
   border: none;
@@ -841,6 +848,21 @@ body {
   transition: opacity var(--transition);
 }
 .btn-history-link:hover { opacity: 1; }
+
+/* Mute toggle — emoji icon, borderless, top-right of log screen */
+.btn-mute {
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 2px;
+  opacity: 0.6;
+  transition: opacity var(--transition), transform 80ms;
+  user-select: none;
+}
+.btn-mute:hover  { opacity: 1; }
+.btn-mute:active { transform: scale(0.88); }
 
 /* ── Screen 0: Dashboard ───────────────────────────────────────────────────── */
 .dashboard-screen {
@@ -973,3 +995,152 @@ body {
   color: var(--accent);
 }
 
+/* ── Set progress indicator ─────────────────────────────────────────────────── */
+.set-progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.set-progress-label {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--text);
+}
+
+.set-progress-pips {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.set-pip {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.set-pip-done {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.set-pip-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* ── Rest countdown screen ───────────────────────────────────────────────────── */
+.rest-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 48px 0 32px;
+}
+
+.rest-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.rest-countdown {
+  font-size: 96px;
+  font-weight: 600;
+  letter-spacing: -4px;
+  color: var(--text);
+  line-height: 1;
+  user-select: none;
+}
+
+.rest-next {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+  text-align: center;
+}
+
+.btn-skip-rest {
+  margin-top: 12px;
+  padding: 14px 40px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.btn-skip-rest:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--text);
+}
+.btn-skip-rest:active { transform: scale(0.98); }
+
+/* ── Today's Routine: done row ───────────────────────────────────────────────── */
+.today-ex-done {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.today-name-done {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-muted);
+}
+
+.today-done-check {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--success);
+  padding-left: 4px;
+  flex-shrink: 0;
+}
+
+/* ── Dashboard: export backup action ────────────────────────────────────────── */
+.dashboard-footer-actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-export-backup {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius);
+  padding: 10px 18px;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+.btn-export-backup:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-export-backup:active {
+  transform: scale(0.98);
+}

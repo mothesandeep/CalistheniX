@@ -80,6 +80,14 @@ const state = {
   // Screen 2: Log Entry
   logExerciseId:   null,     // exercise.id being logged
   logReturnView:   'home',   // view to return to on goBack()
+  // Guided session state (populated when opening from Today's Routine)
+  sessionSet:      1,        // current set number (1-indexed)
+  sessionTotalSets:null,     // total sets from level_exercise; null = unguided
+  sessionRestSec:  null,     // rest_sec from level_exercise; null = unguided
+  // Rest countdown
+  restActive:      false,    // true while countdown is showing
+  restRemaining:   0,        // seconds left on countdown
+  restIntervalId:  null,     // setInterval id for countdown tick
   // Screen 3: History / Chart
   historyExerciseId: null,   // exercise.id whose chart is shown
   historyLogs:       null,   // null = loading | [] = no data | [...] = loaded
@@ -109,7 +117,8 @@ function newUUID() {
 
 // ─── localStorage-first sync (architecture.md §3) ────────────────────────────
 // Key prefix for pending (unsynced) log entries.
-const LS_PREFIX = 'cx_pending_';
+const LS_PREFIX    = 'cx_pending_';
+const LS_MUTE_KEY  = 'cx_muted';    // '1' = muted, absent/other = unmuted
 
 // Write a log entry to localStorage immediately.
 // Returns the client_uuid so the caller can track it.
@@ -141,6 +150,86 @@ function startSyncLoop() {
   lsSyncPending();
   window.addEventListener('focus', lsSyncPending);
   setInterval(lsSyncPending, 30_000);
+}
+
+// ─── Audio + vibration cue system ───────────────────────────────────────────
+// All sound generated via Web Audio API OscillatorNode — no external files.
+// Mute toggle disables both sound and vibration. Default: unmuted.
+
+function isMuted() { return localStorage.getItem(LS_MUTE_KEY) === '1'; }
+
+function toggleMute() {
+  const next = isMuted() ? null : '1';
+  if (next) localStorage.setItem(LS_MUTE_KEY, next);
+  else      localStorage.removeItem(LS_MUTE_KEY);
+  // Update mute button icon in-place without a full re-render.
+  document.querySelectorAll('.btn-mute').forEach(btn => {
+    btn.textContent = next ? '🔇' : '🔊';
+    btn.title       = next ? 'Unmute' : 'Mute';
+  });
+}
+
+// Lazy AudioContext — created on first user interaction to satisfy autoplay policy.
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) {
+    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch { _audioCtx = null; }
+  }
+  return _audioCtx;
+}
+
+// Play a synthesised beep.
+// freq: Hz | durationMs: ms | volume: 0–1 | type: OscillatorType
+function beep(freq = 880, durationMs = 80, volume = 0.4, type = 'sine') {
+  if (isMuted()) return;
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  try {
+    const osc  = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type            = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    // Fast fade-out to avoid click at end
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationMs / 1000);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + durationMs / 1000);
+  } catch { /* AudioContext may be suspended on some browsers */ }
+}
+
+// Short haptic pulse (no-op if navigator.vibrate not supported).
+function vibrate(ms = 200) {
+  if (isMuted()) return;
+  try { navigator.vibrate?.(ms); } catch { }
+}
+
+// ── Named cues ───────────────────────────────────────────────────────────────
+
+// Rest countdown hit zero → start next set. Main alert.
+function cueRestEnd() {
+  beep(880, 120, 0.55, 'sine');
+  vibrate(200);
+}
+
+// Tick during last 3 seconds of rest. Quiet, distinct pitch.
+function cueTick() {
+  beep(660, 60, 0.2, 'sine');
+}
+
+// Hold timer stopped and saved mid-exercise.
+function cueHoldSave() {
+  beep(1047, 100, 0.4, 'sine'); // C6 — higher/lighter
+  vibrate(150);
+}
+
+// All sets of an exercise complete: two-beep fanfare.
+function cueExerciseComplete() {
+  beep(880,  90, 0.5, 'sine');
+  setTimeout(() => beep(1174, 120, 0.5, 'sine'), 130); // D6
+  vibrate([80, 60, 120]);
 }
 
 // ─── Data loading ─────────────────────────────────────────────────────────────
@@ -530,13 +619,39 @@ function renderEditView() {
 
 // ─── Today's Routine view rendering ──────────────────────────────────────────
 
+// Returns true if this exercise has been marked complete for today.
+function isExerciseDone(exerciseId) {
+  return localStorage.getItem(`cx_done_${exerciseId}_${todayISO()}`) === '1';
+}
+
+// Mark an exercise complete for today (keyed by exercise_id + date).
+function markExerciseDone(exerciseId) {
+  localStorage.setItem(`cx_done_${exerciseId}_${todayISO()}`, '1');
+}
+
 function renderTodayRow(le, idx) {
-  const ex = getExercise(le.exercise_id);
-  // Tapping anywhere on the row opens the log screen for this exercise.
+  const ex   = getExercise(le.exercise_id);
+  const done = isExerciseDone(le.exercise_id);
+  // Pass the whole le object as JSON so openLogView gets sets/rest_sec.
+  const leJson = JSON.stringify(le).replace(/'/g, "\\'");
+
+  if (done) {
+    // Completed: non-interactive, shows checkmark.
+    return `
+      <div class="today-ex-row today-ex-done">
+        <span class="today-order mono">${String(idx).padStart(2,'0')}</span>
+        <span class="today-name today-name-done">${le.exercise_name ?? ex?.name ?? '?'} ${badge(ex?.type)}</span>
+        <span class="today-sets mono">${le.sets}</span>
+        <span class="today-target mono">${fmtTarget(le)}</span>
+        <span class="today-tempo mono">${fmtTempo(le.tempo)}</span>
+        <span class="today-done-check">✓</span>
+      </div>`;
+  }
+
   return `
-    <div class="today-ex-row today-ex-clickable" onclick="openLogView(${le.exercise_id}, 'routine')"
-         role="button" tabindex="0"
-         onkeydown="if(event.key==='Enter')openLogView(${le.exercise_id}, 'routine')">
+    <div class="today-ex-row today-ex-clickable" role="button" tabindex="0"
+         onclick="openLogViewFromRoutine(${le.exercise_id})"
+         onkeydown="if(event.key==='Enter')openLogViewFromRoutine(${le.exercise_id})">
       <span class="today-order mono">${String(idx).padStart(2,'0')}</span>
       <span class="today-name">${le.exercise_name ?? ex?.name ?? '?'} ${badge(ex?.type)}</span>
       <span class="today-sets mono">${le.sets}</span>
@@ -544,6 +659,13 @@ function renderTodayRow(le, idx) {
       <span class="today-tempo mono">${fmtTempo(le.tempo)}</span>
       <span class="today-rest mono">${fmtRest(le.rest_sec)} <span class="log-arrow">→</span></span>
     </div>`;
+}
+
+// Called from Today's Routine rows — looks up the le from state.levelExercises
+// so openLogView gets the sets/rest_sec context without needing to serialize to HTML.
+function openLogViewFromRoutine(exerciseId) {
+  const le = state.levelExercises.find(e => e.exercise_id === exerciseId) || null;
+  openLogView(exerciseId, 'routine', le);
 }
 
 function renderTodayView() {
@@ -671,6 +793,12 @@ function renderDashboardView() {
       </div>
 
       ${todayCard}
+
+      <div class="dashboard-footer-actions">
+        <button class="btn-export-backup" onclick="exportData()">
+          <span>💾</span> Export All Logs (JSON)
+        </button>
+      </div>
     </div>`;
 }
 
@@ -725,12 +853,26 @@ function renderHomeView() {
 }
 
 // Navigate to the log screen, tracking which view to return to.
-function openLogView(exerciseId, returnView = 'home') {
+// When called from the routine view, levelExercise is the matching le row
+// (contains sets, rest_sec) — enables the guided session flow.
+function openLogView(exerciseId, returnView = 'home', levelExercise = null) {
+  stopRest();
   stopTimer();
   state.logExerciseId = exerciseId;
   state.logReturnView = returnView;
   state.logElapsed    = 0;
-  state.view          = 'log';
+  // Guided session: reset set counter when starting a fresh exercise session.
+  // If levelExercise is provided (opening from routine), wire up set tracking.
+  if (levelExercise) {
+    state.sessionSet       = 1;
+    state.sessionTotalSets = levelExercise.sets || null;
+    state.sessionRestSec   = levelExercise.rest_sec || null;
+  } else {
+    state.sessionSet       = 1;
+    state.sessionTotalSets = null;
+    state.sessionRestSec   = null;
+  }
+  state.view = 'log';
   window.location.hash = `log-${exerciseId}`;
   render();
 }
@@ -766,8 +908,13 @@ function fmtSecs(s) {
 function toggleTimer() {
   if (state.logTimer) {
     stopTimer();
-    // Auto-save the duration when the user stops the timer
-    if (state.logElapsed > 0) saveLog({ duration_sec: state.logElapsed });
+    // Auto-save the duration when the user stops the timer.
+    // Fire hold-save cue first (beep + vibrate) so the gym-user gets
+    // confirmation without needing to see the screen mid-hold.
+    if (state.logElapsed > 0) {
+      cueHoldSave();
+      saveLog({ duration_sec: state.logElapsed });
+    }
   } else {
     startTimer();
   }
@@ -784,9 +931,65 @@ function saveLog(extra = {}) {
     ...extra,
   };
   lsWriteLog(entry);          // immediate localStorage write
-  showToast('✓');             // optimistic checkmark — no spinner, no dialog
+  lsSyncPending();            // trigger background sync
   state.logElapsed = 0;
   stopTimer();
+
+  // ── Guided session flow ───────────────────────────────────────────────────
+  if (state.sessionTotalSets !== null) {
+    const isLastSet = state.sessionSet >= state.sessionTotalSets;
+    if (isLastSet) {
+      // All sets complete — mark done, return to routine.
+      markExerciseDone(state.logExerciseId);
+      cueExerciseComplete();          // two-beep + pattern vibrate
+      showToast('Exercise complete ✓');
+      state.view = state.logReturnView;
+      window.location.hash = state.logReturnView;
+      render();
+    } else {
+      // More sets remain — show rest countdown, then advance.
+      showToast('Set saved ✓');
+      startRestCountdown(state.sessionRestSec || 90);
+    }
+  } else {
+    // Unguided (opened outside routine context) — original behaviour.
+    showToast('✓');
+    render();
+  }
+}
+
+// ── Rest countdown ────────────────────────────────────────────────────────────
+function startRestCountdown(sec) {
+  stopRest();
+  state.restActive    = true;
+  state.restRemaining = sec;
+  render();  // show rest screen immediately
+  state.restIntervalId = setInterval(() => {
+    state.restRemaining--;
+    const el = document.getElementById('rest-countdown');
+    if (el) el.textContent = fmtSecs(state.restRemaining);
+    // Audible warning: quiet tick for last 3 seconds
+    if (state.restRemaining > 0 && state.restRemaining <= 3) cueTick();
+    if (state.restRemaining <= 0) {
+      cueRestEnd();   // beep + vibrate at zero
+      advanceSet();
+    }
+  }, 1000);
+}
+
+function stopRest() {
+  if (state.restIntervalId) {
+    clearInterval(state.restIntervalId);
+    state.restIntervalId = null;
+  }
+  state.restActive = false;
+}
+
+// Called when rest timer hits zero or user taps "Skip Rest".
+function advanceSet() {
+  stopRest();
+  state.sessionSet++;
+  state.restActive = false;
   render();
 }
 
@@ -808,6 +1011,32 @@ function renderLogView() {
   const back   = `<button class="btn-back" onclick="goBack()">← Back</button>`;
   // Small secondary link to jump to the history chart for this exercise
   const histLink = `<button class="btn-history-link" onclick="openHistoryView(${state.logExerciseId})">History →</button>`;
+  const muteBtn  = `<button class="btn-mute" onclick="toggleMute()" title="${isMuted() ? 'Unmute' : 'Mute'}">${isMuted() ? '🔇' : '🔊'}</button>`;
+
+  // ── Rest countdown screen ─────────────────────────────────────────────────
+  if (state.restActive) {
+    return `
+      <div class="log-screen">
+        <div class="log-topbar">${back}${muteBtn}</div>
+        <div class="rest-screen">
+          <p class="rest-label">Rest</p>
+          <div id="rest-countdown" class="rest-countdown mono">${fmtSecs(state.restRemaining)}</div>
+          <p class="rest-next">Set ${state.sessionSet + 1} of ${state.sessionTotalSets} up next</p>
+          <button class="btn-skip-rest" onclick="advanceSet()">Skip Rest</button>
+        </div>
+      </div>`;
+  }
+
+  // ── Set progress indicator (guided sessions only) ─────────────────────────
+  const setProgress = state.sessionTotalSets !== null ? `
+    <div class="set-progress">
+      <span class="set-progress-label mono">Set ${state.sessionSet} of ${state.sessionTotalSets}</span>
+      <div class="set-progress-pips">
+        ${Array.from({length: state.sessionTotalSets}, (_, i) =>
+          `<span class="set-pip ${i < state.sessionSet - 1 ? 'set-pip-done' : i === state.sessionSet - 1 ? 'set-pip-active' : ''}"></span>`
+        ).join('')}
+      </div>
+    </div>` : '';
 
   const logBody = isHold ? `
     <!-- Duration / timer logging -->
@@ -838,11 +1067,12 @@ function renderLogView() {
 
   return `
     <div class="log-screen">
-      <div class="log-topbar">${back}${histLink}</div>
+      <div class="log-topbar">${back}<span class="log-topbar-right">${histLink}${muteBtn}</span></div>
       <div class="log-header">
         <h1 class="log-exercise-name">${ex?.name ?? '?'}</h1>
         <span class="log-type-badge">${badge(ex?.type)}</span>
       </div>
+      ${setProgress}
       ${logBody}
     </div>`;
 }
@@ -1005,6 +1235,8 @@ function renderHistoryView() {
     </div>`;
 }
 
+
+
 // ─── Main render ─────────────────────────────────────────────────────────────
 function render() {
   // Sync active nav link (log view has no tab)
@@ -1022,7 +1254,7 @@ function render() {
     case 'history':   root.innerHTML = renderHistoryView();   break;
     default:          root.innerHTML = renderDashboardView();
   }
-  if (state.view === 'log') buildRpeRow();
+  if (state.view === 'log' && !state.restActive) buildRpeRow();
 }
 
 // ─── Event handlers (global — called from inline html) ─────────────────────
@@ -1054,7 +1286,12 @@ function switchView(view) {
 
 // Navigate back from log screen; refresh today's last-log values if returning home.
 async function goBack() {
+  stopRest();
   stopTimer();
+  // Reset session state so re-opening starts fresh.
+  state.sessionSet       = 1;
+  state.sessionTotalSets = null;
+  state.sessionRestSec   = null;
   const to = state.logReturnView || 'home';
   state.view = to;
   window.location.hash = to;
@@ -1160,6 +1397,25 @@ async function handleDelete(leId) {
   }
 }
 
+// ─── Data Export (Phase 1 F6) ────────────────────────────────────────────────
+async function exportData() {
+  try {
+    const data = await api('GET', '/export');
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `calisthenix-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Export downloaded ✓');
+  } catch (e) {
+    showToast(`Export failed: ${e.message}`, true);
+  }
+}
+
 // ─── Toast ────────────────────────────────────────────────────────────────────
 let _toastTimer = null;
 function showToast(msg, isError = false) {
@@ -1205,7 +1461,7 @@ window.addEventListener('hashchange', async () => {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   applyHash();
-  // startSyncLoop() is wired in Step 5 (offline sync).
+  startSyncLoop();
   try {
     await loadExercises();
     await Promise.all([ loadTodayLogs(), loadLevel(), loadDashboardSummary() ]);

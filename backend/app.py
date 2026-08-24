@@ -91,6 +91,8 @@ def init_db():
 
     # Add notes column if it was missing from an older schema (safe on re-run).
     _migrate_notes_column()
+    # Add progression columns to exercises if missing (safe on re-run).
+    _migrate_progression_columns()
 
 
 def _migrate_notes_column():
@@ -101,6 +103,23 @@ def _migrate_notes_column():
     if 'notes' not in cols:
         cursor.execute('ALTER TABLE level_exercises ADD COLUMN notes TEXT')
         conn.commit()
+    conn.close()
+
+
+def _migrate_progression_columns():
+    """Add three progression tracking columns to exercises if not already present."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cols = [row[1] for row in cursor.execute('PRAGMA table_info(exercises)').fetchall()]
+    migrations = [
+        ('progression_target_reps',     'ALTER TABLE exercises ADD COLUMN progression_target_reps     INTEGER'),
+        ('progression_target_duration', 'ALTER TABLE exercises ADD COLUMN progression_target_duration INTEGER'),
+        ('progression_sessions_needed', 'ALTER TABLE exercises ADD COLUMN progression_sessions_needed INTEGER NOT NULL DEFAULT 2'),
+    ]
+    for col_name, sql in migrations:
+        if col_name not in cols:
+            cursor.execute(sql)
+    conn.commit()
     conn.close()
 
 
@@ -679,5 +698,84 @@ def get_dashboard_summary():
     })
 
 
+@app.route('/exercises/<int:ex_id>/progression-status', methods=['GET'])
+def get_progression_status(ex_id):
+    """Return whether this exercise is ready to progress to next_id.
+
+    Logic:
+      - Fetch the last N calendar-day sessions (N = progression_sessions_needed).
+      - Per session use the *best* set (max reps or max duration_sec).
+      - If all N sessions meet or exceed the target, return ready=True with next_id info.
+      - If no target is set, return no_target=True.
+    """
+    conn = get_db_connection()
+
+    ex = conn.execute('SELECT * FROM exercises WHERE id = ?', (ex_id,)).fetchone()
+    if ex is None:
+        conn.close()
+        return jsonify({'error': 'exercise not found'}), 404
+
+    ex = dict(ex)
+    target_reps     = ex.get('progression_target_reps')
+    target_dur      = ex.get('progression_target_duration')
+    sessions_needed = ex.get('progression_sessions_needed') or 2
+
+    # No target configured yet — nothing to evaluate.
+    if target_reps is None and target_dur is None:
+        conn.close()
+        return jsonify({'ready': False, 'no_target': True})
+
+    # Pull all logs for this exercise, ordered newest first.
+    logs = conn.execute(
+        'SELECT * FROM logs WHERE exercise_id = ? ORDER BY timestamp DESC',
+        (ex_id,)
+    ).fetchall()
+    logs = [dict(r) for r in logs]
+
+    # Group by calendar date (local — use the date portion of ISO timestamp).
+    by_date = {}
+    for log in logs:
+        ts = str(log.get('timestamp') or '')
+        date_str = ts[:10] if len(ts) >= 10 else None
+        if not date_str:
+            continue
+        by_date.setdefault(date_str, []).append(log)
+
+    # Most-recent sessions first.
+    sorted_dates = sorted(by_date.keys(), reverse=True)
+
+    sessions_at_target = 0
+    for date_str in sorted_dates[:sessions_needed]:
+        day_logs = by_date[date_str]
+        if ex['type'] == 'duration':
+            best = max((l.get('duration_sec') or 0) for l in day_logs)
+            meets = best >= target_dur if target_dur is not None else False
+        else:
+            best = max((l.get('reps') or 0) for l in day_logs)
+            meets = best >= target_reps if target_reps is not None else False
+        if meets:
+            sessions_at_target += 1
+
+    ready = (len(sorted_dates) >= sessions_needed and
+             sessions_at_target >= sessions_needed)
+
+    result = {
+        'ready': ready,
+        'sessions_at_target': sessions_at_target,
+        'sessions_needed': sessions_needed,
+    }
+
+    if ready and ex.get('next_id'):
+        next_ex = conn.execute(
+            'SELECT id, name FROM exercises WHERE id = ?', (ex['next_id'],)
+        ).fetchone()
+        if next_ex:
+            result['next_exercise'] = dict(next_ex)
+
+    conn.close()
+    return jsonify(result)
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
+

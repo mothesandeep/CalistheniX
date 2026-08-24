@@ -1,80 +1,140 @@
-# Architecture — Calisthenics Progression Tracker
+# Architecture — CalistheniX
 
-## 1. Overview
+## 1. System Overview
+
+CalistheniX uses a lightweight, decoupled local-first architecture designed for maximum reliability and zero gym-network dependencies:
 
 ```
-┌─────────────────────────────────────────┐
-│  Client — PWA (HTML/CSS/JS + Chart.js)   │
-│  - Renders workout day, logs sets        │
-│  - Local timer for hold-based exercises  │
-│  - Writes every log to localStorage      │
-│    FIRST, then syncs to backend          │
-│  - Service worker: offline shell caching │
-└───────────────┬───────────────────────────┘
-                │  fetch() JSON, only when online
-                ▼
-┌─────────────────────────────────────────┐
-│  Backend — Flask REST API                │
-│  Endpoints:                              │
-│   GET  /exercises                        │
-│   GET  /exercises/:id/logs               │
-│   POST /logs                             │
-│   GET  /export  (JSON dump)              │
-└───────────────┬───────────────────────────┘
-                │
-                ▼
-┌─────────────────────────────────────────┐
-│  SQLite (single file, e.g. tracker.db)   │
-│  Tables: exercises, logs, progressions   │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                 Client — Pure Web Platform                  │
+│  - Vanilla HTML5 / CSS3 / ES6+ JavaScript                   │
+│  - Chart.js for data visualization                          │
+│  - Web Audio API (synthetic beeps) & Vibration API          │
+│  - Optimistic Local-First writes (localStorage)             │
+│  - Idempotent background sync queue                         │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ HTTP JSON REST
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 Backend — Flask REST API                    │
+│  - Python 3.10+ / Flask / Flask-CORS                        │
+│  - Endpoints:                                               │
+│    • GET  /exercises                                        │
+│    • GET  /exercises/:id/logs                               │
+│    • POST /logs                                             │
+│    • GET  /exercises/:id/progression-status                 │
+│    • GET  /routines                                         │
+│    • GET  /routines/:name/levels                            │
+│    • POST /routines/:name/levels                            │
+│    • POST /routines/:name/levels/:level/exercises           │
+│    • PUT  /level-exercises/:id                              │
+│    • DELETE /level-exercises/:id                            │
+│    • GET  /dashboard/summary                                │
+│    • GET  /export                                           │
+└──────────────────────────────┬──────────────────────────────┘
+                               │ SQLite3 Connection
+                               ▼
+┌─────────────────────────────────────────────────────────────┐
+│                 Database — SQLite (tracker.db)              │
+│  - PRAGMA foreign_keys = ON                                 │
+│  - Tables: exercises, logs, routine_levels, level_exercises │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-Single user, no auth layer in MVP — Flask API is not exposed publicly beyond your own device/network unless Phase 3 adds auth.
+---
 
-## 2. Data Model
+## 2. Database Schema
 
-**exercises**
-| column | type | notes |
-|---|---|---|
-| id | INTEGER PK | |
-| name | TEXT | e.g. "Tuck Front Lever" |
-| day | TEXT | Push / Pull / Legs / Full Body / Active Recovery |
-| type | TEXT | `reps` or `duration` — determines which logging UI shows |
-| prerequisite_id | INTEGER FK → exercises.id, nullable | supports future skill-tree UI (Phase 3), unused in MVP UI but must exist now |
-| next_id | INTEGER FK → exercises.id, nullable | same as above |
+### `exercises`
+Defines the global catalog of calisthenics exercises and their progression chain links.
 
-**logs**
-| column | type | notes |
-|---|---|---|
-| id | INTEGER PK | |
-| exercise_id | INTEGER FK | |
-| timestamp | DATETIME | |
-| reps | INTEGER, nullable | used if exercise.type = reps |
-| weight_kg | REAL, nullable | optional even for reps-type |
-| duration_sec | INTEGER, nullable | used if exercise.type = duration |
-| rpe | INTEGER, nullable | 1-10, optional |
-| synced | BOOLEAN | local-only flag, not stored server-side — see sync note below |
+| Column | Type | Constraints | Description |
+|:---|:---|:---|:---|
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Unique exercise identifier |
+| `name` | `TEXT` | `NOT NULL` | Exercise name (e.g. "Diamond Push-ups") |
+| `day` | `TEXT` | `NOT NULL` | Associated split category (`Push`, `Pull`, `Legs`, etc.) |
+| `type` | `TEXT` | `NOT NULL` | `reps` or `duration` |
+| `prerequisite_id` | `INTEGER` | `FOREIGN KEY → exercises.id` | Previous progression step |
+| `next_id` | `INTEGER` | `FOREIGN KEY → exercises.id` | Next progression step |
+| `progression_target_reps` | `INTEGER` | `NULLABLE` | Rep threshold required to advance |
+| `progression_target_duration` | `INTEGER` | `NULLABLE` | Hold seconds required to advance |
+| `progression_sessions_needed`| `INTEGER` | `DEFAULT 2` | Required consecutive sessions hitting target |
 
-**Why one `logs` table instead of splitting reps/duration into separate tables:** a single exercise's history should render on one chart regardless of type; splitting tables makes the query layer (and future exercise-type changes) more complex for no real benefit at this scale.
+### `logs`
+Stores recorded training sets and performance records.
 
-## 3. Offline Sync Approach (the one genuinely tricky integration point)
+| Column | Type | Constraints | Description |
+|:---|:---|:---|:---|
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Unique log record ID |
+| `exercise_id` | `INTEGER` | `FOREIGN KEY → exercises.id` | Associated exercise |
+| `timestamp` | `DATETIME` | `NOT NULL` | ISO 8601 timestamp of set completion |
+| `reps` | `INTEGER` | `NULLABLE` | Rep count (if `type = reps`) |
+| `weight_kg` | `REAL` | `NULLABLE` | Added load in kilograms (optional) |
+| `duration_sec` | `INTEGER` | `NULLABLE` | Isometric hold time in seconds (if `type = duration`) |
+| `rpe` | `INTEGER` | `NULLABLE` | Rate of Perceived Exertion (1–10) |
+| `client_uuid` | `TEXT` | `UNIQUE NOT NULL` | Client-generated UUID for idempotent deduplication |
 
-1. Every log action writes to `localStorage` immediately — this is the source of truth for "did my log succeed," never wait on network.
-2. A background sync function runs on: app load, tab focus, and every 30s while a session is active.
-3. Sync pushes any `localStorage` entries not yet confirmed synced to `POST /logs`; on success, marks them synced and eventually clears them.
-4. If `POST /logs` is called twice for the same local entry (e.g. flaky connection), the client sends a locally-generated UUID per log; the backend treats `client_uuid` as a unique constraint to prevent duplicate rows.
+### `routine_levels`
+Defines distinct difficulty tiers for each workout routine.
 
-This means the backend needs one extra column not shown above: `logs.client_uuid TEXT UNIQUE`.
+| Column | Type | Constraints | Description |
+|:---|:---|:---|:---|
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Unique routine level ID |
+| `routine_name` | `TEXT` | `NOT NULL` | Split name (e.g. `Push A`, `Pull A`, `Legs B`) |
+| `level` | `INTEGER` | `NOT NULL` | Level tier number (`1`–`5`) |
+| *Composite* | — | `UNIQUE(routine_name, level)`| Enforces unique level per routine |
 
-## 4. Chart Rendering
-- `GET /exercises/:id/logs` returns raw log rows.
-- Client aggregates client-side (e.g. max duration per session, or estimated volume = reps × weight) and feeds Chart.js. Keep aggregation logic in one JS module so the "what counts as progress" definition lives in exactly one place — you'll want to tweak this metric as you go.
+### `level_exercises`
+Defines ordered exercise configurations within a routine level.
 
-## 5. Deployment
-- Flask app + SQLite file on any always-on machine you control (or a free-tier host). No horizontal scaling needed — single user, low write volume.
-- PWA manifest + service worker so it installs to home screen; this is what makes offline logging actually feel native rather than "a website that broke."
+| Column | Type | Constraints | Description |
+|:---|:---|:---|:---|
+| `id` | `INTEGER` | `PRIMARY KEY AUTOINCREMENT` | Unique level exercise slot ID |
+| `routine_level_id`| `INTEGER` | `FOREIGN KEY → routine_levels.id` | Associated routine level |
+| `exercise_id` | `INTEGER` | `FOREIGN KEY → exercises.id` | Associated exercise catalog item |
+| `order_index` | `INTEGER` | `NOT NULL` | Order in the workout session |
+| `sets` | `INTEGER` | `NOT NULL DEFAULT 3` | Target set count |
+| `reps` | `INTEGER` | `NULLABLE` | Target rep count per set |
+| `duration_sec` | `INTEGER` | `NULLABLE` | Target hold duration per set |
+| `tempo` | `TEXT` | `NULLABLE` | Movement cadence (e.g. `3010`) |
+| `rest_sec` | `INTEGER` | `NULLABLE DEFAULT 90` | Rest countdown timer in seconds |
+| `superset_group` | `INTEGER` | `NULLABLE` | Superset identifier (`1`, `2`, null for standalone) |
+| `notes` | `TEXT` | `NULLABLE` | Short tactical cues or notes |
 
-## 6. Explicit Non-Architecture (things not to build yet)
-- No auth layer, no multi-tenant data isolation — adding this later means every table needs a `user_id`, which is a mechanical but real migration; don't pre-build it speculatively.
-- No queue/worker system — write volume is far too low to need one.
-- No microservice split — Flask + SQLite in one process is correct at this scale; splitting further is premature.
+---
+
+## 3. Local-First Synchronization Engine
+
+```
+[ User Logs Set ]
+       │
+       ▼
+[ localStorage: Append entry & mark synced=false ] ──> (UI instantly shows success checkmark)
+       │
+       ▼ (Immediate sync + 30s background timer + tab focus trigger)
+[ POST /logs with client_uuid ]
+       │
+   ┌───┴──────────────┐
+   ▼ (Success)        ▼ (Network Error / Offline)
+[ Mark synced=true ]  [ Keep in localStorage queue for retry ]
+```
+
+### Key Guarantees:
+1. **Zero UI Latency**: Logging never awaits a network round-trip.
+2. **Idempotent Ingestion**: `client_uuid` unique constraint prevents duplicate rows even if network retries collide.
+3. **Offline Survivability**: Logs remain securely buffered in `localStorage` indefinitely until connection to the Flask server is restored.
+
+---
+
+## 4. Audio & Haptic Feedback Architecture
+CalistheniX incorporates non-visual gym feedback cues:
+- **Web Audio API**: Synthetic audio oscillators generate short, crisp beeps at defined frequencies (440Hz, 880Hz, 1200Hz) without requiring external audio files.
+- **Navigator Vibration API**: Patterned haptic vibrations (`[80, 50, 80]` ms) alert the athlete when hold durations finish or rest timers hit zero.
+- **Mute Toggle**: Global mute state persisted in `localStorage` allows athletes to silence cues in public gym environments.
+
+---
+
+## 5. Security & Deployment Profile
+- **Deployment**: Pure static frontend served by any web server (Python `http.server`, Nginx, Caddy) + Flask backend.
+- **Network Surface**: Single-user design; intended for local machine usage or private home/tailscale network access.
+- **Backup**: One-click JSON serialization exports the entire database state directly to the user's local filesystem.

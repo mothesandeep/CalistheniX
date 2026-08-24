@@ -1,45 +1,72 @@
-# Design — Calisthenics Progression Tracker
+# Design System & UI Specification — CalistheniX
 
-## 1. Design Principles
-- **Gym-usable, one hand, under 10 seconds per log.** Every design decision gets checked against this. If a screen needs two hands or careful reading mid-set, it's wrong.
-- **No decoration that isn't information.** You've consistently preferred dashboard-style, structured, decision-table UI over generic prose — same principle applies here: charts and numbers, not motivational copy or empty states with mascots.
-- **Dark theme default** — gym lighting is usually bad, and this matches the note-taking system you already use for C++ chapters (JetBrains Mono + Inter, dark background) for visual consistency across your own tools.
+## 1. Design Philosophy
 
-## 2. Screens (MVP — 4 screens total, no more)
+- **Gym-Usable Ergonomics**: One-handed operation, massive tap targets, high-contrast dark theme, and minimal screen time per set.
+- **Data-Dense, Zero Fluff**: Structured statistics, tabular numbers, and clean visual progress bars instead of marketing prose or unnecessary illustrations.
+- **Dark Aesthetic Default**: Deep dark theme (`#0a0a0f`) with electric purple accents (`#7c5cfc`) designed for harsh gym lighting and reduced OLED battery consumption.
 
-### Screen 1 — Today's Day
-- Shows current split day (Push/Pull/Legs/Full Body/Active Recovery) — auto-detected from a simple day-of-week → split mapping you set once, editable.
-- Lists exercises for that day as tappable rows.
-- Each row shows: exercise name, last logged value (e.g. "last: 42s" or "last: 8 reps @ 0kg").
+---
 
-### Screen 2 — Log Entry (per exercise)
-- If `type = reps`: three inputs — reps (numeric keypad), weight (optional, numeric keypad), RPE (optional, 1-10 stepper). One "Save" button.
-- If `type = duration`: single large Start/Stop timer button, shows running time, saves duration on stop. No typing required mid-set.
-- Save always writes local-first (see architecture.md §3) — UI shows an optimistic checkmark instantly, never a spinner waiting on network.
+## 2. Visual Tokens & Styling System
 
-### Screen 3 — Exercise History / Chart
-- One line chart: metric (duration or estimated volume) vs. date.
-- A small stat row above the chart: current value, value 2 weeks ago, % change. This is the actual "is this working" answer — surface it, don't make the user read the chart to infer it.
+| Token | CSS Variable | Value | Purpose / Usage |
+|:---|:---|:---|:---|
+| **Background** | `--bg` | `#0a0a0f` | Main viewport canvas |
+| **Surface 1** | `--surface` | `#12121a` | Cards, primary containers, input panels |
+| **Surface 2** | `--surface-2` | `#1a1a26` | Elevated rows, hover states, input fields |
+| **Border** | `--border` | `rgba(255, 255, 255, 0.07)`| Subtle element boundaries |
+| **Border Focus**| `--border-focus` | `#7c5cfc` | Active input outline |
+| **Accent** | `--accent` | `#7c5cfc` | Brand accent, primary buttons, active tabs |
+| **Accent Hover**| `--accent-hover` | `#9678fd` | Interactive hover highlight |
+| **Accent Glow** | `--accent-glow` | `rgba(124, 92, 252, 0.25)`| Focus states, active indicators |
+| **Success** | `--success` | `#22c55e` | Completed sets, positive progression deltas |
+| **Warning** | `--warning` | `#f59e0b` | High RPE, rest countdown urgency |
+| **Danger** | `--danger` | `#ef4444` | Deletion actions, negative deltas |
+| **Text** | `--text` | `#f1f1f8` | Primary text and headings |
+| **Text Muted** | `--text-muted` | `#8a8aa3` | Secondary labels, descriptions |
+| **Text Dim** | `--text-dim` | `#52526b` | Placeholders, inactive hints |
+| **Font Sans** | `--sans` | `'Inter', system-ui, sans-serif` | Clean geometric UI typography |
+| **Font Mono** | `--mono` | `'JetBrains Mono', monospace` | Timers, reps, sets, tabular metrics |
 
-### Screen 4 — Export
-- One button: "Export all logs (JSON)". No settings, no options. This is the backup safety net from architecture.md — keep it trivially simple so it's never skipped.
+---
 
-## 3. Visual System
+## 3. Core Screens & Navigation Hierarchy
 
-| Token | Value | Notes |
-|---|---|---|
-| Background | near-black (#0d0d0f style) | matches existing dark-theme note system |
-| Font (UI) | Inter | body/UI text |
-| Font (numbers) | JetBrains Mono | reps, weights, timers — tabular alignment matters for scanning fast |
-| Accent | single accent color for "progress up" state | keep it to one accent; resist adding a full palette |
-| Type hierarchy | large numerals for the active timer/input, small labels | mid-set, the number is what matters, not the label |
+### 1. Dashboard View (`#dashboard`)
+- **Top Metrics Row**: Consecutive streak counter, weekly completed workouts, and weekly total volume.
+- **Top Movers Section**: Exercises showing greatest 2-week performance gains with positive delta badges (`+15%`).
+- **Today Split Launchpad**: Clean split card displaying current cycle day (`Push A`, `Pull B`, etc.) with one-tap link to start.
 
-## 4. Interaction Notes
-- Timer screen: the Start/Stop button should be the single largest tappable element on screen — thumb-reachable, no precision required, since hands may be sweaty/shaking post-set.
-- No confirmation dialogs on save — every added tap is friction against the 10-second target. Undo (not confirm) is the right pattern if mistakes need correcting.
-- No onboarding flow, no tutorial screens — this is a single-user tool for someone who designed the split it's logging; skip anything built for a stranger user.
+### 2. Today's Day View (`#home`)
+- **Split Header**: Active split name, calendar date, and cycle tag.
+- **Exercise Card List**: Chronological list of today's target exercises showing last logged numbers (e.g. `last: 4 × 15 reps` or `last: 32s`).
+- **One-Tap Quick Logging**: Directly opens the focused log entry screen for that exercise.
 
-## 5. Explicit Non-Design (MVP)
-- No skill-tree visualization screen yet — data model supports it (architecture.md §2), but the UI for prerequisite/next relationships is Phase 3, not MVP. Don't design it now; it'll bias the schema toward a UI that doesn't exist yet.
-- No settings screen beyond the one-time day-mapping setup — resist adding configuration options preemptively.
-- No custom exercise creation UI in MVP — exercises are seeded directly into the DB by you, once, at setup.
+### 3. Routine View (`#routine`)
+- **Routine & Level Selector**: Dropdowns for selecting split names (`Push A`, `Pull A`, `Legs A`, etc.) and Levels (1–5).
+- **Workout Blueprint Table**: Displays exercise sequence, target sets, target reps/duration, tempo notation (e.g. `2010`), rest periods, and superset groupings.
+- **Superset Brackets**: Visual enclosure for exercises sharing a superset group (`SS1`, `SS2`) with explicit *no rest between exercises* indicators.
+
+### 4. Routine Editor (`#edit`)
+- **Interactive Exercise Management**: Add exercises to routine levels, edit parameters inline, adjust tempo/rest, or remove slots.
+- **Form Controls**: Dedicated numerical steppers for sets, reps, duration, and superset assignment.
+
+### 5. Log Entry & Guided Workout Screen (`#log-<id>`)
+- **Repetition Logging**: Large numerical rep keypad, optional weight input, and 1–10 RPE segmented control.
+- **Isometric Hold Timer**: Giant start/stop timer widget displaying elapsed seconds in high-contrast monospace numerals.
+- **Guided Set Progress**: Visual set progress indicator (`Set 2 of 4`) with progress pips.
+- **Rest Countdown**: Automated rest timer screen with remaining seconds countdown, audio ticks during the final 3 seconds, and a "Skip Rest" button.
+
+### 6. Exercise History & Chart View (`#history-<id>`)
+- **Performance Chart**: Interactive line chart (Chart.js) rendering historical progress over time.
+- **Delta Analysis**: Surfaces 2-week rolling performance comparisons (`+12.5% vs 2 weeks ago`).
+
+---
+
+## 4. Interaction Patterns & Touch Targets
+
+1. **Touch Target Size**: Minimum 44×44px hit areas on all buttons and inputs to prevent missed taps during workouts.
+2. **Instant Optimistic Feedback**: Set saves immediately display a checkmark animation without awaiting backend sync.
+3. **No Intrusive Confirmations**: Actions are fast and reversible; no blocking confirmation dialogs between sets.
+4. **Haptic & Audio Signals**: Distinct audible beeps and vibrations for hold start, hold save, rest countdown tick, and rest end.

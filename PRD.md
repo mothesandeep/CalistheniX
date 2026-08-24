@@ -1,51 +1,65 @@
-# PRD — Calisthenics Progression Tracker
+# Product Requirements Document (PRD) — CalistheniX
 
 ## 1. Problem Statement
-Generic weight-lifting trackers (Hevy, Strong, FitNotes) model training as `sets x reps @ weight`. Calisthenics skill work — planche, front lever, L-sit, handstand progressions — doesn't fit that shape. It's `hold duration`, `tempo`, and `progression tier` (e.g. tuck front lever → advanced tuck → straddle → full). No mainstream free tool models this well. This app exists to close that specific gap, not to replace a general workout logger.
+Generic weight-lifting trackers (Hevy, Strong, FitNotes) model training almost exclusively as `sets × reps @ weight`. Calisthenics skill work — planche, front lever, L-sit, handstand progressions, muscle-ups — fundamentally relies on isometric `hold duration`, movement `tempo`, zero-rest `supersets`, and `progression tiers` (e.g., tuck front lever → advanced tuck → straddle → full). 
 
-## 2. Goal
-A single-user tool that lets me log my existing 5-day PPL/aesthetic split — including rep-based and hold-based exercises — and see trend charts, so I can tell whether I'm actually progressing week over week.
+Mainstream workout loggers fail to represent these dimensions naturally. **CalistheniX** exists to close this gap with a focused, local-first, distraction-free tracker optimized for calisthenics athletes.
 
-**Explicit non-goal:** this is not trying to out-feature Hevy/Strong for general lifting. If the reps/weight logging becomes the primary use case, that's a signal the project has drifted and should stop.
+---
 
-## 3. Target User
-Me. Single user, no auth in MVP. Design decisions should not be made "for scale" or "for other users" unless stated in Phase 3+.
+## 2. Goals & Value Proposition
+- Provide a dedicated, single-user training cockpit for tracking a rolling 7-day PPL A/B split with both repetition-based and hold-based exercises.
+- Provide immediate visual trend charts and delta metrics (% change over 2 weeks) to verify progression over time without manual mental math.
+- Deliver a friction-free logging experience: every set log can be completed in under 10 seconds one-handed mid-session.
+- Zero network reliance for active gym sessions via optimistic local-first caching and background synchronization.
 
-## 4. Success Criteria (how I'll know the MVP was worth building)
-- I open this app instead of a notes app / spreadsheet for at least 3 consecutive real gym sessions in week 1.
-- I can look at any exercise and see a trend line/number without doing mental math.
-- Logging a set takes under 10 seconds, including hold-timer exercises.
+**Explicit Non-Goal:** CalistheniX is not intended to be a bloated social fitness platform or generic lifting utility with paywalled cloud features.
 
-If these aren't true after 2 weeks of real use, stop building further phases — the tool isn't earning its place over Hevy + a spreadsheet.
+---
 
-## 5. Functional Requirements (MVP scope — see phases.md for what's cut)
+## 3. Target User & Persona
+- **Primary User:** Dedicated calisthenics athlete / bodyweight fitness practitioner.
+- **Gym Environment:** Gyms with unreliable or non-existent Wi-Fi/cellular connection, mid-set fatigue, sweaty hands, requiring high-contrast dark mode and large touch targets.
 
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| F1 | Pre-seeded list of my 5-day split exercises, grouped by day (Push/Pull/Legs/Full Body/Active Recovery) | Must |
-| F2 | Log a rep-based set: reps, optional weight, optional RPE | Must |
-| F3 | Log a hold-based set: start/stop timer → duration in seconds | Must |
-| F4 | View a single trend chart per exercise (metric over time) | Must |
-| F5 | Data persists locally even with no network (offline-first logging) | Must |
-| F6 | Export all logs as JSON (backup) | Must |
-| F7 | Exercises store `prerequisite` / `next` relationships (skill tree data model) — UI for this is NOT MVP, but schema must support it now | Must (data model only) |
-| F8 | User can add/edit/delete custom exercises | Should (not MVP) |
-| F9 | Auto-suggest progression when trend plateaus/improves | Won't (MVP) |
-| F10 | Multi-user / auth | Won't (MVP) |
-| F11 | Video form capture | Won't (MVP) |
+---
+
+## 4. Success Criteria
+- Active use for consecutive training sessions without falling back to notes apps or spreadsheets.
+- Logging any set takes **under 10 seconds**, including automatic hold duration capture.
+- Trend line, progression status, and volume deltas are instantly readable.
+
+---
+
+## 5. Functional Requirements Matrix
+
+| ID | Requirement | Category | Priority | Status |
+|:---|:---|:---|:---|:---|
+| **F1** | Pre-seeded calisthenics progression database (Push, Pull, Legs, Core) | Data Model | P0 | ✅ Implemented |
+| **F2** | Log repetition-based sets: reps, optional added weight (kg), optional RPE (1–10) | Logging | P0 | ✅ Implemented |
+| **F3** | Log isometric hold sets: one-tap start/stop timer with millisecond resolution & auto-save | Logging | P0 | ✅ Implemented |
+| **F4** | Single-tap historical trend charts per exercise (Chart.js volume / hold metrics) | Analytics | P0 | ✅ Implemented |
+| **F5** | Local-first persistence (`localStorage`) with background idempotent sync (`client_uuid`) | Resilience | P0 | ✅ Implemented |
+| **F6** | Full database JSON export for backups | Data Portability | P0 | ✅ Implemented |
+| **F7** | Multi-tier routine & level management (`routine_levels`, `level_exercises`, tempo, rest, supersets) | Routines | P0 | ✅ Implemented |
+| **F8** | Rolling 7-day PPL A/B calendar split with automatic daily resolution | Scheduling | P0 | ✅ Implemented |
+| **F9** | Dashboard analytics hub: streak counter, weekly volume, weekly sets, top movers | Analytics | P0 | ✅ Implemented |
+| **F10** | Sensory feedback cues (Web Audio API synthetics + Vibration API haptic pulses) | UX / Cues | P1 | ✅ Implemented |
+| **F11** | Exercise progression evaluation engine (`/exercises/:id/progression-status`) | Progression | P1 | ✅ Implemented |
+| **F12** | Interactive routine editor (add, edit, delete, re-order, configure supersets) | Routine Mgmt | P1 | ✅ Implemented |
+| **F13** | Multi-user authentication & cloud backup sync | Cloud | P3 | ⏳ Planned (Future) |
+
+---
 
 ## 6. Non-Functional Requirements
-- Must be usable one-handed on a phone mid-workout, gym wifi assumed unreliable.
-- No backend dependency for the core "log a set" action — writes to local storage first, syncs when possible.
-- No paid infra. SQLite + Flask on something free-tier or self-hosted.
+- **Performance**: Instant UI responsiveness (<100ms render response time) with zero blocking network calls during workout logging.
+- **Accessibility & UX**: High-contrast dark theme (#0d0d0f palette), tabular numerical typography (`JetBrains Mono`), and thumb-reachable primary action buttons.
+- **Data Integrity**: Idempotent sync ensures duplicate submissions due to flaky connectivity never corrupt logs.
+- **Infrastructure**: Lightweight Python Flask + SQLite backend running on zero-cost or self-hosted environments.
 
-## 7. Out of Scope (explicitly, to prevent scope creep)
-- Nutrition tracking
-- Social features, sharing, leaderboards
-- Auto-generated programs
-- Anything resembling "a complete platform" — see architecture.md for the scope discipline note.
+---
 
-## 8. Risks (carried from prior discussion)
-- Scope creep is the single biggest risk given past project patterns (see phases.md guardrails).
-- Abandonment after week 2-3 is the default outcome for self-built trackers; success criteria above exist specifically to catch this early and cheaply.
-- Time cost competes directly with DSA prep, which is the higher near-term priority (internships). This project should not expand past MVP unless success criteria in §4 are met.
+## 7. Out of Scope
+- Calorie / macronutrient tracking.
+- Social feeds, leaderboards, and profile sharing.
+- Auto-generated AI programs.
+- Bloated device camera posture analysis or video streaming.
