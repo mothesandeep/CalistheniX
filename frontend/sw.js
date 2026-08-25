@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calisthenix-v2.0';
+const CACHE_NAME = 'calisthenix-v2.1';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,14 @@ const STATIC_ASSETS = [
   './app.js',
   './manifest.json',
   './icon.svg',
+  './assets/avatar.jpg',
+  './assets/sidebar_dumbbell.jpg',
+  './assets/upper_anatomy.jpg',
+  './assets/legs_anatomy.jpg',
+  './assets/pushup_form.jpg',
+  './assets/tempo_guide.jpg',
+  './assets/grip_guide.jpg',
+  './assets/hero_athlete.jpg',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap'
 ];
@@ -40,6 +48,9 @@ self.addEventListener('fetch', event => {
       url.pathname.startsWith('/exercises') ||
       url.pathname.startsWith('/logs') ||
       url.pathname.startsWith('/routines') ||
+      url.pathname.startsWith('/splits') ||
+      url.pathname.startsWith('/workouts') ||
+      url.pathname.startsWith('/today') ||
       url.pathname.startsWith('/dashboard') ||
       url.pathname.startsWith('/export') ||
       url.pathname.startsWith('/import') ||

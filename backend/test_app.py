@@ -6,7 +6,10 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
-from backend.app import app, get_db, init_db, reseed_data, _parse_int, DB_PATH
+try:
+    from backend.app import app, get_db, init_db, reseed_data, _parse_int, DB_PATH
+except ImportError:
+    from app import app, get_db, init_db, reseed_data, _parse_int, DB_PATH
 
 
 class TestCalistheniXBackend(unittest.TestCase):
