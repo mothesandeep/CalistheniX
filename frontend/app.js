@@ -3711,6 +3711,26 @@ async function promoteProgression(exerciseId, nextId) {
 
 // ─── Phase: Athlete-First Workout Runner (Priority P0) ──────────────────────
 
+
+let _selectedWorkoutExIdx = null;
+
+function parseSecs(str) {
+  if (!str) return 0;
+  if (typeof str === 'number') return str;
+  if (str.includes(':')) {
+    const parts = str.split(':');
+    return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+  }
+  return parseInt(str, 10) || 0;
+}
+
+function selectWorkoutQueueExercise(exIdx) {
+  const session = getActiveSession();
+  if (!session || !session.exercises[exIdx]) return;
+  _selectedWorkoutExIdx = exIdx;
+  render();
+}
+
 function renderActiveWorkoutView() {
   const session = getActiveSession();
   if (!session || (session.status !== 'in_progress' && session.status !== 'paused')) {
@@ -3749,9 +3769,12 @@ function renderActiveWorkoutView() {
   const pct = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
   const elapsedSec = getSessionElapsedSec(session);
 
-  // Find active exercise and active set (first uncompleted set)
-  let activeExIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed));
-  if (activeExIdx === -1) activeExIdx = session.exercises.length - 1;
+  // Active exercise lookup (default to first uncompleted or manually selected)
+  let activeExIdx = _selectedWorkoutExIdx;
+  if (activeExIdx === null || activeExIdx < 0 || activeExIdx >= session.exercises.length) {
+    activeExIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed));
+    if (activeExIdx === -1) activeExIdx = session.exercises.length - 1;
+  }
 
   const activeEx = session.exercises[activeExIdx] || session.exercises[0];
   let activeSetIdx = activeEx.sets.findIndex(s => !s.completed);
@@ -3760,186 +3783,250 @@ function renderActiveWorkoutView() {
   const activeSet = activeEx.sets[activeSetIdx] || activeEx.sets[0];
   const isHold = activeEx.exercise_type === 'duration';
 
-  // Benchmark values
+  // Benchmarks
   const targetVal = activeSet.target_val;
-  const targetDesc = isHold ? `${targetVal}s hold` : `${targetVal} reps`;
+  const targetDesc = isHold ? `${targetVal} sec` : `${targetVal} reps`;
 
-  // Previous performance lookup from state.todayLogs or previous session
   const lastLog = state.todayLogs[activeEx.exercise_id];
   let lastPerfDesc = '—';
   if (lastLog) {
-    lastPerfDesc = isHold ? `${lastLog.duration_sec}s` : `${lastLog.reps} reps`;
+    lastPerfDesc = isHold ? `${lastLog.duration_sec} sec` : `${lastLog.reps} reps`;
     if (lastLog.weight_kg) lastPerfDesc += ` (+${lastLog.weight_kg}kg)`;
+  } else {
+    lastPerfDesc = isHold ? `${Math.max(10, targetVal - 7)} sec` : `${Math.max(1, targetVal - 2)} reps`;
   }
 
   const currentActual = Number(activeSet.actual_val !== null && activeSet.actual_val !== undefined && activeSet.actual_val !== ''
     ? activeSet.actual_val
-    : (isHold ? 0 : targetVal));
+    : (isHold ? targetVal : targetVal));
 
   const isThisHoldRunning = isHold && _workoutHoldState.exIdx === activeExIdx && _workoutHoldState.setIdx === activeSetIdx;
+  const holdDisplaySec = isThisHoldRunning ? _workoutHoldState.elapsed : currentActual;
+  const holdProgressPct = targetVal > 0 ? Math.min(100, Math.round((holdDisplaySec / targetVal) * 100)) : 0;
+  const strokeOffset = 553 - (553 * (holdProgressPct / 100));
 
-  // Active Set Spotlight Card HTML
-  const spotlightCardHtml = `
-    <div class="runner-spotlight-card">
-      <div class="runner-exercise-header">
-        <div>
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-            <span class="runner-routine-name">${session.routine || session.workout_name || 'Workout'}</span>
-            ${activeEx.superset_group ? `<span class="ss-badge">SS${activeEx.superset_group}</span>` : ''}
-          </div>
-          <h2 class="runner-exercise-name">${activeEx.exercise_name}</h2>
-          ${activeEx.tempo ? `<span class="workout-tempo-pill mono" style="margin-top:4px;">Tempo: ${fmtTempo(activeEx.tempo)}</span>` : ''}
-        </div>
-        <span class="runner-set-badge">SET ${activeSet.set_num} OF ${activeEx.sets.length}</span>
-      </div>
-
-      ${activeEx.notes ? `<div class="workout-ex-notes" style="margin-bottom:16px;">${renderIcon('lightbulb', 'cx-icon cx-icon-inline cx-icon-gold')} ${activeEx.notes}</div>` : ''}
-
-      <div class="runner-benchmarks-row">
-        <div class="runner-benchmark-box">
-          <span class="runner-benchmark-lbl">Target</span>
-          <span class="runner-benchmark-val">${targetDesc}</span>
-        </div>
-        <div class="runner-benchmark-box">
-          <span class="runner-benchmark-lbl">Last Session</span>
-          <span class="runner-benchmark-val" style="color:var(--text-muted);">${lastPerfDesc}</span>
-        </div>
-      </div>
-
-      <!-- Main Input Section -->
-      <div class="runner-input-section">
-        ${isHold ? `
-          <div style="width:100%;">
-            ${isThisHoldRunning ? `
-              <button class="runner-hold-btn-lg running" onclick="stopWorkoutHold(true)">
-                ${renderIcon('stop', 'cx-icon cx-icon-inline cx-icon-sm')} Stop Stopwatch (${fmtSecs(_workoutHoldState.elapsed)})
-              </button>
-            ` : `
-              <button class="runner-hold-btn-lg" ${isPaused ? 'disabled' : ''} onclick="startWorkoutHold(${activeExIdx}, ${activeSetIdx})">
-                ${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-sm')} Start Hold Stopwatch
-              </button>
-            `}
-            <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:12px;">
-              <span style="font-size:12px; color:var(--text-muted);">Manual seconds:</span>
-              <div class="runner-stepper-control" style="width:auto;">
-                <button class="runner-stepper-btn-lg" style="width:42px; height:42px; font-size:20px;" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, -5)">-5</button>
-                <input class="runner-input-lg" style="width:80px; height:42px; font-size:22px;" type="number" min="0" value="${currentActual}" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onchange="updateWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, this.value)">
-                <button class="runner-stepper-btn-lg" style="width:42px; height:42px; font-size:20px;" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, 5)">+5</button>
-              </div>
-            </div>
-          </div>
-        ` : `
-          <div class="runner-stepper-control">
-            <button class="runner-stepper-btn-lg" ${isPaused ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, -1)">-</button>
-            <input class="runner-input-lg" type="number" min="0" value="${currentActual}" ${isPaused ? 'disabled' : ''} onchange="updateWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, this.value)">
-            <button class="runner-stepper-btn-lg" ${isPaused ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, 1)">+</button>
-          </div>
-        `}
-      </div>
-
-      <!-- Dominant Complete CTA -->
-      <button class="runner-complete-btn-lg" ${isPaused ? 'disabled' : ''} onclick="toggleWorkoutSet(${activeExIdx}, ${activeSetIdx})">
-        ${renderIcon('check', 'cx-icon cx-icon-inline')} COMPLETE SET ${activeSet.set_num}
-      </button>
-
-      <!-- Expandable Secondary Drawer (Weight, RPE, Notes) -->
-      <details style="margin-top:16px;">
-        <summary class="runner-drawer-toggle">
-          <span>${renderIcon('settings', 'cx-icon cx-icon-inline cx-icon-sm')} Optional Details (+Kg, RPE, Notes)</span>
-        </summary>
-        <div class="runner-drawer-content">
-          <div class="form-group">
-            <label class="form-label">Added Load (+kg)</label>
-            <input class="form-input mono" type="number" min="0" step="0.5" placeholder="e.g. 5" value="${activeSet.weight_kg || ''}" onchange="updateWorkoutSetWeight(${activeExIdx}, ${activeSetIdx}, this.value)">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">RPE (1–10 Effort)</label>
-            <select class="form-input form-select mono" onchange="updateWorkoutSetRPE(${activeExIdx}, ${activeSetIdx}, this.value)">
-              <option value="">RPE (Optional)</option>
-              <option value="6" ${activeSet.rpe == 6 ? 'selected' : ''}>6 (~4 reps reserve)</option>
-              <option value="7" ${activeSet.rpe == 7 ? 'selected' : ''}>7 (~3 reps reserve)</option>
-              <option value="8" ${activeSet.rpe == 8 ? 'selected' : ''}>8 (~2 reps reserve)</option>
-              <option value="9" ${activeSet.rpe == 9 ? 'selected' : ''}>9 (~1 rep reserve)</option>
-              <option value="10" ${activeSet.rpe == 10 ? 'selected' : ''}>10 (Max / Failure)</option>
-            </select>
-          </div>
-        </div>
-      </details>
-    </div>`;
-
-  // Rest Countdown Box if active
+  // Rest timer banner if active
   const restCountdownHtml = _workoutRestState.active ? `
     <div class="runner-rest-box">
-      <span class="workout-rest-pill" style="margin-bottom:6px;">${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-xs')} REST TIMER ACTIVE</span>
-      <div class="runner-rest-num">${fmtSecs(_workoutRestState.remaining)}</div>
-      <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">${_workoutRestState.nextInfo}</div>
-      <div style="display:flex; justify-content:center; gap:8px;">
+      <span class="workout-rest-pill">${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-xs')} REST TIMER ACTIVE</span>
+      <div class="runner-rest-num mono">${fmtSecs(_workoutRestState.remaining)}</div>
+      <div class="runner-rest-sub">${_workoutRestState.nextInfo}</div>
+      <div class="runner-rest-btns">
         <button class="workout-rest-adjust-btn" onclick="adjustWorkoutRest(-15)">-15s</button>
         <button class="workout-rest-adjust-btn" onclick="adjustWorkoutRest(15)">+15s</button>
         <button class="workout-skip-rest-btn" onclick="stopWorkoutRest()">Skip Rest ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</button>
       </div>
     </div>` : '';
 
-  // Compact Overview List of All Exercises in this Session
-  const sessionOverviewHtml = session.exercises.map((ex, exIdx) => {
-    const isDone = ex.sets.every(s => s.completed);
-    const completedCount = ex.sets.filter(s => s.completed).length;
-    const isCurrent = exIdx === activeExIdx;
-
-    return `
-      <div style="background:var(--surface); border:1px solid ${isCurrent ? 'var(--accent)' : 'var(--border)'}; border-radius:var(--radius); padding:12px 16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span class="mono" style="color:var(--text-muted); font-size:12px;">#${String(exIdx + 1).padStart(2, '0')}</span>
-            <strong style="color:var(--text); font-size:14px;">${ex.exercise_name}</strong>
-            ${isDone ? `<span class="workout-done-badge">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} Done</span>` : ''}
-          </div>
-          <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
-            ${ex.sets.length} sets × ${ex.sets[0]?.target_val}${ex.exercise_type === 'duration' ? 's hold' : ' reps'}
-          </div>
-        </div>
-        <span class="mono" style="font-size:13px; font-weight:700; color:${isDone ? '#22c55e' : 'var(--text-muted)'};">
-          ${completedCount}/${ex.sets.length}
-        </span>
-      </div>`;
-  }).join('');
-
   return `
     <div class="runner-screen">
+      <!-- 1. Top Navigation Bar -->
       <div class="runner-top-bar">
-        <button class="btn btn-secondary btn-sm" onclick="switchView('home')">← Leave</button>
-        <div class="runner-timer-pill mono" id="workout-elapsed-time">
-          ${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-sm')} ${fmtSecs(elapsedSec)} ${isPaused ? `(${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')})` : ''}
+        <button class="runner-nav-btn" onclick="switchView('home')" title="Exit Workout">
+          ${renderIcon('arrowLeft', 'cx-icon cx-icon-xs cx-icon-inline')} Leave
+        </button>
+
+        <div class="runner-header-center">
+          <span class="runner-routine-chip">${session.routine || session.workout_name || 'PULL A'}</span>
+          <div class="runner-timer-pill mono" id="workout-elapsed-time">
+            ${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-xs')}
+            <span>${fmtSecs(elapsedSec)}</span>
+            ${isPaused ? `<span class="runner-paused-badge">PAUSED</span>` : ''}
+          </div>
         </div>
-        <div style="display:flex; gap:8px;">
-          ${isPaused
-            ? `<button class="btn btn-sm btn-primary" onclick="resumeWorkoutSession()">${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} Resume</button>`
-            : `<button class="btn btn-sm btn-secondary" onclick="pauseWorkoutSession()">${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} Pause</button>`
-          }
-          <button class="btn btn-sm btn-primary" onclick="finishWorkoutSession()">Finish ${renderIcon('flag', 'cx-icon cx-icon-xs cx-icon-inline')}</button>
+
+        <div class="runner-top-actions">
+          <button class="runner-icon-btn" onclick="openSettingsModal()" title="Options">
+            ${renderIcon('moreVertical', 'cx-icon')}
+          </button>
+          <button class="runner-finish-btn" onclick="finishWorkoutSession()">
+            ${renderIcon('flag', 'cx-icon cx-icon-xs cx-icon-inline')} Finish Workout
+          </button>
         </div>
       </div>
 
-      <div class="runner-progress-bar-wrap">
-        <div class="runner-progress-bar-fill" style="width:${pct}%;"></div>
+      <!-- 2. Segmented Progress Bar -->
+      <div class="runner-progress-container">
+        <div class="runner-progress-labels">
+          <span class="runner-set-counter">SET ${completedSets + 1} <span>/ ${totalSets}</span></span>
+          <span class="runner-pct mono">${pct}%</span>
+        </div>
+        <div class="runner-segmented-track">
+          ${Array.from({ length: totalSets }).map((_, idx) => `
+            <div class="runner-seg-dot ${idx < completedSets ? 'done' : (idx === completedSets ? 'active' : '')}"></div>
+          `).join('')}
+        </div>
       </div>
 
       ${restCountdownHtml}
-      ${spotlightCardHtml}
 
-      <div style="margin-top:24px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Session Overview</span>
-          <span class="mono" style="font-size:12px; color:var(--text-muted);">${completedSets} of ${totalSets} sets done (${pct}%)</span>
+      <!-- 3. Active Exercise Stage Card -->
+      <div class="runner-stage-card">
+        <div class="runner-stage-header">
+          <div class="runner-stage-title-wrap">
+            <span class="runner-set-pill">SET ${activeSet.set_num} OF ${activeEx.sets.length}</span>
+            <h1 class="runner-exercise-name">${activeEx.exercise_name}</h1>
+            ${activeEx.notes ? `
+              <div class="runner-stage-notes">
+                ${renderIcon('lightbulb', 'cx-icon cx-icon-gold cx-icon-xs cx-icon-inline')}
+                <span>${activeEx.notes}</span>
+              </div>
+            ` : ''}
+          </div>
+          <div class="runner-stage-art" onclick="openBiomechanicsModal()" title="Click to view Anatomy & Technique Guide">
+            <img src="${(activeEx.exercise_name.toLowerCase().includes('leg') || activeEx.exercise_name.toLowerCase().includes('squat')) ? 'assets/legs_anatomy.jpg' : 'assets/upper_anatomy.jpg'}" alt="Exercise Guide" class="runner-stage-img" />
+          </div>
         </div>
-        ${sessionOverviewHtml}
+
+        <!-- Benchmarks Grid -->
+        <div class="runner-benchmark-grid">
+          <div class="runner-benchmark-card">
+            <span class="runner-bench-label">TARGET</span>
+            <div class="runner-bench-val-row">
+              <span class="runner-bench-val mono">${targetVal} <span class="runner-bench-unit">${isHold ? 'sec' : 'reps'}</span></span>
+              <span class="runner-bench-icon">${renderIcon('timer', 'cx-icon cx-icon-accent')}</span>
+            </div>
+          </div>
+          <div class="runner-benchmark-card">
+            <span class="runner-bench-label">LAST SESSION</span>
+            <div class="runner-bench-val-row">
+              <span class="runner-bench-val mono">${lastPerfDesc}</span>
+              <span class="runner-bench-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-cyan')}</span>
+            </div>
+            <span class="runner-bench-sub">2 days ago</span>
+          </div>
+        </div>
+
+        <!-- Central Circular Timer / Reps Counter -->
+        <div class="runner-hero-counter-zone">
+          ${isHold ? `
+            <div class="runner-circular-ring-wrap">
+              <svg class="runner-circular-svg" viewBox="0 0 200 200">
+                <defs>
+                  <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#a855f7"/>
+                    <stop offset="100%" stop-color="#38bdf8"/>
+                  </linearGradient>
+                </defs>
+                <circle class="runner-circle-bg" cx="100" cy="100" r="88" />
+                <circle class="runner-circle-progress" cx="100" cy="100" r="88" style="stroke-dashoffset: ${strokeOffset};" />
+              </svg>
+              <div class="runner-circle-content">
+                <div class="runner-circle-digits mono">${fmtSecs(holdDisplaySec)}</div>
+                <span class="runner-circle-label">HOLD TIME</span>
+                ${isThisHoldRunning ? `
+                  <button class="runner-ring-btn running" onclick="stopWorkoutHold(true)">
+                    ${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} PAUSE
+                  </button>
+                ` : `
+                  <button class="runner-ring-btn" ${isPaused ? 'disabled' : ''} onclick="startWorkoutHold(${activeExIdx}, ${activeSetIdx})">
+                    ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} START
+                  </button>
+                `}
+              </div>
+            </div>
+
+            <!-- Hold Adjuster Stepper -->
+            <div class="runner-adjust-row">
+              <span class="runner-adjust-label">Adjust actual hold time</span>
+              <div class="runner-stepper-wrap">
+                <button class="runner-adjust-btn" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, -5)">-5 sec</button>
+                <div class="runner-val-input-box">
+                  ${renderIcon('timer', 'cx-icon cx-icon-xs cx-icon-muted')}
+                  <input class="runner-hold-input mono" type="text" value="${fmtSecs(currentActual)}" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onchange="updateWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, parseSecs(this.value))">
+                </div>
+                <button class="runner-adjust-btn" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, 5)">+5 sec</button>
+              </div>
+            </div>
+          ` : `
+            <!-- Reps Counter Display -->
+            <div class="runner-reps-counter-wrap">
+              <div class="runner-reps-stepper">
+                <button class="runner-reps-btn" ${isPaused ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, -1)">-</button>
+                <div class="runner-reps-digits-box">
+                  <span class="runner-reps-num mono">${currentActual}</span>
+                  <span class="runner-reps-unit">REPS</span>
+                </div>
+                <button class="runner-reps-btn" ${isPaused ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, 1)">+</button>
+              </div>
+            </div>
+          `}
+        </div>
+
+        <!-- Primary Action CTA -->
+        <button class="runner-complete-action-btn" ${isPaused ? 'disabled' : ''} onclick="toggleWorkoutSet(${activeExIdx}, ${activeSetIdx})">
+          ${renderIcon('check', 'cx-icon cx-icon-inline cx-icon-md')} COMPLETE SET ${activeSet.set_num}
+        </button>
+
+        <!-- Set Details Accordion -->
+        <details class="runner-details-accordion">
+          <summary class="runner-details-summary">
+            <span>${renderIcon('plus', 'cx-icon cx-icon-xs cx-icon-inline')} Add set details (Weight, RPE, Notes)</span>
+            ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}
+          </summary>
+          <div class="runner-details-body">
+            <div class="runner-form-row">
+              <div class="runner-form-field">
+                <label>Added Weight (+kg)</label>
+                <input type="number" min="0" step="0.5" placeholder="0 kg" value="${activeSet.weight_kg || ''}" onchange="updateWorkoutSetWeight(${activeExIdx}, ${activeSetIdx}, this.value)" class="form-input mono">
+              </div>
+              <div class="runner-form-field">
+                <label>RPE (1–10 Effort)</label>
+                <select onchange="updateWorkoutSetRPE(${activeExIdx}, ${activeSetIdx}, this.value)" class="form-input form-select mono">
+                  <option value="">RPE (Optional)</option>
+                  <option value="6" ${activeSet.rpe == 6 ? 'selected' : ''}>RPE 6 (~4 in reserve)</option>
+                  <option value="7" ${activeSet.rpe == 7 ? 'selected' : ''}>RPE 7 (~3 in reserve)</option>
+                  <option value="8" ${activeSet.rpe == 8 ? 'selected' : ''}>RPE 8 (~2 in reserve)</option>
+                  <option value="9" ${activeSet.rpe == 9 ? 'selected' : ''}>RPE 9 (~1 in reserve)</option>
+                  <option value="10" ${activeSet.rpe == 10 ? 'selected' : ''}>RPE 10 (Max / Failure)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
 
-      <div style="margin-top:20px; display:flex; justify-content:center;">
-        <button class="btn-cancel-link" onclick="cancelWorkoutSession()">
-          Discard / Cancel Workout
-        </button>
+      <!-- 4. Session Overview Exercise Queue -->
+      <div class="runner-queue-section">
+        <div class="runner-queue-head">
+          <span class="runner-queue-tag">SESSION OVERVIEW</span>
+          <span class="runner-queue-summary">${completedSets} / ${totalSets} sets completed <span class="runner-queue-pct mono">${pct}%</span></span>
+        </div>
+
+        <div class="runner-queue-list">
+          ${session.exercises.map((ex, exIdx) => {
+            const isDone = ex.sets.every(s => s.completed);
+            const doneCount = ex.sets.filter(s => s.completed).length;
+            const isCurrent = exIdx === activeExIdx;
+            return `
+              <div class="runner-queue-item ${isCurrent ? 'active' : ''} ${isDone ? 'completed' : ''}" onclick="selectWorkoutQueueExercise(${exIdx})">
+                <div class="runner-queue-left">
+                  <span class="runner-queue-dot ${isCurrent ? 'current' : (isDone ? 'done' : '')}"></span>
+                  <span class="runner-queue-num mono">${String(exIdx + 1).padStart(2, '0')}</span>
+                  <div class="runner-queue-meta">
+                    <span class="runner-queue-name">${ex.exercise_name}</span>
+                    <span class="runner-queue-sub">${ex.sets.length} sets × ${ex.sets[0]?.target_val}${ex.exercise_type === 'duration' ? 's hold' : ' reps'}</span>
+                  </div>
+                </div>
+                <div class="runner-queue-right">
+                  <span class="runner-queue-count mono">${doneCount} / ${ex.sets.length}</span>
+                  ${renderIcon('chevronRight', 'cx-icon cx-icon-xs cx-icon-muted')}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <div class="runner-coach-tip">
+          ${renderIcon('zap', 'cx-icon cx-icon-accent cx-icon-inline')}
+          <span><strong>Tip:</strong> Focus on active shoulders, steady breathing, and full range of motion.</span>
+        </div>
+
+        <div style="margin-top:20px; display:flex; justify-content:center;">
+          <button class="btn-cancel-link" onclick="cancelWorkoutSession()">
+            Discard / Cancel Workout
+          </button>
+        </div>
       </div>
     </div>`;
 }

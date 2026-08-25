@@ -4628,3 +4628,734 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
   font-family: var(--font-heading);
   letter-spacing: -0.025em;
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODERN MINIMALIST WORKOUT RUNNER SCREEN (REDESIGN)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.runner-screen {
+  max-width: 740px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── 1. Top Navigation Bar ────────────────────────────────────────────────── */
+.runner-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.runner-nav-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition);
+}
+
+.runner-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+.runner-header-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.runner-routine-chip {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.runner-timer-pill {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.runner-paused-badge {
+  font-size: 10px;
+  font-weight: 800;
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.15);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 4px;
+}
+
+.runner-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+}
+
+.runner-icon-btn:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.runner-finish-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(109, 40, 217, 0.1) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #ffffff;
+  border-radius: var(--radius);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition);
+}
+
+.runner-finish-btn:hover {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(124, 58, 237, 0.2) 100%);
+  border-color: rgba(168, 85, 247, 0.7);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+/* ── 2. Segmented Progress Bar ────────────────────────────────────────────── */
+.runner-progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.runner-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.runner-set-counter {
+  font-size: 13px;
+  font-weight: 800;
+  color: #c084fc;
+  letter-spacing: 0.06em;
+}
+
+.runner-set-counter span {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.runner-pct {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.runner-segmented-track {
+  display: flex;
+  gap: 5px;
+  width: 100%;
+}
+
+.runner-seg-dot {
+  flex: 1;
+  height: 5px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  transition: all var(--transition);
+}
+
+.runner-seg-dot.done {
+  background: #a855f7;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+}
+
+.runner-seg-dot.active {
+  background: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.7);
+}
+
+/* ── 3. Active Exercise Stage Card ────────────────────────────────────────── */
+.runner-stage-card {
+  background: rgba(14, 14, 24, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(168, 85, 247, 0.32);
+  border-radius: var(--radius-lg);
+  padding: 28px 28px 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.runner-stage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.runner-set-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #c084fc;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.runner-exercise-name {
+  font-family: var(--font-heading);
+  font-size: 32px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.runner-stage-notes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #cbd5e1;
+  margin-top: 6px;
+}
+
+.runner-stage-art {
+  width: 76px;
+  height: 76px;
+  border-radius: var(--radius);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+}
+
+.runner-stage-art:hover {
+  border-color: rgba(168, 85, 247, 0.6);
+  transform: scale(1.05);
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.3);
+}
+
+.runner-stage-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ── Benchmarks Grid ──────────────────────────────────────────────────────── */
+.runner-benchmark-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.runner-benchmark-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.runner-bench-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.runner-bench-val-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.runner-bench-val {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.runner-bench-unit {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.runner-bench-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ── Central Circular Zone ────────────────────────────────────────────────── */
+.runner-hero-counter-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.runner-circular-ring-wrap {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-circular-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.45));
+}
+
+.runner-circle-bg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 10;
+}
+
+.runner-circle-progress {
+  fill: none;
+  stroke: url(#ringGrad);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 553;
+  transition: stroke-dashoffset 200ms linear;
+}
+
+.runner-circle-content {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.runner-circle-digits {
+  font-size: 38px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.runner-circle-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 6px 0 8px;
+}
+
+.runner-ring-btn {
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.runner-ring-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: scale(1.05);
+}
+
+.runner-ring-btn.running {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #ef4444;
+}
+
+.runner-adjust-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.runner-adjust-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.runner-stepper-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-adjust-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.runner-adjust-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+}
+
+.runner-val-input-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+}
+
+.runner-hold-input {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  width: 64px;
+  text-align: center;
+  outline: none;
+}
+
+/* ── Reps Stepper Zone ────────────────────────────────────────────────────── */
+.runner-reps-counter-wrap {
+  padding: 10px 0;
+}
+
+.runner-reps-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.runner-reps-btn {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+}
+
+.runner-reps-btn:hover {
+  background: rgba(168, 85, 247, 0.2);
+  border-color: rgba(168, 85, 247, 0.5);
+  transform: scale(1.08);
+}
+
+.runner-reps-digits-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 100px;
+}
+
+.runner-reps-num {
+  font-size: 56px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.runner-reps-unit {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.12em;
+  margin-top: 4px;
+}
+
+/* ── Primary Complete Action CTA ─────────────────────────────────────────── */
+.runner-complete-action-btn {
+  width: 100%;
+  padding: 18px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.45);
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-transform: uppercase;
+}
+
+.runner-complete-action-btn:hover {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  box-shadow: 0 14px 40px rgba(139, 92, 246, 0.65);
+  transform: translateY(-2px);
+}
+
+.runner-complete-action-btn:active {
+  transform: scale(0.98);
+}
+
+/* ── Details Accordion ────────────────────────────────────────────────────── */
+.runner-details-accordion {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 14px;
+}
+
+.runner-details-summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-details-summary::-webkit-details-marker {
+  display: none;
+}
+
+.runner-details-body {
+  padding-top: 14px;
+}
+
+.runner-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.runner-form-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* ── 4. Session Overview Queue ────────────────────────────────────────────── */
+.runner-queue-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.runner-queue-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.runner-queue-tag {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.runner-queue-summary {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.runner-queue-pct {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.runner-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.runner-queue-item {
+  background: rgba(14, 14, 24, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.runner-queue-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateX(3px);
+}
+
+.runner-queue-item.active {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+}
+
+.runner-queue-item.completed {
+  opacity: 0.85;
+}
+
+.runner-queue-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.runner-queue-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.runner-queue-dot.current {
+  background: #38bdf8;
+  box-shadow: 0 0 10px #38bdf8;
+}
+
+.runner-queue-dot.done {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.runner-queue-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+
+.runner-queue-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  display: block;
+}
+
+.runner-queue-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.runner-queue-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-queue-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.runner-queue-item.completed .runner-queue-count {
+  color: #10b981;
+}
+
+.runner-coach-tip {
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #e2e8f0;
+  margin-top: 8px;
+}
