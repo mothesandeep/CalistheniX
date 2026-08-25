@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calisthenix-v1.2';
+const CACHE_NAME = 'calisthenix-v2.0';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -36,7 +36,14 @@ self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
   // Bypass API requests to Flask backend
-  if (url.port === '5001' || url.pathname.startsWith('/exercises') || url.pathname.startsWith('/logs') || url.pathname.startsWith('/routines') || url.pathname.startsWith('/dashboard') || url.pathname.startsWith('/export')) {
+  if (url.port === '5001' ||
+      url.pathname.startsWith('/exercises') ||
+      url.pathname.startsWith('/logs') ||
+      url.pathname.startsWith('/routines') ||
+      url.pathname.startsWith('/dashboard') ||
+      url.pathname.startsWith('/export') ||
+      url.pathname.startsWith('/import') ||
+      url.pathname.startsWith('/workout_sessions')) {
     return;
   }
 
