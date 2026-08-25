@@ -75,18 +75,24 @@ body {
 
 /* ── Desktop Sidebar ──────────────────────────────────────────────────────── */
 .desktop-sidebar {
-  width: 240px;
+  width: 210px;
   background: #090910;
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 24px 16px;
+  padding: 22px 14px;
   position: sticky;
   top: 0;
   height: 100vh;
   flex-shrink: 0;
   z-index: 100;
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
 }
 
 .sidebar-top {
@@ -2995,14 +3001,14 @@ body {
   width: 100%;
 }
 
-/* ── Top Greeting Header ─────────────────────────────────────────────────── */
+/* ── Top Greeting Header & Controls ───────────────────────────────────────── */
 .home-header-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 4px;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 14px;
 }
 
 .home-greeting-title {
@@ -3020,22 +3026,90 @@ body {
   font-weight: 500;
 }
 
-.home-header-badge {
+.home-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.home-notif-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  cursor: pointer;
+  position: relative;
+  font-size: 16px;
+  transition: all var(--transition);
+}
+
+.home-notif-btn:hover {
+  border-color: var(--border-accent);
+  background: var(--surface-2);
+}
+
+.home-notif-dot {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 7px;
+  height: 7px;
+  background: #8b5cf6;
+  border-radius: 50%;
+  box-shadow: 0 0 8px #8b5cf6;
+}
+
+.home-week-select-pill {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.home-week-select-pill:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--surface-2);
+}
+
+.home-streak-pill {
+  background: var(--surface);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f97316;
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  padding: 8px 14px;
-  border-radius: var(--radius);
-  font-size: 12px;
-  color: var(--text-muted);
+  box-shadow: 0 0 14px rgba(249, 115, 22, 0.12);
 }
 
-/* ── Top Grid (Hero + Weekly & Streak Column) ─────────────────────────────── */
+.home-streak-pill-num {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+/* ── Top Grid (Hero + Weekly & Muscle Focus Column) ───────────────────────── */
 .home-top-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: 1.55fr 1fr;
   gap: 20px;
   align-items: stretch;
 }
@@ -3057,7 +3131,7 @@ body {
   flex-direction: column;
   justify-content: space-between;
   padding: 32px 30px;
-  min-height: 360px;
+  min-height: 380px;
   box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.8), inset 0 0 40px rgba(139, 92, 246, 0.08);
   transition: border-color var(--transition), box-shadow var(--transition);
 }
@@ -3160,9 +3234,17 @@ body {
 }
 
 .home-hero-btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.01);
   box-shadow: 0 10px 32px rgba(139, 92, 246, 0.65);
   background: linear-gradient(135deg, #9b6df7 0%, #7c3aed 100%);
+}
+
+.home-hero-btn:hover .arrow-icon {
+  transform: translateX(3px);
+}
+
+.arrow-icon {
+  transition: transform 180ms ease;
 }
 
 .home-hero-btn:active {
@@ -3209,7 +3291,7 @@ body {
   }
 }
 
-/* ── Side Column (Weekly Overview + Streak) ───────────────────────────────── */
+/* ── Side Column (Weekly Progress + Muscle Focus) ─────────────────────────── */
 .home-side-col {
   display: flex;
   flex-direction: column;
@@ -3220,11 +3302,10 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 22px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  flex: 1;
   transition: border-color var(--transition);
 }
 
@@ -3248,14 +3329,14 @@ body {
 }
 
 .home-weekly-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #ffffff;
 }
 
 .home-weekly-pct {
   font-family: var(--mono);
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 800;
   color: #a78bfa;
 }
@@ -3265,7 +3346,7 @@ body {
   background: var(--surface-2);
   border-radius: 4px;
   overflow: hidden;
-  margin: 12px 0 16px;
+  margin: 10px 0 14px;
   position: relative;
 }
 
@@ -3313,56 +3394,87 @@ body {
   color: var(--text-muted);
 }
 
-/* ── Streak Card ─────────────────────────────────────────────────────────── */
-.home-streak-card {
+/* ── Muscle Focus Card (Phase.md Section 20) ─────────────────────────────── */
+.home-muscle-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  position: relative;
-  overflow: hidden;
+  justify-content: space-between;
+  flex: 1;
   transition: border-color var(--transition);
 }
 
-.home-streak-card:hover {
-  border-color: rgba(249, 115, 22, 0.3);
+.home-muscle-card:hover {
+  border-color: rgba(139, 92, 246, 0.3);
 }
 
-.home-streak-head {
+.home-muscle-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 8px;
 }
 
-.home-streak-tag {
+.home-muscle-tag {
   font-size: 11px;
   font-weight: 700;
-  color: #f97316;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
-.home-streak-num {
-  font-size: 26px;
-  font-weight: 800;
+.home-muscle-tabs {
+  display: flex;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.home-muscle-tab-btn {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.home-muscle-tab-btn.active {
+  background: var(--accent);
   color: #ffffff;
+}
+
+.home-muscle-body-wrap {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 16px;
+  margin: 8px 0;
+  position: relative;
 }
 
-.home-streak-msg {
-  font-size: 13px;
-  color: var(--text-muted);
+.home-muscle-svg {
+  width: 76px;
+  height: 105px;
+  filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.25));
 }
 
-.home-streak-sparkline {
-  height: 38px;
-  width: 100%;
-  margin-top: 4px;
+.home-muscle-target-list {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c4b5fd;
+  text-align: center;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
 }
 
 /* ── 4-Metric Strip ──────────────────────────────────────────────────────── */
@@ -3459,15 +3571,21 @@ body {
   pointer-events: none;
 }
 
-/* ── Bottom Grid (Exercise Progress & PRs) ────────────────────────────────── */
-.home-bottom-grid {
+/* ── 3-Column Lower Grid (Phase.md Section 23, 25, 26) ─────────────────────── */
+.home-three-col-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: 1.15fr 1fr 1.05fr;
+  gap: 18px;
 }
 
-@media (max-width: 900px) {
-  .home-bottom-grid {
+@media (max-width: 1180px) {
+  .home-three-col-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .home-three-col-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -3476,7 +3594,7 @@ body {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 24px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -3491,7 +3609,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .home-section-head-title {
@@ -3521,7 +3639,7 @@ body {
 .home-progress-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .home-progress-item {
@@ -3532,7 +3650,7 @@ body {
   border-radius: var(--radius);
   background: var(--surface-2);
   border: 1px solid var(--border);
-  gap: 12px;
+  gap: 10px;
   cursor: pointer;
   transition: all var(--transition);
 }
@@ -3543,11 +3661,11 @@ body {
 }
 
 .home-progress-name-wrap {
-  min-width: 140px;
+  min-width: 120px;
 }
 
 .home-progress-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text);
 }
@@ -3566,7 +3684,7 @@ body {
 
 .home-progress-bar-numbers {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 11px;
   color: var(--text);
   font-weight: 600;
 }
@@ -3586,10 +3704,10 @@ body {
 
 .home-progress-delta-badge {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: #22c55e;
-  padding: 3px 8px;
+  padding: 2px 6px;
   background: rgba(34, 197, 94, 0.12);
   border-radius: var(--radius-sm);
   flex-shrink: 0;
@@ -3599,14 +3717,14 @@ body {
 .home-prs-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .home-pr-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
+  padding: 10px 12px;
   border-radius: var(--radius);
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -3622,21 +3740,21 @@ body {
 .home-pr-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .home-pr-trophy-icon {
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .home-pr-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--text);
 }
 
 .home-pr-new-tag {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: #f59e0b;
 }
@@ -3647,46 +3765,87 @@ body {
 
 .home-pr-val {
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   color: #ffffff;
 }
 
 .home-pr-date {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
 }
 
-/* ── Upcoming Workouts Strip ─────────────────────────────────────────────── */
-.home-upcoming-strip {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
+/* ── Upcoming Workouts Timeline (Phase.md Section 26) ─────────────────────── */
+.home-timeline-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
-.home-upcoming-item {
+.home-timeline-item {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 13px;
-  padding: 6px 8px;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.home-timeline-item:hover {
+  border-color: rgba(139, 92, 246, 0.35);
+  background: rgba(139, 92, 246, 0.06);
+}
+
+.home-timeline-date-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-sm);
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  flex-shrink: 0;
 }
 
-.home-upcoming-day {
+.home-timeline-date-num {
   font-family: var(--mono);
-  font-weight: 700;
-  color: var(--accent);
-  width: 50px;
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
 }
 
-.home-upcoming-name {
-  font-weight: 600;
-  color: var(--text);
+.home-timeline-date-day {
+  font-size: 10px;
+  font-weight: 700;
+  color: #a78bfa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.home-timeline-info {
   flex: 1;
+  min-width: 0;
+}
+
+.home-timeline-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.home-timeline-muscles {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Motivational Closing Banner ─────────────────────────────────────────── */

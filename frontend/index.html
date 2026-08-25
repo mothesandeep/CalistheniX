@@ -55,6 +55,15 @@
           <span class="sidebar-nav-icon">📈</span>
           <span class="sidebar-nav-text">Progress</span>
         </a>
+        <a href="#progress" class="sidebar-nav-item" data-view="progress" onclick="switchView('progress')">
+          <span class="sidebar-nav-icon">🏆</span>
+          <span class="sidebar-nav-text">PRs</span>
+        </a>
+        <a href="#split" class="sidebar-nav-item" data-view="split" onclick="switchView('split')">
+          <span class="sidebar-nav-icon">🗓️</span>
+          <span class="sidebar-nav-text">Calendar</span>
+        </a>
+        <div class="sidebar-divider"></div>
         <button class="sidebar-nav-item sidebar-settings-btn" onclick="openSettingsModal()" title="Settings & Data">
           <span class="sidebar-nav-icon">⚙</span>
           <span class="sidebar-nav-text">Settings</span>
@@ -66,7 +75,6 @@
           <img src="assets/avatar.jpg" alt="Sandeep" class="sidebar-avatar" onerror="this.style.display='none'" />
           <div class="sidebar-athlete-info">
             <span class="sidebar-athlete-name">Sandeep</span>
-            <span class="sidebar-athlete-badge">⚡ Level Beast</span>
             <span class="sidebar-athlete-streak" id="sidebar-streak-val">🔥 12 day streak</span>
           </div>
         </div>

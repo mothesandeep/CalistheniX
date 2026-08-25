@@ -867,7 +867,209 @@ function closeSettingsModal() {
   if (root) root.innerHTML = '';
 }
 
-// ─── Screen 1: Athlete-First Home / Today Screen ────────────────────────────
+// ─── Muscle Focus Engine & Body Visualization (Phase.md Section 20) ───────────
+let _activeMuscleView = 'front';
+let _currentWorkoutMuscles = { label: 'Legs, Glutes, Core', frontMuscles: ['quads', 'abs'], backMuscles: ['glutes', 'calves'] };
+
+function getWorkoutMuscleTargets(workout) {
+  if (!workout || !workout.exercises || workout.exercises.length === 0) {
+    return {
+      label: 'Full Body Mobility',
+      frontMuscles: ['abs', 'quads'],
+      backMuscles: ['glutes', 'calves']
+    };
+  }
+  const exNames = workout.exercises.map(e => (e.name || '').toLowerCase());
+  const nameStr = exNames.join(' ');
+
+  let front = [];
+  let back = [];
+  let targets = [];
+
+  if (nameStr.includes('push') || nameStr.includes('dip') || nameStr.includes('press') || nameStr.includes('chest') || nameStr.includes('hspu')) {
+    front.push('chest', 'shoulders', 'triceps', 'abs');
+    targets.push('Chest', 'Shoulders', 'Triceps');
+  }
+  if (nameStr.includes('pull') || nameStr.includes('chin') || nameStr.includes('row') || nameStr.includes('lever') || nameStr.includes('muscle-up')) {
+    back.push('lats', 'upper_back', 'biceps', 'forearms');
+    front.push('biceps');
+    targets.push('Back', 'Biceps', 'Lats');
+  }
+  if (nameStr.includes('squat') || nameStr.includes('lunge') || nameStr.includes('calf') || nameStr.includes('leg') || nameStr.includes('pistol')) {
+    front.push('quads');
+    back.push('glutes', 'hamstrings', 'calves');
+    targets.push('Legs', 'Glutes', 'Calves');
+  }
+  if (nameStr.includes('plank') || nameStr.includes('sit') || nameStr.includes('flag') || nameStr.includes('core') || nameStr.includes('hollow')) {
+    front.push('abs', 'obliques');
+    back.push('lower_back');
+    targets.push('Core', 'Abs');
+  }
+
+  if (targets.length === 0) {
+    targets.push('Upper Body', 'Core');
+    front.push('chest', 'abs', 'shoulders');
+    back.push('upper_back', 'lats');
+  }
+
+  return {
+    label: Array.from(new Set(targets)).slice(0, 3).join(', '),
+    frontMuscles: Array.from(new Set(front)),
+    backMuscles: Array.from(new Set(back))
+  };
+}
+
+function setMuscleBodyView(view) {
+  _activeMuscleView = view;
+  const container = document.getElementById('home-muscle-body-container');
+  if (container) {
+    container.innerHTML = renderMuscleBodySvg(_activeMuscleView, _currentWorkoutMuscles);
+  }
+  const btns = document.querySelectorAll('.home-muscle-tab-btn');
+  btns.forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === view);
+  });
+}
+
+function renderMuscleBodySvg(view, muscles) {
+  const activeList = view === 'front' ? (muscles.frontMuscles || []) : (muscles.backMuscles || []);
+
+  const isChest = activeList.includes('chest');
+  const isShoulders = activeList.includes('shoulders');
+  const isBiceps = activeList.includes('biceps');
+  const isAbs = activeList.includes('abs');
+  const isQuads = activeList.includes('quads');
+
+  const isUpperBack = activeList.includes('upper_back') || activeList.includes('lats');
+  const isGlutes = activeList.includes('glutes');
+  const isHamstrings = activeList.includes('hamstrings');
+  const isCalves = activeList.includes('calves');
+
+  const activeColor = '#8b5cf6';
+  const glowFilter = 'filter="url(#muscleGlow)"';
+  const baseColor = '#1c1c2c';
+  const strokeColor = 'rgba(255, 255, 255, 0.18)';
+
+  if (view === 'front') {
+    return `
+      <svg class="home-muscle-svg" viewBox="0 0 100 140" fill="none">
+        <defs>
+          <filter id="muscleGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+        <!-- Head & Neck -->
+        <circle cx="50" cy="14" r="8" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1.2"/>
+        <path d="M47 22 H53 V27 H47 Z" fill="${baseColor}"/>
+
+        <!-- Shoulders -->
+        <path d="M30 28 Q38 25 46 27 L44 35 Q36 34 30 28 Z" fill="${isShoulders ? activeColor : baseColor}" ${isShoulders ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <path d="M70 28 Q62 25 54 27 L56 35 Q64 34 70 28 Z" fill="${isShoulders ? activeColor : baseColor}" ${isShoulders ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+
+        <!-- Chest (Pecs) -->
+        <path d="M36 35 Q50 34 49 46 Q38 46 36 35 Z" fill="${isChest ? activeColor : baseColor}" ${isChest ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <path d="M64 35 Q50 34 51 46 Q62 46 64 35 Z" fill="${isChest ? activeColor : baseColor}" ${isChest ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+
+        <!-- Biceps / Arms -->
+        <rect x="23" y="32" width="7" height="20" rx="3.5" fill="${isBiceps ? activeColor : baseColor}" ${isBiceps ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <rect x="70" y="32" width="7" height="20" rx="3.5" fill="${isBiceps ? activeColor : baseColor}" ${isBiceps ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+
+        <!-- Abs / Core -->
+        <rect x="42" y="49" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" ${isAbs ? glowFilter : ''}/>
+        <rect x="51" y="49" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" ${isAbs ? glowFilter : ''}/>
+        <rect x="42" y="59" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" ${isAbs ? glowFilter : ''}/>
+        <rect x="51" y="59" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" ${isAbs ? glowFilter : ''}/>
+        <rect x="43" y="69" width="6" height="7" rx="2" fill="${isAbs ? activeColor : baseColor}" ${isAbs ? glowFilter : ''}/>
+        <rect x="51" y="69" width="6" height="7" rx="2" fill="${isAbs ? activeColor : baseColor}" ${isAbs ? glowFilter : ''}/>
+
+        <!-- Quads / Legs -->
+        <path d="M36 80 L34 110 Q40 112 45 110 L47 80 Z" fill="${isQuads ? activeColor : baseColor}" ${isQuads ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <path d="M64 80 L66 110 Q60 112 55 110 L53 80 Z" fill="${isQuads ? activeColor : baseColor}" ${isQuads ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+
+        <!-- Calves -->
+        <rect x="35" y="114" width="8" height="20" rx="3" fill="${isCalves ? activeColor : baseColor}" ${isCalves ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <rect x="57" y="114" width="8" height="20" rx="3" fill="${isCalves ? activeColor : baseColor}" ${isCalves ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+      </svg>`;
+  } else {
+    // Back View
+    return `
+      <svg class="home-muscle-svg" viewBox="0 0 100 140" fill="none">
+        <defs>
+          <filter id="muscleGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
+        <!-- Head & Neck -->
+        <circle cx="50" cy="14" r="8" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1.2"/>
+        <path d="M47 22 H53 V27 H47 Z" fill="${baseColor}"/>
+
+        <!-- Upper Back / Traps & Lats -->
+        <path d="M32 28 Q50 25 68 28 L62 58 Q50 64 38 58 Z" fill="${isUpperBack ? activeColor : baseColor}" ${isUpperBack ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+
+        <!-- Arms -->
+        <rect x="23" y="32" width="7" height="20" rx="3.5" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1"/>
+        <rect x="70" y="32" width="7" height="20" rx="3.5" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1"/>
+
+        <!-- Glutes -->
+        <path d="M36 68 Q49 68 49 80 Q38 82 36 68 Z" fill="${isGlutes ? activeColor : baseColor}" ${isGlutes ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <path d="M64 68 Q51 68 51 80 Q62 82 64 68 Z" fill="${isGlutes ? activeColor : baseColor}" ${isGlutes ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+
+        <!-- Hamstrings -->
+        <path d="M36 84 L34 110 Q40 112 45 110 L47 84 Z" fill="${isHamstrings ? activeColor : baseColor}" ${isHamstrings ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <path d="M64 84 L66 110 Q60 112 55 110 L53 84 Z" fill="${isHamstrings ? activeColor : baseColor}" ${isHamstrings ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+
+        <!-- Calves -->
+        <rect x="35" y="114" width="8" height="20" rx="3" fill="${isCalves ? activeColor : baseColor}" ${isCalves ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <rect x="57" y="114" width="8" height="20" rx="3" fill="${isCalves ? activeColor : baseColor}" ${isCalves ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+      </svg>`;
+  }
+}
+
+// ─── Notification Modal Popover (Phase.md Section 7) ──────────────────────────
+function openNotifModal() {
+  const root = document.getElementById('settings-modal-root');
+  if (!root) return;
+
+  const resolved = state.todayResolved;
+  const isWorkout = resolved && resolved.status === 'workout';
+  const workoutName = resolved?.workout?.name || 'Scheduled Workout';
+
+  root.innerHTML = `
+    <div class="settings-modal-backdrop" onclick="closeSettingsModal()">
+      <div class="settings-modal" onclick="event.stopPropagation()" style="max-width:420px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2 style="font-size:17px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
+            <span>🔔 Notifications</span>
+          </h2>
+          <button class="btn btn-sm btn-secondary" onclick="closeSettingsModal()">✕</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+          <div style="background:var(--surface-2); border:1px solid var(--border); padding:12px 14px; border-radius:var(--radius); display:flex; gap:12px; align-items:flex-start;">
+            <span style="font-size:20px;">⚡</span>
+            <div>
+              <strong style="color:#ffffff; font-size:13px;">${isWorkout ? `Today's Workout: ${workoutName}` : 'Rest & Recovery Day'}</strong>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${isWorkout ? 'Ready when you are. Step up and claim your strength.' : 'Hydrate, stretch, and prepare for tomorrow.'}</div>
+            </div>
+          </div>
+
+          <div style="background:var(--surface-2); border:1px solid var(--border); padding:12px 14px; border-radius:var(--radius); display:flex; gap:12px; align-items:flex-start;">
+            <span style="font-size:20px;">🔥</span>
+            <div>
+              <strong style="color:#ffffff; font-size:13px;">Active Streak Check</strong>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Consistency builds champions. Keep your streak chain unbroken.</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+          <button class="btn btn-primary" onclick="closeSettingsModal()">Got It</button>
+        </div>
+      </div>
+    </div>`;
+}
 
 // ─── 3D Parallax and Motion Handlers ─────────────────────────────────────────
 function handleHeroParallax(e) {
@@ -887,7 +1089,7 @@ function resetHeroParallax(e) {
   if (img) img.style.transform = 'scale(1) translate(0, 0)';
 }
 
-// ─── Screen 1: Athlete-First Home / Dashboard Screen ─────────────────────────
+// ─── Screen 1: Athlete-First Home / Dashboard Screen (Phase.md Target) ────────
 
 function renderHomeView() {
   const summary = state.dashboardSummary || {
@@ -918,9 +1120,8 @@ function renderHomeView() {
   const todayDow = (new Date().getDay() + 6) % 7; // 0=Monday .. 6=Sunday
   const dayLetters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-  // Check which days in current week had logs from state.dashboardActivity
-  const actMap = {};
-  (state.dashboardActivity || []).forEach(a => { actMap[a.date] = a.total_sets; });
+  // Calculate muscle targets for today's workout
+  _currentWorkoutMuscles = getWorkoutMuscleTargets(resolved?.workout);
 
   const weekCirclesHtml = dayLetters.map((letter, idx) => {
     const isToday = idx === todayDow;
@@ -983,7 +1184,7 @@ function renderHomeView() {
     let heroBtnHtml = `
       <button class="home-hero-btn" onclick="startWorkoutFromResolved()">
         <span>⚡ Start Workout</span>
-        <span style="font-size:18px;">➔</span>
+        <span class="arrow-icon">➔</span>
       </button>`;
 
     let heroStatusTag = 'TODAY\'S WORKOUT';
@@ -993,14 +1194,14 @@ function renderHomeView() {
         heroBtnHtml = `
           <button class="home-hero-btn" onclick="openWorkoutView()">
             <span>▶ Resume Workout</span>
-            <span style="font-size:18px;">➔</span>
+            <span class="arrow-icon">➔</span>
           </button>`;
       } else {
         heroStatusTag = '⚡ WORKOUT IN PROGRESS';
         heroBtnHtml = `
           <button class="home-hero-btn" onclick="openWorkoutView()">
             <span>⚡ Continue Workout</span>
-            <span style="font-size:18px;">➔</span>
+            <span class="arrow-icon">➔</span>
           </button>`;
       }
     }
@@ -1042,14 +1243,14 @@ function renderHomeView() {
       </div>`;
   }
 
-  // 3. Weekly Overview & Streak Side Column
+  // 3. Weekly Progress & Muscle Focus Side Column (Phase.md Section 18, 19, 20)
   const sideColHtml = `
     <div class="home-side-col fade-in-up stagger-2">
-      <!-- Weekly Overview Card -->
+      <!-- Weekly Progress Card -->
       <div class="home-weekly-card">
         <div>
           <div class="home-weekly-head">
-            <span class="home-weekly-tag">Weekly Overview</span>
+            <span class="home-weekly-tag">Weekly Progress</span>
             <span class="home-weekly-pct">${weeklyPct}%</span>
           </div>
           <div class="home-weekly-title">${weekSessionsDone} of ${plannedWorkoutsCount} workouts done</div>
@@ -1062,28 +1263,29 @@ function renderHomeView() {
         </div>
       </div>
 
-      <!-- Current Streak Card -->
-      <div class="home-streak-card">
-        <div class="home-streak-head">
-          <span class="home-streak-tag">Current Streak</span>
-          <span style="font-size:11px; color:var(--text-muted);">Consistency</span>
+      <!-- Muscle Focus Card -->
+      <div class="home-muscle-card">
+        <div class="home-muscle-head">
+          <span class="home-muscle-tag">Muscle Focus</span>
+          <div class="home-muscle-tabs">
+            <button class="home-muscle-tab-btn ${_activeMuscleView === 'front' ? 'active' : ''}" data-tab="front" onclick="setMuscleBodyView('front')">Front</button>
+            <button class="home-muscle-tab-btn ${_activeMuscleView === 'back' ? 'active' : ''}" data-tab="back" onclick="setMuscleBodyView('back')">Back</button>
+          </div>
         </div>
-        <div class="home-streak-num">
-          🔥 ${summary.streak_days || 0} days
+
+        <div class="home-muscle-body-wrap" id="home-muscle-body-container">
+          ${renderMuscleBodySvg(_activeMuscleView, _currentWorkoutMuscles)}
         </div>
-        <div class="home-streak-msg">
-          ${summary.streak_days > 0 ? 'Keep going! Don\'t break the chain.' : 'Start your streak with today\'s workout.'}
+
+        <div class="home-muscle-target-list">
+          🎯 Target: ${_currentWorkoutMuscles.label}
         </div>
-        <svg class="home-streak-sparkline" viewBox="0 0 200 40" fill="none">
-          <path d="M0 35 Q 30 32, 60 25 T 120 18 T 160 12 T 200 6" stroke="#f97316" stroke-width="2.5" stroke-linecap="round"/>
-          <circle cx="200" cy="6" r="4" fill="#f97316" filter="drop-shadow(0 0 6px #f97316)"/>
-        </svg>
       </div>
     </div>`;
 
-  // 4. 4-Metric Training Strip
+  // 4. 4-Metric Training Strip (Phase.md Section 21, 22)
   const avgWorkoutMin = 46;
-  const trainingVolumeKg = (summary.week_sets || 0) * 115; // realistic calisthenics work capacity load
+  const trainingVolumeKg = (summary.week_sets || 0) * 115;
   const volumeStr = trainingVolumeKg > 0 ? `${trainingVolumeKg.toLocaleString()} kg` : `${summary.week_sets * 10} reps`;
 
   const metricsStripHtml = `
@@ -1133,10 +1335,10 @@ function renderHomeView() {
       </div>
     </div>`;
 
-  // 5. Bottom Split: Exercise Progress & Recent PRs
+  // 5. Three-Column Lower Grid: Exercise Progress, Recent PRs, Upcoming Workouts (Phase.md Section 23, 25, 26)
   let progressItemsHtml = '';
   if (summary.top_movers && summary.top_movers.length > 0) {
-    progressItemsHtml = summary.top_movers.map(m => `
+    progressItemsHtml = summary.top_movers.slice(0, 3).map(m => `
       <div class="home-progress-item" onclick="openHistoryView(${m.exercise_id})">
         <div class="home-progress-name-wrap">
           <div class="home-progress-name">${m.exercise_name}</div>
@@ -1152,16 +1354,16 @@ function renderHomeView() {
       </div>
     `).join('');
   } else {
-    // Graceful baseline display with catalog movements
+    // Clean movement progressions from active exercise catalog
     const sampleMovers = state.exercises.slice(0, 3);
     progressItemsHtml = sampleMovers.map((e, idx) => `
       <div class="home-progress-item" onclick="openHistoryView(${e.id})">
         <div class="home-progress-name-wrap">
           <div class="home-progress-name">${e.name}</div>
-          <div class="home-progress-best">Movement Tracked</div>
+          <div class="home-progress-best">Active Exercise</div>
         </div>
         <div class="home-progress-bar-wrap">
-          <div class="home-progress-bar-numbers">Active Progression</div>
+          <div class="home-progress-bar-numbers">Progression Track</div>
           <div class="home-progress-bar-track">
             <div class="home-progress-bar-fill" style="width: ${60 + idx * 15}%;"></div>
           </div>
@@ -1191,28 +1393,44 @@ function renderHomeView() {
     `).join('');
   } else {
     prsItemsHtml = `
-      <div class="empty-state" style="padding:16px 0;">
-        <p style="color:var(--text-muted); font-size:13px; margin:0;">No PRs recorded yet. Your next milestone starts with today's workout.</p>
+      <div class="empty-state" style="padding:14px 0;">
+        <p style="color:var(--text-muted); font-size:12px; margin:0;">No PRs recorded yet. Complete today's workout to log your first record!</p>
       </div>`;
   }
 
-  // Upcoming 3 Days Preview from Active Split
-  const upcomingHtml = [1, 2, 3].map(offset => {
+  // Upcoming Workouts Timeline (Phase.md Section 26)
+  const todayDate = new Date();
+  const timelineItemsHtml = [1, 2, 3].map(offset => {
     const nextIdx = (todayDow + offset) % 7;
+    const futureDate = new Date();
+    futureDate.setDate(todayDate.getDate() + offset);
+    const dayNum = futureDate.getDate();
+    const dayShort = DAY_NAMES[nextIdx].slice(0, 3).toUpperCase();
+
     const dayItem = schedule[nextIdx];
-    if (!dayItem) return '';
-    const isWorkout = dayItem.day_type === 'workout' && dayItem.workout_id;
+    const isWorkout = dayItem?.day_type === 'workout' && dayItem?.workout_id;
+    const title = isWorkout ? dayItem.workout_name : 'Rest Day';
+    const muscles = isWorkout ? (dayItem.workout_desc || 'Hypertrophy & Strength') : 'Active Recovery & Mobility';
+
     return `
-      <div class="home-upcoming-item">
-        <span class="home-upcoming-day">${DAY_NAMES[nextIdx].slice(0, 3).toUpperCase()}</span>
-        <span class="home-upcoming-name">${isWorkout ? dayItem.workout_name : 'Rest & Recovery'}</span>
-        ${isWorkout ? '<span class="badge badge-reps" style="font-size:10px;">Workout</span>' : '<span class="badge badge-duration" style="font-size:10px;">Rest</span>'}
+      <div class="home-timeline-item" onclick="switchView('split')">
+        <div class="home-timeline-date-box">
+          <span class="home-timeline-date-num">${dayNum}</span>
+          <span class="home-timeline-date-day">${dayShort}</span>
+        </div>
+        <div class="home-timeline-info">
+          <div class="home-timeline-title">${title}</div>
+          <div class="home-timeline-muscles">${muscles}</div>
+        </div>
+        <div>
+          ${isWorkout ? '<span class="badge badge-reps" style="font-size:10px;">Workout</span>' : '<span class="badge badge-duration" style="font-size:10px;">Rest</span>'}
+        </div>
       </div>`;
   }).join('');
 
-  const bottomGridHtml = `
-    <div class="home-bottom-grid fade-in-up stagger-4">
-      <!-- Left Card: Exercise Progress -->
+  const threeColGridHtml = `
+    <div class="home-three-col-grid fade-in-up stagger-4">
+      <!-- Column 1: Exercise Progress -->
       <div class="home-section-card">
         <div>
           <div class="home-section-head">
@@ -1225,7 +1443,7 @@ function renderHomeView() {
         </div>
       </div>
 
-      <!-- Right Card: Recent PRs & Upcoming Preview -->
+      <!-- Column 2: Recent PRs -->
       <div class="home-section-card">
         <div>
           <div class="home-section-head">
@@ -1235,16 +1453,24 @@ function renderHomeView() {
           <div class="home-prs-list">
             ${prsItemsHtml}
           </div>
+        </div>
+      </div>
 
-          <div class="home-upcoming-strip">
-            <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Upcoming Schedule</span>
-            ${upcomingHtml}
+      <!-- Column 3: Upcoming Workouts (Timeline) -->
+      <div class="home-section-card">
+        <div>
+          <div class="home-section-head">
+            <span class="home-section-head-title">📅 Upcoming Workouts</span>
+            <a href="#split" class="home-section-link" onclick="switchView('split')">View full split ➔</a>
+          </div>
+          <div class="home-timeline-list">
+            ${timelineItemsHtml}
           </div>
         </div>
       </div>
     </div>`;
 
-  // 6. Motivational Closing Banner
+  // 6. Motivational Closing Banner (Phase.md Section 27)
   const quoteBannerHtml = `
     <div class="home-quote-banner fade-in-up stagger-4">
       <div class="home-quote-text">
@@ -1260,26 +1486,43 @@ function renderHomeView() {
 
   return `
     <div class="home-container">
+      <!-- Top Header & Controls (Phase.md Section 6, 7, 8) -->
       <div class="home-header-row fade-in-up">
         <div>
           <h1 class="home-greeting-title">${greeting}, Sandeep! 👊</h1>
-          <p class="home-greeting-sub">Discipline today. Strength forever.</p>
+          <p class="home-greeting-sub">Discipline today, strength forever.</p>
         </div>
-        <div class="home-header-badge">
-          <span>🔥</span>
-          <strong style="color:#ffffff;">${summary.streak_days || 0} Day Streak</strong>
-          <span>·</span>
-          <span>${getTodayLabel()}</span>
+        <div class="home-header-controls">
+          <button class="home-notif-btn" onclick="openNotifModal()" title="Notifications" aria-label="Notifications">
+            🔔
+            <span class="home-notif-dot"></span>
+          </button>
+          <div class="home-week-select-pill" onclick="switchView('split')" title="View Active Week Schedule">
+            <span>📅 This Week ▾</span>
+          </div>
+          <div class="home-streak-pill" title="Current Daily Streak">
+            <span>🔥</span>
+            <div>
+              <span class="home-streak-pill-num">${summary.streak_days || 0}</span>
+              <span style="font-size:11px; margin-left:2px;">Day Streak</span>
+            </div>
+          </div>
         </div>
       </div>
 
+      <!-- Top Hero & Supporting Column (Phase.md Section 9–20) -->
       <div class="home-top-grid">
         ${todayHeroHtml}
         ${sideColHtml}
       </div>
 
+      <!-- 4-Metric Strip (Phase.md Section 21, 22) -->
       ${metricsStripHtml}
-      ${bottomGridHtml}
+
+      <!-- 3-Column Lower Grid: Progress, PRs, Upcoming (Phase.md Section 23–26) -->
+      ${threeColGridHtml}
+
+      <!-- Motivational Closing Footer (Phase.md Section 27) -->
       ${quoteBannerHtml}
     </div>`;
 }
