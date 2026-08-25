@@ -468,7 +468,7 @@ class TestCalistheniXBackend(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         bundle = res.get_json()
         self.assertIsInstance(bundle, dict)
-        self.assertEqual(bundle.get('export_version'), '2.0')
+        self.assertIn(bundle.get('export_version'), ['2.0', '2.1'])
         self.assertIn('logs', bundle)
         self.assertIn('workout_sessions', bundle)
         self.assertIn('exercises', bundle)
@@ -633,6 +633,250 @@ class TestCalistheniXBackend(unittest.TestCase):
         res_root = self.client.get('/')
         self.assertEqual(res_root.status_code, 200)
         self.assertEqual(res_root.get_json()['status'], 'online')
+
+    def test_custom_splits_crud_and_activation(self):
+        """Custom Splits: Test creating, activating, updating, and deleting training splits."""
+        # 1. Check default seed split exists
+        res = self.client.get('/splits')
+        self.assertEqual(res.status_code, 200)
+        splits = res.get_json()
+        self.assertGreaterEqual(len(splits), 1)
+        active_seed = [s for s in splits if s['is_active'] == 1][0]
+        self.assertIn('PPL', active_seed['name'])
+        self.assertEqual(len(active_seed['schedule']), 7)
+
+        # 2. Create a new split
+        res_create = self.client.post('/splits', json={
+            'name': 'Upper Lower 4-Day',
+            'description': '4 days on, 3 days off',
+            'is_active': 1
+        })
+        self.assertEqual(res_create.status_code, 201)
+        new_split = res_create.get_json()
+        new_split_id = new_split['id']
+        self.assertEqual(new_split['is_active'], 1)
+
+        # Verify old split was deactivated
+        res_old = self.client.get(f"/splits/{active_seed['id']}")
+        self.assertEqual(res_old.get_json()['is_active'], 0)
+
+        # 3. Update split
+        res_update = self.client.put(f'/splits/{new_split_id}', json={
+            'name': 'Upper / Lower Power & Hypertrophy',
+            'description': 'Updated description'
+        })
+        self.assertEqual(res_update.status_code, 200)
+        self.assertEqual(res_update.get_json()['name'], 'Upper / Lower Power & Hypertrophy')
+
+        # 4. Delete split
+        res_del = self.client.delete(f'/splits/{new_split_id}')
+        self.assertEqual(res_del.status_code, 200)
+        res_check = self.client.get(f'/splits/{new_split_id}')
+        self.assertEqual(res_check.status_code, 404)
+
+    def test_weekly_schedule_assignment(self):
+        """Weekly Schedule: Test assigning workouts and rest days across Monday to Sunday."""
+        # Fetch first split and workout
+        res_splits = self.client.get('/splits')
+        split_id = res_splits.get_json()[0]['id']
+        res_workouts = self.client.get('/workouts')
+        workout_id = res_workouts.get_json()[0]['id']
+
+        # 1. Update Monday (0) to workout
+        res_day0 = self.client.put(f'/splits/{split_id}/schedule/0', json={
+            'day_type': 'workout',
+            'workout_id': workout_id
+        })
+        self.assertEqual(res_day0.status_code, 200)
+        self.assertEqual(res_day0.get_json()['day_type'], 'workout')
+        self.assertEqual(res_day0.get_json()['workout_id'], workout_id)
+
+        # 2. Update Wednesday (2) to rest
+        res_day2 = self.client.put(f'/splits/{split_id}/schedule/2', json={
+            'day_type': 'rest'
+        })
+        self.assertEqual(res_day2.status_code, 200)
+        self.assertEqual(res_day2.get_json()['day_type'], 'rest')
+        self.assertIsNone(res_day2.get_json()['workout_id'])
+
+        # 3. Batch update schedule
+        batch_days = [
+            {'day_of_week': 0, 'day_type': 'workout', 'workout_id': workout_id},
+            {'day_of_week': 1, 'day_type': 'rest', 'workout_id': None},
+            {'day_of_week': 2, 'day_type': 'workout', 'workout_id': workout_id},
+            {'day_of_week': 3, 'day_type': 'rest', 'workout_id': None},
+            {'day_of_week': 4, 'day_type': 'workout', 'workout_id': workout_id},
+            {'day_of_week': 5, 'day_type': 'rest', 'workout_id': None},
+            {'day_of_week': 6, 'day_type': 'rest', 'workout_id': None},
+        ]
+        res_batch = self.client.put(f'/splits/{split_id}/schedule', json={'days': batch_days})
+        self.assertEqual(res_batch.status_code, 200)
+
+        # Verify persisted schedule
+        res_sched = self.client.get(f'/splits/{split_id}/schedule')
+        sched_data = res_sched.get_json()
+        self.assertEqual(len(sched_data), 7)
+        self.assertEqual(sched_data[0]['day_type'], 'workout')
+        self.assertEqual(sched_data[1]['day_type'], 'rest')
+
+    def test_workouts_crud_and_duplication(self):
+        """Reusable Workouts: Test creating custom workout, exercise mapping, duplication, and safe deletion."""
+        with get_db() as conn:
+            ex1 = conn.execute('SELECT id FROM exercises LIMIT 1').fetchone()['id']
+            ex2 = conn.execute('SELECT id FROM exercises LIMIT 1 OFFSET 1').fetchone()['id']
+
+        # 1. Create Workout
+        res_create = self.client.post('/workouts', json={
+            'name': 'Upper Power A',
+            'description': 'Heavy compound upper body focus',
+            'exercises': [
+                {'exercise_id': ex1, 'sets': 4, 'reps': 8, 'rest_sec': 120, 'tempo': '3010', 'notes': 'Chest focus'},
+                {'exercise_id': ex2, 'sets': 3, 'duration_sec': 45, 'rest_sec': 90, 'superset_group': 1}
+            ]
+        })
+        self.assertEqual(res_create.status_code, 201)
+        w_id = res_create.get_json()['id']
+
+        # 2. Get Workout Detail
+        res_detail = self.client.get(f'/workouts/{w_id}')
+        self.assertEqual(res_detail.status_code, 200)
+        detail = res_detail.get_json()
+        self.assertEqual(detail['name'], 'Upper Power A')
+        self.assertEqual(len(detail['exercises']), 2)
+        self.assertEqual(detail['total_sets'], 7)
+
+        # 3. Duplicate Workout
+        res_dup = self.client.post(f'/workouts/{w_id}/duplicate')
+        self.assertEqual(res_dup.status_code, 201)
+        dup = res_dup.get_json()
+        self.assertEqual(dup['name'], 'Upper Power A (Copy)')
+        self.assertNotEqual(dup['id'], w_id)
+
+        # Check duplicate has independent copies of exercises
+        res_dup_detail = self.client.get(f"/workouts/{dup['id']}")
+        self.assertEqual(len(res_dup_detail.get_json()['exercises']), 2)
+
+        # 4. Delete Workout
+        res_del = self.client.delete(f'/workouts/{w_id}')
+        self.assertEqual(res_del.status_code, 200)
+        res_del_check = self.client.get(f'/workouts/{w_id}')
+        self.assertEqual(res_del_check.status_code, 404)
+
+    def test_today_resolver_workout_and_rest(self):
+        """Today Resolver: Test dynamic resolution of active split, workout day vs rest day, and next workout."""
+        # 1. GET /today
+        res_today = self.client.get('/today')
+        self.assertEqual(res_today.status_code, 200)
+        today_data = res_today.get_json()
+        self.assertIn(today_data['status'], ['workout', 'rest'])
+        self.assertIn('day_of_week', today_data)
+        self.assertIn('day_name', today_data)
+
+        # 2. Modify current day in active split to test Rest day behavior explicitly
+        current_dow = datetime.now().weekday()
+        res_splits = self.client.get('/splits')
+        active_split = [s for s in res_splits.get_json() if s['is_active'] == 1][0]
+
+        # Force today to be rest
+        self.client.put(f"/splits/{active_split['id']}/schedule/{current_dow}", json={
+            'day_type': 'rest'
+        })
+        res_rest_today = self.client.get('/today')
+        self.assertEqual(res_rest_today.status_code, 200)
+        rest_data = res_rest_today.get_json()
+        self.assertEqual(rest_data['status'], 'rest')
+
+        # Check next workout is resolved
+        if rest_data.get('next_workout'):
+            self.assertIn('workout_name', rest_data['next_workout'])
+            self.assertIn('day_name', rest_data['next_workout'])
+
+    def test_historical_immutability_on_future_workout_edits(self):
+        """Historical Protection: Editing or deleting a future workout NEVER mutates or erases past completed sessions."""
+        # 1. Create a workout
+        with get_db() as conn:
+            ex = conn.execute('SELECT id, name FROM exercises LIMIT 1').fetchone()
+            ex_id = ex['id']
+            ex_name = ex['name']
+
+        res_w = self.client.post('/workouts', json={
+            'name': 'Historical Test Workout',
+            'exercises': [{'exercise_id': ex_id, 'sets': 4, 'reps': 8, 'rest_sec': 90}]
+        })
+        w_id = res_w.get_json()['id']
+
+        # 2. Execute and complete a workout session for this workout
+        sess_uuid = str(uuid.uuid4())
+        session_payload = {
+            'id': sess_uuid,
+            'routine': 'Historical Test Workout',
+            'workout_id': w_id,
+            'level': 1,
+            'started_at': '2026-08-20T10:00:00Z',
+            'completed_at': '2026-08-20T10:45:00Z',
+            'duration_sec': 2700,
+            'status': 'completed',
+            'exercises': [
+                {
+                    'id': 1,
+                    'exercise_id': ex_id,
+                    'exercise_name': ex_name,
+                    'exercise_type': 'reps',
+                    'sets': [
+                        {'set_num': 1, 'target_val': 8, 'actual_val': 8, 'weight_kg': 10.0, 'rpe': 8, 'completed': True, 'client_uuid': f'{sess_uuid}_1'},
+                        {'set_num': 2, 'target_val': 8, 'actual_val': 8, 'weight_kg': 10.0, 'rpe': 8, 'completed': True, 'client_uuid': f'{sess_uuid}_2'}
+                    ]
+                }
+            ]
+        }
+        res_sync = self.client.post('/workout_sessions', json=session_payload)
+        self.assertEqual(res_sync.status_code, 201)
+
+        # Verify historical session is saved accurately
+        res_sess = self.client.get(f'/workout_sessions/{sess_uuid}')
+        self.assertEqual(res_sess.status_code, 200)
+        self.assertEqual(len(res_sess.get_json()['logs']), 2)
+
+        # 3. User later modifies "Historical Test Workout" to 5 sets × 12 reps (+20kg)
+        self.client.put(f'/workouts/{w_id}', json={
+            'name': 'Historical Test Workout Modified',
+            'exercises': [{'exercise_id': ex_id, 'sets': 5, 'reps': 12, 'rest_sec': 120}]
+        })
+
+        # 4. Verify PAST COMPLETED SESSION is completely unchanged
+        res_sess_after = self.client.get(f'/workout_sessions/{sess_uuid}')
+        self.assertEqual(res_sess_after.status_code, 200)
+        after_data = res_sess_after.get_json()
+        self.assertEqual(after_data['routine_name'], 'Historical Test Workout')
+        self.assertEqual(len(after_data['logs']), 2)
+        self.assertEqual(after_data['logs'][0]['reps'], 8)
+        self.assertEqual(after_data['logs'][0]['weight_kg'], 10.0)
+
+        # 5. Even if workout is deleted, completed session still exists intact
+        self.client.delete(f'/workouts/{w_id}')
+        res_sess_persists = self.client.get(f'/workout_sessions/{sess_uuid}')
+        self.assertEqual(res_sess_persists.status_code, 200)
+        self.assertEqual(len(res_sess_persists.get_json()['logs']), 2)
+
+    def test_export_import_splits_and_workouts(self):
+        """Export/Import v2.1: Test backup and restore containing splits and workouts."""
+        # Export bundle
+        res_export = self.client.get('/export')
+        self.assertEqual(res_export.status_code, 200)
+        export_data = res_export.get_json()
+        self.assertEqual(export_data['export_version'], '2.1')
+        self.assertIn('training_splits', export_data)
+        self.assertIn('weekly_schedules', export_data)
+        self.assertIn('workouts', export_data)
+        self.assertIn('workout_exercises', export_data)
+
+        # Import into clean DB
+        res_import = self.client.post('/import', json=export_data)
+        self.assertEqual(res_import.status_code, 200)
+        import_res = res_import.get_json()
+        self.assertEqual(import_res['status'], 'success')
+        self.assertGreaterEqual(import_res['imported_splits'], 1)
+        self.assertGreaterEqual(import_res['imported_workouts'], 1)
 
 
 if __name__ == '__main__':

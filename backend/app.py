@@ -135,6 +135,59 @@ def init_db():
         )
         ''')
 
+        # ── Custom Training Splits & Weekly Schedules (Custom Split Phase) ───────
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS training_splits (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            name        TEXT NOT NULL,
+            description TEXT,
+            is_active   INTEGER NOT NULL DEFAULT 0,
+            created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS workouts (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            name        TEXT NOT NULL,
+            description TEXT,
+            created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS weekly_schedules (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            split_id    INTEGER NOT NULL,
+            day_of_week INTEGER NOT NULL,
+            day_type    TEXT NOT NULL DEFAULT 'workout',
+            workout_id  INTEGER,
+            FOREIGN KEY(split_id) REFERENCES training_splits(id) ON DELETE CASCADE,
+            FOREIGN KEY(workout_id) REFERENCES workouts(id) ON DELETE SET NULL,
+            UNIQUE(split_id, day_of_week)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS workout_exercises (
+            id             INTEGER PRIMARY KEY AUTOINCREMENT,
+            workout_id     INTEGER NOT NULL,
+            exercise_id    INTEGER NOT NULL,
+            order_index    INTEGER NOT NULL,
+            sets           INTEGER NOT NULL DEFAULT 3,
+            reps           INTEGER,
+            duration_sec   INTEGER,
+            rest_sec       INTEGER NOT NULL DEFAULT 90,
+            tempo          TEXT,
+            superset_group INTEGER,
+            notes          TEXT,
+            FOREIGN KEY(workout_id) REFERENCES workouts(id) ON DELETE CASCADE,
+            FOREIGN KEY(exercise_id) REFERENCES exercises(id)
+        )
+        ''')
+
         conn.commit()
 
     # Add notes column if it was missing from an older schema (safe on re-run).
@@ -186,7 +239,7 @@ def _migrate_progression_columns():
 #   (name, ex_type, sets, reps_or_none, duration_sec_or_none, rest_sec, notes_or_none)
 # All levels are 1 (no L1-L5 progression tiers in this plan).
 
-_SEED_VERSION = 'ppl-ab-v1'  # bump to re-seed without deleting the DB
+_SEED_VERSION = 'custom-split-v1'  # bump to re-seed without deleting the DB
 
 _SEED = [
     ('Push A', [
@@ -239,6 +292,8 @@ _SEED = [
     ]),
 ]
 
+DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
 
 def reseed_data():
     """Clear exercises/routine_levels/level_exercises and repopulate with _SEED.
@@ -256,9 +311,13 @@ def reseed_data():
         # ── Clear dependent tables in safe order ──────────────────────────────────
         cursor.execute('DELETE FROM level_exercises')
         cursor.execute('DELETE FROM routine_levels')
+        cursor.execute('DELETE FROM weekly_schedules')
+        cursor.execute('DELETE FROM workout_exercises')
+        cursor.execute('DELETE FROM workouts')
+        cursor.execute('DELETE FROM training_splits')
         cursor.execute('DELETE FROM exercises')
         # Reset autoincrement counters so IDs start fresh
-        cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('exercises','routine_levels','level_exercises')")
+        cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('exercises','routine_levels','level_exercises','training_splits','workouts','weekly_schedules','workout_exercises')")
 
         # ── Insert exercises (deduplicate by name — Push B reuses some from Push A) ─
         ex_id_by_name = {}
@@ -274,7 +333,7 @@ def reseed_data():
                     # Exercise already inserted (shared across days).
                     pass
 
-        # ── Insert routine_levels and level_exercises ─────────────────────────────
+        # ── Insert routine_levels and level_exercises (legacy compatibility) ───────
         for routine_name, exercises in _SEED:
             cursor.execute(
                 'INSERT INTO routine_levels (routine_name, level) VALUES (?, 1)',
@@ -290,6 +349,49 @@ def reseed_data():
                        VALUES (?, ?, ?, ?, ?, ?, NULL, ?, NULL, ?)''',
                     (rl_id, ex_id, idx, sets, reps, dur, rest, notes)
                 )
+
+        # ── Insert Reusable Workouts & Workout Exercises (Custom Split Model) ───────
+        workout_ids = {}
+        for workout_name, exercises in _SEED:
+            cursor.execute(
+                'INSERT INTO workouts (name, description) VALUES (?, ?)',
+                (workout_name, f'Standard {workout_name} workout routine')
+            )
+            w_id = cursor.lastrowid
+            workout_ids[workout_name] = w_id
+            for idx, (name, ex_type, sets, reps, dur, rest, notes) in enumerate(exercises, start=1):
+                ex_id = ex_id_by_name[name]
+                cursor.execute(
+                    '''INSERT INTO workout_exercises
+                           (workout_id, exercise_id, order_index, sets,
+                            reps, duration_sec, tempo, rest_sec, superset_group, notes)
+                       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, NULL, ?)''',
+                    (w_id, ex_id, idx, sets, reps, dur, rest, notes)
+                )
+
+        # ── Insert Default Training Split: Push Pull Legs (PPL) ───────────────────
+        cursor.execute(
+            '''INSERT INTO training_splits (name, description, is_active)
+               VALUES ('Push Pull Legs (PPL)', 'Classic 6-day PPL cycle with mid-week rest', 1)'''
+        )
+        split_id = cursor.lastrowid
+
+        # 7-day schedule: Mon=Push A, Tue=Pull A, Wed=Legs A, Thu=Rest, Fri=Push B, Sat=Pull B, Sun=Legs B
+        schedule_map = [
+            (0, 'workout', workout_ids.get('Push A')),
+            (1, 'workout', workout_ids.get('Pull A')),
+            (2, 'workout', workout_ids.get('Legs A')),
+            (3, 'rest', None),
+            (4, 'workout', workout_ids.get('Push B')),
+            (5, 'workout', workout_ids.get('Pull B')),
+            (6, 'workout', workout_ids.get('Legs B')),
+        ]
+        for day_idx, day_type, w_id in schedule_map:
+            cursor.execute(
+                '''INSERT INTO weekly_schedules (split_id, day_of_week, day_type, workout_id)
+                   VALUES (?, ?, ?, ?)''',
+                (split_id, day_idx, day_type, w_id)
+            )
 
         # ── Stamp seed version ────────────────────────────────────────────────────
         cursor.execute(
@@ -316,9 +418,13 @@ def root_status():
     return jsonify({
         'service': 'CalistheniX REST API',
         'status': 'online',
-        'version': '1.0.0',
+        'version': '2.0.0',
         'endpoints': {
+            'today': '/today',
+            'splits': '/splits',
+            'workouts': '/workouts',
             'exercises': '/exercises',
+            'workout_sessions': '/workout_sessions',
             'dashboard_summary': '/dashboard/summary',
             'dashboard_records': '/dashboard/records',
             'dashboard_activity': '/dashboard/activity',
@@ -326,6 +432,597 @@ def root_status():
             'frontend_ui': 'http://localhost:8080'
         }
     }), 200
+
+
+# ── Today Resolver Endpoint (Custom Split Model) ───────────────────────────────
+
+@app.route('/today', methods=['GET'])
+def get_today_resolved():
+    """Resolve today's workout based on active training split and current day of week."""
+    with get_db() as conn:
+        active_split = conn.execute('SELECT * FROM training_splits WHERE is_active = 1').fetchone()
+        if not active_split:
+            active_split = conn.execute('SELECT * FROM training_splits ORDER BY id ASC LIMIT 1').fetchone()
+
+        now = datetime.now()
+        day_of_week = now.weekday()  # 0=Monday .. 6=Sunday
+        day_name = DAY_NAMES[day_of_week]
+
+        if not active_split:
+            return jsonify({
+                'status': 'no_split',
+                'day_of_week': day_of_week,
+                'day_name': day_name,
+                'message': 'No training split configured'
+            }), 200
+
+        split_id = active_split['id']
+        split_name = active_split['name']
+
+        sched = conn.execute(
+            'SELECT * FROM weekly_schedules WHERE split_id = ? AND day_of_week = ?',
+            (split_id, day_of_week)
+        ).fetchone()
+
+        if not sched or sched['day_type'] == 'rest' or not sched['workout_id']:
+            # Search for next scheduled workout
+            next_workout = None
+            for offset in range(1, 8):
+                next_day_idx = (day_of_week + offset) % 7
+                next_sched = conn.execute(
+                    'SELECT * FROM weekly_schedules WHERE split_id = ? AND day_of_week = ?',
+                    (split_id, next_day_idx)
+                ).fetchone()
+                if next_sched and next_sched['day_type'] == 'workout' and next_sched['workout_id']:
+                    w = conn.execute('SELECT * FROM workouts WHERE id = ?', (next_sched['workout_id'],)).fetchone()
+                    if w:
+                        next_workout = {
+                            'day_of_week': next_day_idx,
+                            'day_name': DAY_NAMES[next_day_idx],
+                            'workout_id': w['id'],
+                            'workout_name': w['name']
+                        }
+                        break
+
+            return jsonify({
+                'status': 'rest',
+                'day_of_week': day_of_week,
+                'day_name': day_name,
+                'split_id': split_id,
+                'split_name': split_name,
+                'message': 'Rest Day — Recovery & Adaptations',
+                'next_workout': next_workout
+            }), 200
+
+        workout_id = sched['workout_id']
+        workout = conn.execute('SELECT * FROM workouts WHERE id = ?', (workout_id,)).fetchone()
+        if not workout:
+            return jsonify({
+                'status': 'rest',
+                'day_of_week': day_of_week,
+                'day_name': day_name,
+                'split_id': split_id,
+                'split_name': split_name,
+                'message': 'Assigned workout was not found',
+                'next_workout': None
+            }), 200
+
+        rows = conn.execute('''
+            SELECT we.*, e.name as exercise_name, e.type as exercise_type,
+                   e.progression_target_reps, e.progression_target_duration
+            FROM workout_exercises we
+            JOIN exercises e ON we.exercise_id = e.id
+            WHERE we.workout_id = ?
+            ORDER BY we.order_index ASC, we.id ASC
+        ''', (workout_id,)).fetchall()
+
+        exercises = []
+        for r in rows:
+            last_log = conn.execute('''
+                SELECT reps, duration_sec, weight_kg, rpe, timestamp
+                FROM logs
+                WHERE exercise_id = ?
+                ORDER BY timestamp DESC
+                LIMIT 1
+            ''', (r['exercise_id'],)).fetchone()
+
+            exercises.append({
+                'id': r['id'],
+                'workout_id': r['workout_id'],
+                'exercise_id': r['exercise_id'],
+                'exercise_name': r['exercise_name'],
+                'exercise_type': r['exercise_type'],
+                'order_index': r['order_index'],
+                'sets': r['sets'],
+                'reps': r['reps'],
+                'duration_sec': r['duration_sec'],
+                'rest_sec': r['rest_sec'],
+                'tempo': r['tempo'],
+                'superset_group': r['superset_group'],
+                'notes': r['notes'],
+                'last_log': dict(last_log) if last_log else None
+            })
+
+        total_sets = sum(e['sets'] for e in exercises)
+
+        return jsonify({
+            'status': 'workout',
+            'day_of_week': day_of_week,
+            'day_name': day_name,
+            'split_id': split_id,
+            'split_name': split_name,
+            'workout': {
+                'id': workout['id'],
+                'name': workout['name'],
+                'description': workout['description'],
+                'total_sets': total_sets,
+                'exercises': exercises
+            }
+        }), 200
+
+
+# ── Training Splits API ────────────────────────────────────────────────────────
+
+@app.route('/splits', methods=['GET'])
+def get_splits():
+    """List all training splits with schedule overview."""
+    with get_db() as conn:
+        splits = conn.execute('SELECT * FROM training_splits ORDER BY is_active DESC, id ASC').fetchall()
+        result = []
+        for s in splits:
+            s_dict = dict(s)
+            sched_rows = conn.execute('''
+                SELECT ws.day_of_week, ws.day_type, ws.workout_id, w.name as workout_name
+                FROM weekly_schedules ws
+                LEFT JOIN workouts w ON ws.workout_id = w.id
+                WHERE ws.split_id = ?
+                ORDER BY ws.day_of_week ASC
+            ''', (s['id'],)).fetchall()
+
+            schedule = []
+            workout_days = 0
+            rest_days = 0
+            for row in sched_rows:
+                dow = row['day_of_week']
+                day_type = row['day_type']
+                if day_type == 'workout' and row['workout_id']:
+                    workout_days += 1
+                else:
+                    rest_days += 1
+                schedule.append({
+                    'day_of_week': dow,
+                    'day_name': DAY_NAMES[dow],
+                    'day_type': day_type,
+                    'workout_id': row['workout_id'],
+                    'workout_name': row['workout_name']
+                })
+
+            s_dict['workout_days'] = workout_days
+            s_dict['rest_days'] = rest_days
+            s_dict['schedule'] = schedule
+            result.append(s_dict)
+
+        return jsonify(result), 200
+
+
+@app.route('/splits', methods=['POST'])
+def create_split():
+    """Create a new training split with 7-day schedule initialized."""
+    body = request.get_json(silent=True) or {}
+    name = (body.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'Split name is required'}), 400
+
+    description = body.get('description', '')
+    is_active = 1 if body.get('is_active') else 0
+    schedule_input = body.get('schedule') or []
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        if is_active == 1:
+            cursor.execute('UPDATE training_splits SET is_active = 0')
+
+        cursor.execute(
+            '''INSERT INTO training_splits (name, description, is_active)
+               VALUES (?, ?, ?)''',
+            (name, description, is_active)
+        )
+        split_id = cursor.lastrowid
+
+        input_map = {item.get('day_of_week'): item for item in schedule_input if isinstance(item, dict)}
+        for dow in range(7):
+            item = input_map.get(dow, {})
+            day_type = item.get('day_type', 'rest')
+            w_id = item.get('workout_id') if day_type == 'workout' else None
+            cursor.execute(
+                '''INSERT INTO weekly_schedules (split_id, day_of_week, day_type, workout_id)
+                   VALUES (?, ?, ?, ?)''',
+                (split_id, dow, day_type, w_id)
+            )
+
+        conn.commit()
+
+        count = conn.execute('SELECT COUNT(*) FROM training_splits WHERE is_active = 1').fetchone()[0]
+        if count == 0:
+            cursor.execute('UPDATE training_splits SET is_active = 1 WHERE id = ?', (split_id,))
+            conn.commit()
+
+        created_split = conn.execute('SELECT * FROM training_splits WHERE id = ?', (split_id,)).fetchone()
+        return jsonify(dict(created_split)), 201
+
+
+@app.route('/splits/<int:split_id>', methods=['GET'])
+def get_split_detail(split_id):
+    """Get single split details with complete 7-day schedule."""
+    with get_db() as conn:
+        s = conn.execute('SELECT * FROM training_splits WHERE id = ?', (split_id,)).fetchone()
+        if not s:
+            return jsonify({'error': 'Split not found'}), 404
+
+        s_dict = dict(s)
+        sched_rows = conn.execute('''
+            SELECT ws.day_of_week, ws.day_type, ws.workout_id, w.name as workout_name, w.description as workout_desc
+            FROM weekly_schedules ws
+            LEFT JOIN workouts w ON ws.workout_id = w.id
+            WHERE ws.split_id = ?
+            ORDER BY ws.day_of_week ASC
+        ''', (split_id,)).fetchall()
+
+        schedule = []
+        for row in sched_rows:
+            dow = row['day_of_week']
+            schedule.append({
+                'day_of_week': dow,
+                'day_name': DAY_NAMES[dow],
+                'day_type': row['day_type'],
+                'workout_id': row['workout_id'],
+                'workout_name': row['workout_name'],
+                'workout_desc': row['workout_desc']
+            })
+
+        s_dict['schedule'] = schedule
+        return jsonify(s_dict), 200
+
+
+@app.route('/splits/<int:split_id>', methods=['PUT'])
+def update_split(split_id):
+    """Update split name, description, or activation status."""
+    body = request.get_json(silent=True) or {}
+    with get_db() as conn:
+        s = conn.execute('SELECT * FROM training_splits WHERE id = ?', (split_id,)).fetchone()
+        if not s:
+            return jsonify({'error': 'Split not found'}), 404
+
+        name = body.get('name', s['name']).strip()
+        description = body.get('description', s['description'])
+        is_active = body.get('is_active')
+
+        cursor = conn.cursor()
+        if is_active == 1:
+            cursor.execute('UPDATE training_splits SET is_active = 0')
+            cursor.execute(
+                'UPDATE training_splits SET name = ?, description = ?, is_active = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                (name, description, split_id)
+            )
+        else:
+            cursor.execute(
+                'UPDATE training_splits SET name = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                (name, description, split_id)
+            )
+
+        conn.commit()
+        updated = conn.execute('SELECT * FROM training_splits WHERE id = ?', (split_id,)).fetchone()
+        return jsonify(dict(updated)), 200
+
+
+@app.route('/splits/<int:split_id>', methods=['DELETE'])
+def delete_split(split_id):
+    """Delete split safely. If active, another split becomes active."""
+    with get_db() as conn:
+        s = conn.execute('SELECT * FROM training_splits WHERE id = ?', (split_id,)).fetchone()
+        if not s:
+            return jsonify({'error': 'Split not found'}), 404
+
+        was_active = s['is_active'] == 1
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM weekly_schedules WHERE split_id = ?', (split_id,))
+        cursor.execute('DELETE FROM training_splits WHERE id = ?', (split_id,))
+
+        if was_active:
+            other = conn.execute('SELECT id FROM training_splits ORDER BY id ASC LIMIT 1').fetchone()
+            if other:
+                cursor.execute('UPDATE training_splits SET is_active = 1 WHERE id = ?', (other['id'],))
+
+        conn.commit()
+        return jsonify({'status': 'deleted', 'id': split_id}), 200
+
+
+@app.route('/splits/<int:split_id>/schedule', methods=['GET'])
+def get_split_schedule(split_id):
+    """Get schedule for split."""
+    with get_db() as conn:
+        rows = conn.execute('''
+            SELECT ws.id, ws.split_id, ws.day_of_week, ws.day_type, ws.workout_id,
+                   w.name AS workout_name, w.description AS workout_description
+            FROM weekly_schedules ws
+            LEFT JOIN workouts w ON ws.workout_id = w.id
+            WHERE ws.split_id = ?
+            ORDER BY ws.day_of_week ASC
+        ''', (split_id,)).fetchall()
+
+        schedule = []
+        for r in rows:
+            dow = r['day_of_week']
+            schedule.append({
+                'id': r['id'],
+                'split_id': r['split_id'],
+                'day_of_week': dow,
+                'day_name': DAY_NAMES[dow],
+                'day_type': r['day_type'],
+                'workout_id': r['workout_id'],
+                'workout_name': r['workout_name'],
+                'workout_description': r['workout_description']
+            })
+
+        return jsonify(schedule), 200
+
+
+@app.route('/splits/<int:split_id>/schedule', methods=['PUT'])
+def update_split_schedule_batch(split_id):
+    """Batch update 7-day schedule for a split."""
+    body = request.get_json(silent=True) or {}
+    days = body.get('days') if isinstance(body, dict) else body
+    if not isinstance(days, list):
+        return jsonify({'error': 'List of days required'}), 400
+
+    with get_db() as conn:
+        s = conn.execute('SELECT * FROM training_splits WHERE id = ?', (split_id,)).fetchone()
+        if not s:
+            return jsonify({'error': 'Split not found'}), 404
+
+        cursor = conn.cursor()
+        for item in days:
+            if not isinstance(item, dict) or 'day_of_week' not in item:
+                continue
+            dow = int(item['day_of_week'])
+            day_type = item.get('day_type', 'workout')
+            w_id = item.get('workout_id') if day_type == 'workout' else None
+            cursor.execute('''
+                INSERT INTO weekly_schedules (split_id, day_of_week, day_type, workout_id)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(split_id, day_of_week) DO UPDATE SET
+                    day_type = excluded.day_type,
+                    workout_id = excluded.workout_id
+            ''', (split_id, dow, day_type, w_id))
+
+        conn.commit()
+        return jsonify({'status': 'updated', 'split_id': split_id}), 200
+
+
+@app.route('/splits/<int:split_id>/schedule/<int:day_of_week>', methods=['PUT'])
+def update_split_schedule_day(split_id, day_of_week):
+    """Update single day of a weekly schedule."""
+    if day_of_week < 0 or day_of_week > 6:
+        return jsonify({'error': 'day_of_week must be between 0 (Monday) and 6 (Sunday)'}), 400
+
+    body = request.get_json(silent=True) or {}
+    day_type = body.get('day_type', 'workout')
+    workout_id = body.get('workout_id') if day_type == 'workout' else None
+
+    with get_db() as conn:
+        s = conn.execute('SELECT * FROM training_splits WHERE id = ?', (split_id,)).fetchone()
+        if not s:
+            return jsonify({'error': 'Split not found'}), 404
+
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO weekly_schedules (split_id, day_of_week, day_type, workout_id)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(split_id, day_of_week) DO UPDATE SET
+                day_type = excluded.day_type,
+                workout_id = excluded.workout_id
+        ''', (split_id, day_of_week, day_type, workout_id))
+        conn.commit()
+
+        row = conn.execute('''
+            SELECT ws.*, w.name as workout_name
+            FROM weekly_schedules ws
+            LEFT JOIN workouts w ON ws.workout_id = w.id
+            WHERE ws.split_id = ? AND ws.day_of_week = ?
+        ''', (split_id, day_of_week)).fetchone()
+
+        res = dict(row)
+        res['day_name'] = DAY_NAMES[day_of_week]
+        return jsonify(res), 200
+
+
+# ── Reusable Workouts API ──────────────────────────────────────────────────────
+
+@app.route('/workouts', methods=['GET'])
+def get_workouts():
+    """List all reusable workouts with exercise count and total sets."""
+    with get_db() as conn:
+        rows = conn.execute('''
+            SELECT w.*,
+                   COUNT(we.id) AS exercise_count,
+                   COALESCE(SUM(we.sets), 0) AS total_sets
+            FROM workouts w
+            LEFT JOIN workout_exercises we ON w.id = we.workout_id
+            GROUP BY w.id, w.name, w.description, w.created_at, w.updated_at
+            ORDER BY w.name ASC
+        ''').fetchall()
+        return jsonify([dict(r) for r in rows]), 200
+
+
+@app.route('/workouts', methods=['POST'])
+def create_workout():
+    """Create a new reusable workout with exercises."""
+    body = request.get_json(silent=True) or {}
+    name = (body.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'Workout name is required'}), 400
+
+    description = body.get('description', '')
+    exercises = body.get('exercises', [])
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO workouts (name, description) VALUES (?, ?)', (name, description))
+        workout_id = cursor.lastrowid
+
+        for idx, ex in enumerate(exercises, start=1):
+            ex_id = ex.get('exercise_id') or ex.get('id')
+            if not ex_id:
+                continue
+            cursor.execute('''
+                INSERT INTO workout_exercises
+                    (workout_id, exercise_id, order_index, sets, reps, duration_sec, rest_sec, tempo, superset_group, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                workout_id,
+                ex_id,
+                ex.get('order_index', idx),
+                ex.get('sets', 3),
+                ex.get('reps'),
+                ex.get('duration_sec'),
+                ex.get('rest_sec', 90),
+                ex.get('tempo'),
+                ex.get('superset_group'),
+                ex.get('notes')
+            ))
+
+        conn.commit()
+        w = conn.execute('SELECT * FROM workouts WHERE id = ?', (workout_id,)).fetchone()
+        return jsonify(dict(w)), 201
+
+
+@app.route('/workouts/<int:workout_id>', methods=['GET'])
+def get_workout_detail(workout_id):
+    """Get single workout detail with its ordered exercises."""
+    with get_db() as conn:
+        w = conn.execute('SELECT * FROM workouts WHERE id = ?', (workout_id,)).fetchone()
+        if not w:
+            return jsonify({'error': 'Workout not found'}), 404
+
+        w_dict = dict(w)
+        rows = conn.execute('''
+            SELECT we.*, e.name AS exercise_name, e.type AS exercise_type,
+                   e.progression_target_reps, e.progression_target_duration
+            FROM workout_exercises we
+            JOIN exercises e ON we.exercise_id = e.id
+            WHERE we.workout_id = ?
+            ORDER BY we.order_index ASC, we.id ASC
+        ''', (workout_id,)).fetchall()
+
+        w_dict['exercises'] = [dict(r) for r in rows]
+        w_dict['total_sets'] = sum(r['sets'] for r in rows)
+        return jsonify(w_dict), 200
+
+
+@app.route('/workouts/<int:workout_id>', methods=['PUT'])
+def update_workout(workout_id):
+    """Update workout name, description, and exercise sequence."""
+    body = request.get_json(silent=True) or {}
+    name = (body.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'Workout name is required'}), 400
+
+    description = body.get('description', '')
+    exercises = body.get('exercises')
+
+    with get_db() as conn:
+        w = conn.execute('SELECT * FROM workouts WHERE id = ?', (workout_id,)).fetchone()
+        if not w:
+            return jsonify({'error': 'Workout not found'}), 404
+
+        cursor = conn.cursor()
+        cursor.execute(
+            'UPDATE workouts SET name = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            (name, description, workout_id)
+        )
+
+        if exercises is not None and isinstance(exercises, list):
+            cursor.execute('DELETE FROM workout_exercises WHERE workout_id = ?', (workout_id,))
+            for idx, ex in enumerate(exercises, start=1):
+                ex_id = ex.get('exercise_id') or ex.get('id')
+                if not ex_id:
+                    continue
+                cursor.execute('''
+                    INSERT INTO workout_exercises
+                        (workout_id, exercise_id, order_index, sets, reps, duration_sec, rest_sec, tempo, superset_group, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    workout_id,
+                    ex_id,
+                    ex.get('order_index', idx),
+                    ex.get('sets', 3),
+                    ex.get('reps'),
+                    ex.get('duration_sec'),
+                    ex.get('rest_sec', 90),
+                    ex.get('tempo'),
+                    ex.get('superset_group'),
+                    ex.get('notes')
+                ))
+
+        conn.commit()
+        updated_w = conn.execute('SELECT * FROM workouts WHERE id = ?', (workout_id,)).fetchone()
+        return jsonify(dict(updated_w)), 200
+
+
+@app.route('/workouts/<int:workout_id>/duplicate', methods=['POST'])
+def duplicate_workout(workout_id):
+    """Duplicate a workout into an independent copy."""
+    with get_db() as conn:
+        w = conn.execute('SELECT * FROM workouts WHERE id = ?', (workout_id,)).fetchone()
+        if not w:
+            return jsonify({'error': 'Workout not found'}), 404
+
+        new_name = f"{w['name']} (Copy)"
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO workouts (name, description) VALUES (?, ?)',
+            (new_name, w['description'])
+        )
+        new_workout_id = cursor.lastrowid
+
+        exs = conn.execute('SELECT * FROM workout_exercises WHERE workout_id = ? ORDER BY order_index ASC', (workout_id,)).fetchall()
+        for e in exs:
+            cursor.execute('''
+                INSERT INTO workout_exercises
+                    (workout_id, exercise_id, order_index, sets, reps, duration_sec, rest_sec, tempo, superset_group, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                new_workout_id,
+                e['exercise_id'],
+                e['order_index'],
+                e['sets'],
+                e['reps'],
+                e['duration_sec'],
+                e['rest_sec'],
+                e['tempo'],
+                e['superset_group'],
+                e['notes']
+            ))
+
+        conn.commit()
+        dup = conn.execute('SELECT * FROM workouts WHERE id = ?', (new_workout_id,)).fetchone()
+        return jsonify(dict(dup)), 201
+
+
+@app.route('/workouts/<int:workout_id>', methods=['DELETE'])
+def delete_workout(workout_id):
+    """Delete a workout safely, clearing schedule references to rest without deleting history."""
+    with get_db() as conn:
+        w = conn.execute('SELECT * FROM workouts WHERE id = ?', (workout_id,)).fetchone()
+        if not w:
+            return jsonify({'error': 'Workout not found'}), 404
+
+        cursor = conn.cursor()
+        cursor.execute("UPDATE weekly_schedules SET day_type = 'rest', workout_id = NULL WHERE workout_id = ?", (workout_id,))
+        cursor.execute('DELETE FROM workout_exercises WHERE workout_id = ?', (workout_id,))
+        cursor.execute('DELETE FROM workouts WHERE id = ?', (workout_id,))
+        conn.commit()
+        return jsonify({'status': 'deleted', 'id': workout_id}), 200
 
 
 # ── Existing endpoints ──────────────────────────────────────────────────────────
@@ -728,15 +1425,24 @@ def export_all_logs():
             'SELECT * FROM exercises ORDER BY id ASC'
         ).fetchall()
 
+        splits = conn.execute('SELECT * FROM training_splits ORDER BY id ASC').fetchall()
+        schedules = conn.execute('SELECT * FROM weekly_schedules ORDER BY split_id ASC, day_of_week ASC').fetchall()
+        workouts = conn.execute('SELECT * FROM workouts ORDER BY id ASC').fetchall()
+        workout_exercises = conn.execute('SELECT * FROM workout_exercises ORDER BY workout_id ASC, order_index ASC').fetchall()
+
         if request.args.get('format') == 'legacy':
             return jsonify([dict(r) for r in rows]), 200
 
         return jsonify({
-            'export_version': '2.0',
+            'export_version': '2.1',
             'exported_at': datetime.now(timezone.utc).isoformat(),
             'logs': [dict(r) for r in rows],
             'workout_sessions': [dict(s) for s in sessions],
-            'exercises': [dict(e) for e in exercises]
+            'exercises': [dict(e) for e in exercises],
+            'training_splits': [dict(s) for s in splits],
+            'weekly_schedules': [dict(ws) for ws in schedules],
+            'workouts': [dict(w) for w in workouts],
+            'workout_exercises': [dict(we) for we in workout_exercises]
         }), 200
 
 
@@ -1161,6 +1867,83 @@ def import_logs():
             except sqlite3.IntegrityError:
                 skipped_logs += 1
 
+        # 3. Import workouts & workout_exercises if present
+        workout_items = body.get('workouts', []) if isinstance(body, dict) else []
+        for w in workout_items:
+            if not isinstance(w, dict) or not w.get('name'):
+                continue
+            w_id = w.get('id')
+            existing = None
+            if w_id:
+                existing = conn.execute('SELECT id FROM workouts WHERE id = ?', (w_id,)).fetchone()
+            if not existing:
+                cursor.execute(
+                    'INSERT INTO workouts (id, name, description) VALUES (?, ?, ?)',
+                    (w_id, w['name'], w.get('description', ''))
+                )
+            else:
+                cursor.execute(
+                    'UPDATE workouts SET name = ?, description = ? WHERE id = ?',
+                    (w['name'], w.get('description', ''), existing['id'])
+                )
+
+        we_items = body.get('workout_exercises', []) if isinstance(body, dict) else []
+        for we in we_items:
+            if not isinstance(we, dict) or not we.get('workout_id') or not we.get('exercise_id'):
+                continue
+            we_id = we.get('id')
+            existing = None
+            if we_id:
+                existing = conn.execute('SELECT id FROM workout_exercises WHERE id = ?', (we_id,)).fetchone()
+            if not existing:
+                try:
+                    cursor.execute('''
+                        INSERT INTO workout_exercises
+                            (id, workout_id, exercise_id, order_index, sets, reps, duration_sec, rest_sec, tempo, superset_group, notes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        we_id,
+                        we['workout_id'],
+                        we['exercise_id'],
+                        we.get('order_index', 1),
+                        we.get('sets', 3),
+                        we.get('reps'),
+                        we.get('duration_sec'),
+                        we.get('rest_sec', 90),
+                        we.get('tempo'),
+                        we.get('superset_group'),
+                        we.get('notes')
+                    ))
+                except sqlite3.IntegrityError:
+                    pass
+
+        # 4. Import training_splits & weekly_schedules if present
+        split_items = body.get('training_splits', []) if isinstance(body, dict) else []
+        for sp in split_items:
+            if not isinstance(sp, dict) or not sp.get('name'):
+                continue
+            sp_id = sp.get('id')
+            existing = None
+            if sp_id:
+                existing = conn.execute('SELECT id FROM training_splits WHERE id = ?', (sp_id,)).fetchone()
+            if not existing:
+                cursor.execute(
+                    'INSERT INTO training_splits (id, name, description, is_active) VALUES (?, ?, ?, ?)',
+                    (sp_id, sp['name'], sp.get('description', ''), sp.get('is_active', 0))
+                )
+
+        ws_items = body.get('weekly_schedules', []) if isinstance(body, dict) else []
+        for ws in ws_items:
+            if not isinstance(ws, dict) or 'split_id' not in ws or 'day_of_week' not in ws:
+                continue
+            cursor.execute('''
+                INSERT INTO weekly_schedules (split_id, day_of_week, day_type, workout_id)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(split_id, day_of_week) DO UPDATE SET
+                    day_type = excluded.day_type,
+                    workout_id = excluded.workout_id
+            ''', (ws['split_id'], ws['day_of_week'], ws.get('day_type', 'workout'), ws.get('workout_id')))
+
         conn.commit()
         return jsonify({
             'status': 'success',
@@ -1168,6 +1951,8 @@ def import_logs():
             'skipped_logs': skipped_logs,
             'imported_sessions': imported_sessions,
             'skipped_sessions': skipped_sessions,
+            'imported_workouts': len(workout_items),
+            'imported_splits': len(split_items),
             'total_processed': len(log_items) + len(session_items)
         }), 200
 
