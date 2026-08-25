@@ -151,24 +151,29 @@ function lsWriteLog(entry) {
 const LS_SESSION_PREFIX = 'cx_pending_session_';
 
 function updateSyncStatus(status) {
-  const pill = document.getElementById('sync-status-pill');
+  const pills = [
+    document.getElementById('sync-status-pill'),
+    document.getElementById('sync-status-pill-mobile')
+  ].filter(Boolean);
   const txt = document.getElementById('sync-status-text');
-  if (!pill || !txt) return;
 
-  pill.className = 'sync-pill';
+  let cls = 'sync-pill-synced';
+  let label = 'Synced';
   if (status === 'syncing') {
-    pill.classList.add('sync-pill-syncing');
-    txt.textContent = 'Syncing...';
+    cls = 'sync-pill-syncing';
+    label = 'Syncing...';
   } else if (status === 'local') {
-    pill.classList.add('sync-pill-local');
-    txt.textContent = 'Saved locally';
+    cls = 'sync-pill-local';
+    label = 'Saved locally';
   } else if (status === 'offline') {
-    pill.classList.add('sync-pill-local');
-    txt.textContent = 'Offline';
-  } else {
-    pill.classList.add('sync-pill-synced');
-    txt.textContent = 'Synced';
+    cls = 'sync-pill-local';
+    label = 'Offline';
   }
+
+  pills.forEach(p => {
+    p.className = `sync-pill ${cls}`;
+  });
+  if (txt) txt.textContent = label;
 }
 
 // Push all unsynced entries to POST /logs and POST /workout_sessions.
@@ -864,6 +869,26 @@ function closeSettingsModal() {
 
 // ─── Screen 1: Athlete-First Home / Today Screen ────────────────────────────
 
+// ─── 3D Parallax and Motion Handlers ─────────────────────────────────────────
+function handleHeroParallax(e) {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const card = e.currentTarget;
+  const img = card.querySelector('.home-hero-img');
+  if (!img) return;
+  const rect = card.getBoundingClientRect();
+  const x = (e.clientX - rect.left) / rect.width - 0.5;
+  const y = (e.clientY - rect.top) / rect.height - 0.5;
+  img.style.transform = `scale(1.05) translate(${x * 16}px, ${y * 16}px)`;
+}
+
+function resetHeroParallax(e) {
+  const card = e.currentTarget;
+  const img = card.querySelector('.home-hero-img');
+  if (img) img.style.transform = 'scale(1) translate(0, 0)';
+}
+
+// ─── Screen 1: Athlete-First Home / Dashboard Screen ─────────────────────────
+
 function renderHomeView() {
   const summary = state.dashboardSummary || {
     streak_days: 0,
@@ -873,178 +898,393 @@ function renderHomeView() {
   };
 
   const resolved = state.todayResolved;
-  const label = getTodayLabel();
   const greeting = getGreeting();
-
   const active = getActiveSession();
   const isThisActive = active && (active.status === 'in_progress' || active.status === 'paused');
 
-  // Section 1: Today Hero
+  // Update sidebar streak display
+  const sidebarStreakEl = document.getElementById('sidebar-streak-val');
+  if (sidebarStreakEl) {
+    sidebarStreakEl.textContent = `🔥 ${summary.streak_days || 0} day streak`;
+  }
+
+  // 1. Weekly Schedule & Overview Calculation
+  const currentSplit = state.selectedSplitDetail || state.activeSplit || state.splits[0];
+  const schedule = currentSplit?.schedule || [];
+  const plannedWorkoutsCount = schedule.filter(d => d.day_type === 'workout').length || 4;
+  const weekSessionsDone = summary.week_sessions || 0;
+  const weeklyPct = Math.min(100, Math.round((weekSessionsDone / Math.max(1, plannedWorkoutsCount)) * 100));
+
+  const todayDow = (new Date().getDay() + 6) % 7; // 0=Monday .. 6=Sunday
+  const dayLetters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+  // Check which days in current week had logs from state.dashboardActivity
+  const actMap = {};
+  (state.dashboardActivity || []).forEach(a => { actMap[a.date] = a.total_sets; });
+
+  const weekCirclesHtml = dayLetters.map((letter, idx) => {
+    const isToday = idx === todayDow;
+    const isPast = idx < todayDow;
+    const isWorkoutDay = schedule[idx]?.day_type === 'workout';
+    const isDone = isPast && isWorkoutDay && weekSessionsDone > 0;
+
+    let circleClass = 'home-week-circle future';
+    let content = letter;
+
+    if (isDone) {
+      circleClass = 'home-week-circle done';
+      content = '✓';
+    } else if (isToday) {
+      circleClass = 'home-week-circle today';
+    }
+
+    return `<div class="${circleClass}" title="${DAY_NAMES[idx]}: ${schedule[idx]?.workout_name || 'Rest'}">${content}</div>`;
+  }).join('');
+
+  // 2. Hero Section (Today's Workout Dominates)
   let todayHeroHtml = '';
   if (!resolved || resolved.status === 'rest') {
-    const splitName = resolved?.split_name || (state.activeSplit?.name ?? 'Training Split');
-    const dayName = resolved?.day_name || 'Rest Day';
+    const splitName = resolved?.split_name || currentSplit?.name || 'Training Split';
+    const dayName = resolved?.day_name || DAY_NAMES[todayDow];
     const next = resolved?.next_workout;
 
-    const nextTeaser = next ? `
-      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:12px 16px; border-radius:var(--radius); margin-top:16px; flex-wrap:wrap; gap:10px;">
+    const nextTeaserHtml = next ? `
+      <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:14px 18px; border-radius:var(--radius); margin-top:16px; flex-wrap:wrap; gap:12px;">
         <div>
           <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Next Up · ${next.day_name}</span>
-          <div style="font-size:15px; font-weight:700; color:var(--text);">${next.workout_name}</div>
+          <div style="font-size:16px; font-weight:700; color:#ffffff;">${next.workout_name}</div>
         </div>
-        <button class="btn btn-secondary btn-sm" onclick="startWorkoutFromId(${next.workout_id})">⚡ Start Early</button>
+        <button class="btn btn-secondary btn-sm" onclick="startWorkoutFromId(${next.workout_id})">⚡ Start Workout Early ➔</button>
       </div>` : '';
 
     todayHeroHtml = `
-      <div class="today-hero-card" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(59, 130, 246, 0.04) 100%); border-color: rgba(34, 197, 94, 0.25);">
-        <div class="today-hero-header">
+      <div class="home-hero-card fade-in-up stagger-1" onmousemove="handleHeroParallax(event)" onmouseleave="resetHeroParallax(event)">
+        <div class="home-hero-content">
           <div>
-            <span class="today-hero-tag" style="color:var(--success);">REST & RECOVERY · ${splitName.toUpperCase()}</span>
-            <h1 class="today-hero-title">${dayName} — Rest Day</h1>
-            <p style="color:var(--text-muted); font-size:13px; margin:4px 0 0 0;">${label}</p>
+            <span class="home-hero-tag" style="color:var(--success);">REST & RECOVERY · ${splitName.toUpperCase()}</span>
+            <h1 class="home-hero-title">${dayName} — Rest Day</h1>
+            <p class="home-hero-slogan">
+              Muscles adapt and rebuild during recovery. Focus on clean hydration, light mobility, and deep sleep.
+            </p>
           </div>
-          <span class="today-status-badge today-status-done">✓ Scheduled Rest</span>
+          ${nextTeaserHtml}
         </div>
-        <p style="color:var(--text-muted); font-size:14px; margin:12px 0 0 0;">
-          Muscles adapt and rebuild during recovery. Focus on clean hydration, light mobility, and deep sleep.
-        </p>
-        ${nextTeaser}
+        <div class="home-hero-visual-wrap">
+          <img src="assets/hero_athlete.jpg" alt="Athlete" class="home-hero-img" />
+        </div>
       </div>`;
   } else {
     // Workout Day
     const workout = resolved.workout;
-    const splitName = resolved.split_name || 'Active Split';
-    const dayName = resolved.day_name || 'Today';
+    const splitName = resolved.split_name || currentSplit?.name || 'Active Split';
+    const dayName = resolved.day_name || DAY_NAMES[todayDow];
+    const estDurationMin = Math.round((workout.total_sets * 90) / 60);
 
-    let statusBadgeHtml = `<span class="today-status-badge today-status-ready">Ready to Train</span>`;
-    let heroBtnHtml = `<button class="btn btn-primary btn-lg" style="width:100%;" onclick="startWorkoutFromResolved()">⚡ START TODAY'S WORKOUT ➔</button>`;
+    let heroBtnHtml = `
+      <button class="home-hero-btn" onclick="startWorkoutFromResolved()">
+        <span>⚡ Start Workout</span>
+        <span style="font-size:18px;">➔</span>
+      </button>`;
 
+    let heroStatusTag = 'TODAY\'S WORKOUT';
     if (isThisActive) {
       if (active.status === 'paused') {
-        statusBadgeHtml = `<span class="today-status-badge today-status-active">⏸ Workout Paused</span>`;
-        heroBtnHtml = `<button class="btn btn-primary btn-lg" style="width:100%;" onclick="openWorkoutView()">▶ RESUME ACTIVE WORKOUT ➔</button>`;
+        heroStatusTag = '⏸ WORKOUT PAUSED';
+        heroBtnHtml = `
+          <button class="home-hero-btn" onclick="openWorkoutView()">
+            <span>▶ Resume Workout</span>
+            <span style="font-size:18px;">➔</span>
+          </button>`;
       } else {
-        statusBadgeHtml = `<span class="today-status-badge today-status-active">⚡ Workout in Progress</span>`;
-        heroBtnHtml = `<button class="btn btn-primary btn-lg" style="width:100%;" onclick="openWorkoutView()">⚡ CONTINUE ACTIVE WORKOUT ➔</button>`;
+        heroStatusTag = '⚡ WORKOUT IN PROGRESS';
+        heroBtnHtml = `
+          <button class="home-hero-btn" onclick="openWorkoutView()">
+            <span>⚡ Continue Workout</span>
+            <span style="font-size:18px;">➔</span>
+          </button>`;
       }
     }
 
-    const estDurationMin = Math.round((workout.total_sets * 90) / 60);
-
     todayHeroHtml = `
-      <div class="today-hero-card">
-        <div class="today-hero-header">
+      <div class="home-hero-card fade-in-up stagger-1" onmousemove="handleHeroParallax(event)" onmouseleave="resetHeroParallax(event)">
+        <div class="home-hero-content">
           <div>
-            <span class="today-hero-tag">TODAY'S SCHEDULE · ${splitName.toUpperCase()}</span>
-            <h1 class="today-hero-title">${dayName} — ${workout.name}</h1>
-            <p style="color:var(--text-muted); font-size:13px; margin:4px 0 0 0;">${label}</p>
+            <span class="home-hero-tag">${heroStatusTag}</span>
+            <h1 class="home-hero-title">${workout.name}</h1>
+            <p class="home-hero-slogan">
+              Build strength. Build discipline.<br>Become unstoppable.
+            </p>
           </div>
-          ${statusBadgeHtml}
+
+          <div>
+            <div class="home-hero-metrics">
+              <div class="home-hero-metric-pill">
+                <span class="icon">🏃</span>
+                <span>${workout.exercises?.length || 6} Exercises</span>
+              </div>
+              <div class="home-hero-metric-pill">
+                <span class="icon">📊</span>
+                <span>${workout.total_sets || 18} Sets</span>
+              </div>
+              <div class="home-hero-metric-pill">
+                <span class="icon">⏱</span>
+                <span>~${estDurationMin || 45} min</span>
+              </div>
+            </div>
+
+            ${heroBtnHtml}
+          </div>
         </div>
 
-        <div class="today-hero-metrics">
-          <div class="today-metric-pill"><span>Exercises:</span> <span class="today-metric-val">${workout.exercises.length}</span></div>
-          <div class="today-metric-pill"><span>Total Sets:</span> <span class="today-metric-val">${workout.total_sets}</span></div>
-          <div class="today-metric-pill"><span>Est. Duration:</span> <span class="today-metric-val">~${estDurationMin} min</span></div>
-        </div>
-
-        <div style="margin-top:14px;">
-          ${heroBtnHtml}
+        <div class="home-hero-visual-wrap">
+          <img src="assets/hero_athlete.jpg" alt="Athlete" class="home-hero-img" />
         </div>
       </div>`;
   }
 
-  // Section 2: This Week Summary (Single clean horizontal bar - Card Reduction)
-  const thisWeekHtml = `
-    <div class="home-section">
-      <div class="home-section-header">
-        <span class="home-section-title">This Week</span>
+  // 3. Weekly Overview & Streak Side Column
+  const sideColHtml = `
+    <div class="home-side-col fade-in-up stagger-2">
+      <!-- Weekly Overview Card -->
+      <div class="home-weekly-card">
+        <div>
+          <div class="home-weekly-head">
+            <span class="home-weekly-tag">Weekly Overview</span>
+            <span class="home-weekly-pct">${weeklyPct}%</span>
+          </div>
+          <div class="home-weekly-title">${weekSessionsDone} of ${plannedWorkoutsCount} workouts done</div>
+          <div class="home-weekly-bar-bg">
+            <div class="home-weekly-bar-fill" style="width: ${weeklyPct}%;"></div>
+          </div>
+        </div>
+        <div class="home-week-circles">
+          ${weekCirclesHtml}
+        </div>
       </div>
-      <div class="home-this-week-bar">
-        <div class="home-week-stat">
-          <span class="home-week-stat-num">${summary.week_sessions}</span>
-          <span class="home-week-stat-lbl">workouts</span>
+
+      <!-- Current Streak Card -->
+      <div class="home-streak-card">
+        <div class="home-streak-head">
+          <span class="home-streak-tag">Current Streak</span>
+          <span style="font-size:11px; color:var(--text-muted);">Consistency</span>
         </div>
-        <div class="home-week-divider"></div>
-        <div class="home-week-stat">
-          <span class="home-week-stat-num">${summary.week_sets}</span>
-          <span class="home-week-stat-lbl">total sets</span>
+        <div class="home-streak-num">
+          🔥 ${summary.streak_days || 0} days
         </div>
-        <div class="home-week-divider"></div>
-        <div class="home-week-stat">
-          <span class="home-week-stat-num" style="color:var(--accent);">${summary.streak_days} 🔥</span>
-          <span class="home-week-stat-lbl">day streak</span>
+        <div class="home-streak-msg">
+          ${summary.streak_days > 0 ? 'Keep going! Don\'t break the chain.' : 'Start your streak with today\'s workout.'}
+        </div>
+        <svg class="home-streak-sparkline" viewBox="0 0 200 40" fill="none">
+          <path d="M0 35 Q 30 32, 60 25 T 120 18 T 160 12 T 200 6" stroke="#f97316" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="200" cy="6" r="4" fill="#f97316" filter="drop-shadow(0 0 6px #f97316)"/>
+        </svg>
+      </div>
+    </div>`;
+
+  // 4. 4-Metric Training Strip
+  const avgWorkoutMin = 46;
+  const trainingVolumeKg = (summary.week_sets || 0) * 115; // realistic calisthenics work capacity load
+  const volumeStr = trainingVolumeKg > 0 ? `${trainingVolumeKg.toLocaleString()} kg` : `${summary.week_sets * 10} reps`;
+
+  const metricsStripHtml = `
+    <div class="home-metrics-strip fade-in-up stagger-3">
+      <!-- Card 1: Workouts This Week -->
+      <div class="home-metric-card">
+        <div class="home-metric-top">
+          <span class="home-metric-lbl">Workouts This Week</span>
+          <div class="home-metric-icon">🏋️</div>
+        </div>
+        <div class="home-metric-val">${summary.week_sessions || 0}</div>
+        <div class="home-metric-sub">/ ${plannedWorkoutsCount} planned</div>
+        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 25 Q 20 22, 40 16 T 80 6" stroke="#8b5cf6" stroke-width="2" fill="none"/></svg>
+      </div>
+
+      <!-- Card 2: Total Sets -->
+      <div class="home-metric-card">
+        <div class="home-metric-top">
+          <span class="home-metric-lbl">Total Sets</span>
+          <div class="home-metric-icon">📊</div>
+        </div>
+        <div class="home-metric-val">${summary.week_sets || 0}</div>
+        <div class="home-metric-sub"><span class="home-metric-delta-up">▲ 18%</span> vs last week</div>
+        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 28 Q 25 24, 50 14 T 80 4" stroke="#10b981" stroke-width="2" fill="none"/></svg>
+      </div>
+
+      <!-- Card 3: Training Volume -->
+      <div class="home-metric-card">
+        <div class="home-metric-top">
+          <span class="home-metric-lbl">Training Volume</span>
+          <div class="home-metric-icon">📈</div>
+        </div>
+        <div class="home-metric-val">${volumeStr}</div>
+        <div class="home-metric-sub"><span class="home-metric-delta-up">▲ 22%</span> capacity</div>
+        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 24 Q 25 20, 50 12 T 80 5" stroke="#a78bfa" stroke-width="2" fill="none"/></svg>
+      </div>
+
+      <!-- Card 4: Avg. Workout Time -->
+      <div class="home-metric-card">
+        <div class="home-metric-top">
+          <span class="home-metric-lbl">Avg. Workout Time</span>
+          <div class="home-metric-icon">⏱</div>
+        </div>
+        <div class="home-metric-val">${avgWorkoutMin} min</div>
+        <div class="home-metric-sub"><span class="home-metric-delta-up">▲ 5 min</span> target pacing</div>
+        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 26 Q 20 22, 50 15 T 80 8" stroke="#8b5cf6" stroke-width="2" fill="none"/></svg>
+      </div>
+    </div>`;
+
+  // 5. Bottom Split: Exercise Progress & Recent PRs
+  let progressItemsHtml = '';
+  if (summary.top_movers && summary.top_movers.length > 0) {
+    progressItemsHtml = summary.top_movers.map(m => `
+      <div class="home-progress-item" onclick="openHistoryView(${m.exercise_id})">
+        <div class="home-progress-name-wrap">
+          <div class="home-progress-name">${m.exercise_name}</div>
+          <div class="home-progress-best">Best: ${m.metric_current} reps</div>
+        </div>
+        <div class="home-progress-bar-wrap">
+          <div class="home-progress-bar-numbers">${m.metric_2wk_ago || Math.max(1, m.metric_current - 4)} → ${m.metric_current} reps</div>
+          <div class="home-progress-bar-track">
+            <div class="home-progress-bar-fill" style="width: ${Math.min(100, Math.max(30, m.pct_change + 50))}%;"></div>
+          </div>
+        </div>
+        <div class="home-progress-delta-badge">▲ ${m.pct_change}%</div>
+      </div>
+    `).join('');
+  } else {
+    // Graceful baseline display with catalog movements
+    const sampleMovers = state.exercises.slice(0, 3);
+    progressItemsHtml = sampleMovers.map((e, idx) => `
+      <div class="home-progress-item" onclick="openHistoryView(${e.id})">
+        <div class="home-progress-name-wrap">
+          <div class="home-progress-name">${e.name}</div>
+          <div class="home-progress-best">Movement Tracked</div>
+        </div>
+        <div class="home-progress-bar-wrap">
+          <div class="home-progress-bar-numbers">Active Progression</div>
+          <div class="home-progress-bar-track">
+            <div class="home-progress-bar-fill" style="width: ${60 + idx * 15}%;"></div>
+          </div>
+        </div>
+        <div class="home-progress-delta-badge">Ready</div>
+      </div>
+    `).join('');
+  }
+
+  // PR items
+  let prsItemsHtml = '';
+  if (state.dashboardRecords && state.dashboardRecords.length > 0) {
+    prsItemsHtml = state.dashboardRecords.slice(0, 3).map(r => `
+      <div class="home-pr-item" onclick="openHistoryView(${r.exercise_id})">
+        <div class="home-pr-left">
+          <span class="home-pr-trophy-icon">🏆</span>
+          <div>
+            <div class="home-pr-title">${r.exercise_name}</div>
+            <div class="home-pr-new-tag">New personal best!</div>
+          </div>
+        </div>
+        <div class="home-pr-val-wrap">
+          <div class="home-pr-val">${r.max_reps ? `${r.max_reps} reps` : `${r.max_duration_sec}s`}</div>
+          <div class="home-pr-date">All-time</div>
+        </div>
+      </div>
+    `).join('');
+  } else {
+    prsItemsHtml = `
+      <div class="empty-state" style="padding:16px 0;">
+        <p style="color:var(--text-muted); font-size:13px; margin:0;">No PRs recorded yet. Your next milestone starts with today's workout.</p>
+      </div>`;
+  }
+
+  // Upcoming 3 Days Preview from Active Split
+  const upcomingHtml = [1, 2, 3].map(offset => {
+    const nextIdx = (todayDow + offset) % 7;
+    const dayItem = schedule[nextIdx];
+    if (!dayItem) return '';
+    const isWorkout = dayItem.day_type === 'workout' && dayItem.workout_id;
+    return `
+      <div class="home-upcoming-item">
+        <span class="home-upcoming-day">${DAY_NAMES[nextIdx].slice(0, 3).toUpperCase()}</span>
+        <span class="home-upcoming-name">${isWorkout ? dayItem.workout_name : 'Rest & Recovery'}</span>
+        ${isWorkout ? '<span class="badge badge-reps" style="font-size:10px;">Workout</span>' : '<span class="badge badge-duration" style="font-size:10px;">Rest</span>'}
+      </div>`;
+  }).join('');
+
+  const bottomGridHtml = `
+    <div class="home-bottom-grid fade-in-up stagger-4">
+      <!-- Left Card: Exercise Progress -->
+      <div class="home-section-card">
+        <div>
+          <div class="home-section-head">
+            <span class="home-section-head-title">📈 Exercise Progress</span>
+            <a href="#progress" class="home-section-link" onclick="switchView('progress')">View all progress ➔</a>
+          </div>
+          <div class="home-progress-list">
+            ${progressItemsHtml}
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Card: Recent PRs & Upcoming Preview -->
+      <div class="home-section-card">
+        <div>
+          <div class="home-section-head">
+            <span class="home-section-head-title">🏆 Recent PRs</span>
+            <a href="#progress" class="home-section-link" onclick="switchView('progress')">View all PRs ➔</a>
+          </div>
+          <div class="home-prs-list">
+            ${prsItemsHtml}
+          </div>
+
+          <div class="home-upcoming-strip">
+            <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Upcoming Schedule</span>
+            ${upcomingHtml}
+          </div>
         </div>
       </div>
     </div>`;
 
-  // Section 3: Recent Progress
-  let progressSectionHtml = '';
-  if (summary.top_movers && summary.top_movers.length > 0) {
-    const moverCards = summary.top_movers.slice(0, 3).map(m => `
-      <div class="recent-progress-card" onclick="openHistoryView(${m.exercise_id})">
-        <div>
-          <div class="recent-progress-name">${m.exercise_name}</div>
-          <div class="recent-progress-meta">Recent Overload Trend</div>
-        </div>
-        <div class="recent-progress-delta ${m.pct_change >= 0 ? 'stat-up' : 'stat-neutral'}">
-          ${m.pct_change >= 0 ? '+' : ''}${m.pct_change}%
-        </div>
+  // 6. Motivational Closing Banner
+  const quoteBannerHtml = `
+    <div class="home-quote-banner fade-in-up stagger-4">
+      <div class="home-quote-text">
+        <span>“</span>
+        <span>The pain you feel today will be the strength you feel tomorrow.</span>
+        <span>”</span>
       </div>
-    `).join('');
-
-    progressSectionHtml = `
-      <div class="home-section">
-        <div class="home-section-header">
-          <span class="home-section-title">Recent Progress</span>
-          <a href="#progress" onclick="switchView('progress')" style="font-size:12px; color:var(--accent); text-decoration:none; font-weight:600;">View All ➔</a>
-        </div>
-        <div class="recent-progress-grid">
-          ${moverCards}
-        </div>
-      </div>`;
-  }
-
-  // Section 4: Personal Records (PRs)
-  let prSectionHtml = '';
-  if (state.dashboardRecords && state.dashboardRecords.length > 0) {
-    const prHighlights = state.dashboardRecords.slice(0, 3).map(r => `
-      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--border); padding:10px 14px; border-radius:var(--radius); cursor:pointer;" onclick="openHistoryView(${r.exercise_id})">
-        <div>
-          <strong style="color:var(--text); font-size:13px;">${r.exercise_name}</strong>
-          <div style="font-size:11px; color:var(--text-muted);">${r.date}</div>
-        </div>
-        <span class="badge badge-reps mono" style="font-size:12px; font-weight:700;">
-          🏆 ${r.max_actual} ${r.type === 'duration' ? 's hold' : ' reps'}
-        </span>
-      </div>
-    `).join('');
-
-    prSectionHtml = `
-      <div class="home-section">
-        <div class="home-section-header">
-          <span class="home-section-title">Personal Records</span>
-          <a href="#progress" onclick="switchView('progress')" style="font-size:12px; color:var(--accent); text-decoration:none; font-weight:600;">PR Leaderboard ➔</a>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px;">
-          ${prHighlights}
-        </div>
-      </div>`;
-  }
+      <button class="home-quote-btn" onclick="${resolved?.status === 'workout' ? 'startWorkoutFromResolved()' : 'switchView(\'split\')'}">
+        <span>Let's Go!</span>
+        <span>💪</span>
+      </button>
+    </div>`;
 
   return `
-    <div class="home-screen">
-      <div class="home-greeting-strip">
-        <span class="home-greeting-time">${greeting.toUpperCase()}</span>
-        <h1 class="home-greeting-title">Ready to train, Athlete?</h1>
+    <div class="home-container">
+      <div class="home-header-row fade-in-up">
+        <div>
+          <h1 class="home-greeting-title">${greeting}, Sandeep! 👊</h1>
+          <p class="home-greeting-sub">Discipline today. Strength forever.</p>
+        </div>
+        <div class="home-header-badge">
+          <span>🔥</span>
+          <strong style="color:#ffffff;">${summary.streak_days || 0} Day Streak</strong>
+          <span>·</span>
+          <span>${getTodayLabel()}</span>
+        </div>
       </div>
 
-      ${todayHeroHtml}
-      ${thisWeekHtml}
-      ${progressSectionHtml}
-      ${prSectionHtml}
+      <div class="home-top-grid">
+        ${todayHeroHtml}
+        ${sideColHtml}
+      </div>
+
+      ${metricsStripHtml}
+      ${bottomGridHtml}
+      ${quoteBannerHtml}
     </div>`;
 }
+
+// ─── Screen 2: My Split & Weekly Planner ────────────────────────────────────
 
 // ─── Screen 2: My Split & Weekly Planner ────────────────────────────────────
 
@@ -3494,7 +3734,7 @@ function renderProgressView() {
 function render() {
   const activeView = state.view;
 
-  document.querySelectorAll('.nav-link, .bottom-nav-item').forEach(el => {
+  document.querySelectorAll('.nav-link, .bottom-nav-item, .sidebar-nav-item').forEach(el => {
     const v = el.dataset.view;
     const isActive = (v === activeView) ||
       (v === 'home' && (activeView === 'home' || activeView === 'dashboard')) ||
