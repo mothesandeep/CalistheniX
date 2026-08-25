@@ -2594,9 +2594,12 @@ function renderActiveWorkoutView() {
 // ─── Main render ─────────────────────────────────────────────────────────────
 function render() {
   // Sync active nav link (log view has no tab)
-  document.querySelectorAll('.nav-link').forEach(a =>
-    a.classList.toggle('active', a.dataset.view === state.view)
-  );
+  document.querySelectorAll('.nav-link').forEach(a => {
+    const v = a.dataset.view;
+    const isActive = v === state.view ||
+      (v === 'history_list' && (state.view === 'history_list' || state.view === 'session_detail' || state.view === 'history'));
+    a.classList.toggle('active', isActive);
+  });
 
   const root = document.getElementById('app-root');
   switch (state.view) {

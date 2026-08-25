@@ -1,18 +1,44 @@
 {
-  "name": "CalistheniX",
+  "name": "CalistheniX — Progression & Workout Runner",
   "short_name": "CalistheniX",
-  "description": "Local-first calisthenics progression tracker for hold-based skill work and progressive overload.",
+  "description": "Local-first calisthenics progression tracker and live workout runner for isometric hold skill work and progressive overload.",
+  "id": "/calisthenix-app",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0a0a0f",
   "theme_color": "#0a0a0f",
   "orientation": "portrait-primary",
+  "categories": ["fitness", "health", "sports", "lifestyle"],
   "icons": [
     {
       "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Today's Workout",
+      "short_name": "Workout",
+      "description": "Launch the live workout runner for today's split",
+      "url": "./#workout",
+      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "View Training History",
+      "short_name": "History",
+      "description": "Review completed workout logs and recorded sets",
+      "url": "./#history",
+      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Dashboard Analytics",
+      "short_name": "Dashboard",
+      "description": "View streaks, PR records, and activity heatmap",
+      "url": "./#dashboard",
+      "icons": [{ "src": "icon.svg", "sizes": "any" }]
     }
   ]
 }
