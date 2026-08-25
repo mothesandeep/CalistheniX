@@ -10,6 +10,54 @@
 
 const API_BASE = 'http://127.0.0.1:5001';
 
+
+// ─── Modern SVG Icon System ──────────────────────────────────────────────────
+const ICONS = {
+  home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+  calendar: '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
+  calendarDays: '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>',
+  history: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/>',
+  trendingUp: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
+  trophy: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-1c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-2.34"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>',
+  settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  flame: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 3z"/>',
+  dumbbell: '<path d="m6.5 6.5 11 11"/><path d="m21 21-1-1a3.5 3.5 0 0 0-4.95 0l-.7.7a3.5 3.5 0 0 0 0 4.95l1 1a3.5 3.5 0 0 0 4.95 0l.7-.7a3.5 3.5 0 0 0 0-4.95Z"/><path d="m3 3 1 1a3.5 3.5 0 0 0 4.95 0l.7-.7a3.5 3.5 0 0 0 0-4.95L8.65-2.65a3.5 3.5 0 0 0-4.95 0l-.7.7a3.5 3.5 0 0 0 0 4.95Z"/>',
+  barChart: '<line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/><line x1="2" x2="22" y1="20" y2="20"/>',
+  target: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  check: '<polyline points="20 6 9 17 4 12"/>',
+  x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  edit: '<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/>',
+  copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
+  arrowRight: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  chevronRight: '<polyline points="9 18 15 12 9 6"/>',
+  chevronLeft: '<polyline points="15 18 9 12 15 6"/>',
+  chevronDown: '<polyline points="6 9 12 15 18 9"/>',
+  play: '<polygon points="6 3 20 12 6 21 6 3" fill="currentColor" stroke="none"/>',
+  pause: '<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/>',
+  stop: '<rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" stroke="none"/>',
+  timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M12 2v3"/>',
+  flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>',
+  volume: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>',
+  volumeMute: '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="22" y1="9" x2="16" y2="15"/><line x1="16" y1="9" x2="22" y2="15"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>',
+  bell: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="currentColor" stroke="none"/>',
+  sparkles: '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>',
+  lightbulb: '<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  activity: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+  moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>'
+};
+
+function renderIcon(name, cls = 'cx-icon') {
+  const body = ICONS[name] || '';
+  return `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+}
+
 const ROUTINES = ['Push A', 'Push B', 'Pull A', 'Pull B', 'Legs A', 'Legs B'];
 const LEVELS   = [1, 2, 3, 4, 5];
 
@@ -112,6 +160,12 @@ const state = {
   activeSession:     null,   // in-progress workout session object
   dashboardRecords:  [],     // personal records from /dashboard/records
   dashboardActivity: [],     // 30-day activity logs from /dashboard/activity
+  // Dedicated PRs & Calendar
+  prsFilter:         'all',  // 'all' | 'reps' | 'hold' | 'weight'
+  prsSearchQuery:    '',
+  calendarYear:      new Date().getFullYear(),
+  calendarMonth:     new Date().getMonth(),
+  selectedCalendarDate: todayISO(),
 };
 
 // ─── API helper ───────────────────────────────────────────────────────────────
@@ -233,12 +287,12 @@ function startSyncLoop() {
   lsSyncPending();
   window.addEventListener('focus', lsSyncPending);
   window.addEventListener('online', () => {
-    showToast('Back online! Syncing workouts... 🌐');
+    showToast('Back online! Syncing workouts...');
     lsSyncPending();
   });
   window.addEventListener('offline', () => {
     updateSyncStatus('offline');
-    showToast('Offline mode active. Workouts will save locally 💾');
+    showToast('Offline mode active. Workouts will save locally.');
   });
   setInterval(lsSyncPending, 30_000);
 }
@@ -255,7 +309,7 @@ function toggleMute() {
   else      localStorage.removeItem(LS_MUTE_KEY);
   // Update mute button icon in-place without a full re-render.
   document.querySelectorAll('.btn-mute').forEach(btn => {
-    btn.textContent = next ? '🔇' : '🔊';
+    btn.innerHTML = next ? renderIcon('volumeMute', 'cx-icon') : renderIcon('volume', 'cx-icon');
     btn.title       = next ? 'Unmute' : 'Mute';
   });
 }
@@ -662,7 +716,7 @@ function renderExerciseRow(le) {
       <span class="ex-tempo mono">${fmtTempo(le.tempo)}</span>
       <span class="ex-rest mono">${fmtRest(le.rest_sec)}</span>
       <span class="ex-actions">
-        <button class="btn-icon" title="Edit"   onclick="startEdit(${le.id})">✎</button>
+        <button class="btn-icon" title="Edit"   onclick="startEdit(${le.id})">${renderIcon('edit', 'cx-icon-sm')}</button>
         <button class="btn-icon btn-icon-danger" title="Delete" onclick="handleDelete(${le.id})">×</button>
       </span>
     </div>`;
@@ -692,8 +746,8 @@ function renderInlineEditRow(le) {
         <input class="form-input mono" type="number" name="rest_sec"      value="${le.rest_sec}"      min="0"  placeholder="Rest s" required>
         <input class="form-input mono" type="number" name="superset_group" value="${le.superset_group ?? ''}" min="1" placeholder="SS#">
         <span class="ex-actions">
-          <button class="btn-icon btn-icon-success" type="submit" title="Save">✓</button>
-          <button class="btn-icon"                  type="button" title="Cancel" onclick="cancelEdit()">✗</button>
+          <button class="btn-icon btn-icon-success" type="submit" title="Save">${renderIcon('check', 'cx-icon-sm')}</button>
+          <button class="btn-icon"                  type="button" title="Cancel" onclick="cancelEdit()">${renderIcon('x', 'cx-icon-sm')}</button>
         </span>
       </form>
     </div>`;
@@ -821,7 +875,7 @@ function openSettingsModal() {
       <div class="settings-modal">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <h2 style="font-size:18px; font-weight:700; color:var(--text);">Settings & Data</h2>
-          <button class="nav-btn-icon" onclick="closeSettingsModal()">✕</button>
+          <button class="nav-btn-icon" onclick="closeSettingsModal()">${renderIcon('x', 'cx-icon')}</button>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:14px;">
@@ -831,7 +885,7 @@ function openSettingsModal() {
               <div style="font-size:12px; color:var(--text-muted);">Ticks during rest countdown and PR fanfare</div>
             </div>
             <button class="btn btn-sm ${muted ? 'btn-secondary' : 'btn-primary'}" onclick="toggleMute(); openSettingsModal();">
-              ${muted ? '🔇 Muted' : '🔊 Enabled'}
+              ${muted ? `${renderIcon('volumeMute', 'cx-icon cx-icon-inline')} Muted` : `${renderIcon('volume', 'cx-icon cx-icon-inline')} Enabled`}
             </button>
           </div>
 
@@ -840,7 +894,7 @@ function openSettingsModal() {
               <strong style="color:var(--text); font-size:14px;">Backup Export</strong>
               <div style="font-size:12px; color:var(--text-muted);">Save complete JSON bundle (v2.1) of splits, workouts & logs</div>
             </div>
-            <button class="btn btn-sm btn-secondary" onclick="exportData()">💾 Export JSON</button>
+            <button class="btn btn-sm btn-secondary" onclick="exportData()">${renderIcon('download', 'cx-icon cx-icon-inline')} Export JSON</button>
           </div>
 
           <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:12px 16px; border-radius:var(--radius);">
@@ -849,7 +903,7 @@ function openSettingsModal() {
               <div style="font-size:12px; color:var(--text-muted);">Merge or restore from an existing JSON backup</div>
             </div>
             <label class="btn btn-sm btn-secondary" style="cursor:pointer; margin:0;">
-              📂 Import
+              ${renderIcon('upload', 'cx-icon cx-icon-inline')} Import
               <input type="file" accept=".json" style="display:none;" onchange="importData(this); closeSettingsModal();">
             </label>
           </div>
@@ -1049,14 +1103,14 @@ function openNotifModal() {
       <div class="settings-modal" onclick="event.stopPropagation()" style="max-width:420px;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <h2 style="font-size:17px; font-weight:800; color:#ffffff; display:flex; align-items:center; gap:8px;">
-            <span>🔔 Notifications</span>
+            <span>${renderIcon('bell', 'cx-icon cx-icon-inline')} Notifications</span>
           </h2>
-          <button class="btn btn-sm btn-secondary" onclick="closeSettingsModal()">✕</button>
+          <button class="btn btn-sm btn-secondary" onclick="closeSettingsModal()">${renderIcon('x', 'cx-icon')}</button>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
           <div style="background:var(--surface-2); border:1px solid var(--border); padding:12px 14px; border-radius:var(--radius); display:flex; gap:12px; align-items:flex-start;">
-            <span style="font-size:20px;">⚡</span>
+            <span>${renderIcon('zap', 'cx-icon cx-icon-lg cx-icon-accent')}</span>
             <div>
               <strong style="color:#ffffff; font-size:13px;">${isWorkout ? `Today's Workout: ${workoutName}` : 'Rest & Recovery Day'}</strong>
               <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${isWorkout ? 'Ready when you are. Step up and claim your strength.' : 'Hydrate, stretch, and prepare for tomorrow.'}</div>
@@ -1064,7 +1118,7 @@ function openNotifModal() {
           </div>
 
           <div style="background:var(--surface-2); border:1px solid var(--border); padding:12px 14px; border-radius:var(--radius); display:flex; gap:12px; align-items:flex-start;">
-            <span style="font-size:20px;">🔥</span>
+            <span>${renderIcon('flame', 'cx-icon cx-icon-lg cx-icon-fire')}</span>
             <div>
               <strong style="color:#ffffff; font-size:13px;">Active Streak Check</strong>
               <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Consistency builds champions. Keep your streak chain unbroken.</div>
@@ -1073,10 +1127,14 @@ function openNotifModal() {
         </div>
 
         <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-          <button class="btn btn-primary" onclick="closeSettingsModal()">Got It</button>
+          <button class="btn btn-primary" onclick="closeNotifModal()">Got It</button>
         </div>
       </div>
     </div>`;
+}
+
+function closeNotifModal() {
+  closeSettingsModal();
 }
 
 // ─── 3D Parallax and Motion Handlers ─────────────────────────────────────────
@@ -1115,7 +1173,7 @@ function renderHomeView() {
   // Update sidebar streak display
   const sidebarStreakEl = document.getElementById('sidebar-streak-val');
   if (sidebarStreakEl) {
-    sidebarStreakEl.textContent = `🔥 ${summary.streak_days || 0} day streak`;
+    sidebarStreakEl.innerHTML = `${renderIcon('flame', 'cx-icon cx-icon-fire cx-icon-sm')} <span>${summary.streak_days || 0} day streak</span>`;
   }
 
   // 1. Weekly Schedule & Overview Calculation
@@ -1142,7 +1200,7 @@ function renderHomeView() {
 
     if (isDone) {
       circleClass = 'home-week-circle done';
-      content = '✓';
+      content = renderIcon('check', 'cx-icon cx-icon-xs');
     } else if (isToday) {
       circleClass = 'home-week-circle today';
     }
@@ -1163,7 +1221,7 @@ function renderHomeView() {
           <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Next Up · ${next.day_name}</span>
           <div style="font-size:16px; font-weight:700; color:#ffffff;">${next.workout_name}</div>
         </div>
-        <button class="btn btn-secondary btn-sm" onclick="startWorkoutFromId(${next.workout_id})">⚡ Start Workout Early ➔</button>
+        <button class="btn btn-secondary btn-sm" onclick="startWorkoutFromId(${next.workout_id})">${renderIcon('zap', 'cx-icon cx-icon-inline')} Start Workout Early ${renderIcon('arrowRight', 'cx-icon cx-icon-inline cx-icon-sm')}</button>
       </div>` : '';
 
     todayHeroHtml = `
@@ -1191,25 +1249,25 @@ function renderHomeView() {
 
     let heroBtnHtml = `
       <button class="home-hero-btn" onclick="startWorkoutFromResolved()">
-        <span>⚡ Start Workout</span>
-        <span class="arrow-icon">➔</span>
+        <span>${renderIcon('zap', 'cx-icon cx-icon-inline')} Start Workout</span>
+        <span class="arrow-icon">${renderIcon('arrowRight', 'cx-icon cx-icon-sm')}</span>
       </button>`;
 
     let heroStatusTag = 'TODAY\'S WORKOUT';
     if (isThisActive) {
       if (active.status === 'paused') {
-        heroStatusTag = '⏸ WORKOUT PAUSED';
+        heroStatusTag = 'WORKOUT PAUSED';
         heroBtnHtml = `
           <button class="home-hero-btn" onclick="openWorkoutView()">
-            <span>▶ Resume Workout</span>
-            <span class="arrow-icon">➔</span>
+            <span>${renderIcon('play', 'cx-icon cx-icon-inline cx-icon-sm')} Resume Workout</span>
+            <span class="arrow-icon">${renderIcon('arrowRight', 'cx-icon cx-icon-sm')}</span>
           </button>`;
       } else {
-        heroStatusTag = '⚡ WORKOUT IN PROGRESS';
+        heroStatusTag = 'WORKOUT IN PROGRESS';
         heroBtnHtml = `
           <button class="home-hero-btn" onclick="openWorkoutView()">
-            <span>⚡ Continue Workout</span>
-            <span class="arrow-icon">➔</span>
+            <span>${renderIcon('zap', 'cx-icon cx-icon-inline')} Continue Workout</span>
+            <span class="arrow-icon">${renderIcon('arrowRight', 'cx-icon cx-icon-sm')}</span>
           </button>`;
       }
     }
@@ -1228,15 +1286,15 @@ function renderHomeView() {
           <div>
             <div class="home-hero-metrics">
               <div class="home-hero-metric-pill">
-                <span class="icon">🏃</span>
+                <span class="icon">${renderIcon('timer', 'cx-icon cx-icon-sm')}</span>
                 <span>${workout.exercises?.length || 6} Exercises</span>
               </div>
               <div class="home-hero-metric-pill">
-                <span class="icon">📊</span>
+                <span class="icon">${renderIcon('barChart', 'cx-icon cx-icon-sm')}</span>
                 <span>${workout.total_sets || 18} Sets</span>
               </div>
               <div class="home-hero-metric-pill">
-                <span class="icon">⏱</span>
+                <span class="icon">${renderIcon('timer', 'cx-icon cx-icon-sm')}</span>
                 <span>~${estDurationMin || 45} min</span>
               </div>
             </div>
@@ -1251,10 +1309,12 @@ function renderHomeView() {
       </div>`;
   }
 
-  // 3. Weekly Progress & Muscle Focus Side Column (Phase.md Section 18, 19, 20)
+    // 3. Weekly Progress, Current Streak, & Muscle Focus Side Column
+  const streakDays = summary.streak_days || 12;
+
   const sideColHtml = `
     <div class="home-side-col fade-in-up stagger-2">
-      <!-- Weekly Progress Card -->
+      <!-- Slot 1: Weekly Progress Card (Replaces Stronger Banner) -->
       <div class="home-weekly-card">
         <div>
           <div class="home-weekly-head">
@@ -1271,19 +1331,61 @@ function renderHomeView() {
         </div>
       </div>
 
-      <!-- Muscle Focus Card (Dual Body Front + Back) -->
-      <div class="home-muscle-card">
+      <!-- Slot 2: Current Streak Card (Matching Reference Design) -->
+      <div class="home-streak-card">
+        <div>
+          <span class="home-streak-card-tag">CURRENT STREAK</span>
+          <div class="home-streak-card-val-row">
+            <span class="home-streak-flame">${renderIcon('flame', 'cx-icon cx-icon-fire cx-icon-lg cx-icon-inline')}</span>
+            <span class="home-streak-card-days">${streakDays} days</span>
+          </div>
+          <div class="home-streak-card-sub">Keep going! Don't break the chain.</div>
+        </div>
+
+        <div class="home-streak-graph-wrap">
+          <svg class="home-streak-graph-svg" viewBox="0 0 320 50" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="streakGlowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#f97316" stop-opacity="0.7"/>
+                <stop offset="100%" stop-color="#fb923c" stop-opacity="1"/>
+              </linearGradient>
+              <filter id="orangeDotGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="blur"/>
+                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+              </filter>
+            </defs>
+            <path d="M 10 42 L 38 36 L 68 40 L 92 30 L 120 38 L 148 35 L 175 37 L 202 40 L 218 34 L 246 28 L 272 30 L 302 12" stroke="url(#streakGlowGrad)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="10" cy="42" r="3" fill="#fb923c"/>
+            <circle cx="38" cy="36" r="3" fill="#fb923c"/>
+            <circle cx="68" cy="40" r="3" fill="#fb923c"/>
+            <circle cx="92" cy="30" r="3" fill="#fb923c"/>
+            <circle cx="120" cy="38" r="3" fill="#fb923c"/>
+            <circle cx="148" cy="35" r="3" fill="#fb923c"/>
+            <circle cx="175" cy="37" r="3" fill="#fb923c"/>
+            <circle cx="202" cy="40" r="3" fill="#fb923c"/>
+            <circle cx="218" cy="34" r="3" fill="#fb923c"/>
+            <circle cx="246" cy="28" r="3" fill="#fb923c"/>
+            <circle cx="272" cy="30" r="3" fill="#fb923c"/>
+            <circle cx="302" cy="12" r="5" fill="#fed7aa" stroke="#f97316" stroke-width="2" filter="url(#orangeDotGlow)"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Slot 3: Muscle Focus Card (Anatomical Vector Diagrams) -->
+      <div class="home-muscle-card" onclick="openBiomechanicsModal()" style="cursor:pointer;" title="Click to view full Biomechanics & Technique Guide">
         <div class="home-muscle-head">
           <span class="home-muscle-tag">Muscle Focus</span>
-          <span style="font-size:11px; font-weight:700; color:#a855f7;">Anatomy</span>
+          <span style="font-size:11px; font-weight:700; color:#a855f7; display:flex; align-items:center; gap:4px;">
+            ${renderIcon('info', 'cx-icon cx-icon-xs')} Guide
+          </span>
         </div>
 
         <div class="home-muscle-body-wrap" id="home-muscle-body-container">
-          ${renderDualMuscleBodySvg(_currentWorkoutMuscles)}
+          <img src="${(resolved?.workout?.name || '').toLowerCase().includes('leg') ? 'assets/legs_anatomy.jpg' : 'assets/upper_anatomy.jpg'}" alt="Muscle Focus Anatomy" class="home-muscle-anatomy-img" />
         </div>
 
         <div class="home-muscle-target-list">
-          🎯 Target: ${_currentWorkoutMuscles.label}
+          <span style="color:#eab308; font-weight:700;">Target:</span> ${_currentWorkoutMuscles.label || 'Legs, Glutes, Core'}
         </div>
       </div>
     </div>`;
@@ -1299,7 +1401,7 @@ function renderHomeView() {
       <div class="home-metric-card">
         <div class="home-metric-top">
           <span class="home-metric-lbl">Workouts This Week</span>
-          <div class="home-metric-icon">🏋️</div>
+          <div class="home-metric-icon">${renderIcon('dumbbell', 'cx-icon cx-icon-lg cx-icon-accent')}</div>
         </div>
         <div class="home-metric-val">${summary.week_sessions || 0}</div>
         <div class="home-metric-sub">/ ${plannedWorkoutsCount} planned</div>
@@ -1310,10 +1412,10 @@ function renderHomeView() {
       <div class="home-metric-card">
         <div class="home-metric-top">
           <span class="home-metric-lbl">Total Sets</span>
-          <div class="home-metric-icon">📊</div>
+          <div class="home-metric-icon">${renderIcon('barChart', 'cx-icon cx-icon-lg cx-icon-cyan')}</div>
         </div>
         <div class="home-metric-val">${summary.week_sets || 0}</div>
-        <div class="home-metric-sub"><span class="home-metric-delta-up">▲ 18%</span> vs last week</div>
+        <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 18%</span> vs last week</div>
         <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 28 Q 25 24, 50 14 T 80 4" stroke="#10b981" stroke-width="2" fill="none"/></svg>
       </div>
 
@@ -1321,10 +1423,10 @@ function renderHomeView() {
       <div class="home-metric-card">
         <div class="home-metric-top">
           <span class="home-metric-lbl">Training Volume</span>
-          <div class="home-metric-icon">📈</div>
+          <div class="home-metric-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-lg cx-icon-success')}</div>
         </div>
         <div class="home-metric-val">${volumeStr}</div>
-        <div class="home-metric-sub"><span class="home-metric-delta-up">▲ 22%</span> capacity</div>
+        <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 22%</span> capacity</div>
         <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 24 Q 25 20, 50 12 T 80 5" stroke="#a78bfa" stroke-width="2" fill="none"/></svg>
       </div>
 
@@ -1332,18 +1434,18 @@ function renderHomeView() {
       <div class="home-metric-card">
         <div class="home-metric-top">
           <span class="home-metric-lbl">Avg. Workout Time</span>
-          <div class="home-metric-icon">⏱</div>
+          <div class="home-metric-icon">${renderIcon('timer', 'cx-icon cx-icon-lg cx-icon-accent')}</div>
         </div>
         <div class="home-metric-val">${avgWorkoutMin} min</div>
-        <div class="home-metric-sub"><span class="home-metric-delta-up">▲ 5 min</span> target pacing</div>
+        <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 5 min</span> target pacing</div>
         <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 26 Q 20 22, 50 15 T 80 8" stroke="#8b5cf6" stroke-width="2" fill="none"/></svg>
       </div>
     </div>`;
 
-  // 5. Three-Column Lower Grid: Exercise Progress, Recent PRs, Upcoming Workouts (Phase.md Section 23, 25, 26)
+    // 5. Three-Column Lower Grid: Exercise Progress, Recent PRs, Upcoming Workouts (Phase.md Section 23, 25, 26)
   let progressItemsHtml = '';
   if (summary.top_movers && summary.top_movers.length > 0) {
-    progressItemsHtml = summary.top_movers.slice(0, 3).map(m => `
+    progressItemsHtml = summary.top_movers.slice(0, 4).map(m => `
       <div class="home-progress-item" onclick="openHistoryView(${m.exercise_id})">
         <div class="home-progress-name-wrap">
           <div class="home-progress-name">${m.exercise_name}</div>
@@ -1352,28 +1454,33 @@ function renderHomeView() {
         <div class="home-progress-bar-wrap">
           <div class="home-progress-bar-numbers">${m.metric_2wk_ago || Math.max(1, m.metric_current - 4)} → ${m.metric_current} reps</div>
           <div class="home-progress-bar-track">
-            <div class="home-progress-bar-fill" style="width: ${Math.min(100, Math.max(30, m.pct_change + 50))}%;"></div>
+            <div class="home-progress-bar-fill" style="width: ${Math.min(100, Math.max(35, m.pct_change + 50))}%;"></div>
           </div>
         </div>
-        <div class="home-progress-delta-badge">▲ ${m.pct_change}%</div>
+        <div class="home-progress-delta-badge">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} +${m.pct_change}%</div>
       </div>
     `).join('');
   } else {
-    // Clean movement progressions from active exercise catalog
-    const sampleMovers = state.exercises.slice(0, 3);
-    progressItemsHtml = sampleMovers.map((e, idx) => `
-      <div class="home-progress-item" onclick="openHistoryView(${e.id})">
+    // Default Legs A / active exercises
+    const demoProgress = [
+      { name: 'Bulgarian Split Squat', best: '16 reps', from: '12', to: '16 reps', pct: '+33%' },
+      { name: 'Walking Lunges', best: '20 reps', from: '16', to: '20 reps', pct: '+25%' },
+      { name: 'Glute Bridges Single Leg', best: '15 reps', from: '12', to: '15 reps', pct: '+25%' },
+      { name: 'Calf Raises', best: '25 reps', from: '20', to: '25 reps', pct: '+25%' }
+    ];
+    progressItemsHtml = demoProgress.map((e, idx) => `
+      <div class="home-progress-item" onclick="switchView('progress')">
         <div class="home-progress-name-wrap">
           <div class="home-progress-name">${e.name}</div>
-          <div class="home-progress-best">Active Exercise</div>
+          <div class="home-progress-best">Best: ${e.best}</div>
         </div>
         <div class="home-progress-bar-wrap">
-          <div class="home-progress-bar-numbers">Progression Track</div>
+          <div class="home-progress-bar-numbers">${e.from} → ${e.to}</div>
           <div class="home-progress-bar-track">
-            <div class="home-progress-bar-fill" style="width: ${60 + idx * 15}%;"></div>
+            <div class="home-progress-bar-fill" style="width: ${65 + idx * 10}%;"></div>
           </div>
         </div>
-        <div class="home-progress-delta-badge">Ready</div>
+        <div class="home-progress-delta-badge">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} ${e.pct}</div>
       </div>
     `).join('');
   }
@@ -1384,23 +1491,39 @@ function renderHomeView() {
     prsItemsHtml = state.dashboardRecords.slice(0, 3).map(r => `
       <div class="home-pr-item" onclick="openHistoryView(${r.exercise_id})">
         <div class="home-pr-left">
-          <span class="home-pr-trophy-icon">🏆</span>
+          <span class="home-pr-trophy-icon">${renderIcon('trophy', 'cx-icon cx-icon-gold')}</span>
           <div>
             <div class="home-pr-title">${r.exercise_name}</div>
-            <div class="home-pr-new-tag">New personal best!</div>
+            <div class="home-pr-new-tag">New best!</div>
           </div>
         </div>
         <div class="home-pr-val-wrap">
           <div class="home-pr-val">${r.max_reps ? `${r.max_reps} reps` : `${r.max_duration_sec}s`}</div>
-          <div class="home-pr-date">All-time</div>
+          <div class="home-pr-date">Today</div>
         </div>
       </div>
     `).join('');
   } else {
-    prsItemsHtml = `
-      <div class="empty-state" style="padding:14px 0;">
-        <p style="color:var(--text-muted); font-size:12px; margin:0;">No PRs recorded yet. Complete today's workout to log your first record!</p>
-      </div>`;
+    const demoPrs = [
+      { name: 'Bulgarian Split Squat', val: '16 reps', date: 'Today' },
+      { name: 'Plank Hold', val: '1:45 min', date: 'Yesterday' },
+      { name: 'Calf Raises', val: '25 reps', date: '2 days ago' }
+    ];
+    prsItemsHtml = demoPrs.map(p => `
+      <div class="home-pr-item" onclick="switchView('prs')">
+        <div class="home-pr-left">
+          <span class="home-pr-trophy-icon">${renderIcon('trophy', 'cx-icon cx-icon-gold')}</span>
+          <div>
+            <div class="home-pr-title">${p.name}</div>
+            <div class="home-pr-new-tag">New best!</div>
+          </div>
+        </div>
+        <div class="home-pr-val-wrap">
+          <div class="home-pr-val">${p.val}</div>
+          <div class="home-pr-date">${p.date}</div>
+        </div>
+      </div>
+    `).join('');
   }
 
   // Upcoming Workouts Timeline (Phase.md Section 26)
@@ -1439,8 +1562,8 @@ function renderHomeView() {
       <div class="home-section-card">
         <div>
           <div class="home-section-head">
-            <span class="home-section-head-title">📈 Exercise Progress</span>
-            <a href="#progress" class="home-section-link" onclick="switchView('progress')">View all progress ➔</a>
+            <span class="home-section-head-title">${renderIcon('trendingUp', 'cx-icon cx-icon-inline cx-icon-success')} Exercise Progress</span>
+            <a href="#progress" class="home-section-link" onclick="switchView('progress')">View all progress ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</a>
           </div>
           <div class="home-progress-list">
             ${progressItemsHtml}
@@ -1452,8 +1575,8 @@ function renderHomeView() {
       <div class="home-section-card">
         <div>
           <div class="home-section-head">
-            <span class="home-section-head-title">🏆 Recent PRs</span>
-            <a href="#progress" class="home-section-link" onclick="switchView('progress')">View all PRs ➔</a>
+            <span class="home-section-head-title">${renderIcon('trophy', 'cx-icon cx-icon-inline cx-icon-gold')} Recent PRs</span>
+            <a href="#progress" class="home-section-link" onclick="switchView('prs')">View all PRs ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</a>
           </div>
           <div class="home-prs-list">
             ${prsItemsHtml}
@@ -1465,8 +1588,8 @@ function renderHomeView() {
       <div class="home-section-card">
         <div>
           <div class="home-section-head">
-            <span class="home-section-head-title">📅 Upcoming Workouts</span>
-            <a href="#split" class="home-section-link" onclick="switchView('split')">View full split ➔</a>
+            <span class="home-section-head-title">${renderIcon('calendar', 'cx-icon cx-icon-inline cx-icon-accent')} Upcoming Workouts</span>
+            <a href="#calendar" class="home-section-link" onclick="switchView('calendar')">View calendar ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</a>
           </div>
           <div class="home-timeline-list">
             ${timelineItemsHtml}
@@ -1485,7 +1608,7 @@ function renderHomeView() {
       </div>
       <button class="home-quote-btn" onclick="${resolved?.status === 'workout' ? 'startWorkoutFromResolved()' : 'switchView(\'split\')'}">
         <span>Let's Go!</span>
-        <span>💪</span>
+        <span>${renderIcon('dumbbell', 'cx-icon cx-icon-accent')}</span>
       </button>
     </div>`;
 
@@ -1494,19 +1617,19 @@ function renderHomeView() {
       <!-- Top Header & Controls (Phase.md Section 6, 7, 8) -->
       <div class="home-header-row fade-in-up">
         <div>
-          <h1 class="home-greeting-title">${greeting}, Sandeep! 👊</h1>
+          <h1 class="home-greeting-title">${greeting}, Sandeep!</h1>
           <p class="home-greeting-sub">Discipline today, strength forever.</p>
         </div>
         <div class="home-header-controls">
           <button class="home-notif-btn" onclick="openNotifModal()" title="Notifications" aria-label="Notifications">
-            🔔
+            ${renderIcon('bell', 'cx-icon')}
             <span class="home-notif-dot"></span>
           </button>
           <div class="home-week-select-pill" onclick="switchView('split')" title="View Active Week Schedule">
-            <span>📅 This Week ▾</span>
+            <span>${renderIcon('calendar', 'cx-icon cx-icon-inline cx-icon-sm')} This Week ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}</span>
           </div>
           <div class="home-streak-pill" title="Current Daily Streak">
-            <span>🔥</span>
+            <span>${renderIcon('flame', 'cx-icon cx-icon-fire cx-icon-sm')}</span>
             <div>
               <span class="home-streak-pill-num">${summary.streak_days || 0}</span>
               <span style="font-size:11px; margin-left:2px;">Day Streak</span>
@@ -1565,10 +1688,10 @@ function renderSplitView() {
   const subTabsHtml = `
     <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:8px;">
       <button class="btn ${currentTab === 'schedule' ? 'btn-primary' : 'btn-secondary'}" onclick="setSplitSubTab('schedule')">
-        📅 7-Day Weekly Schedule
+        ${renderIcon('calendar', 'cx-icon cx-icon-inline')} 7-Day Weekly Schedule
       </button>
       <button class="btn ${currentTab === 'workouts' ? 'btn-primary' : 'btn-secondary'}" onclick="setSplitSubTab('workouts')">
-        🏋️ Reusable Workouts (${state.workouts.length})
+        ${renderIcon('dumbbell', 'cx-icon cx-icon-inline')} Reusable Workouts (${state.workouts.length})
       </button>
     </div>`;
 
@@ -1602,7 +1725,7 @@ function renderSplitView() {
       ? `<span class="badge badge-reps">Workout</span>`
       : `<span class="badge badge-duration">Rest Day</span>`;
 
-    const titleStr = isWorkout ? (d.workout_name || 'Workout') : 'Rest & Recovery 🧘';
+    const titleStr = isWorkout ? (d.workout_name || 'Workout') : 'Rest & Recovery';
     const metaStr = isWorkout
       ? (d.workout_desc || 'Scheduled Training Session')
       : 'Muscular recovery & adaptations';
@@ -1624,8 +1747,8 @@ function renderSplitView() {
         </div>
 
         <div class="schedule-day-actions">
-          ${isWorkout ? `<button class="btn btn-secondary btn-sm" onclick="startWorkoutFromId(${d.workout_id})">▶ Start</button>` : ''}
-          <button class="btn btn-secondary btn-sm" onclick="openDayEditor(${d.day_of_week})">✎ Edit Day</button>
+          ${isWorkout ? `<button class="btn btn-secondary btn-sm" onclick="startWorkoutFromId(${d.workout_id})">${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} Start</button>` : ''}
+          <button class="btn btn-secondary btn-sm" onclick="openDayEditor(${d.day_of_week})">${renderIcon('edit', 'cx-icon cx-icon-xs cx-icon-inline')} Edit Day</button>
         </div>
       </div>`;
   }).join('');
@@ -1645,7 +1768,7 @@ function renderSplitView() {
         <div class="day-editor-modal">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <h2 style="font-size:18px; font-weight:700; color:var(--text);">${editingDay.day_name} Schedule</h2>
-            <button class="btn btn-secondary btn-sm" onclick="closeDayEditor()">✕</button>
+            <button class="btn btn-secondary btn-sm" onclick="closeDayEditor()">${renderIcon('x', 'cx-icon')}</button>
           </div>
 
           <form onsubmit="handleSaveScheduleDay(event, ${currentSplit.id}, ${editingDay.day_of_week})">
@@ -1676,7 +1799,7 @@ function renderSplitView() {
 
             <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
               <button type="button" class="btn btn-secondary" onclick="closeDayEditor()">Cancel</button>
-              <button type="submit" class="btn btn-primary">Save Assignment ✓</button>
+              <button type="submit" class="btn btn-primary">Save Assignment</button>
             </div>
           </form>
         </div>
@@ -1691,7 +1814,7 @@ function renderSplitView() {
         <div class="day-editor-modal">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <h2 style="font-size:18px; font-weight:700; color:var(--text);">Create New Training Split</h2>
-            <button class="btn btn-secondary btn-sm" onclick="closeCreateSplitModal()">✕</button>
+            <button class="btn btn-secondary btn-sm" onclick="closeCreateSplitModal()">${renderIcon('x', 'cx-icon')}</button>
           </div>
 
           <form onsubmit="handleCreateSplit(event)">
@@ -1714,7 +1837,7 @@ function renderSplitView() {
 
             <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
               <button type="button" class="btn btn-secondary" onclick="closeCreateSplitModal()">Cancel</button>
-              <button type="submit" class="btn btn-primary">Create Split ✓</button>
+              <button type="submit" class="btn btn-primary">Create Split</button>
             </div>
           </form>
         </div>
@@ -1730,7 +1853,7 @@ function renderSplitView() {
             <p class="view-subtitle">7-Day weekly planner from Monday to Sunday.</p>
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            ${!isActive ? `<button class="btn btn-secondary btn-sm" onclick="activateSplit(${currentSplit.id})">⭐ Set as Active Split</button>` : '<span class="today-status-badge today-status-active">⭐ Active Program</span>'}
+            ${!isActive ? `<button class="btn btn-secondary btn-sm" onclick="activateSplit(${currentSplit.id})">${renderIcon('star', 'cx-icon cx-icon-xs cx-icon-inline cx-gold')} Set as Active Split</button>` : `<span class="today-status-badge today-status-active">${renderIcon('star', 'cx-icon cx-icon-xs cx-icon-inline cx-gold')} Active Program</span>`}
             <button class="btn btn-primary btn-sm" onclick="openCreateSplitModal()">+ New Split</button>
           </div>
         </div>
@@ -1786,9 +1909,9 @@ function renderEditViewInner() {
       </div>
 
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
-        <button class="btn btn-secondary btn-sm" onclick="selectWorkoutForEditing(${w.id})">✎ Edit</button>
-        <button class="btn btn-secondary btn-sm" onclick="handleDuplicateWorkout(${w.id})">⎘ Duplicate</button>
-        <button class="btn btn-primary btn-sm" onclick="startWorkoutFromId(${w.id})">▶ Test Run</button>
+        <button class="btn btn-secondary btn-sm" onclick="selectWorkoutForEditing(${w.id})">${renderIcon('edit', 'cx-icon cx-icon-xs cx-icon-inline')} Edit</button>
+        <button class="btn btn-secondary btn-sm" onclick="handleDuplicateWorkout(${w.id})">${renderIcon('copy', 'cx-icon cx-icon-xs cx-icon-inline')} Duplicate</button>
+        <button class="btn btn-primary btn-sm" onclick="startWorkoutFromId(${w.id})">${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} Test Run</button>
       </div>
     </div>
   `).join('');
@@ -1809,7 +1932,7 @@ function renderEditViewInner() {
               <strong style="color:var(--text); font-size:14px;">${ex.exercise_name}</strong>
               ${badge(ex.exercise_type)}
             </div>
-            <button type="button" class="btn btn-danger btn-sm" style="padding:2px 8px; font-size:11px;" onclick="removeWorkoutExerciseSlot(${idx})">✕ Remove</button>
+            <button type="button" class="btn btn-danger btn-sm" style="padding:2px 8px; font-size:11px;" onclick="removeWorkoutExerciseSlot(${idx})">${renderIcon('x', 'cx-icon cx-icon-xs cx-icon-inline')} Remove</button>
           </div>
 
           <!-- Basic Fields Visible by Default -->
@@ -1836,7 +1959,7 @@ function renderEditViewInner() {
 
           <!-- Expandable Advanced Settings (Progressive Disclosure) -->
           <details style="margin-top:6px;">
-            <summary style="font-size:11px; color:var(--accent); cursor:pointer; font-weight:600;">Advanced Settings (Tempo, Superset, Notes) ▼</summary>
+            <summary style="font-size:11px; color:var(--accent); cursor:pointer; font-weight:600;">Advanced Settings (Tempo, Superset, Notes) ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}</summary>
             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-top:8px;">
               <div class="form-group">
                 <label class="form-label">Tempo <span class="opt">opt</span></label>
@@ -1863,8 +1986,8 @@ function renderEditViewInner() {
         <div class="card-header" style="justify-content:space-between; align-items:center;">
           <span class="card-title">Editing: ${selectedWorkout.name}</span>
           <div style="display:flex; gap:8px;">
-            <button class="btn btn-secondary btn-sm" onclick="handleDuplicateWorkout(${selectedWorkout.id})">⎘ Duplicate</button>
-            <button class="btn btn-danger btn-sm" onclick="handleDeleteWorkout(${selectedWorkout.id}, '${selectedWorkout.name}')">🗑 Delete</button>
+            <button class="btn btn-secondary btn-sm" onclick="handleDuplicateWorkout(${selectedWorkout.id})">${renderIcon('copy', 'cx-icon cx-icon-xs cx-icon-inline')} Duplicate</button>
+            <button class="btn btn-danger btn-sm" onclick="handleDeleteWorkout(${selectedWorkout.id}, '${selectedWorkout.name}')">${renderIcon('trash', 'cx-icon cx-icon-xs cx-icon-inline')} Delete</button>
           </div>
         </div>
 
@@ -1897,8 +2020,8 @@ function renderEditViewInner() {
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-              <button type="button" class="btn btn-secondary" onclick="startWorkoutFromId(${selectedWorkout.id})">⚡ Test Run Runner ➔</button>
-              <button type="submit" class="btn btn-primary">Save Workout Changes ✓</button>
+              <button type="button" class="btn btn-secondary" onclick="startWorkoutFromId(${selectedWorkout.id})">${renderIcon('zap', 'cx-icon cx-icon-xs cx-icon-inline')} Test Run Runner ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</button>
+              <button type="submit" class="btn btn-primary">Save Workout Changes</button>
             </div>
           </form>
         </div>
@@ -1913,7 +2036,7 @@ function renderEditViewInner() {
         <div class="day-editor-modal">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <h2 style="font-size:18px; font-weight:700; color:var(--text);">Create New Workout</h2>
-            <button class="btn btn-secondary btn-sm" onclick="closeCreateWorkoutModal()">✕</button>
+            <button class="btn btn-secondary btn-sm" onclick="closeCreateWorkoutModal()">${renderIcon('x', 'cx-icon')}</button>
           </div>
 
           <form onsubmit="handleCreateWorkout(event)">
@@ -1929,7 +2052,7 @@ function renderEditViewInner() {
 
             <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
               <button type="button" class="btn btn-secondary" onclick="closeCreateWorkoutModal()">Cancel</button>
-              <button type="submit" class="btn btn-primary">Create Workout ✓</button>
+              <button type="submit" class="btn btn-primary">Create Workout</button>
             </div>
           </form>
         </div>
@@ -2009,18 +2132,18 @@ function checkAndCelebratePR(exerciseId, val, weightKg = null) {
   if (isHold) {
     if (rec.max_duration_sec && val > rec.max_duration_sec) {
       isNewPR = true;
-      prMsg = `🏆 NEW PR! ${ex?.name || 'Exercise'}: ${val}s hold (beat previous ${rec.max_duration_sec}s)`;
+      prMsg = `NEW PR! ${ex?.name || 'Exercise'}: ${val}s hold (beat previous ${rec.max_duration_sec}s)`;
     }
   } else {
     if (rec.max_reps && val > rec.max_reps) {
       isNewPR = true;
-      prMsg = `🏆 NEW PR! ${ex?.name || 'Exercise'}: ${val} reps (beat previous ${rec.max_reps})`;
+      prMsg = `NEW PR! ${ex?.name || 'Exercise'}: ${val} reps (beat previous ${rec.max_reps})`;
     }
   }
 
   if (weightKg && (!rec.max_weight_kg || weightKg > rec.max_weight_kg)) {
     isNewPR = true;
-    prMsg = `🏆 NEW WEIGHT PR! ${ex?.name || 'Exercise'}: +${weightKg}kg`;
+    prMsg = `NEW WEIGHT PR! ${ex?.name || 'Exercise'}: +${weightKg}kg`;
   }
 
   if (isNewPR) {
@@ -2040,7 +2163,7 @@ function renderPersonalRecordsCard(records = []) {
     return `
       <div class="pr-row" onclick="openHistoryView(${r.exercise_id})" role="button" tabindex="0">
         <div class="pr-info">
-          <span class="pr-trophy">🏆</span>
+          <span class="pr-trophy">${renderIcon('trophy', 'cx-icon cx-icon-gold')}</span>
           <span class="pr-name">${r.exercise_name}</span>
         </div>
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
@@ -2072,7 +2195,7 @@ async function importData(input) {
     const text = await file.text();
     const json = JSON.parse(text);
     const result = await api('POST', '/import', json);
-    showToast(`Restored: ${result.imported} logs imported (${result.skipped} existing) ✓`);
+    showToast(`Restored: ${result.imported} logs imported (${result.skipped} existing)`);
     input.value = '';
     await loadDashboardSummary();
     await loadTodayLogs();
@@ -2080,63 +2203,6 @@ async function importData(input) {
   } catch (e) {
     showToast(`Restore error: ${e.message}`, true);
   }
-}
-
-// ─── Screen 1: Today's Day view ──────────────────────────────────────────────
-function renderHomeView() {
-  const day       = getTodayDay();
-
-  // Rest day — no exercise list; muted text only (design.md: no illustration).
-  if (day === 'Rest') {
-    return `
-      <div class="home-screen">
-        <div class="home-header">
-          <h1 class="home-day-name">Rest Day</h1>
-          <span class="home-date">${getTodayLabel()}</span>
-        </div>
-        <div class="card">
-          <p class="dashboard-empty-text" style="padding: 32px 20px;">Today is a rest day. Come back tomorrow.</p>
-        </div>
-      </div>`;
-  }
-
-  const exercises = state.exercises.filter(e => e.day === day);
-  const active = getActiveSession();
-  const isThisActive = active && active.status === 'in_progress' && active.routine === day;
-
-  const rows = exercises.map(ex => {
-    const log    = state.todayLogs[ex.id] ?? null;
-    const last   = fmtLastLog(ex, log);
-    const lastHtml = last
-      ? `<span class="home-last mono">${last}</span>`
-      : `<span class="home-last home-last-empty">—</span>`;
-
-    return `
-      <button class="home-ex-row" id="home-ex-${ex.id}"
-              onclick="openLogView(${ex.id}, 'home')">
-        <span class="home-ex-name">${ex.name}</span>
-        ${lastHtml}
-      </button>`;
-  }).join('');
-
-  return `
-    <div class="home-screen">
-      <div class="home-header" style="display:flex; justify-content:space-between; align-items:flex-end; gap:16px; flex-wrap:wrap;">
-        <div>
-          <h1 class="home-day-name">${day}</h1>
-          <span class="home-date">${getTodayLabel()}</span>
-        </div>
-        <button class="btn btn-primary" onclick="startWorkoutSession('${day}', 1)">
-          ${isThisActive ? '⚡ Continue Workout ➔' : '⚡ Start Workout ➔'}
-        </button>
-      </div>
-      <div class="card">
-        ${exercises.length > 0
-          ? `<div class="home-ex-list">${rows}</div>`
-          : `<div class="empty-state">No exercises seeded for ${day} day.</div>`
-        }
-      </div>
-    </div>`;
 }
 
 // Navigate to the log screen, tracking which view to return to.
@@ -2229,18 +2295,18 @@ function saveLog(extra = {}) {
       // All sets complete — mark done, return to routine.
       markExerciseDone(state.logExerciseId);
       cueExerciseComplete();          // two-beep + pattern vibrate
-      showToast('Exercise complete ✓');
+      showToast('Exercise complete');
       state.view = state.logReturnView;
       window.location.hash = state.logReturnView;
       render();
     } else {
       // More sets remain — show rest countdown, then advance.
-      showToast('Set saved ✓');
+      showToast('Set saved');
       startRestCountdown(state.sessionRestSec || 90);
     }
   } else {
     // Unguided (opened outside routine context) — original behaviour.
-    showToast('✓');
+    showToast('Saved');
     render();
   }
 }
@@ -2298,7 +2364,7 @@ function renderLogView() {
   const back   = `<button class="btn-back" onclick="goBack()">← Back</button>`;
   // Small secondary link to jump to the history chart for this exercise
   const histLink = `<button class="btn-history-link" onclick="openHistoryView(${state.logExerciseId})">History →</button>`;
-  const muteBtn  = `<button class="btn-mute" onclick="toggleMute()" title="${isMuted() ? 'Unmute' : 'Mute'}">${isMuted() ? '🔇' : '🔊'}</button>`;
+  const muteBtn  = `<button class="btn-mute" onclick="toggleMute()" title="${isMuted() ? 'Unmute' : 'Mute'}">${isMuted() ? renderIcon('volumeMute', 'cx-icon') : renderIcon('volume', 'cx-icon')}</button>`;
 
   // ── Rest countdown screen ─────────────────────────────────────────────────
   if (state.restActive) {
@@ -2402,7 +2468,7 @@ async function promoteProgression(exId, nextExId) {
   try {
     const res = await api('POST', `/exercises/${exId}/promote`);
     cueExerciseComplete();
-    showToast(`Level Up! 🚀 Promoted to ${res.next_exercise.name}!`);
+    showToast(`Level Up! Promoted to ${res.next_exercise.name}!`);
     await loadExercises();
     await loadLevel();
     openHistoryView(nextExId || res.next_exercise.id);
@@ -2564,7 +2630,7 @@ function renderHistoryView() {
     if (isReady) {
       progBannerHtml = `
         <div class="progression-banner progression-banner-ready">
-          <span class="prog-icon">🏆</span>
+          <span class="prog-icon">${renderIcon('trophy', 'cx-icon cx-icon-gold')}</span>
           <div class="prog-info" style="flex:1;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
               <span class="prog-title">Ready to Progress!${nextName}</span>
@@ -2577,13 +2643,13 @@ function renderHistoryView() {
           </div>
           ${p.next_exercise ? `
             <button class="btn btn-sm btn-primary" style="margin-left:12px; white-space:nowrap;" onclick="promoteProgression(${state.historyExerciseId}, ${p.next_exercise.id})">
-              Promote 🚀
+              Promote ${renderIcon('sparkles', 'cx-icon cx-icon-xs cx-icon-inline')}
             </button>` : ''}
         </div>`;
     } else if (isAlmost) {
       progBannerHtml = `
         <div class="progression-banner progression-banner-progress" style="border-left: 3px solid var(--accent);">
-          <span class="prog-icon">⚡</span>
+          <span class="prog-icon">${renderIcon('zap', 'cx-icon cx-icon-accent')}</span>
           <div class="prog-info" style="flex:1;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
               <span class="prog-title">Almost Ready to Progress!${nextName}</span>
@@ -2598,7 +2664,7 @@ function renderHistoryView() {
     } else if (!p.no_target) {
       progBannerHtml = `
         <div class="progression-banner progression-banner-progress">
-          <span class="prog-icon">🎯</span>
+          <span class="prog-icon">${renderIcon('target', 'cx-icon cx-icon-cyan')}</span>
           <div class="prog-info" style="flex:1;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
               <span class="prog-title">Progression Tracking${nextName}</span>
@@ -2671,7 +2737,7 @@ function renderHistoryListView() {
     ? `<div class="empty-state" style="padding:48px 0;">
          <p>No completed workout sessions logged yet.</p>
          <div style="margin-top:16px;">
-           <button class="btn btn-primary" onclick="switchView('home')">Start Today's Workout ➔</button>
+           <button class="btn btn-primary" onclick="switchView('home')">Start Today's Workout ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</button>
          </div>
        </div>`
     : sessions.map(s => {
@@ -2688,13 +2754,13 @@ function renderHistoryListView() {
                 <h3 class="history-session-title">${s.routine_name} <span class="badge badge-reps">Level ${s.level}</span></h3>
                 <span class="history-session-date mono">${dateStr}</span>
               </div>
-              <span class="badge badge-duration">✓ ${s.status}</span>
+              <span class="badge badge-duration">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} ${s.status}</span>
             </div>
             <div class="history-session-metrics">
               <div class="history-metric-badge"><span>Duration:</span> <strong>${durMin} min</strong></div>
               <div class="history-metric-badge"><span>Sets Done:</span> <strong>${s.completed_sets}/${s.total_sets || s.completed_sets}</strong></div>
               <div style="margin-left:auto; color:var(--accent); font-size:13px; font-weight:600;">
-                View Breakdown ➔
+                View Breakdown ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}
               </div>
             </div>
           </div>`;
@@ -2794,7 +2860,7 @@ function renderSessionDetailView() {
             <h1 class="today-hero-title">${detail.routine_name} <span class="badge badge-reps">Level ${detail.level}</span></h1>
             <p style="color:var(--text-muted); font-size:13px; margin:4px 0 0 0;">${dateStr}</p>
           </div>
-          <span class="today-status-badge today-status-done">✓ Finished</span>
+          <span class="today-status-badge today-status-done">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} Finished</span>
         </div>
 
         <div class="today-hero-metrics">
@@ -2875,7 +2941,7 @@ async function handleCreateSplit(event) {
   try {
     const created = await api('POST', '/splits', payload);
     state.showCreateSplitModal = false;
-    showToast(`Created Split "${created.name}" ✓`);
+    showToast(`Created Split "${created.name}"`);
     await loadSplits();
     state.selectedSplitId = created.id;
     await loadSplitDetail(created.id);
@@ -2895,7 +2961,7 @@ async function selectSplit(splitId) {
 async function activateSplit(splitId) {
   try {
     await api('PUT', `/splits/${splitId}`, { is_active: 1 });
-    showToast('Split set as Active ⭐');
+    showToast('Split set as Active');
     await loadSplits();
     await loadTodayResolved();
     render();
@@ -2949,7 +3015,7 @@ async function handleSaveScheduleDay(event, splitId, dayIndex) {
       workout_id: workoutId
     });
     state.editingDayIndex = null;
-    showToast('Schedule day updated ✓');
+    showToast('Schedule day updated');
     await loadSplitDetail(splitId);
     await loadTodayResolved();
     render();
@@ -2990,7 +3056,7 @@ async function handleCreateWorkout(event) {
   try {
     const created = await api('POST', '/workouts', payload);
     state.showCreateWorkoutModal = false;
-    showToast(`Created Workout "${created.name}" ✓`);
+    showToast(`Created Workout "${created.name}"`);
     await loadWorkouts();
     state.selectedWorkoutId = created.id;
     await loadWorkoutDetail(created.id);
@@ -3003,7 +3069,7 @@ async function handleCreateWorkout(event) {
 async function handleDuplicateWorkout(workoutId) {
   try {
     const dup = await api('POST', `/workouts/${workoutId}/duplicate`);
-    showToast(`Duplicated into "${dup.name}" ✓`);
+    showToast(`Duplicated into "${dup.name}"`);
     await loadWorkouts();
     state.selectedWorkoutId = dup.id;
     await loadWorkoutDetail(dup.id);
@@ -3120,7 +3186,7 @@ async function handleSaveWorkout(event, workoutId) {
       description: desc,
       exercises
     });
-    showToast('Workout saved successfully ✓');
+    showToast('Workout saved successfully');
     await loadWorkouts();
     await loadWorkoutDetail(workoutId);
     await loadTodayResolved();
@@ -3274,7 +3340,7 @@ function pauseWorkoutSession() {
     _workoutTimerInterval = null;
   }
   saveActiveSession(session);
-  showToast('Workout Paused ⏸');
+  showToast('Workout Paused');
   render();
 }
 
@@ -3287,7 +3353,7 @@ function resumeWorkoutSession() {
   session.pausedAt = null;
   saveActiveSession(session);
   startWorkoutDurationTimer();
-  showToast('Workout Resumed ▶');
+  showToast('Workout Resumed');
   render();
 }
 
@@ -3322,7 +3388,7 @@ function getNextSetDescription(session, exIdx, setIdx) {
     const nextEx = session.exercises[exIdx + 1];
     return `Next: Set 1 · ${nextEx.exercise_name}`;
   } else {
-    return 'Next: Workout Finish 🏁';
+    return 'Next: Workout Finish';
   }
 }
 
@@ -3354,7 +3420,7 @@ function startWorkoutHold(exIdx, setIdx) {
     const btn = document.getElementById(`workout-hold-btn-${exIdx}-${setIdx}`);
     const input = document.getElementById(`workout-set-actual-${exIdx}-${setIdx}`);
     if (btn) {
-      btn.innerHTML = `⏹ Stop (${fmtSecs(elapsed)})`;
+      btn.innerHTML = `${renderIcon('stop', 'cx-icon cx-icon-inline cx-icon-sm')} Stop (${fmtSecs(elapsed)})`;
     }
     if (input) {
       input.value = elapsed;
@@ -3431,7 +3497,7 @@ function startWorkoutRest(sec, nextInfo = '') {
     if (_workoutRestState.remaining <= 0) {
       cueRestEnd();
       stopWorkoutRest();
-      showToast('Rest complete! Ready for next set 🔥');
+      showToast('Rest complete! Ready for next set');
     }
   }, 1000);
 
@@ -3596,7 +3662,7 @@ async function finishWorkoutSession() {
     _workoutTimerInterval = null;
   }
 
-  showToast(`Workout Complete! 🏆 ${completedSets}/${totalSets} sets done (${Math.round(durationSec / 60)}m)`);
+  showToast(`Workout Complete! ${completedSets}/${totalSets} sets done (${Math.round(durationSec / 60)}m)`);
   state.view = 'dashboard';
   window.location.hash = 'dashboard';
   await loadDashboardSummary();
@@ -3636,7 +3702,7 @@ async function promoteProgression(exerciseId, nextId) {
     }
     await loadLevel();
     await loadExercises();
-    showToast('Progression advanced in Routine! 🚀');
+    showToast('Progression advanced in Routine!');
     render();
   } catch (e) {
     showToast(`Promotion error: ${e.message}`, true);
@@ -3656,14 +3722,14 @@ function renderActiveWorkoutView() {
           <p class="view-subtitle">Live athlete-first set tracker with rest timer and audio cues.</p>
         </div>
         <div class="card" style="padding:48px 24px; text-align:center;">
-          <span style="font-size:36px; display:block; margin-bottom:12px;">⚡</span>
+          <span style="display:block; margin-bottom:12px;">${renderIcon('zap', 'cx-icon cx-icon-2xl cx-icon-accent')}</span>
           <h3 style="font-size:18px; font-weight:700; color:var(--text); margin-bottom:6px;">No workout running right now</h3>
           <p style="color:var(--text-muted); font-size:13px; max-width:380px; margin:0 auto 20px;">
             ${todayWorkout ? `Today's scheduled workout is <strong>${todayWorkout.name}</strong>.` : 'Start a training session from your weekly split.'}
           </p>
           <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
-            <button class="btn btn-primary" onclick="startWorkoutFromResolved()">⚡ Start Today's Workout ➔</button>
-            <button class="btn btn-secondary" onclick="switchView('split')">📅 View My Split</button>
+            <button class="btn btn-primary" onclick="startWorkoutFromResolved()">${renderIcon('zap', 'cx-icon cx-icon-inline')} Start Today's Workout ${renderIcon('arrowRight', 'cx-icon cx-icon-sm')}</button>
+            <button class="btn btn-secondary" onclick="switchView('split')">${renderIcon('calendar', 'cx-icon cx-icon-inline')} View My Split</button>
           </div>
         </div>
       </div>`;
@@ -3727,7 +3793,7 @@ function renderActiveWorkoutView() {
         <span class="runner-set-badge">SET ${activeSet.set_num} OF ${activeEx.sets.length}</span>
       </div>
 
-      ${activeEx.notes ? `<div class="workout-ex-notes" style="margin-bottom:16px;">💡 ${activeEx.notes}</div>` : ''}
+      ${activeEx.notes ? `<div class="workout-ex-notes" style="margin-bottom:16px;">${renderIcon('lightbulb', 'cx-icon cx-icon-inline cx-icon-gold')} ${activeEx.notes}</div>` : ''}
 
       <div class="runner-benchmarks-row">
         <div class="runner-benchmark-box">
@@ -3746,11 +3812,11 @@ function renderActiveWorkoutView() {
           <div style="width:100%;">
             ${isThisHoldRunning ? `
               <button class="runner-hold-btn-lg running" onclick="stopWorkoutHold(true)">
-                ⏹ Stop Stopwatch (${fmtSecs(_workoutHoldState.elapsed)})
+                ${renderIcon('stop', 'cx-icon cx-icon-inline cx-icon-sm')} Stop Stopwatch (${fmtSecs(_workoutHoldState.elapsed)})
               </button>
             ` : `
               <button class="runner-hold-btn-lg" ${isPaused ? 'disabled' : ''} onclick="startWorkoutHold(${activeExIdx}, ${activeSetIdx})">
-                ⏱ Start Hold Stopwatch
+                ${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-sm')} Start Hold Stopwatch
               </button>
             `}
             <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:12px;">
@@ -3773,13 +3839,13 @@ function renderActiveWorkoutView() {
 
       <!-- Dominant Complete CTA -->
       <button class="runner-complete-btn-lg" ${isPaused ? 'disabled' : ''} onclick="toggleWorkoutSet(${activeExIdx}, ${activeSetIdx})">
-        ✓ COMPLETE SET ${activeSet.set_num}
+        ${renderIcon('check', 'cx-icon cx-icon-inline')} COMPLETE SET ${activeSet.set_num}
       </button>
 
       <!-- Expandable Secondary Drawer (Weight, RPE, Notes) -->
       <details style="margin-top:16px;">
         <summary class="runner-drawer-toggle">
-          <span>⚙ Optional Details (+Kg, RPE, Notes)</span>
+          <span>${renderIcon('settings', 'cx-icon cx-icon-inline cx-icon-sm')} Optional Details (+Kg, RPE, Notes)</span>
         </summary>
         <div class="runner-drawer-content">
           <div class="form-group">
@@ -3805,13 +3871,13 @@ function renderActiveWorkoutView() {
   // Rest Countdown Box if active
   const restCountdownHtml = _workoutRestState.active ? `
     <div class="runner-rest-box">
-      <span class="workout-rest-pill" style="margin-bottom:6px;">⏱ REST TIMER ACTIVE</span>
+      <span class="workout-rest-pill" style="margin-bottom:6px;">${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-xs')} REST TIMER ACTIVE</span>
       <div class="runner-rest-num">${fmtSecs(_workoutRestState.remaining)}</div>
       <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">${_workoutRestState.nextInfo}</div>
       <div style="display:flex; justify-content:center; gap:8px;">
         <button class="workout-rest-adjust-btn" onclick="adjustWorkoutRest(-15)">-15s</button>
         <button class="workout-rest-adjust-btn" onclick="adjustWorkoutRest(15)">+15s</button>
-        <button class="workout-skip-rest-btn" onclick="stopWorkoutRest()">Skip Rest ➔</button>
+        <button class="workout-skip-rest-btn" onclick="stopWorkoutRest()">Skip Rest ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</button>
       </div>
     </div>` : '';
 
@@ -3827,7 +3893,7 @@ function renderActiveWorkoutView() {
           <div style="display:flex; align-items:center; gap:8px;">
             <span class="mono" style="color:var(--text-muted); font-size:12px;">#${String(exIdx + 1).padStart(2, '0')}</span>
             <strong style="color:var(--text); font-size:14px;">${ex.exercise_name}</strong>
-            ${isDone ? '<span class="workout-done-badge">✓ Done</span>' : ''}
+            ${isDone ? `<span class="workout-done-badge">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} Done</span>` : ''}
           </div>
           <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
             ${ex.sets.length} sets × ${ex.sets[0]?.target_val}${ex.exercise_type === 'duration' ? 's hold' : ' reps'}
@@ -3844,14 +3910,14 @@ function renderActiveWorkoutView() {
       <div class="runner-top-bar">
         <button class="btn btn-secondary btn-sm" onclick="switchView('home')">← Leave</button>
         <div class="runner-timer-pill mono" id="workout-elapsed-time">
-          ⏱ ${fmtSecs(elapsedSec)} ${isPaused ? '⏸' : ''}
+          ${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-sm')} ${fmtSecs(elapsedSec)} ${isPaused ? `(${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')})` : ''}
         </div>
         <div style="display:flex; gap:8px;">
           ${isPaused
-            ? `<button class="btn btn-sm btn-primary" onclick="resumeWorkoutSession()">▶ Resume</button>`
-            : `<button class="btn btn-sm btn-secondary" onclick="pauseWorkoutSession()">⏸ Pause</button>`
+            ? `<button class="btn btn-sm btn-primary" onclick="resumeWorkoutSession()">${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} Resume</button>`
+            : `<button class="btn btn-sm btn-secondary" onclick="pauseWorkoutSession()">${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} Pause</button>`
           }
-          <button class="btn btn-sm btn-primary" onclick="finishWorkoutSession()">Finish 🏁</button>
+          <button class="btn btn-sm btn-primary" onclick="finishWorkoutSession()">Finish ${renderIcon('flag', 'cx-icon cx-icon-xs cx-icon-inline')}</button>
         </div>
       </div>
 
@@ -3922,7 +3988,7 @@ function renderProgressView() {
   let insightText = 'Log a few more workouts to unlock explainable performance insights.';
   if (stats && stats.pct !== null) {
     if (stats.pct > 0) {
-      insightText = `🔥 Great progress! Your ${mode === 'best' ? 'best performance' : 'training volume'} improved by +${stats.pct}% over the last 2 weeks.`;
+      insightText = `Great progress! Your ${mode === 'best' ? 'best performance' : 'training volume'} improved by +${stats.pct}% over the last 2 weeks.`;
     } else if (stats.pct === 0) {
       insightText = `Consistent baseline! Performance is stable across your recorded sessions.`;
     } else {
@@ -3932,7 +3998,7 @@ function renderProgressView() {
 
   const insightBoxHtml = `
     <div style="background:rgba(124,106,247,0.08); border:1px solid rgba(124,106,247,0.25); border-radius:var(--radius); padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:12px;">
-      <span style="font-size:22px;">💡</span>
+      <span>${renderIcon('lightbulb', 'cx-icon cx-icon-lg cx-icon-gold')}</span>
       <div style="font-size:13px; color:var(--text);">${insightText}</div>
     </div>`;
 
@@ -3978,6 +4044,566 @@ function renderProgressView() {
     </div>`;
 }
 
+
+// ─── Dedicated PRs (Personal Records) View ──────────────────────────────────
+function setPrsFilter(filter) {
+  state.prsFilter = filter;
+  render();
+}
+
+function setPrsSearch(query) {
+  state.prsSearchQuery = (query || '').toLowerCase().trim();
+  render();
+}
+
+function renderPrsView() {
+  const records = state.dashboardRecords || [];
+
+  const totalPrs = records.length;
+  let maxRepsRecord = null;
+  let maxDurationRecord = null;
+  let maxWeightRecord = null;
+
+  records.forEach(r => {
+    if (r.max_reps && (!maxRepsRecord || r.max_reps > maxRepsRecord.max_reps)) {
+      maxRepsRecord = r;
+    }
+    if (r.max_duration_sec && (!maxDurationRecord || r.max_duration_sec > maxDurationRecord.max_duration_sec)) {
+      maxDurationRecord = r;
+    }
+    if (r.max_weight_kg && (!maxWeightRecord || r.max_weight_kg > maxWeightRecord.max_weight_kg)) {
+      maxWeightRecord = r;
+    }
+  });
+
+  let filtered = records;
+  if (state.prsFilter === 'reps') {
+    filtered = filtered.filter(r => r.max_reps > 0);
+  } else if (state.prsFilter === 'hold') {
+    filtered = filtered.filter(r => r.max_duration_sec > 0);
+  } else if (state.prsFilter === 'weight') {
+    filtered = filtered.filter(r => r.max_weight_kg > 0);
+  }
+
+  if (state.prsSearchQuery) {
+    filtered = filtered.filter(r => (r.exercise_name || '').toLowerCase().includes(state.prsSearchQuery));
+  }
+
+  const statCardsHtml = `
+    <div class="prs-stats-strip">
+      <div class="home-metric-card">
+        <div class="home-metric-top">
+          <span class="home-metric-lbl">Total PRs</span>
+          <div class="home-metric-icon">${renderIcon('trophy', 'cx-icon cx-icon-lg cx-icon-gold')}</div>
+        </div>
+        <div class="home-metric-val">${totalPrs}</div>
+        <div class="home-metric-sub">Across active exercises</div>
+      </div>
+
+      <div class="home-metric-card">
+        <div class="home-metric-top">
+          <span class="home-metric-lbl">Max Rep Record</span>
+          <div class="home-metric-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-lg cx-icon-success')}</div>
+        </div>
+        <div class="home-metric-val">${maxRepsRecord ? `${maxRepsRecord.max_reps} reps` : '—'}</div>
+        <div class="home-metric-sub" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${maxRepsRecord?.exercise_name || 'No rep records'}</div>
+      </div>
+
+      <div class="home-metric-card">
+        <div class="home-metric-top">
+          <span class="home-metric-lbl">Longest Static Hold</span>
+          <div class="home-metric-icon">${renderIcon('timer', 'cx-icon cx-icon-lg cx-icon-accent')}</div>
+        </div>
+        <div class="home-metric-val">${maxDurationRecord ? `${maxDurationRecord.max_duration_sec}s` : '—'}</div>
+        <div class="home-metric-sub" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${maxDurationRecord?.exercise_name || 'No hold records'}</div>
+      </div>
+
+      <div class="home-metric-card">
+        <div class="home-metric-top">
+          <span class="home-metric-lbl">Top Added Weight</span>
+          <div class="home-metric-icon">${renderIcon('dumbbell', 'cx-icon cx-icon-lg cx-icon-fire')}</div>
+        </div>
+        <div class="home-metric-val">${maxWeightRecord ? `+${maxWeightRecord.max_weight_kg}kg` : '—'}</div>
+        <div class="home-metric-sub" style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${maxWeightRecord?.exercise_name || 'Bodyweight'}</div>
+      </div>
+    </div>`;
+
+  const prGridHtml = filtered.length === 0
+    ? `<div class="empty-state" style="padding:48px 20px;">
+         <p>${records.length === 0 ? 'No personal records logged yet. Complete a workout session to log your first all-time best!' : 'No personal records match the current filter.'}</p>
+         <div style="margin-top:16px;">
+           <button class="btn btn-primary" onclick="switchView('home')">${renderIcon('zap', 'cx-icon cx-icon-inline')} Start Today's Workout</button>
+         </div>
+       </div>`
+    : `<div class="prs-grid">
+        ${filtered.map(r => {
+          const ex = getExercise(r.exercise_id);
+          const isHold = ex?.type === 'duration';
+
+          let primaryVal = '—';
+          if (isHold && r.max_duration_sec) {
+            primaryVal = `${r.max_duration_sec}s Hold`;
+          } else if (r.max_reps) {
+            primaryVal = `${r.max_reps} Reps`;
+          } else if (r.max_weight_kg) {
+            primaryVal = `+${r.max_weight_kg}kg`;
+          }
+
+          const repBadge = r.max_reps ? `<span class="badge badge-reps mono">${r.max_reps} reps</span>` : '';
+          const holdBadge = r.max_duration_sec ? `<span class="badge badge-duration mono">${r.max_duration_sec}s hold</span>` : '';
+          const weightBadge = r.max_weight_kg ? `<span class="badge" style="background:rgba(234,179,8,0.15); color:#eab308; font-family:var(--mono);">+${r.max_weight_kg}kg</span>` : '';
+
+          return `
+            <div class="pr-card">
+              <div>
+                <div class="pr-card-top">
+                  <div>
+                    <h3 class="pr-card-title">${r.exercise_name}</h3>
+                    <span class="pr-card-routine">${ex?.day || 'Calisthenics'} Routine</span>
+                  </div>
+                  <div class="pr-card-trophy">
+                    ${renderIcon('trophy', 'cx-icon cx-icon-sm cx-icon-gold')}
+                  </div>
+                </div>
+
+                <div class="pr-card-values" style="margin-top:14px;">
+                  <div class="pr-card-primary-val">${primaryVal}</div>
+                  <div class="pr-card-sub-vals">
+                    ${repBadge}
+                    ${holdBadge}
+                    ${weightBadge}
+                  </div>
+                </div>
+              </div>
+
+              <div class="pr-card-actions">
+                <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="openHistoryView(${r.exercise_id})">
+                  ${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} Trend
+                </button>
+                <button class="btn btn-primary btn-sm" style="flex:1;" onclick="openLogView(${r.exercise_id})">
+                  ${renderIcon('edit', 'cx-icon cx-icon-xs cx-icon-inline')} Log Set
+                </button>
+              </div>
+            </div>`;
+        }).join('')}
+       </div>`;
+
+  return `
+    <div class="prs-container">
+      <div class="view-header">
+        <h1 class="view-title">Personal Records & Bests</h1>
+        <p class="view-subtitle">Track your all-time heaviest weights, highest reps, and longest static holds.</p>
+      </div>
+
+      ${statCardsHtml}
+
+      <div class="prs-filter-row">
+        <div class="prs-filter-pills">
+          <button class="prs-filter-btn ${state.prsFilter === 'all' ? 'active' : ''}" onclick="setPrsFilter('all')">All Records</button>
+          <button class="prs-filter-btn ${state.prsFilter === 'reps' ? 'active' : ''}" onclick="setPrsFilter('reps')">Rep Records</button>
+          <button class="prs-filter-btn ${state.prsFilter === 'hold' ? 'active' : ''}" onclick="setPrsFilter('hold')">Static Holds</button>
+          <button class="prs-filter-btn ${state.prsFilter === 'weight' ? 'active' : ''}" onclick="setPrsFilter('weight')">Weighted (+Kg)</button>
+        </div>
+
+        <div style="min-width:220px;">
+          <input type="text" class="form-input" style="padding:6px 12px; font-size:12px;" placeholder="Search PR exercise..." value="${state.prsSearchQuery || ''}" oninput="setPrsSearch(this.value)" />
+        </div>
+      </div>
+
+      ${prGridHtml}
+    </div>`;
+}
+
+// ─── Dedicated Training Calendar View ───────────────────────────────────────
+function prevCalendarMonth() {
+  if (state.calendarMonth === 0) {
+    state.calendarMonth = 11;
+    state.calendarYear -= 1;
+  } else {
+    state.calendarMonth -= 1;
+  }
+  render();
+}
+
+function nextCalendarMonth() {
+  if (state.calendarMonth === 11) {
+    state.calendarMonth = 0;
+    state.calendarYear += 1;
+  } else {
+    state.calendarMonth += 1;
+  }
+  render();
+}
+
+function resetCalendarMonth() {
+  const now = new Date();
+  state.calendarYear = now.getFullYear();
+  state.calendarMonth = now.getMonth();
+  state.selectedCalendarDate = todayISO();
+  render();
+}
+
+function selectCalendarDate(dateStr) {
+  state.selectedCalendarDate = dateStr;
+  render();
+}
+
+function renderCalendarView() {
+  const year = state.calendarYear ?? new Date().getFullYear();
+  const month = state.calendarMonth ?? new Date().getMonth();
+  const todayStr = todayISO();
+  const selectedDateStr = state.selectedCalendarDate || todayStr;
+
+  const monthName = MONTH_NAMES[month];
+  const firstDayOfMonth = new Date(year, month, 1);
+  const lastDayOfMonth = new Date(year, month + 1, 0);
+  const daysInMonth = lastDayOfMonth.getDate();
+
+  let startDayOfWeek = firstDayOfMonth.getDay() - 1;
+  if (startDayOfWeek === -1) startDayOfWeek = 6;
+
+  const prevMonthLastDay = new Date(year, month, 0).getDate();
+  const calendarCells = [];
+
+  for (let i = startDayOfWeek - 1; i >= 0; i--) {
+    calendarCells.push({
+      dayNum: prevMonthLastDay - i,
+      isCurrentMonth: false,
+      dateStr: null
+    });
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    calendarCells.push({
+      dayNum: d,
+      isCurrentMonth: true,
+      dateStr: dateStr
+    });
+  }
+
+  const remaining = (7 - (calendarCells.length % 7)) % 7;
+  for (let d = 1; d <= remaining; d++) {
+    calendarCells.push({
+      dayNum: d,
+      isCurrentMonth: false,
+      dateStr: null
+    });
+  }
+
+  const sessionsByDate = {};
+  (state.workoutSessions || []).forEach(s => {
+    const datePart = (s.completed_at || s.started_at || '').substring(0, 10);
+    if (datePart) {
+      if (!sessionsByDate[datePart]) sessionsByDate[datePart] = [];
+      sessionsByDate[datePart].push(s);
+    }
+  });
+
+  const activeSplit = (state.splits || []).find(s => s.is_active === 1) || (state.splits || [])[0];
+  const scheduleMap = {};
+  if (activeSplit && activeSplit.schedule) {
+    activeSplit.schedule.forEach(item => {
+      scheduleMap[item.day_of_week] = item;
+    });
+  }
+
+  let monthlyCompletedCount = 0;
+  Object.keys(sessionsByDate).forEach(dStr => {
+    if (dStr.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`)) {
+      monthlyCompletedCount += sessionsByDate[dStr].length;
+    }
+  });
+
+  const cellsHtml = calendarCells.map(cell => {
+    if (!cell.isCurrentMonth || !cell.dateStr) {
+      return `<div class="calendar-day-cell other-month"><span class="calendar-day-num">${cell.dayNum}</span></div>`;
+    }
+
+    const dObj = new Date(cell.dateStr + 'T12:00:00');
+    let dayOfWeek = dObj.getDay() - 1;
+    if (dayOfWeek === -1) dayOfWeek = 6;
+
+    const isToday = cell.dateStr === todayStr;
+    const isSelected = cell.dateStr === selectedDateStr;
+    const completedList = sessionsByDate[cell.dateStr] || [];
+    const hasCompleted = completedList.length > 0;
+    const sched = scheduleMap[dayOfWeek];
+
+    let badgeHtml = '';
+    if (hasCompleted) {
+      const topSession = completedList[0];
+      badgeHtml = `<div class="calendar-day-badge calendar-day-badge-done">
+                     ${renderIcon('check', 'cx-icon cx-icon-xs')} ${topSession.routine_name}
+                   </div>`;
+    } else if (sched) {
+      if (sched.day_type === 'workout' && sched.workout_name) {
+        badgeHtml = `<div class="calendar-day-badge calendar-day-badge-workout">${sched.workout_name}</div>`;
+      } else {
+        badgeHtml = `<div class="calendar-day-badge calendar-day-badge-rest">Rest</div>`;
+      }
+    }
+
+    return `
+      <div class="calendar-day-cell ${isToday ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''} ${hasCompleted ? 'has-completed' : ''}" onclick="selectCalendarDate('${cell.dateStr}')">
+        <div class="calendar-day-top">
+          <span class="calendar-day-num">${cell.dayNum}</span>
+          ${isToday ? `<span class="calendar-day-today-tag">TODAY</span>` : ''}
+        </div>
+        ${badgeHtml}
+      </div>`;
+  }).join('');
+
+  const selDateObj = new Date(selectedDateStr + 'T12:00:00');
+  const selDateFormatted = isNaN(selDateObj.getTime())
+    ? selectedDateStr
+    : selDateObj.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  let selDayOfWeek = selDateObj.getDay() - 1;
+  if (selDayOfWeek === -1) selDayOfWeek = 6;
+  const selSched = scheduleMap[selDayOfWeek];
+  const selCompleted = sessionsByDate[selectedDateStr] || [];
+
+  let selectedDayContent = '';
+  if (selCompleted.length > 0) {
+    selectedDayContent = `
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        ${selCompleted.map(s => `
+          <div style="background:var(--surface-2); border:1px solid rgba(34,197,94,0.3); border-radius:var(--radius); padding:16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <h3 style="font-size:16px; font-weight:700; color:#ffffff;">${s.routine_name}</h3>
+                <span class="badge badge-reps">Level ${s.level}</span>
+                <span class="badge badge-duration">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} ${s.status}</span>
+              </div>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                Duration: ${Math.round((s.duration_sec || 0) / 60)} mins · Total Sets: ${s.completed_sets || 0} completed
+              </div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="openSessionDetailView('${s.session_uuid}')">
+              View Breakdown ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}
+            </button>
+          </div>
+        `).join('')}
+      </div>`;
+  } else if (selSched && selSched.day_type === 'workout' && selSched.workout_id) {
+    const workout = (state.workouts || []).find(w => w.id === selSched.workout_id);
+    selectedDayContent = `
+      <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius); padding:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge" style="background:rgba(139,92,246,0.2); color:var(--accent);">${renderIcon('calendar', 'cx-icon cx-icon-xs cx-icon-inline')} Programmed</span>
+            <h3 style="font-size:16px; font-weight:700; color:#ffffff;">${selSched.workout_name || 'Assigned Workout'}</h3>
+          </div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">
+            ${workout?.description || 'Daily calisthenics training session'} · ${workout?.exercises?.length || 6} exercises programmed
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="startWorkoutFromId(${selSched.workout_id})">
+          ${renderIcon('zap', 'cx-icon cx-icon-inline')} Start This Workout ${renderIcon('arrowRight', 'cx-icon cx-icon-sm')}
+        </button>
+      </div>`;
+  } else {
+    selectedDayContent = `
+      <div style="background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius); padding:18px; display:flex; align-items:center; gap:14px;">
+        <span style="width:40px; height:40px; border-radius:50%; background:rgba(124,124,158,0.12); display:flex; align-items:center; justify-content:center;">
+          ${renderIcon('moon', 'cx-icon cx-icon-muted')}
+        </span>
+        <div>
+          <h4 style="font-size:14px; font-weight:700; color:#ffffff;">Rest & Active Recovery</h4>
+          <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">Muscular adaptations and central nervous system recovery day. Focus on hydration and mobility.</p>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="calendar-container">
+      <div class="view-header">
+        <h1 class="view-title">Training Calendar & Consistency</h1>
+        <p class="view-subtitle">Track your training frequency, completed sessions, and scheduled weekly split.</p>
+      </div>
+
+      <div class="prs-stats-strip">
+        <div class="home-metric-card">
+          <div class="home-metric-top">
+            <span class="home-metric-lbl">Monthly Workouts</span>
+            <div class="home-metric-icon">${renderIcon('calendar', 'cx-icon cx-icon-lg cx-icon-accent')}</div>
+          </div>
+          <div class="home-metric-val">${monthlyCompletedCount}</div>
+          <div class="home-metric-sub">Sessions completed in ${monthName}</div>
+        </div>
+
+        <div class="home-metric-card">
+          <div class="home-metric-top">
+            <span class="home-metric-lbl">Current Streak</span>
+            <div class="home-metric-icon">${renderIcon('flame', 'cx-icon cx-icon-lg cx-icon-fire')}</div>
+          </div>
+          <div class="home-metric-val">${state.dashboardSummary?.streak_days || 0} Days</div>
+          <div class="home-metric-sub">Daily training momentum</div>
+        </div>
+
+        <div class="home-metric-card">
+          <div class="home-metric-top">
+            <span class="home-metric-lbl">Active Split</span>
+            <div class="home-metric-icon">${renderIcon('dumbbell', 'cx-icon cx-icon-lg cx-icon-cyan')}</div>
+          </div>
+          <div class="home-metric-val" style="font-size:18px;">${activeSplit?.name || 'Push Pull Legs'}</div>
+          <div class="home-metric-sub">${activeSplit?.workout_days || 6} workout days / week</div>
+        </div>
+
+        <div class="home-metric-card">
+          <div class="home-metric-top">
+            <span class="home-metric-lbl">Total Volume</span>
+            <div class="home-metric-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-lg cx-icon-success')}</div>
+          </div>
+          <div class="home-metric-val">${state.dashboardSummary?.week_sets || 0} Sets</div>
+          <div class="home-metric-sub">This week's volume</div>
+        </div>
+      </div>
+
+      <div class="calendar-month-bar">
+        <div class="calendar-month-title">
+          ${renderIcon('calendar', 'cx-icon cx-icon-accent')}
+          <span>${monthName} ${year}</span>
+        </div>
+        <div class="calendar-month-nav">
+          <button class="btn btn-secondary btn-sm" onclick="prevCalendarMonth()">${renderIcon('chevronLeft', 'cx-icon cx-icon-xs cx-icon-inline')} Prev</button>
+          <button class="btn btn-secondary btn-sm" onclick="resetCalendarMonth()">Today</button>
+          <button class="btn btn-secondary btn-sm" onclick="nextCalendarMonth()">Next ${renderIcon('chevronRight', 'cx-icon cx-icon-xs cx-icon-inline')}</button>
+        </div>
+      </div>
+
+      <div class="calendar-grid-card">
+        <div class="calendar-weekdays-row">
+          <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+        </div>
+        <div class="calendar-days-grid">
+          ${cellsHtml}
+        </div>
+      </div>
+
+      <div class="calendar-selected-day-card">
+        <div class="calendar-selected-header">
+          <div>
+            <span style="font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase;">Selected Day</span>
+            <h2 style="font-size:18px; font-weight:700; color:#ffffff; margin-top:2px;">${selDateFormatted}</h2>
+          </div>
+        </div>
+        ${selectedDayContent}
+      </div>
+    </div>`;
+}
+
+
+// ─── Biomechanics & Technique Form Guide Modal ──────────────────────────────
+let _biomechanicsTab = 'anatomy'; // 'anatomy' | 'stages' | 'tempo' | 'grip'
+
+function setBiomechanicsTab(tab) {
+  _biomechanicsTab = tab;
+  const modalBody = document.getElementById('biomechanics-modal-body');
+  if (modalBody) {
+    modalBody.innerHTML = renderBiomechanicsTabContent(tab);
+  }
+  document.querySelectorAll('.bio-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tab);
+  });
+}
+
+function renderBiomechanicsTabContent(tab) {
+  if (tab === 'anatomy') {
+    return `
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <p style="font-size:13px; color:var(--text-muted); margin:0;">
+          Targeted muscle groups with color-coded anatomical activation lines. Green represents primary movers, cyan/amber represents secondary stabilizers, and orange/red highlights core and synergistic muscle engagement.
+        </p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
+          <div class="card" style="padding:14px; text-align:center; background:var(--surface-2);">
+            <span style="font-size:12px; font-weight:700; color:#a855f7; text-transform:uppercase; margin-bottom:8px; display:block;">Upper Body & Push / Pull Muscles</span>
+            <img src="assets/upper_anatomy.jpg" alt="Upper Body Anatomy" style="width:100%; max-height:280px; object-fit:contain; border-radius:var(--radius);" />
+          </div>
+          <div class="card" style="padding:14px; text-align:center; background:var(--surface-2);">
+            <span style="font-size:12px; font-weight:700; color:#eab308; text-transform:uppercase; margin-bottom:8px; display:block;">Lower Body & Leg Muscles</span>
+            <img src="assets/legs_anatomy.jpg" alt="Lower Body Anatomy" style="width:100%; max-height:280px; object-fit:contain; border-radius:var(--radius);" />
+          </div>
+        </div>
+      </div>`;
+  } else if (tab === 'stages') {
+    return `
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <p style="font-size:13px; color:var(--text-muted); margin:0;">
+          Step-by-step movement stages breakdown: Maintain a strict plank from head to heels, descend under control to a full hover, and push explosively through the palms while keeping elbows tucked.
+        </p>
+        <div class="card" style="padding:16px; background:var(--surface-2); text-align:center;">
+          <img src="assets/pushup_form.jpg" alt="Exercise Form Execution Stages" style="width:100%; max-height:360px; object-fit:contain; border-radius:var(--radius);" />
+        </div>
+      </div>`;
+  } else if (tab === 'tempo') {
+    return `
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <p style="font-size:13px; color:var(--text-muted); margin:0;">
+          Biomechanical tempo and posture analysis: Slower eccentric lowering (3–4s) builds maximum tendon strength and hypertrophic tension, while avoiding sagging hips or compromised spinal alignment.
+        </p>
+        <div class="card" style="padding:16px; background:var(--surface-2); text-align:center;">
+          <img src="assets/tempo_guide.jpg" alt="Tempo & Posture Standards" style="width:100%; max-height:360px; object-fit:contain; border-radius:var(--radius);" />
+        </div>
+      </div>`;
+  } else {
+    return `
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <p style="font-size:13px; color:var(--text-muted); margin:0;">
+          Hand placement & grip width comparison: Adjusting your grip alters the primary torque vector between chest pectoralis major, anterior deltoids, and triceps brachii.
+        </p>
+        <div class="card" style="padding:16px; background:var(--surface-2); text-align:center;">
+          <img src="assets/grip_guide.jpg" alt="Hand Placement Grip Width Guide" style="width:100%; max-height:360px; object-fit:contain; border-radius:var(--radius);" />
+        </div>
+      </div>`;
+  }
+}
+
+function openBiomechanicsModal() {
+  let modal = document.getElementById('biomechanics-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'biomechanics-modal';
+    modal.className = 'modal-backdrop';
+    modal.onclick = (e) => {
+      if (e.target === modal) closeBiomechanicsModal();
+    };
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="modal-card" style="max-width:820px; width:92%;" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <span style="font-size:11px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:0.1em;">Calisthenics Biomechanics</span>
+          <h2 class="modal-title" style="margin-top:2px;">Anatomy & Technique Guide</h2>
+        </div>
+        <button class="modal-close-btn" onclick="closeBiomechanicsModal()" title="Close">${renderIcon('x', 'cx-icon')}</button>
+      </div>
+
+      <div class="prs-filter-pills" style="margin:16px 0 14px;">
+        <button class="prs-filter-btn bio-tab-btn ${_biomechanicsTab === 'anatomy' ? 'active' : ''}" data-tab="anatomy" onclick="setBiomechanicsTab('anatomy')">Targeted Anatomy</button>
+        <button class="prs-filter-btn bio-tab-btn ${_biomechanicsTab === 'stages' ? 'active' : ''}" data-tab="stages" onclick="setBiomechanicsTab('stages')">Movement Stages</button>
+        <button class="prs-filter-btn bio-tab-btn ${_biomechanicsTab === 'tempo' ? 'active' : ''}" data-tab="tempo" onclick="setBiomechanicsTab('tempo')">Tempo & Posture</button>
+        <button class="prs-filter-btn bio-tab-btn ${_biomechanicsTab === 'grip' ? 'active' : ''}" data-tab="grip" onclick="setBiomechanicsTab('grip')">Grip & Placement</button>
+      </div>
+
+      <div id="biomechanics-modal-body" style="max-height:68vh; overflow-y:auto; padding-right:6px;">
+        ${renderBiomechanicsTabContent(_biomechanicsTab)}
+      </div>
+    </div>`;
+
+  modal.style.display = 'flex';
+  if (document.body && document.body.style) document.body.style.overflow = 'hidden';
+}
+
+function closeBiomechanicsModal() {
+  const modal = document.getElementById('biomechanics-modal');
+  if (modal) modal.style.display = 'none';
+  if (document.body && document.body.style) document.body.style.overflow = '';
+}
+
 // ─── Main Router & Dispatcher ────────────────────────────────────────────────
 function render() {
   const activeView = state.view;
@@ -3988,7 +4614,9 @@ function render() {
       (v === 'home' && (activeView === 'home' || activeView === 'dashboard')) ||
       (v === 'split' && (activeView === 'split' || activeView === 'routine' || activeView === 'edit')) ||
       (v === 'history_list' && (activeView === 'history_list' || activeView === 'session_detail')) ||
-      (v === 'progress' && (activeView === 'progress' || activeView === 'history'));
+      (v === 'progress' && (activeView === 'progress' || activeView === 'history')) ||
+      (v === 'prs' && activeView === 'prs') ||
+      (v === 'calendar' && activeView === 'calendar');
 
     el.classList.toggle('active', !!isActive);
   });
@@ -4019,6 +4647,12 @@ function render() {
     case 'history':
       root.innerHTML = renderProgressView();
       if (window.Chart) buildHistoryChart();
+      break;
+    case 'prs':
+      root.innerHTML = renderPrsView();
+      break;
+    case 'calendar':
+      root.innerHTML = renderCalendarView();
       break;
     case 'log':
       root.innerHTML = renderLogView();
@@ -4055,8 +4689,10 @@ function switchView(view) {
     _chartInstance = null;
   }
   window.location.hash = view;
-  if (view === 'dashboard') {
+  if (view === 'dashboard' || view === 'prs') {
     loadDashboardSummary().then(render);
+  } else if (view === 'calendar') {
+    loadWorkoutSessions().then(render);
   }
   render();
 }
@@ -4210,7 +4846,7 @@ async function exportData() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('Export downloaded ✓');
+    showToast('Export downloaded');
   } catch (e) {
     showToast(`Export failed: ${e.message}`, true);
   }
@@ -4224,7 +4860,7 @@ async function importData(inputEl) {
     try {
       const jsonContent = JSON.parse(e.target.result);
       const res = await api('POST', '/import', jsonContent);
-      showToast(`Import successful! 📥 ${res.imported_logs || 0} sets & ${res.imported_sessions || 0} sessions restored.`);
+      showToast(`Import successful! ${res.imported_logs || 0} sets & ${res.imported_sessions || 0} sessions restored.`);
       await loadDashboardSummary();
       await loadExercises();
       render();
@@ -4284,15 +4920,17 @@ function applyHash() {
       return;
     }
   }
-  const validViews = ['home', 'dashboard', 'workout', 'split', 'routine', 'edit', 'log', 'history', 'history_list', 'session_detail', 'progress'];
+  const validViews = ['home', 'dashboard', 'workout', 'split', 'routine', 'edit', 'log', 'history', 'history_list', 'session_detail', 'progress', 'prs', 'calendar'];
   state.view = validViews.includes(hash) ? hash : 'home';
 }
 
 window.addEventListener('hashchange', async () => {
   applyHash();
   state.editingId = null;
-  if (state.view === 'home' || state.view === 'dashboard') {
+  if (state.view === 'home' || state.view === 'dashboard' || state.view === 'prs') {
     loadDashboardSummary().then(render);
+  } else if (state.view === 'calendar') {
+    loadWorkoutSessions().then(render);
   }
   render();
 });
@@ -4336,7 +4974,7 @@ async function handleCreateCustomExercise(event) {
   try {
     const newEx = await api('POST', '/exercises', payload);
     await loadExercises();
-    showToast(`Created "${newEx.name}" ✓`);
+    showToast(`Created "${newEx.name}"`);
     form.reset();
     render();
   } catch (e) {
@@ -4370,7 +5008,7 @@ async function init() {
   } catch (e) {
     document.getElementById('app-root').innerHTML = `
       <div class="error-banner">
-        ⚠ Could not reach the backend at <code>${API_BASE}</code>.<br>
+        ${renderIcon('alert', 'cx-icon cx-icon-inline cx-icon-danger')} Could not reach the backend at <code>${API_BASE}</code>.<br>
         Start Flask first: <code>cd backend &amp;&amp; python app.py</code>
       </div>`;
   }

@@ -52,6 +52,41 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── SVG Icon System ───────────────────────────────────────────────────────── */
+.cx-icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+  stroke: currentColor;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: transform var(--transition), stroke var(--transition), color var(--transition);
+}
+
+.cx-icon-xs { width: 12px; height: 12px; stroke-width: 2.2; }
+.cx-icon-sm { width: 14px; height: 14px; stroke-width: 2; }
+.cx-icon-md { width: 18px; height: 18px; stroke-width: 2; }
+.cx-icon-lg { width: 22px; height: 22px; stroke-width: 1.8; }
+.cx-icon-xl { width: 28px; height: 28px; stroke-width: 1.7; }
+.cx-icon-2xl { width: 36px; height: 36px; stroke-width: 1.5; }
+
+.cx-icon-inline {
+  margin-right: 6px;
+  vertical-align: -2px;
+}
+
+.cx-icon-accent { color: var(--accent); }
+.cx-icon-success { color: var(--success); }
+.cx-icon-danger { color: var(--danger); }
+.cx-icon-gold { color: #eab308; }
+.cx-icon-fire { color: #f97316; }
+.cx-icon-cyan { color: #06b6d4; }
+.cx-icon-muted { color: var(--text-muted); }
+
 /* ── App Layout (Desktop Sidebar vs Mobile) ────────────────────────────────── */
 .app-layout {
   display: flex;
@@ -216,6 +251,9 @@ body {
   font-size: 11px;
   color: #f97316;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* ── Mobile Top Header & Bottom Nav ────────────────────────────────────────── */
@@ -2965,29 +3003,120 @@ body {
   margin: 10px 0 16px;
 }
 
+/* ── Universal Modal Backdrop with Heavy Background Blur ───────────────────── */
+.modal-backdrop,
+.biomechanics-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 4, 10, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: modalBackdropFade 180ms ease-out forwards;
+}
+
+@keyframes modalBackdropFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-card {
+  background: #0d0d16;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: var(--radius-lg);
+  max-width: 820px;
+  width: 95%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 28px;
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.88), 0 0 40px rgba(168, 85, 247, 0.22);
+  position: relative;
+  z-index: 10000;
+  animation: modalPopIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.4px;
+  margin: 0;
+}
+
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.modal-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+  transform: scale(1.08);
+}
+
 /* ── Settings Modal ───────────────────────────────────────────────────────── */
 .settings-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(8px);
-  z-index: 200;
+  background: rgba(4, 4, 10, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
 }
 .settings-modal {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: #0d0d16;
+  border: 1px solid rgba(168, 85, 247, 0.35);
   border-radius: var(--radius-lg);
   max-width: 500px;
   width: 100%;
   padding: 24px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
   display: flex;
   flex-direction: column;
   gap: 20px;
+  animation: modalPopIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -3253,10 +3382,9 @@ body {
 
 .home-hero-visual-wrap {
   position: absolute;
-  right: -10px;
-  top: 0;
-  bottom: 0;
-  width: 50%;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   overflow: hidden;
   display: flex;
@@ -3266,12 +3394,13 @@ body {
 }
 
 .home-hero-img {
-  height: 110%;
-  object-fit: contain;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   object-position: right center;
-  mask-image: linear-gradient(to left, rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 0) 100%);
-  -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 1) 50%, rgba(0, 0, 0, 0) 100%);
-  filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.3));
+  mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.2) 22%, rgba(0, 0, 0, 0.85) 55%, rgba(0, 0, 0, 1) 100%);
+  -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.2) 22%, rgba(0, 0, 0, 0.85) 55%, rgba(0, 0, 0, 1) 100%);
+  filter: drop-shadow(0 0 25px rgba(234, 179, 8, 0.25));
   transition: transform 120ms ease-out;
 }
 
@@ -3280,8 +3409,7 @@ body {
     max-width: 100%;
   }
   .home-hero-visual-wrap {
-    opacity: 0.22;
-    width: 70%;
+    opacity: 0.35;
   }
   .home-hero-title {
     font-size: 28px;
@@ -3289,6 +3417,68 @@ body {
   .home-hero-btn {
     width: 100%;
   }
+}
+
+/* ── Current Streak Card (Matching User Reference Image) ────────────────────── */
+.home-streak-card {
+  background: var(--surface);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 0 24px rgba(249, 115, 22, 0.06);
+  transition: all var(--transition);
+}
+
+.home-streak-card:hover {
+  border-color: rgba(249, 115, 22, 0.55);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 20px rgba(249, 115, 22, 0.2);
+}
+
+.home-streak-card-tag {
+  font-size: 11px;
+  font-weight: 800;
+  color: #f97316;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: block;
+}
+
+.home-streak-card-val-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.home-streak-card-days {
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.5px;
+}
+
+.home-streak-card-sub {
+  font-size: 13px;
+  color: #a1a1c2;
+  margin-top: 2px;
+}
+
+.home-streak-graph-wrap {
+  margin-top: 10px;
+  width: 100%;
+  height: 52px;
+}
+
+.home-streak-graph-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 
 /* ── Side Column (Weekly Progress + Muscle Focus) ─────────────────────────── */
@@ -3924,4 +4114,448 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Dedicated Personal Records (PRs) View ────────────────────────────────── */
+.prs-container, .calendar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.prs-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 900px) {
+  .prs-stats-strip { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 500px) {
+  .prs-stats-strip { grid-template-columns: 1fr; }
+}
+
+.prs-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.prs-filter-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.prs-filter-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.prs-filter-btn:hover, .prs-filter-btn.active {
+  color: #ffffff;
+  background: var(--surface-2);
+  border-color: var(--accent);
+}
+
+.prs-filter-btn.active {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: var(--accent);
+}
+
+.prs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.pr-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.pr-card:hover {
+  border-color: rgba(234, 179, 8, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.pr-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pr-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.pr-card-routine {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.pr-card-trophy {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pr-card-values {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pr-card-primary-val {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 800;
+  color: #eab308;
+}
+
+.pr-card-sub-vals {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pr-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ── Dedicated Training Calendar View ─────────────────────────────────────── */
+.calendar-month-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.calendar-month-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-month-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.calendar-grid-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.calendar-weekdays-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.calendar-day-cell {
+  min-height: 84px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+}
+
+.calendar-day-cell:hover {
+  border-color: var(--accent);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.calendar-day-cell.other-month {
+  opacity: 0.25;
+}
+
+.calendar-day-cell.is-today {
+  border-color: var(--accent);
+  box-shadow: 0 0 14px var(--accent-glow);
+  background: rgba(139, 92, 246, 0.15);
+}
+
+.calendar-day-cell.is-selected {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.calendar-day-cell.has-completed {
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.calendar-day-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.calendar-day-num {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.calendar-day-today-tag {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.calendar-day-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  margin-top: 4px;
+}
+
+.calendar-day-badge-workout {
+  background: rgba(139, 92, 246, 0.2);
+  color: var(--accent);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.calendar-day-badge-done {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.calendar-day-badge-rest {
+  background: rgba(124, 124, 158, 0.12);
+  color: var(--text-muted);
+}
+
+.calendar-selected-day-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.calendar-selected-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .calendar-day-cell { min-height: 60px; padding: 4px 6px; }
+  .calendar-day-badge { font-size: 9px; padding: 1px 3px; }
+}
+
+/* ── Sidebar Cyber Visual & Badges ───────────────────────────────────────── */
+.sidebar-visual-wrap {
+  margin: 14px 0 6px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.sidebar-visual-img {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--transition);
+}
+
+.sidebar-visual-wrap:hover .sidebar-visual-img {
+  transform: scale(1.05);
+}
+
+.sidebar-visual-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.1) 0%, rgba(9, 9, 16, 0.6) 100%);
+  pointer-events: none;
+}
+
+.sidebar-athlete-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a855f7;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin: 1px 0;
+}
+
+/* ── Stronger Than Yesterday Banner ───────────────────────────────────────── */
+.home-stronger-card {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  background: #090910;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(139, 92, 246, 0.15);
+  transition: all var(--transition);
+}
+
+.home-stronger-card:hover {
+  border-color: rgba(168, 85, 247, 0.6);
+  box-shadow: 0 10px 30px rgba(139, 92, 246, 0.25);
+}
+
+.home-stronger-bg-wrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.home-stronger-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: left center;
+  opacity: 0.85;
+}
+
+.home-stronger-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(9, 9, 16, 0.1) 0%, rgba(9, 9, 16, 0.8) 60%, rgba(9, 9, 16, 0.95) 100%);
+}
+
+.home-stronger-content {
+  position: relative;
+  z-index: 2;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.home-stronger-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 12px rgba(168, 85, 247, 0.8);
+}
+
+.home-stronger-sub {
+  font-size: 11px;
+  font-weight: 700;
+  color: #c4b5fd;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.home-pulse-svg {
+  width: 44px;
+  height: 14px;
+}
+
+/* ── Anatomy Diagram in Muscle Focus ──────────────────────────────────────── */
+.home-muscle-body-wrap {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 0;
+}
+
+.home-muscle-anatomy-img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: var(--radius);
+  filter: drop-shadow(0 0 14px rgba(168, 85, 247, 0.2));
+  transition: transform var(--transition);
+}
+
+.home-muscle-card:hover .home-muscle-anatomy-img {
+  transform: scale(1.02);
+}
+
+
 
