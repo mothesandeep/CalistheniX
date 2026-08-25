@@ -931,34 +931,39 @@ function setMuscleBodyView(view) {
   });
 }
 
-function renderMuscleBodySvg(view, muscles) {
-  const activeList = view === 'front' ? (muscles.frontMuscles || []) : (muscles.backMuscles || []);
+function renderDualMuscleBodySvg(muscles) {
+  const frontList = muscles.frontMuscles || [];
+  const backList = muscles.backMuscles || [];
 
-  const isChest = activeList.includes('chest');
-  const isShoulders = activeList.includes('shoulders');
-  const isBiceps = activeList.includes('biceps');
-  const isAbs = activeList.includes('abs');
-  const isQuads = activeList.includes('quads');
+  const isChest = frontList.includes('chest');
+  const isShoulders = frontList.includes('shoulders');
+  const isBiceps = frontList.includes('biceps');
+  const isAbs = frontList.includes('abs');
+  const isQuads = frontList.includes('quads');
 
-  const isUpperBack = activeList.includes('upper_back') || activeList.includes('lats');
-  const isGlutes = activeList.includes('glutes');
-  const isHamstrings = activeList.includes('hamstrings');
-  const isCalves = activeList.includes('calves');
+  const isUpperBack = backList.includes('upper_back') || backList.includes('lats');
+  const isGlutes = backList.includes('glutes');
+  const isHamstrings = backList.includes('hamstrings');
+  const isCalves = backList.includes('calves');
 
-  const activeColor = '#8b5cf6';
+  const activeColor = '#a855f7';
   const glowFilter = 'filter="url(#muscleGlow)"';
-  const baseColor = '#1c1c2c';
-  const strokeColor = 'rgba(255, 255, 255, 0.18)';
+  const baseColor = '#1c182a';
+  const strokeColor = 'rgba(168, 85, 247, 0.25)';
 
-  if (view === 'front') {
-    return `
+  const defs = `
+    <defs>
+      <filter id="muscleGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="2.5" result="blur" />
+        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+      </filter>
+    </defs>`;
+
+  const frontSvg = `
+    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+      <span style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Front</span>
       <svg class="home-muscle-svg" viewBox="0 0 100 140" fill="none">
-        <defs>
-          <filter id="muscleGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
+        ${defs}
         <!-- Head & Neck -->
         <circle cx="50" cy="14" r="8" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1.2"/>
         <path d="M47 22 H53 V27 H47 Z" fill="${baseColor}"/>
@@ -988,19 +993,16 @@ function renderMuscleBodySvg(view, muscles) {
         <path d="M64 80 L66 110 Q60 112 55 110 L53 80 Z" fill="${isQuads ? activeColor : baseColor}" ${isQuads ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
 
         <!-- Calves -->
-        <rect x="35" y="114" width="8" height="20" rx="3" fill="${isCalves ? activeColor : baseColor}" ${isCalves ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
-        <rect x="57" y="114" width="8" height="20" rx="3" fill="${isCalves ? activeColor : baseColor}" ${isCalves ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
-      </svg>`;
-  } else {
-    // Back View
-    return `
+        <rect x="35" y="114" width="8" height="20" rx="3" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1"/>
+        <rect x="57" y="114" width="8" height="20" rx="3" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1"/>
+      </svg>
+    </div>`;
+
+  const backSvg = `
+    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+      <span style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Back</span>
       <svg class="home-muscle-svg" viewBox="0 0 100 140" fill="none">
-        <defs>
-          <filter id="muscleGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="2" result="blur" />
-            <feComposite in="SourceGraphic" in2="blur" operator="over" />
-          </filter>
-        </defs>
+        ${defs}
         <!-- Head & Neck -->
         <circle cx="50" cy="14" r="8" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1.2"/>
         <path d="M47 22 H53 V27 H47 Z" fill="${baseColor}"/>
@@ -1023,8 +1025,14 @@ function renderMuscleBodySvg(view, muscles) {
         <!-- Calves -->
         <rect x="35" y="114" width="8" height="20" rx="3" fill="${isCalves ? activeColor : baseColor}" ${isCalves ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
         <rect x="57" y="114" width="8" height="20" rx="3" fill="${isCalves ? activeColor : baseColor}" ${isCalves ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
-      </svg>`;
-  }
+      </svg>
+    </div>`;
+
+  return `
+    <div style="display:flex; justify-content:center; align-items:center; gap:20px; width:100%;">
+      ${frontSvg}
+      ${backSvg}
+    </div>`;
 }
 
 // ─── Notification Modal Popover (Phase.md Section 7) ──────────────────────────
@@ -1263,18 +1271,15 @@ function renderHomeView() {
         </div>
       </div>
 
-      <!-- Muscle Focus Card -->
+      <!-- Muscle Focus Card (Dual Body Front + Back) -->
       <div class="home-muscle-card">
         <div class="home-muscle-head">
           <span class="home-muscle-tag">Muscle Focus</span>
-          <div class="home-muscle-tabs">
-            <button class="home-muscle-tab-btn ${_activeMuscleView === 'front' ? 'active' : ''}" data-tab="front" onclick="setMuscleBodyView('front')">Front</button>
-            <button class="home-muscle-tab-btn ${_activeMuscleView === 'back' ? 'active' : ''}" data-tab="back" onclick="setMuscleBodyView('back')">Back</button>
-          </div>
+          <span style="font-size:11px; font-weight:700; color:#a855f7;">Anatomy</span>
         </div>
 
         <div class="home-muscle-body-wrap" id="home-muscle-body-container">
-          ${renderMuscleBodySvg(_activeMuscleView, _currentWorkoutMuscles)}
+          ${renderDualMuscleBodySvg(_currentWorkoutMuscles)}
         </div>
 
         <div class="home-muscle-target-list">

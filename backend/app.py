@@ -437,6 +437,7 @@ def root_status():
 # ── Today Resolver Endpoint (Custom Split Model) ───────────────────────────────
 
 @app.route('/today', methods=['GET'])
+@app.route('/api/today-workout', methods=['GET'])
 def get_today_resolved():
     """Resolve today's workout based on active training split and current day of week."""
     with get_db() as conn:
@@ -1508,6 +1509,7 @@ def compute_exercise_stats(points, today):
 
 
 @app.route('/dashboard/summary', methods=['GET'])
+@app.route('/api/stats-summary', methods=['GET'])
 def get_dashboard_summary():
     """Return summary statistics for the dashboard view."""
     with get_db() as conn:
@@ -1584,6 +1586,172 @@ def get_dashboard_summary():
         'week_sets': week_sets,
         'top_movers': top_movers
     })
+
+
+@app.route('/api/weekly-progress', methods=['GET'])
+def get_weekly_progress():
+    """Return weekly workout completion and 7-day status."""
+    with get_db() as conn:
+        active_split = conn.execute('SELECT * FROM training_splits WHERE is_active = 1').fetchone()
+        if not active_split:
+            active_split = conn.execute('SELECT * FROM training_splits ORDER BY id ASC LIMIT 1').fetchone()
+
+        schedule = []
+        if active_split:
+            rows = conn.execute(
+                '''
+                SELECT s.day_of_week, s.day_type, s.workout_id, w.name as workout_name
+                FROM weekly_schedules s
+                LEFT JOIN workouts w ON s.workout_id = w.id
+                WHERE s.split_id = ?
+                ORDER BY s.day_of_week ASC
+                ''', (active_split['id'],)
+            ).fetchall()
+            schedule = [dict(r) for r in rows]
+
+        planned_count = len([d for d in schedule if d.get('day_type') == 'workout']) or 4
+        today = datetime.now(timezone.utc).date()
+        cutoff_7 = (today - timedelta(days=6)).isoformat()
+        logs = conn.execute(
+            'SELECT DISTINCT SUBSTR(timestamp, 1, 10) as dt FROM logs WHERE timestamp >= ?',
+            (cutoff_7,)
+        ).fetchall()
+        done_count = len(logs)
+        pct = min(100, int((done_count / max(1, planned_count)) * 100))
+
+        return jsonify({
+            'planned_workouts': planned_count,
+            'completed_workouts': done_count,
+            'completion_pct': pct,
+            'schedule': schedule
+        })
+
+
+@app.route('/api/muscle-focus', methods=['GET'])
+def get_muscle_focus():
+    """Return muscle targets for today's resolved workout."""
+    with get_db() as conn:
+        active_split = conn.execute('SELECT * FROM training_splits WHERE is_active = 1').fetchone()
+        if not active_split:
+            active_split = conn.execute('SELECT * FROM training_splits ORDER BY id ASC LIMIT 1').fetchone()
+
+        day_of_week = datetime.now().weekday()
+        if not active_split:
+            return jsonify({'muscle_label': 'Full Body Mobility', 'front': ['abs', 'quads'], 'back': ['glutes', 'calves']})
+
+        sched = conn.execute(
+            'SELECT * FROM weekly_schedules WHERE split_id = ? AND day_of_week = ?',
+            (active_split['id'], day_of_week)
+        ).fetchone()
+
+        if not sched or sched['day_type'] == 'rest' or not sched['workout_id']:
+            return jsonify({'muscle_label': 'Active Recovery & Mobility', 'front': ['abs'], 'back': ['lower_back', 'calves']})
+
+        workout = conn.execute('SELECT * FROM workouts WHERE id = ?', (sched['workout_id'],)).fetchone()
+        desc = workout['description'] if workout else ''
+        name = workout['name'] if workout else ''
+        text = f"{name} {desc}".lower()
+
+        front = []
+        back = []
+        labels = []
+        if any(w in text for w in ['push', 'dip', 'press', 'chest']):
+            front.extend(['chest', 'shoulders', 'triceps', 'abs'])
+            labels.append('Chest, Shoulders, Triceps')
+        if any(w in text for w in ['pull', 'chin', 'row', 'back', 'lever']):
+            back.extend(['lats', 'upper_back', 'biceps'])
+            front.append('biceps')
+            labels.append('Back, Biceps, Lats')
+        if any(w in text for w in ['leg', 'squat', 'lunge', 'calf']):
+            front.append('quads')
+            back.extend(['glutes', 'hamstrings', 'calves'])
+            labels.append('Legs, Glutes, Calves')
+
+        if not labels:
+            labels.append('Full Body Conditioning')
+            front.extend(['chest', 'abs', 'shoulders'])
+            back.extend(['upper_back', 'lats'])
+
+        return jsonify({
+            'workout_name': name,
+            'muscle_label': ', '.join(labels),
+            'front': list(set(front)),
+            'back': list(set(back))
+        })
+
+
+@app.route('/api/exercise-progress', methods=['GET'])
+def get_exercise_progress_api():
+    """Return top mover progressions for the dashboard."""
+    with get_db() as conn:
+        logs = conn.execute('SELECT * FROM logs ORDER BY timestamp ASC').fetchall()
+        exercises = conn.execute('SELECT * FROM exercises').fetchall()
+
+    logs_list = [dict(r) for r in logs]
+    ex_map = {e['id']: dict(e) for e in exercises}
+    today = datetime.now(timezone.utc).date()
+
+    logs_by_ex = {}
+    for l in logs_list:
+        eid = l['exercise_id']
+        logs_by_ex.setdefault(eid, []).append(l)
+
+    movers = []
+    for eid, ex_logs in logs_by_ex.items():
+        ex = ex_map.get(eid)
+        if not ex:
+            continue
+        points = compute_exercise_progress(ex['type'], ex_logs)
+        stats = compute_exercise_stats(points, today)
+        if stats and stats['pct'] is not None:
+            movers.append({
+                'exercise_id': eid,
+                'exercise_name': ex['name'],
+                'current_reps': stats['current'],
+                'past_reps': stats['past'],
+                'pct_change': stats['pct']
+            })
+
+    movers.sort(key=lambda m: abs(m['pct_change']), reverse=True)
+    return jsonify(movers[:4])
+
+
+@app.route('/api/upcoming-workouts', methods=['GET'])
+def get_upcoming_workouts():
+    """Return next 3 days of workouts from active split."""
+    with get_db() as conn:
+        active_split = conn.execute('SELECT * FROM training_splits WHERE is_active = 1').fetchone()
+        if not active_split:
+            active_split = conn.execute('SELECT * FROM training_splits ORDER BY id ASC LIMIT 1').fetchone()
+
+        if not active_split:
+            return jsonify([])
+
+        today_dow = datetime.now().weekday()
+        upcoming = []
+        for offset in range(1, 4):
+            day_idx = (today_dow + offset) % 7
+            sched = conn.execute(
+                '''
+                SELECT s.day_of_week, s.day_type, s.workout_id, w.name as workout_name, w.description as workout_desc
+                FROM weekly_schedules s
+                LEFT JOIN workouts w ON s.workout_id = w.id
+                WHERE s.split_id = ? AND s.day_of_week = ?
+                ''', (active_split['id'], day_idx)
+            ).fetchone()
+
+            is_workout = sched and sched['day_type'] == 'workout' and sched['workout_id']
+            upcoming.append({
+                'day_offset': offset,
+                'day_of_week': day_idx,
+                'day_name': DAY_NAMES[day_idx],
+                'is_workout': bool(is_workout),
+                'workout_id': sched['workout_id'] if is_workout else None,
+                'workout_name': sched['workout_name'] if is_workout else 'Rest & Recovery',
+                'description': sched['workout_desc'] if is_workout else 'Active Recovery & Mobility'
+            })
+
+        return jsonify(upcoming)
 
 
 @app.route('/exercises/<int:ex_id>/progression-status', methods=['GET'])
@@ -1958,6 +2126,7 @@ def import_logs():
 
 
 @app.route('/dashboard/records', methods=['GET'])
+@app.route('/api/recent-prs', methods=['GET'])
 def get_personal_records():
     """Return all-time Personal Records (PRs) across all exercises."""
     with get_db() as conn:
