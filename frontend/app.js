@@ -150,10 +150,46 @@ function lsWriteLog(entry) {
 
 const LS_SESSION_PREFIX = 'cx_pending_session_';
 
+function updateSyncStatus(status) {
+  const pill = document.getElementById('sync-status-pill');
+  const txt = document.getElementById('sync-status-text');
+  if (!pill || !txt) return;
+
+  pill.className = 'sync-pill';
+  if (status === 'syncing') {
+    pill.classList.add('sync-pill-syncing');
+    txt.textContent = 'Syncing...';
+  } else if (status === 'local') {
+    pill.classList.add('sync-pill-local');
+    txt.textContent = 'Saved locally';
+  } else if (status === 'offline') {
+    pill.classList.add('sync-pill-local');
+    txt.textContent = 'Offline';
+  } else {
+    pill.classList.add('sync-pill-synced');
+    txt.textContent = 'Synced';
+  }
+}
+
 // Push all unsynced entries to POST /logs and POST /workout_sessions.
 async function lsSyncPending() {
-  // 1. Sync pending workout sessions
   const sessionKeys = Object.keys(localStorage).filter(k => k.startsWith(LS_SESSION_PREFIX));
+  const logKeys = Object.keys(localStorage).filter(k => k.startsWith(LS_PREFIX));
+
+  if (sessionKeys.length === 0 && logKeys.length === 0) {
+    if (!navigator.onLine) updateSyncStatus('offline');
+    else updateSyncStatus('synced');
+    return;
+  }
+
+  if (!navigator.onLine) {
+    updateSyncStatus('local');
+    return;
+  }
+
+  updateSyncStatus('syncing');
+
+  // 1. Sync pending workout sessions
   for (const key of sessionKeys) {
     let sessionRecord;
     try { sessionRecord = JSON.parse(localStorage.getItem(key)); } catch { continue; }
@@ -166,8 +202,7 @@ async function lsSyncPending() {
   }
 
   // 2. Sync pending individual log entries
-  const keys = Object.keys(localStorage).filter(k => k.startsWith(LS_PREFIX));
-  for (const key of keys) {
+  for (const key of logKeys) {
     let record;
     try { record = JSON.parse(localStorage.getItem(key)); } catch { continue; }
     if (record.synced) { localStorage.removeItem(key); continue; }
@@ -177,6 +212,14 @@ async function lsSyncPending() {
     } catch {
       // Network unavailable — leave in localStorage, will retry on next sync.
     }
+  }
+
+  const remainingSessions = Object.keys(localStorage).filter(k => k.startsWith(LS_SESSION_PREFIX));
+  const remainingLogs = Object.keys(localStorage).filter(k => k.startsWith(LS_PREFIX));
+  if (remainingSessions.length > 0 || remainingLogs.length > 0) {
+    updateSyncStatus('local');
+  } else {
+    updateSyncStatus('synced');
   }
 }
 
@@ -189,6 +232,7 @@ function startSyncLoop() {
     lsSyncPending();
   });
   window.addEventListener('offline', () => {
+    updateSyncStatus('offline');
     showToast('Offline mode active. Workouts will save locally 💾');
   });
   setInterval(lsSyncPending, 30_000);
@@ -754,49 +798,492 @@ function renderCustomExerciseCard() {
 
 // ─── Phase: Reusable Workouts & Catalog Editor View ──────────────────────────
 
-function renderEditView() {
-  const currentTab = state.editSubTab || 'workouts';
-  const selectedWorkout = state.selectedWorkoutDetail || state.workouts.find(w => w.id === state.selectedWorkoutId) || state.workouts[0];
+function getGreeting() {
+  const hr = new Date().getHours();
+  if (hr < 12) return 'Good morning';
+  if (hr < 17) return 'Good afternoon';
+  return 'Good evening';
+}
 
-  const tabButtonsHtml = `
-    <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:8px;">
-      <button class="btn ${currentTab === 'workouts' ? 'btn-primary' : 'btn-secondary'}" onclick="setEditSubTab('workouts')">
-        🏋️ Reusable Workouts (${state.workouts.length})
-      </button>
-      <button class="btn ${currentTab === 'catalog' ? 'btn-primary' : 'btn-secondary'}" onclick="setEditSubTab('catalog')">
-        📚 Global Exercise Library (${state.exercises.length})
-      </button>
-    </div>`;
+// ─── Settings Modal (Secondary) ──────────────────────────────────────────────
+function openSettingsModal() {
+  const root = document.getElementById('settings-modal-root');
+  if (!root) return;
+  const muted = isMuted();
 
-  if (currentTab === 'catalog') {
-    return `
-      <div class="edit-screen">
-        <div class="view-header">
-          <h1 class="view-title">Exercise Library & Catalog</h1>
-          <p class="view-subtitle">Manage movements, progression targets, and add custom exercises.</p>
+  root.innerHTML = `
+    <div class="settings-modal-backdrop" onclick="if(event.target === this) closeSettingsModal()">
+      <div class="settings-modal">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h2 style="font-size:18px; font-weight:700; color:var(--text);">Settings & Data</h2>
+          <button class="nav-btn-icon" onclick="closeSettingsModal()">✕</button>
         </div>
-        ${tabButtonsHtml}
-        ${renderCustomExerciseCard()}
-        <div class="card" style="margin-top:20px;">
-          <div class="card-header">
-            <span class="card-title">All Catalog Exercises</span>
-            <span class="card-count mono">${state.exercises.length} movements</span>
-          </div>
-          <div class="card-body" style="padding:16px;">
-            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px;">
-              ${state.exercises.map(e => `
-                <div style="background:var(--surface-2); padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
-                  <span style="font-weight:600; color:var(--text); font-size:13px;">${e.name}</span>
-                  ${badge(e.type)}
-                </div>
-              `).join('')}
+
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:12px 16px; border-radius:var(--radius);">
+            <div>
+              <strong style="color:var(--text); font-size:14px;">Audio & Haptic Cues</strong>
+              <div style="font-size:12px; color:var(--text-muted);">Ticks during rest countdown and PR fanfare</div>
             </div>
+            <button class="btn btn-sm ${muted ? 'btn-secondary' : 'btn-primary'}" onclick="toggleMute(); openSettingsModal();">
+              ${muted ? '🔇 Muted' : '🔊 Enabled'}
+            </button>
           </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:12px 16px; border-radius:var(--radius);">
+            <div>
+              <strong style="color:var(--text); font-size:14px;">Backup Export</strong>
+              <div style="font-size:12px; color:var(--text-muted);">Save complete JSON bundle (v2.1) of splits, workouts & logs</div>
+            </div>
+            <button class="btn btn-sm btn-secondary" onclick="exportData()">💾 Export JSON</button>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:12px 16px; border-radius:var(--radius);">
+            <div>
+              <strong style="color:var(--text); font-size:14px;">Restore Backup</strong>
+              <div style="font-size:12px; color:var(--text-muted);">Merge or restore from an existing JSON backup</div>
+            </div>
+            <label class="btn btn-sm btn-secondary" style="cursor:pointer; margin:0;">
+              📂 Import
+              <input type="file" accept=".json" style="display:none;" onchange="importData(this); closeSettingsModal();">
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+          <button class="btn btn-primary" onclick="closeSettingsModal()">Done</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function closeSettingsModal() {
+  const root = document.getElementById('settings-modal-root');
+  if (root) root.innerHTML = '';
+}
+
+// ─── Screen 1: Athlete-First Home / Today Screen ────────────────────────────
+
+function renderHomeView() {
+  const summary = state.dashboardSummary || {
+    streak_days: 0,
+    week_sessions: 0,
+    week_sets: 0,
+    top_movers: []
+  };
+
+  const resolved = state.todayResolved;
+  const label = getTodayLabel();
+  const greeting = getGreeting();
+
+  const active = getActiveSession();
+  const isThisActive = active && (active.status === 'in_progress' || active.status === 'paused');
+
+  // Section 1: Today Hero
+  let todayHeroHtml = '';
+  if (!resolved || resolved.status === 'rest') {
+    const splitName = resolved?.split_name || (state.activeSplit?.name ?? 'Training Split');
+    const dayName = resolved?.day_name || 'Rest Day';
+    const next = resolved?.next_workout;
+
+    const nextTeaser = next ? `
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:12px 16px; border-radius:var(--radius); margin-top:16px; flex-wrap:wrap; gap:10px;">
+        <div>
+          <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Next Up · ${next.day_name}</span>
+          <div style="font-size:15px; font-weight:700; color:var(--text);">${next.workout_name}</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="startWorkoutFromId(${next.workout_id})">⚡ Start Early</button>
+      </div>` : '';
+
+    todayHeroHtml = `
+      <div class="today-hero-card" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(59, 130, 246, 0.04) 100%); border-color: rgba(34, 197, 94, 0.25);">
+        <div class="today-hero-header">
+          <div>
+            <span class="today-hero-tag" style="color:var(--success);">REST & RECOVERY · ${splitName.toUpperCase()}</span>
+            <h1 class="today-hero-title">${dayName} — Rest Day</h1>
+            <p style="color:var(--text-muted); font-size:13px; margin:4px 0 0 0;">${label}</p>
+          </div>
+          <span class="today-status-badge today-status-done">✓ Scheduled Rest</span>
+        </div>
+        <p style="color:var(--text-muted); font-size:14px; margin:12px 0 0 0;">
+          Muscles adapt and rebuild during recovery. Focus on clean hydration, light mobility, and deep sleep.
+        </p>
+        ${nextTeaser}
+      </div>`;
+  } else {
+    // Workout Day
+    const workout = resolved.workout;
+    const splitName = resolved.split_name || 'Active Split';
+    const dayName = resolved.day_name || 'Today';
+
+    let statusBadgeHtml = `<span class="today-status-badge today-status-ready">Ready to Train</span>`;
+    let heroBtnHtml = `<button class="btn btn-primary btn-lg" style="width:100%;" onclick="startWorkoutFromResolved()">⚡ START TODAY'S WORKOUT ➔</button>`;
+
+    if (isThisActive) {
+      if (active.status === 'paused') {
+        statusBadgeHtml = `<span class="today-status-badge today-status-active">⏸ Workout Paused</span>`;
+        heroBtnHtml = `<button class="btn btn-primary btn-lg" style="width:100%;" onclick="openWorkoutView()">▶ RESUME ACTIVE WORKOUT ➔</button>`;
+      } else {
+        statusBadgeHtml = `<span class="today-status-badge today-status-active">⚡ Workout in Progress</span>`;
+        heroBtnHtml = `<button class="btn btn-primary btn-lg" style="width:100%;" onclick="openWorkoutView()">⚡ CONTINUE ACTIVE WORKOUT ➔</button>`;
+      }
+    }
+
+    const estDurationMin = Math.round((workout.total_sets * 90) / 60);
+
+    todayHeroHtml = `
+      <div class="today-hero-card">
+        <div class="today-hero-header">
+          <div>
+            <span class="today-hero-tag">TODAY'S SCHEDULE · ${splitName.toUpperCase()}</span>
+            <h1 class="today-hero-title">${dayName} — ${workout.name}</h1>
+            <p style="color:var(--text-muted); font-size:13px; margin:4px 0 0 0;">${label}</p>
+          </div>
+          ${statusBadgeHtml}
+        </div>
+
+        <div class="today-hero-metrics">
+          <div class="today-metric-pill"><span>Exercises:</span> <span class="today-metric-val">${workout.exercises.length}</span></div>
+          <div class="today-metric-pill"><span>Total Sets:</span> <span class="today-metric-val">${workout.total_sets}</span></div>
+          <div class="today-metric-pill"><span>Est. Duration:</span> <span class="today-metric-val">~${estDurationMin} min</span></div>
+        </div>
+
+        <div style="margin-top:14px;">
+          ${heroBtnHtml}
         </div>
       </div>`;
   }
 
-  // Workouts Manager Tab
+  // Section 2: This Week Summary (Single clean horizontal bar - Card Reduction)
+  const thisWeekHtml = `
+    <div class="home-section">
+      <div class="home-section-header">
+        <span class="home-section-title">This Week</span>
+      </div>
+      <div class="home-this-week-bar">
+        <div class="home-week-stat">
+          <span class="home-week-stat-num">${summary.week_sessions}</span>
+          <span class="home-week-stat-lbl">workouts</span>
+        </div>
+        <div class="home-week-divider"></div>
+        <div class="home-week-stat">
+          <span class="home-week-stat-num">${summary.week_sets}</span>
+          <span class="home-week-stat-lbl">total sets</span>
+        </div>
+        <div class="home-week-divider"></div>
+        <div class="home-week-stat">
+          <span class="home-week-stat-num" style="color:var(--accent);">${summary.streak_days} 🔥</span>
+          <span class="home-week-stat-lbl">day streak</span>
+        </div>
+      </div>
+    </div>`;
+
+  // Section 3: Recent Progress
+  let progressSectionHtml = '';
+  if (summary.top_movers && summary.top_movers.length > 0) {
+    const moverCards = summary.top_movers.slice(0, 3).map(m => `
+      <div class="recent-progress-card" onclick="openHistoryView(${m.exercise_id})">
+        <div>
+          <div class="recent-progress-name">${m.exercise_name}</div>
+          <div class="recent-progress-meta">Recent Overload Trend</div>
+        </div>
+        <div class="recent-progress-delta ${m.pct_change >= 0 ? 'stat-up' : 'stat-neutral'}">
+          ${m.pct_change >= 0 ? '+' : ''}${m.pct_change}%
+        </div>
+      </div>
+    `).join('');
+
+    progressSectionHtml = `
+      <div class="home-section">
+        <div class="home-section-header">
+          <span class="home-section-title">Recent Progress</span>
+          <a href="#progress" onclick="switchView('progress')" style="font-size:12px; color:var(--accent); text-decoration:none; font-weight:600;">View All ➔</a>
+        </div>
+        <div class="recent-progress-grid">
+          ${moverCards}
+        </div>
+      </div>`;
+  }
+
+  // Section 4: Personal Records (PRs)
+  let prSectionHtml = '';
+  if (state.dashboardRecords && state.dashboardRecords.length > 0) {
+    const prHighlights = state.dashboardRecords.slice(0, 3).map(r => `
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface); border:1px solid var(--border); padding:10px 14px; border-radius:var(--radius); cursor:pointer;" onclick="openHistoryView(${r.exercise_id})">
+        <div>
+          <strong style="color:var(--text); font-size:13px;">${r.exercise_name}</strong>
+          <div style="font-size:11px; color:var(--text-muted);">${r.date}</div>
+        </div>
+        <span class="badge badge-reps mono" style="font-size:12px; font-weight:700;">
+          🏆 ${r.max_actual} ${r.type === 'duration' ? 's hold' : ' reps'}
+        </span>
+      </div>
+    `).join('');
+
+    prSectionHtml = `
+      <div class="home-section">
+        <div class="home-section-header">
+          <span class="home-section-title">Personal Records</span>
+          <a href="#progress" onclick="switchView('progress')" style="font-size:12px; color:var(--accent); text-decoration:none; font-weight:600;">PR Leaderboard ➔</a>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:10px;">
+          ${prHighlights}
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="home-screen">
+      <div class="home-greeting-strip">
+        <span class="home-greeting-time">${greeting.toUpperCase()}</span>
+        <h1 class="home-greeting-title">Ready to train, Athlete?</h1>
+      </div>
+
+      ${todayHeroHtml}
+      ${thisWeekHtml}
+      ${progressSectionHtml}
+      ${prSectionHtml}
+    </div>`;
+}
+
+// ─── Screen 2: My Split & Weekly Planner ────────────────────────────────────
+
+function renderSplitView() {
+  const currentTab = state.splitSubTab || 'schedule'; // 'schedule' | 'workouts'
+  const currentSplit = state.selectedSplitDetail || state.splits.find(s => s.id === state.selectedSplitId) || state.splits[0];
+
+  if (!currentSplit) {
+    return `
+      <div class="view-header">
+        <h1 class="view-title">My Training Split</h1>
+        <p class="view-subtitle">Create your first training split and configure your weekly schedule.</p>
+      </div>
+      <div class="card" style="padding:32px; text-align:center;">
+        <button class="btn btn-primary" onclick="openCreateSplitModal()">+ Create Training Split</button>
+      </div>`;
+  }
+
+  const isActive = currentSplit.is_active === 1;
+
+  // Split tabs bar
+  const splitTabsHtml = state.splits.map(s => `
+    <button class="split-tab-btn ${s.id === currentSplit.id ? 'active' : ''}" onclick="selectSplit(${s.id})">
+      <span>${s.name}</span>
+      ${s.is_active === 1 ? '<span class="schedule-today-pill" style="font-size:9px; padding:1px 5px;">Active</span>' : ''}
+    </button>
+  `).join('');
+
+  // Sub-tabs: 7-Day Weekly Schedule vs Reusable Workouts & Catalog
+  const subTabsHtml = `
+    <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:8px;">
+      <button class="btn ${currentTab === 'schedule' ? 'btn-primary' : 'btn-secondary'}" onclick="setSplitSubTab('schedule')">
+        📅 7-Day Weekly Schedule
+      </button>
+      <button class="btn ${currentTab === 'workouts' ? 'btn-primary' : 'btn-secondary'}" onclick="setSplitSubTab('workouts')">
+        🏋️ Reusable Workouts (${state.workouts.length})
+      </button>
+    </div>`;
+
+  if (currentTab === 'workouts') {
+    return `
+      <div class="split-screen">
+        <div class="view-header">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+            <div>
+              <h1 class="view-title">Reusable Workouts & Library</h1>
+              <p class="view-subtitle">Build modular workout templates and assign them to your weekly schedule.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openCreateWorkoutModal()">+ New Workout</button>
+          </div>
+        </div>
+
+        ${subTabsHtml}
+        ${renderEditViewInner()}
+      </div>`;
+  }
+
+  // Schedule Grid (7 days Monday-Sunday)
+  const todayDow = (new Date().getDay() + 6) % 7; // 0=Monday .. 6=Sunday
+  const scheduleDays = currentSplit.schedule || [];
+
+  const dayCardsHtml = scheduleDays.map(d => {
+    const isToday = d.day_of_week === todayDow;
+    const isWorkout = d.day_type === 'workout' && d.workout_id;
+
+    const typeBadge = isWorkout
+      ? `<span class="badge badge-reps">Workout</span>`
+      : `<span class="badge badge-duration">Rest Day</span>`;
+
+    const titleStr = isWorkout ? (d.workout_name || 'Workout') : 'Rest & Recovery 🧘';
+    const metaStr = isWorkout
+      ? (d.workout_desc || 'Scheduled Training Session')
+      : 'Muscular recovery & adaptations';
+
+    return `
+      <div class="schedule-day-card ${isToday ? 'schedule-day-today' : ''}">
+        <div>
+          <div class="schedule-day-header">
+            <span class="schedule-day-name">
+              ${d.day_name}
+              ${isToday ? '<span class="schedule-today-pill">Today</span>' : ''}
+            </span>
+            ${typeBadge}
+          </div>
+          <div class="schedule-workout-info" style="margin-top:10px;">
+            <div class="schedule-workout-title">${titleStr}</div>
+            <div class="schedule-workout-meta">${metaStr}</div>
+          </div>
+        </div>
+
+        <div class="schedule-day-actions">
+          ${isWorkout ? `<button class="btn btn-secondary btn-sm" onclick="startWorkoutFromId(${d.workout_id})">▶ Start</button>` : ''}
+          <button class="btn btn-secondary btn-sm" onclick="openDayEditor(${d.day_of_week})">✎ Edit Day</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Day editor modal
+  let dayEditorHtml = '';
+  if (state.editingDayIndex !== null) {
+    const editingDay = scheduleDays.find(d => d.day_of_week === state.editingDayIndex) || { day_of_week: state.editingDayIndex, day_name: DAY_NAMES[state.editingDayIndex], day_type: 'workout' };
+    const workoutOpts = state.workouts.map(w => `
+      <option value="${w.id}" ${w.id === editingDay.workout_id ? 'selected' : ''}>
+        ${w.name} (${w.exercise_count || 0} exercises)
+      </option>
+    `).join('');
+
+    dayEditorHtml = `
+      <div class="day-editor-backdrop" onclick="if(event.target === this) closeDayEditor()">
+        <div class="day-editor-modal">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="font-size:18px; font-weight:700; color:var(--text);">${editingDay.day_name} Schedule</h2>
+            <button class="btn btn-secondary btn-sm" onclick="closeDayEditor()">✕</button>
+          </div>
+
+          <form onsubmit="handleSaveScheduleDay(event, ${currentSplit.id}, ${editingDay.day_of_week})">
+            <div class="form-group" style="margin-bottom:16px;">
+              <label class="form-label">Day Schedule Type</label>
+              <div style="display:flex; gap:12px; margin-top:6px;">
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:500;">
+                  <input type="radio" name="day_type" value="workout" ${editingDay.day_type !== 'rest' ? 'checked' : ''} onchange="toggleDayTypeInput(this.value)">
+                  Workout Session
+                </label>
+                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:500;">
+                  <input type="radio" name="day_type" value="rest" ${editingDay.day_type === 'rest' ? 'checked' : ''} onchange="toggleDayTypeInput(this.value)">
+                  Rest Day
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group" id="day-workout-select-group" style="${editingDay.day_type === 'rest' ? 'display:none;' : ''} margin-bottom:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label class="form-label" style="margin:0;">Select Assigned Workout</label>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="closeDayEditor(); setSplitSubTab('workouts'); openCreateWorkoutModal();">+ New Workout</button>
+              </div>
+              <select class="form-input form-select" name="workout_id" id="day-workout-select">
+                <option value="">-- Choose a workout --</option>
+                ${workoutOpts}
+              </select>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+              <button type="button" class="btn btn-secondary" onclick="closeDayEditor()">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Assignment ✓</button>
+            </div>
+          </form>
+        </div>
+      </div>`;
+  }
+
+  // Create Split Modal
+  let createSplitModalHtml = '';
+  if (state.showCreateSplitModal) {
+    createSplitModalHtml = `
+      <div class="day-editor-backdrop" onclick="if(event.target === this) closeCreateSplitModal()">
+        <div class="day-editor-modal">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="font-size:18px; font-weight:700; color:var(--text);">Create New Training Split</h2>
+            <button class="btn btn-secondary btn-sm" onclick="closeCreateSplitModal()">✕</button>
+          </div>
+
+          <form onsubmit="handleCreateSplit(event)">
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label">Split Name</label>
+              <input class="form-input" type="text" name="name" placeholder="e.g. Upper / Lower 4-Day" required>
+            </div>
+
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label">Description <span class="opt">opt</span></label>
+              <input class="form-input" type="text" name="description" placeholder="e.g. 4 workout days, 3 rest days">
+            </div>
+
+            <div class="form-group" style="margin-bottom:14px;">
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                <input type="checkbox" name="is_active" value="1" checked>
+                Set as Active Training Split
+              </label>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+              <button type="button" class="btn btn-secondary" onclick="closeCreateSplitModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary">Create Split ✓</button>
+            </div>
+          </form>
+        </div>
+      </div>`;
+  }
+
+  return `
+    <div class="split-screen">
+      <div class="view-header">
+        <div class="split-hub-header">
+          <div>
+            <h1 class="view-title">My Training Split</h1>
+            <p class="view-subtitle">7-Day weekly planner from Monday to Sunday.</p>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            ${!isActive ? `<button class="btn btn-secondary btn-sm" onclick="activateSplit(${currentSplit.id})">⭐ Set as Active Split</button>` : '<span class="today-status-badge today-status-active">⭐ Active Program</span>'}
+            <button class="btn btn-primary btn-sm" onclick="openCreateSplitModal()">+ New Split</button>
+          </div>
+        </div>
+      </div>
+
+      ${subTabsHtml}
+
+      <div class="split-tabs-bar">
+        ${splitTabsHtml}
+      </div>
+
+      <div class="schedule-grid">
+        ${dayCardsHtml}
+      </div>
+
+      <div class="card" style="margin-top:20px;">
+        <div class="card-header" style="justify-content:space-between; align-items:center;">
+          <span class="card-title">${currentSplit.name} Settings</span>
+          ${state.splits.length > 1 ? `<button class="btn btn-danger btn-sm" onclick="handleDeleteSplit(${currentSplit.id}, '${currentSplit.name}')">Delete Split</button>` : ''}
+        </div>
+        <div class="card-body">
+          <p style="color:var(--text-muted); font-size:13px; margin:0;">
+            ${currentSplit.description || 'Custom weekly split configuration.'}
+            ${isActive ? ' Currently powering the Home screen.' : ''}
+          </p>
+        </div>
+      </div>
+
+      ${dayEditorHtml}
+      ${createSplitModalHtml}
+    </div>`;
+}
+
+function setSplitSubTab(tab) {
+  state.splitSubTab = tab;
+  render();
+}
+
+function renderEditViewInner() {
+  const selectedWorkout = state.selectedWorkoutDetail || state.workouts.find(w => w.id === state.selectedWorkoutId) || state.workouts[0];
+
   const workoutsListHtml = state.workouts.map(w => `
     <div class="workout-summary-card" style="${selectedWorkout && selectedWorkout.id === w.id ? 'border-color:var(--accent); background:rgba(124,106,247,0.06);' : ''}">
       <div>
@@ -804,7 +1291,7 @@ function renderEditView() {
           <h3 style="font-size:17px; font-weight:700; color:var(--text);">${w.name}</h3>
           <span class="badge badge-reps">${w.exercise_count || 0} exercises</span>
         </div>
-        <p style="color:var(--text-muted); font-size:12px; margin:0;">${w.description || 'Reusable training workout'}</p>
+        <p style="color:var(--text-muted); font-size:12px; margin:0;">${w.description || 'Reusable workout template'}</p>
         <div style="font-size:12px; color:var(--text-muted); margin-top:8px;" class="mono">
           Total Sets: <strong>${w.total_sets || 0}</strong>
         </div>
@@ -837,6 +1324,7 @@ function renderEditView() {
             <button type="button" class="btn btn-danger btn-sm" style="padding:2px 8px; font-size:11px;" onclick="removeWorkoutExerciseSlot(${idx})">✕ Remove</button>
           </div>
 
+          <!-- Basic Fields Visible by Default -->
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-top:6px;">
             <div class="form-group">
               <label class="form-label">Sets</label>
@@ -856,31 +1344,36 @@ function renderEditView() {
               <label class="form-label">Rest (sec)</label>
               <input class="form-input mono" type="number" id="slot-rest-${idx}" value="${ex.rest_sec || 90}" min="0" step="15" style="padding:5px 8px; font-size:13px;">
             </div>
-
-            <div class="form-group">
-              <label class="form-label">Tempo <span class="opt">opt</span></label>
-              <input class="form-input mono" type="text" id="slot-tempo-${idx}" value="${ex.tempo || ''}" placeholder="3010" style="padding:5px 8px; font-size:13px;">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Superset <span class="opt">opt</span></label>
-              <input class="form-input mono" type="number" id="slot-ss-${idx}" value="${ex.superset_group || ''}" placeholder="1, 2" min="1" style="padding:5px 8px; font-size:13px;">
-            </div>
           </div>
 
-          <div class="form-group" style="margin-top:4px;">
-            <input class="form-input" type="text" id="slot-notes-${idx}" value="${ex.notes || ''}" placeholder="Coaching cue / annotation (optional)" style="font-size:12px; padding:6px 10px;">
-          </div>
+          <!-- Expandable Advanced Settings (Progressive Disclosure) -->
+          <details style="margin-top:6px;">
+            <summary style="font-size:11px; color:var(--accent); cursor:pointer; font-weight:600;">Advanced Settings (Tempo, Superset, Notes) ▼</summary>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-top:8px;">
+              <div class="form-group">
+                <label class="form-label">Tempo <span class="opt">opt</span></label>
+                <input class="form-input mono" type="text" id="slot-tempo-${idx}" value="${ex.tempo || ''}" placeholder="3010" style="padding:5px 8px; font-size:13px;">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Superset # <span class="opt">opt</span></label>
+                <input class="form-input mono" type="number" id="slot-ss-${idx}" value="${ex.superset_group || ''}" placeholder="1, 2" min="1" style="padding:5px 8px; font-size:13px;">
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:8px;">
+              <label class="form-label">Coaching Notes <span class="opt">opt</span></label>
+              <input class="form-input" type="text" id="slot-notes-${idx}" value="${ex.notes || ''}" placeholder="e.g. Chest up, full protraction at top" style="font-size:12px; padding:6px 10px;">
+            </div>
+          </details>
         </div>`;
     }).join('');
 
-    // Catalog options for + Add Exercise
     const catalogOpts = state.exercises.map(e => `<option value="${e.id}">${e.name} (${e.type})</option>`).join('');
 
     workoutEditorHtml = `
       <div class="card" style="margin-top:24px;">
         <div class="card-header" style="justify-content:space-between; align-items:center;">
-          <span class="card-title">Editing Workout: ${selectedWorkout.name}</span>
+          <span class="card-title">Editing: ${selectedWorkout.name}</span>
           <div style="display:flex; gap:8px;">
             <button class="btn btn-secondary btn-sm" onclick="handleDuplicateWorkout(${selectedWorkout.id})">⎘ Duplicate</button>
             <button class="btn btn-danger btn-sm" onclick="handleDeleteWorkout(${selectedWorkout.id}, '${selectedWorkout.name}')">🗑 Delete</button>
@@ -896,7 +1389,7 @@ function renderEditView() {
               </div>
               <div class="form-group form-group-wide">
                 <label class="form-label">Description <span class="opt">opt</span></label>
-                <input class="form-input" type="text" id="edit-workout-desc" value="${selectedWorkout.description || ''}" placeholder="e.g. Primary upper body hypertrophy">
+                <input class="form-input" type="text" id="edit-workout-desc" value="${selectedWorkout.description || ''}" placeholder="e.g. Primary upper body focus">
               </div>
             </div>
 
@@ -956,19 +1449,7 @@ function renderEditView() {
   }
 
   return `
-    <div class="edit-screen">
-      <div class="view-header">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap;">
-          <div>
-            <h1 class="view-title">Reusable Workouts & Movements</h1>
-            <p class="view-subtitle">Build custom workouts, configure sets/reps/holds/rest, and assign them to your weekly schedule.</p>
-          </div>
-          <button class="btn btn-primary" onclick="openCreateWorkoutModal()">+ New Workout</button>
-        </div>
-      </div>
-
-      ${tabButtonsHtml}
-
+    <div>
       <div class="workout-list-grid">
         ${workoutsListHtml}
       </div>
@@ -978,462 +1459,17 @@ function renderEditView() {
     </div>`;
 }
 
-// ─── Today View (Dynamic Schedule Consumer) ──────────────────────────────────
-
+// ─── Compatibility alias for #edit ───────────────────────────────────────────
+function renderEditView() {
+  state.splitSubTab = 'workouts';
+  return renderSplitView();
+}
 function renderTodayView() {
-  const resolved = state.todayResolved;
-  const label = getTodayLabel();
-
-  const active = getActiveSession();
-  const isThisActive = active && (active.status === 'in_progress' || active.status === 'paused');
-
-  if (!resolved || resolved.status === 'rest') {
-    const splitName = resolved?.split_name || (state.activeSplit?.name ?? 'Training Split');
-    const dayName = resolved?.day_name || 'Rest Day';
-    const next = resolved?.next_workout;
-
-    const nextWorkoutHtml = next ? `
-      <div class="card" style="margin-top: 16px;">
-        <div class="card-header" style="justify-content:space-between; align-items:center;">
-          <span class="card-title">Next Scheduled Workout</span>
-          <span class="badge badge-reps">${next.day_name}</span>
-        </div>
-        <div class="card-body">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-            <div>
-              <h3 style="font-size:18px; font-weight:700; color:var(--text); margin-bottom:4px;">${next.workout_name}</h3>
-              <p style="color:var(--text-muted); font-size:13px; margin:0;">Scheduled for ${next.day_name} in ${splitName}.</p>
-            </div>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button class="btn btn-primary" onclick="startWorkoutFromId(${next.workout_id})">⚡ Start Workout Early ➔</button>
-              <button class="btn btn-secondary" onclick="switchView('routine')">📅 View Weekly Schedule ➔</button>
-            </div>
-          </div>
-        </div>
-      </div>` : `
-      <div class="card" style="margin-top: 16px;">
-        <div class="card-body" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-          <div>
-            <h4 style="color:var(--text); margin-bottom:4px;">Custom Weekly Schedule</h4>
-            <p style="color:var(--text-muted); font-size:13px; margin:0;">Configure which days are Workouts vs Rest in your training split.</p>
-          </div>
-          <button class="btn btn-secondary" onclick="switchView('routine')">Open Weekly Schedule ➔</button>
-        </div>
-      </div>`;
-
-    return `
-      <div class="today-screen">
-        <div class="today-hero-card" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border-color: rgba(34, 197, 94, 0.25);">
-          <div class="today-hero-header">
-            <div>
-              <span class="today-hero-tag" style="color:var(--success);">REST & RECOVERY · ${splitName.toUpperCase()}</span>
-              <h1 class="today-hero-title">${dayName} — Rest Day</h1>
-              <p style="color:var(--text-muted); font-size:13px; margin:4px 0 0 0;">${label}</p>
-            </div>
-            <span class="today-status-badge today-status-done">✓ Scheduled Rest</span>
-          </div>
-          <p style="color:var(--text-muted); font-size:14px; margin:12px 0 0 0;">
-            Muscles grow and adapt during rest. Prioritize clean hydration, stretching, and recovery sleep.
-          </p>
-          <div class="today-hero-metrics">
-            <div class="today-metric-pill"><span>Split:</span> <span class="today-metric-val">${splitName}</span></div>
-            <div class="today-metric-pill"><span>Focus:</span> <span class="today-metric-val">Recovery & Central Nervous System</span></div>
-          </div>
-        </div>
-
-        ${nextWorkoutHtml}
-      </div>`;
-  }
-
-  // It's a workout day!
-  const workout = resolved.workout;
-  const splitName = resolved.split_name || 'Active Split';
-  const dayName = resolved.day_name || 'Today';
-
-  let statusBadgeHtml = `<span class="today-status-badge today-status-ready">Ready to Train</span>`;
-  let heroBtnHtml = `<button class="btn btn-primary btn-lg" onclick="startWorkoutFromResolved()">⚡ Start Today's Workout ➔</button>`;
-
-  if (isThisActive) {
-    if (active.status === 'paused') {
-      statusBadgeHtml = `<span class="today-status-badge today-status-active">⏸ Workout Paused</span>`;
-      heroBtnHtml = `<button class="btn btn-primary btn-lg" onclick="openWorkoutView()">▶ Resume Workout ➔</button>`;
-    } else {
-      statusBadgeHtml = `<span class="today-status-badge today-status-active">⚡ Workout in Progress</span>`;
-      heroBtnHtml = `<button class="btn btn-primary btn-lg" onclick="openWorkoutView()">⚡ Continue Workout ➔</button>`;
-    }
-  }
-
-  const estDurationMin = Math.round((workout.total_sets * 90) / 60);
-
-  const previewCardsHtml = (!workout.exercises || workout.exercises.length === 0)
-    ? `<div class="empty-state">No exercises configured for ${workout.name}. <a href="#edit" onclick="switchView('edit')">Add exercises in Workouts Editor →</a></div>`
-    : workout.exercises.map((ex, i) => {
-        const isHold = ex.exercise_type === 'duration';
-        const targetDesc = isHold
-          ? (ex.duration_sec ? `${ex.duration_sec}s hold` : '30s hold')
-          : (ex.reps ? `${ex.reps} reps` : '10-12 reps');
-        const tempoStr = ex.tempo ? ` · Tempo ${ex.tempo}` : '';
-        const restStr = ` · Rest ${ex.rest_sec || 90}s`;
-        const ssBadge = ex.superset_group ? `<span class="ss-badge">SS${ex.superset_group}</span>` : '';
-        const notesStr = ex.notes ? `<div style="font-size:12px; color:var(--accent); margin-top:3px;">💡 ${ex.notes}</div>` : '';
-
-        return `
-          <div class="today-ex-preview-card">
-            <div class="today-ex-info">
-              <span class="today-ex-title">
-                <span class="mono" style="color:var(--text-muted); font-size:12px;">#${String(i + 1).padStart(2, '0')}</span>
-                ${ex.exercise_name} ${badge(ex.exercise_type)} ${ssBadge}
-              </span>
-              <span class="today-ex-meta">Target: ${ex.sets} sets × ${targetDesc}${tempoStr}${restStr}</span>
-              ${notesStr}
-            </div>
-            <button class="btn btn-secondary btn-sm" onclick="openLogView(${ex.exercise_id}, 'home')" title="Quick log / History">
-              History
-            </button>
-          </div>`;
-      }).join('');
-
-  return `
-    <div class="today-screen">
-      <div class="today-hero-card">
-        <div class="today-hero-header">
-          <div>
-            <span class="today-hero-tag">TODAY'S SCHEDULE · ${splitName.toUpperCase()}</span>
-            <h1 class="today-hero-title">${dayName} — ${workout.name}</h1>
-            <p style="color:var(--text-muted); font-size:13px; margin:4px 0 0 0;">${label}</p>
-          </div>
-          ${statusBadgeHtml}
-        </div>
-
-        <div class="today-hero-metrics">
-          <div class="today-metric-pill"><span>Exercises:</span> <span class="today-metric-val">${workout.exercises.length}</span></div>
-          <div class="today-metric-pill"><span>Total Sets:</span> <span class="today-metric-val">${workout.total_sets}</span></div>
-          <div class="today-metric-pill"><span>Est. Duration:</span> <span class="today-metric-val">~${estDurationMin} min</span></div>
-        </div>
-
-        <div style="margin-top:4px;">
-          ${heroBtnHtml}
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header" style="justify-content:space-between; align-items:center;">
-          <span class="card-title">${workout.name} Exercise Plan</span>
-          <a href="#routine" onclick="switchView('routine')" style="font-size:13px; color:var(--accent); text-decoration:none; font-weight:500;">
-            Weekly Schedule ➔
-          </a>
-        </div>
-        <div class="card-body" style="padding:16px;">
-          ${previewCardsHtml}
-        </div>
-      </div>
-    </div>`;
+  return renderHomeView();
 }
-
-// ─── Weekly Schedule & Training Split Hub View ──────────────────────────────
-
 function renderRoutineView() {
-  const currentSplit = state.selectedSplitDetail || state.splits.find(s => s.id === state.selectedSplitId) || state.splits[0];
-  if (!currentSplit) {
-    return `
-      <div class="view-header">
-        <h1 class="view-title">Weekly Schedule & Split</h1>
-        <p class="view-subtitle">No training splits found. Create your first split below.</p>
-      </div>
-      <div class="card" style="padding:24px; text-align:center;">
-        <button class="btn btn-primary" onclick="openCreateSplitModal()">+ Create Training Split</button>
-      </div>`;
-  }
-
-  const isActive = currentSplit.is_active === 1;
-
-  // Split tabs selector
-  const splitTabsHtml = state.splits.map(s => `
-    <button class="split-tab-btn ${s.id === currentSplit.id ? 'active' : ''}" onclick="selectSplit(${s.id})">
-      <span>${s.name}</span>
-      ${s.is_active === 1 ? '<span class="schedule-today-pill" style="font-size:9px; padding:1px 5px;">Active</span>' : ''}
-    </button>
-  `).join('');
-
-  // 7-day schedule grid
-  const todayDow = (new Date().getDay() + 6) % 7; // 0=Monday .. 6=Sunday
-  const scheduleDays = currentSplit.schedule || [];
-
-  const dayCardsHtml = scheduleDays.map(d => {
-    const isToday = d.day_of_week === todayDow;
-    const isWorkout = d.day_type === 'workout' && d.workout_id;
-
-    const typeBadge = isWorkout
-      ? `<span class="badge badge-reps">Workout</span>`
-      : `<span class="badge badge-duration">Rest Day</span>`;
-
-    const titleStr = isWorkout ? (d.workout_name || 'Workout') : 'Rest & Recovery 🧘';
-    const metaStr = isWorkout
-      ? (d.workout_desc || 'Scheduled Training Session')
-      : 'Muscular recovery & adaptations';
-
-    return `
-      <div class="schedule-day-card ${isToday ? 'schedule-day-today' : ''}">
-        <div>
-          <div class="schedule-day-header">
-            <span class="schedule-day-name">
-              ${d.day_name}
-              ${isToday ? '<span class="schedule-today-pill">Today</span>' : ''}
-            </span>
-            ${typeBadge}
-          </div>
-          <div class="schedule-workout-info" style="margin-top:10px;">
-            <div class="schedule-workout-title">${titleStr}</div>
-            <div class="schedule-workout-meta">${metaStr}</div>
-          </div>
-        </div>
-
-        <div class="schedule-day-actions">
-          ${isWorkout ? `<button class="btn btn-secondary btn-sm" onclick="startWorkoutFromId(${d.workout_id})">▶ Start</button>` : ''}
-          <button class="btn btn-secondary btn-sm" onclick="openDayEditor(${d.day_of_week})">✎ Edit Day</button>
-        </div>
-      </div>`;
-  }).join('');
-
-  // Day editor modal if active
-  let dayEditorHtml = '';
-  if (state.editingDayIndex !== null) {
-    const editingDay = scheduleDays.find(d => d.day_of_week === state.editingDayIndex) || { day_of_week: state.editingDayIndex, day_name: DAY_NAMES[state.editingDayIndex], day_type: 'workout' };
-    const workoutOpts = state.workouts.map(w => `
-      <option value="${w.id}" ${w.id === editingDay.workout_id ? 'selected' : ''}>
-        ${w.name} (${w.exercise_count || 0} exercises)
-      </option>
-    `).join('');
-
-    dayEditorHtml = `
-      <div class="day-editor-backdrop" onclick="if(event.target === this) closeDayEditor()">
-        <div class="day-editor-modal">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2 style="font-size:18px; font-weight:700; color:var(--text);">${editingDay.day_name} Schedule</h2>
-            <button class="btn btn-secondary btn-sm" onclick="closeDayEditor()">✕</button>
-          </div>
-
-          <form onsubmit="handleSaveScheduleDay(event, ${currentSplit.id}, ${editingDay.day_of_week})">
-            <div class="form-group" style="margin-bottom:16px;">
-              <label class="form-label">Day Schedule Type</label>
-              <div style="display:flex; gap:12px; margin-top:6px;">
-                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:500;">
-                  <input type="radio" name="day_type" value="workout" ${editingDay.day_type !== 'rest' ? 'checked' : ''} onchange="toggleDayTypeInput(this.value)">
-                  Workout Session
-                </label>
-                <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:500;">
-                  <input type="radio" name="day_type" value="rest" ${editingDay.day_type === 'rest' ? 'checked' : ''} onchange="toggleDayTypeInput(this.value)">
-                  Rest Day
-                </label>
-              </div>
-            </div>
-
-            <div class="form-group" id="day-workout-select-group" style="${editingDay.day_type === 'rest' ? 'display:none;' : ''} margin-bottom:16px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <label class="form-label" style="margin:0;">Select Assigned Workout</label>
-                <a href="#edit" onclick="closeDayEditor(); switchView('edit');" style="font-size:12px; color:var(--accent); text-decoration:none;">+ Create New Workout</a>
-              </div>
-              <select class="form-input form-select" name="workout_id" id="day-workout-select">
-                <option value="">-- Choose a workout --</option>
-                ${workoutOpts}
-              </select>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-              <button type="button" class="btn btn-secondary" onclick="closeDayEditor()">Cancel</button>
-              <button type="submit" class="btn btn-primary">Save Assignment ✓</button>
-            </div>
-          </form>
-        </div>
-      </div>`;
-  }
-
-  // Create Split Modal if active
-  let createSplitModalHtml = '';
-  if (state.showCreateSplitModal) {
-    createSplitModalHtml = `
-      <div class="day-editor-backdrop" onclick="if(event.target === this) closeCreateSplitModal()">
-        <div class="day-editor-modal">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2 style="font-size:18px; font-weight:700; color:var(--text);">Create New Training Split</h2>
-            <button class="btn btn-secondary btn-sm" onclick="closeCreateSplitModal()">✕</button>
-          </div>
-
-          <form onsubmit="handleCreateSplit(event)">
-            <div class="form-group" style="margin-bottom:14px;">
-              <label class="form-label">Split Name</label>
-              <input class="form-input" type="text" name="name" placeholder="e.g. Upper / Lower 4-Day" required>
-            </div>
-
-            <div class="form-group" style="margin-bottom:14px;">
-              <label class="form-label">Description <span class="opt">opt</span></label>
-              <input class="form-input" type="text" name="description" placeholder="e.g. 4 workout days, 3 rest days">
-            </div>
-
-            <div class="form-group" style="margin-bottom:14px;">
-              <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                <input type="checkbox" name="is_active" value="1" checked>
-                Set as Active Training Split
-              </label>
-            </div>
-
-            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-              <button type="button" class="btn btn-secondary" onclick="closeCreateSplitModal()">Cancel</button>
-              <button type="submit" class="btn btn-primary">Create Split ✓</button>
-            </div>
-          </form>
-        </div>
-      </div>`;
-  }
-
-  return `
-    <div class="split-screen">
-      <div class="view-header">
-        <div class="split-hub-header">
-          <div>
-            <h1 class="view-title">Weekly Schedule & Split</h1>
-            <p class="view-subtitle">Customize what happens on each day of the week from Monday to Sunday.</p>
-          </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            ${!isActive ? `<button class="btn btn-secondary" onclick="activateSplit(${currentSplit.id})">⭐ Set as Active Split</button>` : '<span class="today-status-badge today-status-active">⭐ Active Program</span>'}
-            <button class="btn btn-primary" onclick="openCreateSplitModal()">+ New Split</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="split-tabs-bar">
-        ${splitTabsHtml}
-      </div>
-
-      <div class="schedule-grid">
-        ${dayCardsHtml}
-      </div>
-
-      <div class="card" style="margin-top:20px;">
-        <div class="card-header" style="justify-content:space-between; align-items:center;">
-          <span class="card-title">${currentSplit.name} Split Settings</span>
-          ${state.splits.length > 1 ? `<button class="btn btn-danger btn-sm" onclick="handleDeleteSplit(${currentSplit.id}, '${currentSplit.name}')">Delete Split</button>` : ''}
-        </div>
-        <div class="card-body">
-          <p style="color:var(--text-muted); font-size:13px; margin:0;">
-            ${currentSplit.description || 'Custom weekly split configuration.'}
-            ${isActive ? ' This is your current active split powering the Today workout screen.' : ''}
-          </p>
-        </div>
-      </div>
-
-      ${dayEditorHtml}
-      ${createSplitModalHtml}
-    </div>`;
-}
-
-// ─── Screen 0: Dashboard view ────────────────────────────────────────────────
-function renderDashboardView() {
-  const summary = state.dashboardSummary || {
-    streak_days: 0,
-    week_sessions: 0,
-    week_sets: 0,
-    top_movers: []
-  };
-
-  const label = getTodayLabel();
-  const active = getActiveSession();
-  const isAnyActive = active && (active.status === 'in_progress' || active.status === 'paused');
-
-  const resolved = state.todayResolved;
-  const isRest = !resolved || resolved.status === 'rest';
-  const splitTitle = resolved?.split_name || 'Active Split';
-  const workoutName = resolved?.workout?.name || 'Workout';
-  const dayName = resolved?.day_name || 'Today';
-
-  const todayCard = isRest
-    ? `<div class="dashboard-today-card">
-        <div class="dashboard-today-link" onclick="switchView('home');" style="cursor:pointer;">
-          <div class="dashboard-today-info">
-            <span class="dashboard-today-tag">Today · ${splitTitle}</span>
-            <span class="dashboard-today-name">${dayName} — Rest Day 🧘</span>
-            <span class="dashboard-today-date">${label}</span>
-          </div>
-          <span class="dashboard-today-action">View Schedule ➔</span>
-        </div>
-      </div>`
-    : `<div class="dashboard-today-card ${isAnyActive ? 'dashboard-today-card-active' : ''}">
-        <a href="#workout" class="dashboard-today-link" onclick="${isAnyActive ? 'openWorkoutView()' : 'startWorkoutFromResolved()'}; return false;">
-          <div class="dashboard-today-info">
-            <span class="dashboard-today-tag">${isAnyActive ? '⚡ Active Workout in Progress' : `Today's Workout · ${splitTitle}`}</span>
-            <span class="dashboard-today-name">${isAnyActive ? (active.routine || active.workout_name) : `${dayName} — ${workoutName}`}</span>
-            <span class="dashboard-today-date">${label}</span>
-          </div>
-          <span class="dashboard-today-action">${isAnyActive ? 'Continue Workout ➔' : 'Start Workout ➔'}</span>
-        </a>
-      </div>`;
-
-  let moversBody = '';
-  if (!summary.top_movers || summary.top_movers.length === 0) {
-    moversBody = `<p class="dashboard-empty-text">Log a few more sessions to see trends here.</p>`;
-  } else {
-    moversBody = `
-      <div class="mover-list">
-        ${summary.top_movers.map(m => `
-          <div class="mover-row" onclick="openHistoryView(${m.exercise_id})" role="button" tabindex="0">
-            <span class="mover-name">${m.exercise_name}</span>
-            <span class="mover-pct mono ${m.pct_change >= 0 ? 'stat-up' : 'stat-neutral'}">
-              ${m.pct_change >= 0 ? '+' : ''}${m.pct_change}%
-            </span>
-          </div>
-        `).join('')}
-      </div>`;
-  }
-
-  return `
-    <div class="dashboard-screen">
-      <div class="dashboard-streak-card">
-        <div class="dashboard-streak-num mono">${summary.streak_days}</div>
-        <div class="dashboard-streak-label">day streak</div>
-      </div>
-
-      <div class="stat-row">
-        <div class="stat-item">
-          <span class="stat-label">Week Sessions</span>
-          <span class="stat-value mono">${summary.week_sessions}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Week Sets</span>
-          <span class="stat-value mono">${summary.week_sets}</span>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Top Movers</span>
-        </div>
-        <div class="card-body">
-          ${moversBody}
-        </div>
-      </div>
-
-      ${renderPersonalRecordsCard(state.dashboardRecords)}
-
-      ${renderActivityHeatmap(state.dashboardActivity)}
-
-      ${todayCard}
-
-      <div style="margin-top:16px; margin-bottom:16px;">
-        <button class="btn btn-secondary" style="width:100%; justify-content:center; padding:14px; font-weight:600;" onclick="openHistoryListView()">
-          📖 View Workout History Log ➔
-        </button>
-      </div>
-
-      <div class="dashboard-footer-actions">
-        <button class="btn-export-backup" onclick="exportData()">
-          <span>💾</span> Export Backup (JSON)
-        </button>
-        <label class="btn-export-backup" style="cursor:pointer;">
-          <span>📂</span> Restore Backup (JSON)
-          <input type="file" accept=".json" style="display:none;" onchange="importData(this)">
-        </label>
-      </div>
-    </div>`;
+  state.splitSubTab = 'schedule';
+  return renderSplitView();
 }
 
 // ─── Phase 4: Consistency Heatmap & PRs Cards ──────────────────────────────
@@ -3119,18 +3155,27 @@ async function promoteProgression(exerciseId, nextId) {
   }
 }
 
+// ─── Phase: Athlete-First Workout Runner (Priority P0) ──────────────────────
+
 function renderActiveWorkoutView() {
   const session = getActiveSession();
   if (!session || (session.status !== 'in_progress' && session.status !== 'paused')) {
+    const todayWorkout = state.todayResolved?.workout;
     return `
-      <div class="workout-screen">
-        <div class="log-topbar">
-          <button class="btn-back" onclick="switchView('dashboard')">← Dashboard</button>
+      <div class="runner-screen">
+        <div class="view-header" style="margin-bottom:16px;">
+          <h1 class="view-title">Active Workout Runner</h1>
+          <p class="view-subtitle">Live athlete-first set tracker with rest timer and audio cues.</p>
         </div>
-        <div class="empty-state" style="padding:48px 0;">
-          <p>No active workout session running.</p>
-          <div style="margin-top:16px;">
-            <button class="btn btn-primary" onclick="startWorkoutSession('${getTodayDay() === 'Rest' ? 'Push A' : getTodayDay()}', 1)">Start Today's Workout ➔</button>
+        <div class="card" style="padding:48px 24px; text-align:center;">
+          <span style="font-size:36px; display:block; margin-bottom:12px;">⚡</span>
+          <h3 style="font-size:18px; font-weight:700; color:var(--text); margin-bottom:6px;">No workout running right now</h3>
+          <p style="color:var(--text-muted); font-size:13px; max-width:380px; margin:0 auto 20px;">
+            ${todayWorkout ? `Today's scheduled workout is <strong>${todayWorkout.name}</strong>.` : 'Start a training session from your weekly split.'}
+          </p>
+          <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="startWorkoutFromResolved()">⚡ Start Today's Workout ➔</button>
+            <button class="btn btn-secondary" onclick="switchView('split')">📅 View My Split</button>
           </div>
         </div>
       </div>`;
@@ -3139,199 +3184,205 @@ function renderActiveWorkoutView() {
   const isPaused = session.status === 'paused';
   let totalSets = 0;
   let completedSets = 0;
+
   session.exercises.forEach(ex => {
     ex.sets.forEach(s => {
       totalSets++;
       if (s.completed) completedSets++;
     });
   });
+
   const pct = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 0;
   const elapsedSec = getSessionElapsedSec(session);
-  const activeExIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed));
 
-  const exCardsHtml = session.exercises.map((ex, exIdx) => {
-    const isHold = ex.exercise_type === 'duration';
-    const isExDone = ex.sets.length > 0 && ex.sets.every(s => s.completed);
-    const isCardActive = (exIdx === activeExIdx);
-    const ssTag = ex.superset_group ? `<span class="ss-badge">SS${ex.superset_group}</span>` : '';
-    const tempoHtml = ex.tempo ? `<span class="workout-tempo-pill mono">Tempo: ${fmtTempo(ex.tempo)}</span>` : '';
+  // Find active exercise and active set (first uncompleted set)
+  let activeExIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed));
+  if (activeExIdx === -1) activeExIdx = session.exercises.length - 1;
 
-    const setRowsHtml = ex.sets.map((set, sIdx) => {
-      const isThisHoldRunning = isHold && _workoutHoldState.exIdx === exIdx && _workoutHoldState.setIdx === sIdx;
+  const activeEx = session.exercises[activeExIdx] || session.exercises[0];
+  let activeSetIdx = activeEx.sets.findIndex(s => !s.completed);
+  if (activeSetIdx === -1) activeSetIdx = activeEx.sets.length - 1;
 
-      let statusBtnHtml = '';
-      if (isHold) {
-        if (isThisHoldRunning) {
-          statusBtnHtml = `
-            <button class="workout-hold-btn workout-hold-btn-running"
-                    id="workout-hold-btn-${exIdx}-${sIdx}"
-                    onclick="stopWorkoutHold(true)">
-              ⏹ Stop (${fmtSecs(_workoutHoldState.elapsed)})
-            </button>`;
-        } else if (set.completed) {
-          statusBtnHtml = `
-            <button class="workout-check-btn workout-check-btn-done"
-                    ${isPaused ? 'disabled style="opacity:0.6;"' : ''}
-                    onclick="toggleWorkoutSet(${exIdx}, ${sIdx})">
-              ✓ ${set.actual_val}s
-            </button>`;
-        } else {
-          statusBtnHtml = `
-            <button class="workout-hold-btn"
-                    ${isPaused ? 'disabled style="opacity:0.6;"' : ''}
-                    id="workout-hold-btn-${exIdx}-${sIdx}"
-                    onclick="startWorkoutHold(${exIdx}, ${sIdx})">
-              ⏱ Start Hold
-            </button>`;
-        }
-      } else {
-        statusBtnHtml = `
-          <button class="workout-check-btn ${set.completed ? 'workout-check-btn-done' : ''}"
-                  ${isPaused ? 'disabled style="opacity:0.6;"' : ''}
-                  onclick="toggleWorkoutSet(${exIdx}, ${sIdx})">
-            ${set.completed ? '✓ Done' : 'Check'}
-          </button>`;
-      }
+  const activeSet = activeEx.sets[activeSetIdx] || activeEx.sets[0];
+  const isHold = activeEx.exercise_type === 'duration';
 
-      return `
-        <div class="workout-set-row ${set.completed ? 'workout-set-row-done' : ''}">
-          <span class="workout-set-num mono">Set ${set.set_num}</span>
-          <span class="workout-set-target mono">${set.target_val}${isHold ? 's' : 'r'}</span>
-          <div class="workout-stepper-wrap">
-            <button class="workout-stepper-btn" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${exIdx}, ${sIdx}, -1)">-</button>
-            <input class="workout-set-input mono ${set.completed ? 'workout-set-input-done' : ''}" type="number" min="0"
-                   id="workout-set-actual-${exIdx}-${sIdx}"
-                   ${isPaused ? 'disabled' : ''}
-                   value="${set.actual_val !== null && set.actual_val !== undefined ? set.actual_val : ''}"
-                   placeholder="${set.target_val}"
-                   onchange="updateWorkoutSetActual(${exIdx}, ${sIdx}, this.value)">
-            <button class="workout-stepper-btn" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${exIdx}, ${sIdx}, 1)">+</button>
+  // Benchmark values
+  const targetVal = activeSet.target_val;
+  const targetDesc = isHold ? `${targetVal}s hold` : `${targetVal} reps`;
+
+  // Previous performance lookup from state.todayLogs or previous session
+  const lastLog = state.todayLogs[activeEx.exercise_id];
+  let lastPerfDesc = '—';
+  if (lastLog) {
+    lastPerfDesc = isHold ? `${lastLog.duration_sec}s` : `${lastLog.reps} reps`;
+    if (lastLog.weight_kg) lastPerfDesc += ` (+${lastLog.weight_kg}kg)`;
+  }
+
+  const currentActual = Number(activeSet.actual_val !== null && activeSet.actual_val !== undefined && activeSet.actual_val !== ''
+    ? activeSet.actual_val
+    : (isHold ? 0 : targetVal));
+
+  const isThisHoldRunning = isHold && _workoutHoldState.exIdx === activeExIdx && _workoutHoldState.setIdx === activeSetIdx;
+
+  // Active Set Spotlight Card HTML
+  const spotlightCardHtml = `
+    <div class="runner-spotlight-card">
+      <div class="runner-exercise-header">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+            <span class="runner-routine-name">${session.routine || session.workout_name || 'Workout'}</span>
+            ${activeEx.superset_group ? `<span class="ss-badge">SS${activeEx.superset_group}</span>` : ''}
           </div>
-          <div class="workout-set-input-wrap">
-            <input class="workout-set-input mono" type="number" min="0" step="0.5"
-                   ${isPaused ? 'disabled' : ''}
-                   value="${set.weight_kg != null ? set.weight_kg : ''}"
-                   placeholder="kg"
-                   onchange="updateWorkoutSetWeight(${exIdx}, ${sIdx}, this.value)" style="width:50px;">
-          </div>
-          <div class="workout-set-input-wrap">
-            <select class="workout-set-input mono"
-                    ${isPaused ? 'disabled' : ''}
-                    onchange="updateWorkoutSetRPE(${exIdx}, ${sIdx}, this.value)"
-                    style="width:60px; padding:4px 2px; font-size:11px;"
-                    title="RPE (Rate of Perceived Exertion)">
-              <option value="">RPE</option>
-              <option value="6" ${set.rpe == 6 ? 'selected' : ''}>6</option>
-              <option value="7" ${set.rpe == 7 ? 'selected' : ''}>7</option>
-              <option value="8" ${set.rpe == 8 ? 'selected' : ''}>8</option>
-              <option value="9" ${set.rpe == 9 ? 'selected' : ''}>9</option>
-              <option value="10" ${set.rpe == 10 ? 'selected' : ''}>10</option>
-            </select>
-          </div>
-          ${statusBtnHtml}
-        </div>`;
-    }).join('');
+          <h2 class="runner-exercise-name">${activeEx.exercise_name}</h2>
+          ${activeEx.tempo ? `<span class="workout-tempo-pill mono" style="margin-top:4px;">Tempo: ${fmtTempo(activeEx.tempo)}</span>` : ''}
+        </div>
+        <span class="runner-set-badge">SET ${activeSet.set_num} OF ${activeEx.sets.length}</span>
+      </div>
 
-    return `
-      <div class="workout-ex-card ${isExDone ? 'workout-ex-card-done' : (isCardActive ? 'workout-ex-card-active' : '')}">
-        <div class="workout-ex-header">
-          <div class="workout-ex-title-wrap">
-            <h2 class="workout-ex-name">
-              ${ex.exercise_name} ${badge(ex.exercise_type)} ${ssTag}
-              ${isCardActive && !isExDone ? '<span class="workout-active-badge">⚡ Focus</span>' : ''}
-            </h2>
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:2px;">
-              <span class="workout-ex-target-label mono">Target: ${ex.sets.length} × ${ex.sets[0]?.target_val}${isHold ? 's' : ' reps'}</span>
-              ${tempoHtml}
+      ${activeEx.notes ? `<div class="workout-ex-notes" style="margin-bottom:16px;">💡 ${activeEx.notes}</div>` : ''}
+
+      <div class="runner-benchmarks-row">
+        <div class="runner-benchmark-box">
+          <span class="runner-benchmark-lbl">Target</span>
+          <span class="runner-benchmark-val">${targetDesc}</span>
+        </div>
+        <div class="runner-benchmark-box">
+          <span class="runner-benchmark-lbl">Last Session</span>
+          <span class="runner-benchmark-val" style="color:var(--text-muted);">${lastPerfDesc}</span>
+        </div>
+      </div>
+
+      <!-- Main Input Section -->
+      <div class="runner-input-section">
+        ${isHold ? `
+          <div style="width:100%;">
+            ${isThisHoldRunning ? `
+              <button class="runner-hold-btn-lg running" onclick="stopWorkoutHold(true)">
+                ⏹ Stop Stopwatch (${fmtSecs(_workoutHoldState.elapsed)})
+              </button>
+            ` : `
+              <button class="runner-hold-btn-lg" ${isPaused ? 'disabled' : ''} onclick="startWorkoutHold(${activeExIdx}, ${activeSetIdx})">
+                ⏱ Start Hold Stopwatch
+              </button>
+            `}
+            <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-top:12px;">
+              <span style="font-size:12px; color:var(--text-muted);">Manual seconds:</span>
+              <div class="runner-stepper-control" style="width:auto;">
+                <button class="runner-stepper-btn-lg" style="width:42px; height:42px; font-size:20px;" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, -5)">-5</button>
+                <input class="runner-input-lg" style="width:80px; height:42px; font-size:22px;" type="number" min="0" value="${currentActual}" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onchange="updateWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, this.value)">
+                <button class="runner-stepper-btn-lg" style="width:42px; height:42px; font-size:20px;" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, 5)">+5</button>
+              </div>
             </div>
           </div>
-          ${isExDone ? `<span class="workout-done-badge">✓ Done</span>` : ''}
+        ` : `
+          <div class="runner-stepper-control">
+            <button class="runner-stepper-btn-lg" ${isPaused ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, -1)">-</button>
+            <input class="runner-input-lg" type="number" min="0" value="${currentActual}" ${isPaused ? 'disabled' : ''} onchange="updateWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, this.value)">
+            <button class="runner-stepper-btn-lg" ${isPaused ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, 1)">+</button>
+          </div>
+        `}
+      </div>
+
+      <!-- Dominant Complete CTA -->
+      <button class="runner-complete-btn-lg" ${isPaused ? 'disabled' : ''} onclick="toggleWorkoutSet(${activeExIdx}, ${activeSetIdx})">
+        ✓ COMPLETE SET ${activeSet.set_num}
+      </button>
+
+      <!-- Expandable Secondary Drawer (Weight, RPE, Notes) -->
+      <details style="margin-top:16px;">
+        <summary class="runner-drawer-toggle">
+          <span>⚙ Optional Details (+Kg, RPE, Notes)</span>
+        </summary>
+        <div class="runner-drawer-content">
+          <div class="form-group">
+            <label class="form-label">Added Load (+kg)</label>
+            <input class="form-input mono" type="number" min="0" step="0.5" placeholder="e.g. 5" value="${activeSet.weight_kg || ''}" onchange="updateWorkoutSetWeight(${activeExIdx}, ${activeSetIdx}, this.value)">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">RPE (1–10 Effort)</label>
+            <select class="form-input form-select mono" onchange="updateWorkoutSetRPE(${activeExIdx}, ${activeSetIdx}, this.value)">
+              <option value="">RPE (Optional)</option>
+              <option value="6" ${activeSet.rpe == 6 ? 'selected' : ''}>6 (~4 reps reserve)</option>
+              <option value="7" ${activeSet.rpe == 7 ? 'selected' : ''}>7 (~3 reps reserve)</option>
+              <option value="8" ${activeSet.rpe == 8 ? 'selected' : ''}>8 (~2 reps reserve)</option>
+              <option value="9" ${activeSet.rpe == 9 ? 'selected' : ''}>9 (~1 rep reserve)</option>
+              <option value="10" ${activeSet.rpe == 10 ? 'selected' : ''}>10 (Max / Failure)</option>
+            </select>
+          </div>
         </div>
-        ${ex.notes ? `<div class="workout-ex-notes">${ex.notes}</div>` : ''}
-        <div class="workout-sets-header">
-          <span>Set</span><span>Target</span><span>Actual</span><span>+Kg</span><span>RPE</span><span>Status</span>
+      </details>
+    </div>`;
+
+  // Rest Countdown Box if active
+  const restCountdownHtml = _workoutRestState.active ? `
+    <div class="runner-rest-box">
+      <span class="workout-rest-pill" style="margin-bottom:6px;">⏱ REST TIMER ACTIVE</span>
+      <div class="runner-rest-num">${fmtSecs(_workoutRestState.remaining)}</div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">${_workoutRestState.nextInfo}</div>
+      <div style="display:flex; justify-content:center; gap:8px;">
+        <button class="workout-rest-adjust-btn" onclick="adjustWorkoutRest(-15)">-15s</button>
+        <button class="workout-rest-adjust-btn" onclick="adjustWorkoutRest(15)">+15s</button>
+        <button class="workout-skip-rest-btn" onclick="stopWorkoutRest()">Skip Rest ➔</button>
+      </div>
+    </div>` : '';
+
+  // Compact Overview List of All Exercises in this Session
+  const sessionOverviewHtml = session.exercises.map((ex, exIdx) => {
+    const isDone = ex.sets.every(s => s.completed);
+    const completedCount = ex.sets.filter(s => s.completed).length;
+    const isCurrent = exIdx === activeExIdx;
+
+    return `
+      <div style="background:var(--surface); border:1px solid ${isCurrent ? 'var(--accent)' : 'var(--border)'}; border-radius:var(--radius); padding:12px 16px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="mono" style="color:var(--text-muted); font-size:12px;">#${String(exIdx + 1).padStart(2, '0')}</span>
+            <strong style="color:var(--text); font-size:14px;">${ex.exercise_name}</strong>
+            ${isDone ? '<span class="workout-done-badge">✓ Done</span>' : ''}
+          </div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+            ${ex.sets.length} sets × ${ex.sets[0]?.target_val}${ex.exercise_type === 'duration' ? 's hold' : ' reps'}
+          </div>
         </div>
-        <div class="workout-sets-list">
-          ${setRowsHtml}
-        </div>
+        <span class="mono" style="font-size:13px; font-weight:700; color:${isDone ? '#22c55e' : 'var(--text-muted)'};">
+          ${completedCount}/${ex.sets.length}
+        </span>
       </div>`;
   }).join('');
 
   return `
-    <div class="workout-screen">
-      <div class="workout-topbar">
-        <button class="btn-back" onclick="switchView('dashboard')">← Leave</button>
-        <div class="workout-timer-badge mono" id="workout-elapsed-time">
-          ${fmtSecs(elapsedSec)} ${isPaused ? '⏸' : ''}
+    <div class="runner-screen">
+      <div class="runner-top-bar">
+        <button class="btn btn-secondary btn-sm" onclick="switchView('home')">← Leave</button>
+        <div class="runner-timer-pill mono" id="workout-elapsed-time">
+          ⏱ ${fmtSecs(elapsedSec)} ${isPaused ? '⏸' : ''}
         </div>
-        <div style="display:flex; gap:8px; align-items:center;">
+        <div style="display:flex; gap:8px;">
           ${isPaused
             ? `<button class="btn btn-sm btn-primary" onclick="resumeWorkoutSession()">▶ Resume</button>`
-            : `<button class="btn btn-sm" style="background:var(--surface-2); border:1px solid var(--border);" onclick="pauseWorkoutSession()">⏸ Pause</button>`
+            : `<button class="btn btn-sm btn-secondary" onclick="pauseWorkoutSession()">⏸ Pause</button>`
           }
           <button class="btn btn-sm btn-primary" onclick="finishWorkoutSession()">Finish 🏁</button>
         </div>
       </div>
 
-      ${isPaused ? `
-        <div class="workout-paused-banner">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <span style="font-size:20px;">⏸</span>
-            <div>
-              <strong style="color:var(--text);">Workout is currently paused</strong>
-              <div style="font-size:12px; color:var(--text-muted);">Elapsed timer is halted. Tap resume to continue logging.</div>
-            </div>
-          </div>
-          <button class="btn btn-sm btn-primary" onclick="resumeWorkoutSession()">▶ Resume Workout</button>
-        </div>
-      ` : ''}
-
-      <div class="workout-header">
-        <span class="workout-routine-tag">${session.routine} · Level ${session.level}</span>
-        <h1 class="workout-title">Active Session</h1>
+      <div class="runner-progress-bar-wrap">
+        <div class="runner-progress-bar-fill" style="width:${pct}%;"></div>
       </div>
 
-      <div class="workout-progress-wrap">
-        <div class="workout-progress-text">
-          <span class="mono">${completedSets} / ${totalSets} Sets Completed</span>
-          <span class="mono">${pct}%</span>
+      ${restCountdownHtml}
+      ${spotlightCardHtml}
+
+      <div style="margin-top:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Session Overview</span>
+          <span class="mono" style="font-size:12px; color:var(--text-muted);">${completedSets} of ${totalSets} sets done (${pct}%)</span>
         </div>
-        <div class="workout-progress-bar">
-          <div class="workout-progress-fill" style="width: ${pct}%;"></div>
-        </div>
+        ${sessionOverviewHtml}
       </div>
 
-      <div class="workout-exercises-list">
-        ${exCardsHtml}
-      </div>
-
-      ${_workoutRestState.active ? `
-        <div class="workout-rest-banner" id="workout-rest-banner">
-          <div class="workout-rest-header">
-            <div class="workout-rest-title-wrap">
-              <span class="workout-rest-pill">⏱ REST TIMER</span>
-              <span class="workout-rest-next">${_workoutRestState.nextInfo}</span>
-            </div>
-            <button class="workout-rest-close-btn" onclick="stopWorkoutRest()" title="Dismiss Rest">✕</button>
-          </div>
-          <div class="workout-rest-body">
-            <div class="workout-rest-time mono" id="workout-rest-timer-val">${fmtSecs(_workoutRestState.remaining)}</div>
-            <div class="workout-rest-controls">
-              <button class="workout-rest-adjust-btn" onclick="adjustWorkoutRest(-15)">-15s</button>
-              <button class="workout-rest-adjust-btn" onclick="adjustWorkoutRest(15)">+15s</button>
-              <button class="workout-skip-rest-btn" onclick="stopWorkoutRest()">Skip Rest ➔</button>
-            </div>
-          </div>
-          <div class="workout-rest-progress">
-            <div class="workout-rest-fill" id="workout-rest-timer-bar" style="width: ${_workoutRestState.total > 0 ? Math.max(0, Math.min(100, (_workoutRestState.remaining / _workoutRestState.total) * 100)) : 0}%;"></div>
-          </div>
-        </div>
-      ` : ''}
-
-      <div class="workout-bottom-actions">
-        <button class="btn btn-save" style="width:100%; justify-content:center; padding:16px; font-size:16px;" onclick="finishWorkoutSession()">
-          Finish Workout 🏁
-        </button>
+      <div style="margin-top:20px; display:flex; justify-content:center;">
         <button class="btn-cancel-link" onclick="cancelWorkoutSession()">
           Discard / Cancel Workout
         </button>
@@ -3339,30 +3390,155 @@ function renderActiveWorkoutView() {
     </div>`;
 }
 
-// ─── Main render ─────────────────────────────────────────────────────────────
+// ─── Screen 5: Progress & Insights View ─────────────────────────────────────
+
+function renderProgressView() {
+  const selectedExId = state.historyExerciseId || (state.exercises[0]?.id ?? null);
+  const ex = getExercise(selectedExId);
+
+  const exOptionsHtml = state.exercises.map(e => `
+    <option value="${e.id}" ${e.id === selectedExId ? 'selected' : ''}>
+      ${e.name} (${e.type === 'duration' ? 'Hold' : 'Reps'})
+    </option>
+  `).join('');
+
+  const mode = state.historyMetricMode || 'best';
+  const points = computeProgress(ex, state.historyLogs || [], mode);
+  const stats = computeStats(points);
+  const isHold = ex?.type === 'duration';
+  const unit = isHold ? 's' : (mode === 'volume' ? ' vol' : ' reps');
+
+  let statCardsHtml = '';
+  if (stats) {
+    const { current, past, pct } = stats;
+    const pctStr = pct !== null ? `${pct >= 0 ? '+' : ''}${pct}%` : '—';
+
+    statCardsHtml = `
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; margin-bottom:20px;">
+        <div class="card" style="padding:14px; text-align:center;">
+          <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Current</span>
+          <div class="mono" style="font-size:22px; font-weight:800; color:var(--text); margin-top:2px;">${current}${unit}</div>
+        </div>
+        <div class="card" style="padding:14px; text-align:center;">
+          <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">2 Wks Ago</span>
+          <div class="mono" style="font-size:22px; font-weight:800; color:var(--text); margin-top:2px;">${past !== null ? past + unit : '—'}</div>
+        </div>
+        <div class="card" style="padding:14px; text-align:center;">
+          <span style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">4-Wk Trend</span>
+          <div class="mono" style="font-size:22px; font-weight:800; color:${pct >= 0 ? '#22c55e' : 'var(--text-muted)'}; margin-top:2px;">${pctStr}</div>
+        </div>
+      </div>`;
+  }
+
+  // Natural Language Insight Box
+  let insightText = 'Log a few more workouts to unlock explainable performance insights.';
+  if (stats && stats.pct !== null) {
+    if (stats.pct > 0) {
+      insightText = `🔥 Great progress! Your ${mode === 'best' ? 'best performance' : 'training volume'} improved by +${stats.pct}% over the last 2 weeks.`;
+    } else if (stats.pct === 0) {
+      insightText = `Consistent baseline! Performance is stable across your recorded sessions.`;
+    } else {
+      insightText = `Volume adjusted down by ${stats.pct}% — recovery is an essential part of supercompensation.`;
+    }
+  }
+
+  const insightBoxHtml = `
+    <div style="background:rgba(124,106,247,0.08); border:1px solid rgba(124,106,247,0.25); border-radius:var(--radius); padding:14px 18px; margin-bottom:20px; display:flex; align-items:center; gap:12px;">
+      <span style="font-size:22px;">💡</span>
+      <div style="font-size:13px; color:var(--text);">${insightText}</div>
+    </div>`;
+
+  const chartHtml = points.length > 0
+    ? `<div class="chart-wrap" style="height:240px;"><canvas id="history-canvas"></canvas></div>`
+    : `<div class="empty-state">No workout logs recorded yet for ${ex?.name || 'this exercise'}. Complete a session to see performance trends.</div>`;
+
+  return `
+    <div class="progress-screen">
+      <div class="view-header">
+        <h1 class="view-title">Progress & Insights</h1>
+        <p class="view-subtitle">Track progressive overload, performance trends, and personal bests.</p>
+      </div>
+
+      <div class="card" style="padding:16px; margin-bottom:20px;">
+        <label class="form-label" style="margin-bottom:6px;">Select Exercise to Analyze</label>
+        <select class="form-input form-select" onchange="openHistoryView(parseInt(this.value, 10))">
+          ${exOptionsHtml}
+        </select>
+      </div>
+
+      ${insightBoxHtml}
+      ${statCardsHtml}
+
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-header" style="justify-content:space-between; align-items:center;">
+          <span class="card-title">${ex?.name || 'Movement'} Trend</span>
+          <div class="metric-toggle-group">
+            <button class="metric-toggle-btn ${mode === 'best' ? 'active' : ''}" onclick="setHistoryMetricMode('best')">
+              ${isHold ? 'Best Hold' : 'Best Set'}
+            </button>
+            <button class="metric-toggle-btn ${mode === 'volume' ? 'active' : ''}" onclick="setHistoryMetricMode('volume')">
+              ${isHold ? 'Total Hold' : 'Total Volume'}
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          ${chartHtml}
+        </div>
+      </div>
+
+      ${renderPersonalRecordsCard(state.dashboardRecords)}
+    </div>`;
+}
+
+// ─── Main Router & Dispatcher ────────────────────────────────────────────────
 function render() {
-  // Sync active nav link (log view has no tab)
-  document.querySelectorAll('.nav-link').forEach(a => {
-    const v = a.dataset.view;
-    const isActive = v === state.view ||
-      (v === 'history_list' && (state.view === 'history_list' || state.view === 'session_detail' || state.view === 'history'));
-    a.classList.toggle('active', isActive);
+  const activeView = state.view;
+
+  document.querySelectorAll('.nav-link, .bottom-nav-item').forEach(el => {
+    const v = el.dataset.view;
+    const isActive = (v === activeView) ||
+      (v === 'home' && (activeView === 'home' || activeView === 'dashboard')) ||
+      (v === 'split' && (activeView === 'split' || activeView === 'routine' || activeView === 'edit')) ||
+      (v === 'history_list' && (activeView === 'history_list' || activeView === 'session_detail')) ||
+      (v === 'progress' && (activeView === 'progress' || activeView === 'history'));
+
+    el.classList.toggle('active', !!isActive);
   });
 
   const root = document.getElementById('app-root');
+  if (!root) return;
+
   switch (state.view) {
-    case 'dashboard':      root.innerHTML = renderDashboardView();     break;
-    case 'home':           root.innerHTML = renderTodayView();         break;
-    case 'routine':        root.innerHTML = renderRoutineView();       break;
-    case 'edit':           root.innerHTML = renderEditView();          break;
-    case 'log':            root.innerHTML = renderLogView();           break;
-    case 'history':        root.innerHTML = renderHistoryView();       break;
-    case 'history_list':   root.innerHTML = renderHistoryListView();   break;
-    case 'session_detail': root.innerHTML = renderSessionDetailView(); break;
-    case 'workout':        root.innerHTML = renderActiveWorkoutView();  break;
-    default:               root.innerHTML = renderDashboardView();
+    case 'home':
+    case 'dashboard':
+      root.innerHTML = renderHomeView();
+      break;
+    case 'workout':
+      root.innerHTML = renderActiveWorkoutView();
+      break;
+    case 'split':
+    case 'routine':
+    case 'edit':
+      root.innerHTML = renderSplitView();
+      break;
+    case 'history_list':
+      root.innerHTML = renderHistoryListView();
+      break;
+    case 'session_detail':
+      root.innerHTML = renderSessionDetailView();
+      break;
+    case 'progress':
+    case 'history':
+      root.innerHTML = renderProgressView();
+      if (window.Chart) buildHistoryChart();
+      break;
+    case 'log':
+      root.innerHTML = renderLogView();
+      if (!state.restActive) buildRpeRow();
+      break;
+    default:
+      root.innerHTML = renderHomeView();
   }
-  if (state.view === 'log' && !state.restActive) buildRpeRow();
 }
 
 // ─── Event handlers (global — called from inline html) ─────────────────────
@@ -3586,7 +3762,11 @@ function showToast(msg, isError = false) {
 
 // ─── Hash-based routing ───────────────────────────────────────────────────────
 function applyHash() {
-  const hash = window.location.hash.replace('#', '') || 'dashboard';
+  const hash = window.location.hash.replace('#', '') || 'home';
+  if (hash === 'settings') {
+    openSettingsModal();
+    return;
+  }
   if (hash.startsWith('log-')) {
     const id = parseInt(hash.replace('log-', ''), 10);
     if (!isNaN(id)) { state.view = 'log'; state.logExerciseId = id; return; }
@@ -3603,25 +3783,27 @@ function applyHash() {
     loadWorkoutSessions().then(render);
     return;
   }
+  if (hash === 'progress') {
+    state.view = 'progress';
+    return;
+  }
   if (hash.startsWith('history-')) {
     const id = parseInt(hash.replace('history-', ''), 10);
     if (!isNaN(id)) {
-      state.view = 'history';
+      state.view = 'progress';
       state.historyExerciseId = id;
-      // Logs are fetched lazily in openHistoryView; if landing directly via
-      // hash, trigger the fetch here so the chart populates.
       if (state.exercises.length) openHistoryView(id);
       return;
     }
   }
-  const validViews = ['dashboard', 'home', 'routine', 'edit', 'log', 'history', 'history_list', 'session_detail', 'workout'];
-  state.view = validViews.includes(hash) ? hash : 'dashboard';
+  const validViews = ['home', 'dashboard', 'workout', 'split', 'routine', 'edit', 'log', 'history', 'history_list', 'session_detail', 'progress'];
+  state.view = validViews.includes(hash) ? hash : 'home';
 }
 
 window.addEventListener('hashchange', async () => {
   applyHash();
   state.editingId = null;
-  if (state.view === 'dashboard') {
+  if (state.view === 'home' || state.view === 'dashboard') {
     loadDashboardSummary().then(render);
   }
   render();

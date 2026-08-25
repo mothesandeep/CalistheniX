@@ -22,18 +22,56 @@
 
 <body>
   <header class="app-header">
-    <span class="app-logo">Calisthen<span class="logo-x">i</span>X</span>
-    <nav class="app-nav">
-      <a href="#dashboard" class="nav-link" data-view="dashboard">Dashboard</a>
-      <a href="#home"      class="nav-link" data-view="home">Today</a>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <a href="#home" class="app-logo-link" style="text-decoration:none;">
+        <span class="app-logo">Calisthen<span class="logo-x">i</span>X</span>
+      </a>
+      <span id="sync-status-pill" class="sync-pill sync-pill-synced" title="Data persistence & sync status">
+        <span class="sync-dot"></span>
+        <span id="sync-status-text">Synced</span>
+      </span>
+    </div>
+
+    <!-- Desktop Nav -->
+    <nav class="app-nav desktop-nav">
+      <a href="#home"      class="nav-link" data-view="home">Home</a>
+      <a href="#workout"   class="nav-link" data-view="workout">Workout</a>
+      <a href="#split"     class="nav-link" data-view="split">My Split</a>
       <a href="#history"   class="nav-link" data-view="history_list">History</a>
-      <a href="#routine"   class="nav-link" data-view="routine">Routine</a>
-      <a href="#edit"      class="nav-link" data-view="edit">Edit</a>
+      <a href="#progress"  class="nav-link" data-view="progress">Progress</a>
+      <button class="nav-btn-icon" onclick="openSettingsModal()" title="Settings & Backup" aria-label="Settings">
+        ⚙
+      </button>
     </nav>
   </header>
 
   <main id="app-root" class="app-main"></main>
 
+  <!-- Mobile Bottom Navigation -->
+  <nav class="app-bottom-nav mobile-nav">
+    <a href="#home" class="bottom-nav-item" data-view="home">
+      <span class="bottom-nav-icon">🏠</span>
+      <span class="bottom-nav-label">Home</span>
+    </a>
+    <a href="#workout" class="bottom-nav-item bottom-nav-workout" data-view="workout">
+      <span class="bottom-nav-icon">⚡</span>
+      <span class="bottom-nav-label">Workout</span>
+    </a>
+    <a href="#split" class="bottom-nav-item" data-view="split">
+      <span class="bottom-nav-icon">📅</span>
+      <span class="bottom-nav-label">Split</span>
+    </a>
+    <a href="#history" class="bottom-nav-item" data-view="history_list">
+      <span class="bottom-nav-icon">📖</span>
+      <span class="bottom-nav-label">History</span>
+    </a>
+    <a href="#progress" class="bottom-nav-item" data-view="progress">
+      <span class="bottom-nav-icon">📈</span>
+      <span class="bottom-nav-label">Progress</span>
+    </a>
+  </nav>
+
+  <div id="settings-modal-root"></div>
   <div id="toast" class="toast toast-hidden"></div>
 
   <!-- Chart.js via CDN (architecture.md §5 — no build step) -->
