@@ -1,40 +1,53 @@
 /* ── Design tokens ─────────────────────────────────────────────────────────── */
 :root {
-  --bg:           #07070a;
-  --surface:      #0e0e16;
-  --surface-2:    #141422;
-  --surface-3:    #1a1a2e;
-  --border:       rgba(255, 255, 255, 0.08);
-  --border-focus: rgba(139, 92, 246, 0.6);
-  --border-accent:rgba(139, 92, 246, 0.35);
+  --bg:           #06060a;
+  --surface:      #0d0d16;
+  --surface-glass:rgba(14, 14, 24, 0.75);
+  --surface-2:    #12121e;
+  --surface-3:    #19192b;
+  --border:       rgba(255, 255, 255, 0.07);
+  --border-light: rgba(255, 255, 255, 0.12);
+  --border-focus: rgba(168, 85, 247, 0.6);
+  --border-accent:rgba(168, 85, 247, 0.35);
 
-  --text:         #f1f1f8;
-  --text-muted:   #7c7c9e;
-  --text-dim:     #444460;
+  --text:         #f8fafc;
+  --text-muted:   #94a3b8;
+  --text-dim:     #475569;
 
   --accent:       #8b5cf6;
-  --accent-hover: #a78bfa;
-  --accent-dim:   rgba(139, 92, 246, 0.12);
-  --accent-glow:  rgba(139, 92, 246, 0.35);
+  --accent-light: #a855f7;
+  --accent-hover: #c084fc;
+  --accent-dim:   rgba(139, 92, 246, 0.14);
+  --accent-glow:  rgba(168, 85, 247, 0.4);
 
   --success:      #10b981;
   --success-dim:  rgba(16, 185, 129, 0.15);
   --danger:       #f43f5e;
   --danger-dim:   rgba(244, 63, 94, 0.15);
+  --warning:      #f97316;
+  --warning-dim:  rgba(249, 115, 22, 0.15);
 
   --badge-reps-bg:  rgba(16, 185, 129, 0.15);
   --badge-reps-fg:  #10b981;
-  --badge-hold-bg:  rgba(139, 92, 246, 0.18);
+  --badge-hold-bg:  rgba(168, 85, 247, 0.18);
   --badge-hold-fg:  #c4b5fd;
 
-  --sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --mono: 'JetBrains Mono', monospace;
+  --sans:         'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --mono:         'JetBrains Mono', monospace;
 
-  --radius-sm: 6px;
-  --radius:    12px;
-  --radius-lg: 18px;
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius:    14px;
+  --radius-lg: 20px;
+  --radius-xl: 26px;
 
-  --transition: 180ms ease;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 44px rgba(0, 0, 0, 0.7), 0 0 30px rgba(139, 92, 246, 0.15);
+  --shadow-glass: 0 12px 36px -4px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  --transition: 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ── Reset ─────────────────────────────────────────────────────────────────── */
@@ -50,6 +63,41 @@ body {
   line-height: 1.5;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 480px;
+  background: radial-gradient(circle at 45% -10%, rgba(139, 92, 246, 0.12) 0%, rgba(6, 182, 212, 0.04) 40%, transparent 80%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Sleek Minimalist Scrollbars ───────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(6, 6, 10, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 999px;
+  transition: background var(--transition);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.6);
 }
 
 /* ── SVG Icon System ───────────────────────────────────────────────────────── */
@@ -3251,23 +3299,23 @@ body {
 
 /* ── Hero Card (Dominant Component) ───────────────────────────────────────── */
 .home-hero-card {
-  background: radial-gradient(circle at 80% 30%, rgba(139, 92, 246, 0.28) 0%, rgba(14, 14, 22, 0.96) 65%), #0c0c14;
-  border: 1px solid rgba(139, 92, 246, 0.35);
+  background: radial-gradient(circle at 85% 35%, rgba(147, 51, 234, 0.22) 0%, rgba(12, 12, 20, 0.96) 68%), #0a0a12;
+  border: 1px solid rgba(168, 85, 247, 0.32);
   border-radius: var(--radius-lg);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 32px 30px;
-  min-height: 380px;
-  box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.8), inset 0 0 40px rgba(139, 92, 246, 0.08);
-  transition: border-color var(--transition), box-shadow var(--transition);
+  padding: 32px 32px;
+  min-height: 390px;
+  box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 30px rgba(139, 92, 246, 0.12);
+  transition: all var(--transition);
 }
 
 .home-hero-card:hover {
-  border-color: rgba(139, 92, 246, 0.55);
-  box-shadow: 0 16px 44px -8px rgba(0, 0, 0, 0.9), 0 0 30px rgba(139, 92, 246, 0.2);
+  border-color: rgba(168, 85, 247, 0.55);
+  box-shadow: 0 24px 56px -10px rgba(0, 0, 0, 0.9), 0 0 36px rgba(168, 85, 247, 0.25);
 }
 
 .home-hero-content {
@@ -3489,18 +3537,21 @@ body {
 }
 
 .home-weekly-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: rgba(13, 13, 22, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 20px 22px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: border-color var(--transition);
+  transition: all var(--transition);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .home-weekly-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(168, 85, 247, 0.35);
 }
 
 .home-weekly-head {
@@ -3586,19 +3637,23 @@ body {
 
 /* ── Muscle Focus Card (Phase.md Section 20) ─────────────────────────────── */
 .home-muscle-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: rgba(13, 13, 22, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-lg);
   padding: 18px 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   flex: 1;
-  transition: border-color var(--transition);
+  transition: all var(--transition);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .home-muscle-card:hover {
-  border-color: rgba(139, 92, 246, 0.3);
+  border-color: rgba(168, 85, 247, 0.4);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 20px rgba(168, 85, 247, 0.15);
 }
 
 .home-muscle-head {
@@ -3687,21 +3742,25 @@ body {
 }
 
 .home-metric-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: rgba(14, 14, 24, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-lg);
-  padding: 18px 20px;
+  padding: 20px 22px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   transition: all var(--transition);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .home-metric-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);
+  border-color: rgba(168, 85, 247, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(139, 92, 246, 0.15);
 }
 
 .home-metric-top {
@@ -3781,18 +3840,22 @@ body {
 }
 
 .home-section-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: rgba(13, 13, 22, 0.75);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-lg);
-  padding: 22px;
+  padding: 22px 24px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: border-color var(--transition);
+  transition: all var(--transition);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .home-section-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(168, 85, 247, 0.35);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6), 0 0 24px rgba(139, 92, 246, 0.1);
 }
 
 .home-section-head {
@@ -4559,3 +4622,9 @@ body {
 
 
 
+
+
+h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-title, .modal-title, .app-logo {
+  font-family: var(--font-heading);
+  letter-spacing: -0.025em;
+}
