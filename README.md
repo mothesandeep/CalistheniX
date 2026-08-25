@@ -1,5 +1,9 @@
 # CalistheniX 🤸‍♂️⚡
 
+> [!WARNING]  
+> **🚧 WORK IN PROGRESS — ACTIVE DEVELOPMENT**  
+> This repository contains the actively developed version of CalistheniX. Features may change, bugs and incomplete functionality may exist, and it should NOT be considered a stable production release. Stable/release versions will be maintained separately.
+
 > **A local-first, aesthetic calisthenics progression tracker, custom weekly schedule builder, and live workout runner engineered for progressive overload and skill mastery.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](https://opensource.org/licenses/MIT)
