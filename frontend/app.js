@@ -1678,18 +1678,31 @@ function renderHomeView() {
       </div>
     </div>`;
 
-  // 6. Motivational Closing Banner (Phase.md Section 27)
-  const quoteBannerHtml = `
-    <div class="home-quote-banner fade-in-up stagger-4">
-      <div class="home-quote-text">
-        <span>“</span>
-        <span>The pain you feel today will be the strength you feel tomorrow.</span>
-        <span>”</span>
+  // 6. Actionable Training Load & Consistency Insight (Replaces generic motivational filler)
+  const remainingWorkouts = Math.max(0, plannedWorkoutsCount - weekSessionsDone);
+  const trainingPacingText = remainingWorkouts === 0
+    ? 'All planned weekly sessions completed · Recovery active'
+    : `${remainingWorkouts} session${remainingWorkouts > 1 ? 's' : ''} remaining to complete this week's split`;
+
+  const trainingInsightHtml = `
+    <div class="home-insight-card fade-in-up stagger-4">
+      <div class="home-insight-left">
+        <div class="home-insight-icon-wrap">
+          ${renderIcon('activity', 'cx-icon cx-icon-accent')}
+        </div>
+        <div>
+          <div class="home-insight-title">${trainingPacingText}</div>
+          <div class="home-insight-sub">Volume pacing: ${summary.week_sets || 0} sets logged · Recovery pacing optimal for progressive overload.</div>
+        </div>
       </div>
-      <button class="home-quote-btn" onclick="${resolved?.status === 'workout' ? 'startWorkoutFromResolved()' : 'switchView(\'split\')'}">
-        <span>Let's Go!</span>
-        <span>${renderIcon('dumbbell', 'cx-icon cx-icon-accent')}</span>
-      </button>
+      <div class="home-insight-actions">
+        <button class="btn btn-secondary btn-sm" onclick="switchView('split')">
+          ${renderIcon('calendar', 'cx-icon cx-icon-xs cx-icon-inline')} View Schedule
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="switchView('progress')">
+          ${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} View Analytics
+        </button>
+      </div>
     </div>`;
 
   return `
@@ -1730,8 +1743,8 @@ function renderHomeView() {
       <!-- 3-Column Lower Grid: Progress, PRs, Upcoming (Phase.md Section 23–26) -->
       ${threeColGridHtml}
 
-      <!-- Motivational Closing Footer (Phase.md Section 27) -->
-      ${quoteBannerHtml}
+      <!-- Actionable Training Load & Consistency Insight (Phase.md Section 27) -->
+      ${trainingInsightHtml}
     </div>`;
 }
 

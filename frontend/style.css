@@ -4237,51 +4237,69 @@ body::before {
   text-overflow: ellipsis;
 }
 
-/* ── Motivational Closing Banner ─────────────────────────────────────────── */
-.home-quote-banner {
+/* ── Actionable Weekly Training Insight Bar ───────────────────────────────── */
+.home-insight-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 16px 24px;
+  border-radius: var(--radius-card);
+  padding: 16px 22px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 6px;
-  gap: 16px;
+  gap: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.07);
   flex-wrap: wrap;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  margin-top: 4px;
 }
 
-.home-quote-text {
-  font-size: 14px;
-  font-weight: 500;
-  color: #e4e4f0;
-  font-style: italic;
+.home-insight-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
+  min-width: 0;
 }
 
-.home-quote-btn {
-  padding: 10px 22px;
-  border-radius: var(--radius);
+.home-insight-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
   border: 1px solid var(--border);
-  color: #ffffff;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all var(--transition);
   display: flex;
   align-items: center;
-  gap: 8px;
-  text-decoration: none;
-  box-shadow: none;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.home-quote-btn:hover {
-  background: var(--surface-3);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
+.home-insight-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.home-insight-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.home-insight-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .home-insight-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .home-insight-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 /* ── Animations & Stagger ────────────────────────────────────────────────── */
