@@ -546,9 +546,7 @@ function fmtTarget(le) {
 function fmtTempo(t)  { return t  || '—'; }
 function fmtRest(r)   { return r  ? `${r}s` : '—'; }
 function badge(type)  {
-  return type === 'duration'
-    ? '<span class="badge badge-hold">hold</span>'
-    : '<span class="badge badge-reps">reps</span>';
+  return '';
 }
 
 // Format the last log entry for a given exercise (Screen 1 row display).
@@ -703,20 +701,20 @@ function renderExerciseRow(le) {
   // Inline edit mode for this row
   if (state.editingId === le.id) return renderInlineEditRow(le);
 
-  const ex     = getExercise(le.exercise_id);
-  const ssTag  = le.superset_group != null
-    ? `<span class="ss-badge">SS${le.superset_group}</span>`
+  const ex = getExercise(le.exercise_id);
+  const ssTag = le.superset_group != null
+    ? `<span style="font-size:11px; font-weight:700; color:var(--text-dim); margin-left:4px;">[SS${le.superset_group}]</span>`
     : '';
 
   return `
     <div class="ex-row" data-le-id="${le.id}">
       <span class="ex-order mono">${String(le.order_index).padStart(2,'0')}</span>
-      <span class="ex-name">${le.exercise_name ?? ex?.name ?? '?'} ${badge(ex?.type)} ${ssTag}</span>
+      <span class="ex-name">${le.exercise_name ?? ex?.name ?? '?'}${ssTag}</span>
       <span class="ex-meta mono">${le.sets}×${fmtTarget(le)}</span>
       <span class="ex-tempo mono">${fmtTempo(le.tempo)}</span>
       <span class="ex-rest mono">${fmtRest(le.rest_sec)}</span>
       <span class="ex-actions">
-        <button class="btn-icon" title="Edit"   onclick="startEdit(${le.id})">${renderIcon('edit', 'cx-icon-sm')}</button>
+        <button class="btn-icon" title="Edit" onclick="startEdit(${le.id})">${renderIcon('edit', 'cx-icon-sm')}</button>
         <button class="btn-icon btn-icon-danger" title="Delete" onclick="handleDelete(${le.id})">×</button>
       </span>
     </div>`;
@@ -1922,7 +1920,6 @@ function renderEditViewInner() {
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="mono" style="color:var(--text-muted); font-size:12px;">#${String(idx + 1).padStart(2, '0')}</span>
               <strong style="color:var(--text); font-size:14px;">${ex.exercise_name}</strong>
-              ${badge(ex.exercise_type)}
             </div>
             <button type="button" class="btn btn-danger btn-sm" style="padding:2px 8px; font-size:11px;" onclick="removeWorkoutExerciseSlot(${idx})">${renderIcon('x', 'cx-icon cx-icon-xs cx-icon-inline')} Remove</button>
           </div>
@@ -2148,9 +2145,11 @@ function renderPersonalRecordsCard(records = []) {
   if (!records || !records.length) return '';
   const topRecords = records.slice(0, 6);
   const rows = topRecords.map(r => {
-    const repVal = r.max_reps ? `<span class="mono badge badge-reps">${r.max_reps} reps</span>` : '';
-    const holdVal = r.max_duration_sec ? `<span class="mono badge badge-duration">${r.max_duration_sec}s</span>` : '';
-    const weightVal = r.max_weight_kg ? `<span class="mono badge" style="background:rgba(234,179,8,0.15); color:var(--warning);">+${r.max_weight_kg}kg</span>` : '';
+    const statParts = [];
+    if (r.max_reps) statParts.push(`${r.max_reps} reps`);
+    if (r.max_duration_sec) statParts.push(`${r.max_duration_sec}s`);
+    if (r.max_weight_kg) statParts.push(`+${r.max_weight_kg}kg`);
+    const statDesc = statParts.join(' · ') || '—';
 
     return `
       <div class="pr-row" onclick="openHistoryView(${r.exercise_id})" role="button" tabindex="0">
@@ -2158,10 +2157,8 @@ function renderPersonalRecordsCard(records = []) {
           <span class="pr-trophy">${renderIcon('trophy', 'cx-icon cx-icon-gold')}</span>
           <span class="pr-name">${r.exercise_name}</span>
         </div>
-        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-          ${repVal}
-          ${holdVal}
-          ${weightVal}
+        <div class="mono" style="font-size:13px; font-weight:700; color:#f4f4f5;">
+          ${statDesc}
         </div>
       </div>`;
   }).join('');
@@ -2743,10 +2740,10 @@ function renderHistoryListView() {
           <div class="history-session-card" onclick="openSessionDetailView('${s.session_uuid}')">
             <div class="history-session-top">
               <div>
-                <h3 class="history-session-title">${s.routine_name} <span class="badge badge-reps">Level ${s.level}</span></h3>
+                <h3 class="history-session-title">${s.routine_name} <span style="font-size:12px; font-weight:400; color:var(--text-muted);">· Level ${s.level}</span></h3>
                 <span class="history-session-date mono">${dateStr}</span>
               </div>
-              <span class="badge badge-duration">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} ${s.status}</span>
+              <span style="font-size:12px; font-weight:600; color:#10b981; display:flex; align-items:center; gap:4px;">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} Finished</span>
             </div>
             <div class="history-session-metrics">
               <div class="history-metric-badge"><span>Duration:</span> <strong>${durMin} min</strong></div>
@@ -2829,7 +2826,7 @@ function renderSessionDetailView() {
         return `
           <div class="session-detail-ex-box">
             <div class="session-detail-ex-header">
-              <span style="font-size:15px; font-weight:600; color:var(--text);">${ex.name} ${badge(ex.type)}</span>
+              <span style="font-size:15px; font-weight:600; color:var(--text);">${ex.name}</span>
               <span class="mono" style="font-size:12px; color:var(--text-muted);">${ex.sets.length} sets logged</span>
             </div>
             <div style="display:grid; grid-template-columns:48px 1fr 1fr 1fr; gap:8px; font-size:11px; color:var(--text-muted); padding-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.08); text-transform:uppercase; letter-spacing:0.05em;">
@@ -2849,7 +2846,7 @@ function renderSessionDetailView() {
         <div class="today-hero-header">
           <div>
             <span class="today-hero-tag">COMPLETED WORKOUT SESSION</span>
-            <h1 class="today-hero-title">${detail.routine_name} <span class="badge badge-reps">Level ${detail.level}</span></h1>
+            <h1 class="today-hero-title">${detail.routine_name} <span style="font-size:14px; font-weight:400; color:var(--text-muted);">· Level ${detail.level}</span></h1>
             <p style="color:var(--text-muted); font-size:13px; margin:4px 0 0 0;">${dateStr}</p>
           </div>
           <span class="today-status-badge today-status-done">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} Finished</span>
@@ -4228,9 +4225,11 @@ function renderPrsView() {
             primaryVal = `+${r.max_weight_kg}kg`;
           }
 
-          const repBadge = r.max_reps ? `<span class="badge badge-reps mono">${r.max_reps} reps</span>` : '';
-          const holdBadge = r.max_duration_sec ? `<span class="badge badge-duration mono">${r.max_duration_sec}s hold</span>` : '';
-          const weightBadge = r.max_weight_kg ? `<span class="badge" style="background:rgba(234,179,8,0.15); color:#eab308; font-family:var(--mono);">+${r.max_weight_kg}kg</span>` : '';
+          const subParts = [];
+          if (r.max_reps && primaryVal !== `${r.max_reps} Reps`) subParts.push(`${r.max_reps} reps`);
+          if (r.max_duration_sec && primaryVal !== `${r.max_duration_sec}s Hold`) subParts.push(`${r.max_duration_sec}s hold`);
+          if (r.max_weight_kg && primaryVal !== `+${r.max_weight_kg}kg`) subParts.push(`+${r.max_weight_kg}kg`);
+          const subText = subParts.length ? `<span class="mono" style="font-size:12px; color:var(--text-muted);">${subParts.join(' · ')}</span>` : '';
 
           return `
             <div class="pr-card">
@@ -4247,11 +4246,7 @@ function renderPrsView() {
 
                 <div class="pr-card-values" style="margin-top:14px;">
                   <div class="pr-card-primary-val">${primaryVal}</div>
-                  <div class="pr-card-sub-vals">
-                    ${repBadge}
-                    ${holdBadge}
-                    ${weightBadge}
-                  </div>
+                  ${subText ? `<div class="pr-card-sub-vals" style="margin-top:4px;">${subText}</div>` : ''}
                 </div>
               </div>
 
@@ -4453,7 +4448,7 @@ function renderCalendarView() {
               <div style="display:flex; align-items:center; gap:8px;">
                 <h3 style="font-size:16px; font-weight:700; color:#ffffff;">${s.routine_name}</h3>
                 <span class="badge badge-reps">Level ${s.level}</span>
-                <span class="badge badge-duration">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} ${s.status}</span>
+                <span style="font-size:12px; font-weight:600; color:#10b981; display:flex; align-items:center; gap:4px;">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} Finished</span>
               </div>
               <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">
                 Duration: ${Math.round((s.duration_sec || 0) / 60)} mins · Total Sets: ${s.completed_sets || 0} completed
