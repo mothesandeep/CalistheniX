@@ -945,44 +945,60 @@ let _activeMuscleView = 'front';
 let _currentWorkoutMuscles = { label: 'Legs, Glutes, Core', frontMuscles: ['quads', 'abs'], backMuscles: ['glutes', 'calves'] };
 
 function getWorkoutMuscleTargets(workout) {
-  if (!workout || !workout.exercises || workout.exercises.length === 0) {
+  if (!workout) {
     return {
-      label: 'Full Body Mobility',
-      frontMuscles: ['abs', 'quads'],
-      backMuscles: ['glutes', 'calves']
+      label: 'Active Recovery & Mobility',
+      frontMuscles: [],
+      backMuscles: []
     };
   }
-  const exNames = workout.exercises.map(e => (e.name || '').toLowerCase());
-  const nameStr = exNames.join(' ');
+
+  const wName = (workout.name || '').toLowerCase();
+  const exNames = (workout.exercises || []).map(e => (e.exercise_name || e.name || '').toLowerCase()).join(' ');
+  const combined = `${wName} ${exNames}`;
 
   let front = [];
   let back = [];
   let targets = [];
 
-  if (nameStr.includes('push') || nameStr.includes('dip') || nameStr.includes('press') || nameStr.includes('chest') || nameStr.includes('hspu')) {
-    front.push('chest', 'shoulders', 'triceps', 'abs');
-    targets.push('Chest', 'Shoulders', 'Triceps');
-  }
-  if (nameStr.includes('pull') || nameStr.includes('chin') || nameStr.includes('row') || nameStr.includes('lever') || nameStr.includes('muscle-up')) {
-    back.push('lats', 'upper_back', 'biceps', 'forearms');
-    front.push('biceps');
-    targets.push('Back', 'Biceps', 'Lats');
-  }
-  if (nameStr.includes('squat') || nameStr.includes('lunge') || nameStr.includes('calf') || nameStr.includes('leg') || nameStr.includes('pistol')) {
+  // Legs / Lower Body
+  if (combined.includes('leg') || combined.includes('squat') || combined.includes('lunge') || combined.includes('calf') || combined.includes('pistol') || combined.includes('glute')) {
     front.push('quads');
     back.push('glutes', 'hamstrings', 'calves');
-    targets.push('Legs', 'Glutes', 'Calves');
+    targets.push('Legs', 'Glutes', 'Hamstrings', 'Calves');
   }
-  if (nameStr.includes('plank') || nameStr.includes('sit') || nameStr.includes('flag') || nameStr.includes('core') || nameStr.includes('hollow')) {
+
+  // Push / Chest / Shoulders / Triceps
+  if (combined.includes('push') || combined.includes('dip') || combined.includes('press') || combined.includes('chest') || combined.includes('hspu') || combined.includes('tricep') || combined.includes('pike')) {
+    front.push('chest', 'shoulders', 'triceps');
+    back.push('triceps');
+    targets.push('Chest', 'Shoulders', 'Triceps');
+  }
+
+  // Pull / Lats / Back / Biceps
+  if (combined.includes('pull') || combined.includes('chin') || combined.includes('row') || combined.includes('lever') || combined.includes('muscle-up') || combined.includes('bicep') || combined.includes('lat')) {
+    front.push('biceps', 'forearms');
+    back.push('upper_back', 'lats', 'forearms');
+    targets.push('Lats', 'Upper Back', 'Biceps');
+  }
+
+  // Core / Abs
+  if (combined.includes('plank') || combined.includes('sit') || combined.includes('flag') || combined.includes('core') || combined.includes('hollow') || combined.includes('v-up')) {
     front.push('abs', 'obliques');
-    back.push('lower_back');
     targets.push('Core', 'Abs');
   }
 
   if (targets.length === 0) {
-    targets.push('Upper Body', 'Core');
-    front.push('chest', 'abs', 'shoulders');
-    back.push('upper_back', 'lats');
+    if (wName.includes('rest') || wName.includes('recovery')) {
+      return {
+        label: 'Active Recovery & Mobility',
+        frontMuscles: [],
+        backMuscles: []
+      };
+    }
+    targets.push('Full Body');
+    front.push('chest', 'shoulders', 'abs', 'quads');
+    back.push('upper_back', 'glutes');
   }
 
   return {
@@ -1011,90 +1027,89 @@ function renderDualMuscleBodySvg(muscles) {
   const isChest = frontList.includes('chest');
   const isShoulders = frontList.includes('shoulders');
   const isBiceps = frontList.includes('biceps');
+  const isTriceps = frontList.includes('triceps') || backList.includes('triceps');
   const isAbs = frontList.includes('abs');
   const isQuads = frontList.includes('quads');
 
   const isUpperBack = backList.includes('upper_back') || backList.includes('lats');
   const isGlutes = backList.includes('glutes');
   const isHamstrings = backList.includes('hamstrings');
-  const activeColor = '#7c5cfc';
-  const glowFilter = '';
-  const baseColor = '#14141c';
-  const strokeColor = 'rgba(255, 255, 255, 0.12)';
+  const isCalves = backList.includes('calves');
 
-  const defs = '';
+  const activeColor = '#7c5cfc';
+  const baseColor = '#181822';
+  const strokeColor = 'rgba(255, 255, 255, 0.12)';
+  const activeStroke = '#7c5cfc';
 
   const frontSvg = `
-    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-      <span style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Front</span>
-      <svg class="home-muscle-svg" viewBox="0 0 100 140" fill="none">
-        ${defs}
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+      <span style="font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em;">Front</span>
+      <svg class="home-muscle-svg" viewBox="0 0 100 145" fill="none" style="width:72px; height:105px;">
         <!-- Head & Neck -->
         <circle cx="50" cy="14" r="8" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1.2"/>
         <path d="M47 22 H53 V27 H47 Z" fill="${baseColor}"/>
 
         <!-- Shoulders -->
-        <path d="M30 28 Q38 25 46 27 L44 35 Q36 34 30 28 Z" fill="${isShoulders ? activeColor : baseColor}" ${isShoulders ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
-        <path d="M70 28 Q62 25 54 27 L56 35 Q64 34 70 28 Z" fill="${isShoulders ? activeColor : baseColor}" ${isShoulders ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <path d="M28 28 Q38 25 46 27 L44 35 Q34 34 28 28 Z" fill="${isShoulders ? activeColor : baseColor}" stroke="${isShoulders ? activeStroke : strokeColor}" stroke-width="1"/>
+        <path d="M72 28 Q62 25 54 27 L56 35 Q66 34 72 28 Z" fill="${isShoulders ? activeColor : baseColor}" stroke="${isShoulders ? activeStroke : strokeColor}" stroke-width="1"/>
 
         <!-- Chest (Pecs) -->
-        <path d="M36 35 Q50 34 49 46 Q38 46 36 35 Z" fill="${isChest ? activeColor : baseColor}" ${isChest ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
-        <path d="M64 35 Q50 34 51 46 Q62 46 64 35 Z" fill="${isChest ? activeColor : baseColor}" ${isChest ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <path d="M35 34 Q50 33 49 46 Q37 46 35 34 Z" fill="${isChest ? activeColor : baseColor}" stroke="${isChest ? activeStroke : strokeColor}" stroke-width="1"/>
+        <path d="M65 34 Q50 33 51 46 Q63 46 65 34 Z" fill="${isChest ? activeColor : baseColor}" stroke="${isChest ? activeStroke : strokeColor}" stroke-width="1"/>
 
         <!-- Biceps / Arms -->
-        <rect x="23" y="32" width="7" height="20" rx="3.5" fill="${isBiceps ? activeColor : baseColor}" ${isBiceps ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
-        <rect x="70" y="32" width="7" height="20" rx="3.5" fill="${isBiceps ? activeColor : baseColor}" ${isBiceps ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <rect x="22" y="32" width="7" height="22" rx="3.5" fill="${isBiceps || isTriceps ? activeColor : baseColor}" stroke="${isBiceps || isTriceps ? activeStroke : strokeColor}" stroke-width="1"/>
+        <rect x="71" y="32" width="7" height="22" rx="3.5" fill="${isBiceps || isTriceps ? activeColor : baseColor}" stroke="${isBiceps || isTriceps ? activeStroke : strokeColor}" stroke-width="1"/>
 
         <!-- Abs / Core -->
-        <rect x="42" y="49" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" ${isAbs ? glowFilter : ''}/>
-        <rect x="51" y="49" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" ${isAbs ? glowFilter : ''}/>
-        <rect x="42" y="59" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" ${isAbs ? glowFilter : ''}/>
-        <rect x="51" y="59" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" ${isAbs ? glowFilter : ''}/>
-        <rect x="43" y="69" width="6" height="7" rx="2" fill="${isAbs ? activeColor : baseColor}" ${isAbs ? glowFilter : ''}/>
-        <rect x="51" y="69" width="6" height="7" rx="2" fill="${isAbs ? activeColor : baseColor}" ${isAbs ? glowFilter : ''}/>
+        <rect x="42" y="49" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" stroke="${isAbs ? activeStroke : strokeColor}" stroke-width="0.8"/>
+        <rect x="51" y="49" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" stroke="${isAbs ? activeStroke : strokeColor}" stroke-width="0.8"/>
+        <rect x="42" y="59" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" stroke="${isAbs ? activeStroke : strokeColor}" stroke-width="0.8"/>
+        <rect x="51" y="59" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" stroke="${isAbs ? activeStroke : strokeColor}" stroke-width="0.8"/>
+        <rect x="43" y="69" width="6" height="7" rx="2" fill="${isAbs ? activeColor : baseColor}" stroke="${isAbs ? activeStroke : strokeColor}" stroke-width="0.8"/>
+        <rect x="51" y="69" width="6" height="7" rx="2" fill="${isAbs ? activeColor : baseColor}" stroke="${isAbs ? activeStroke : strokeColor}" stroke-width="0.8"/>
 
         <!-- Quads / Legs -->
-        <path d="M36 80 L34 110 Q40 112 45 110 L47 80 Z" fill="${isQuads ? activeColor : baseColor}" ${isQuads ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
-        <path d="M64 80 L66 110 Q60 112 55 110 L53 80 Z" fill="${isQuads ? activeColor : baseColor}" ${isQuads ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <path d="M35 79 L33 110 Q40 112 46 110 L48 79 Z" fill="${isQuads ? activeColor : baseColor}" stroke="${isQuads ? activeStroke : strokeColor}" stroke-width="1"/>
+        <path d="M65 79 L67 110 Q60 112 54 110 L52 79 Z" fill="${isQuads ? activeColor : baseColor}" stroke="${isQuads ? activeStroke : strokeColor}" stroke-width="1"/>
 
         <!-- Calves -->
-        <rect x="35" y="114" width="8" height="20" rx="3" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1"/>
-        <rect x="57" y="114" width="8" height="20" rx="3" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1"/>
+        <rect x="34" y="114" width="8" height="22" rx="3.5" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1"/>
+        <rect x="58" y="114" width="8" height="22" rx="3.5" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1"/>
       </svg>
     </div>`;
 
   const backSvg = `
-    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-      <span style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em;">Back</span>
-      <svg class="home-muscle-svg" viewBox="0 0 100 140" fill="none">
-        ${defs}
+    <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+      <span style="font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em;">Back</span>
+      <svg class="home-muscle-svg" viewBox="0 0 100 145" fill="none" style="width:72px; height:105px;">
         <!-- Head & Neck -->
         <circle cx="50" cy="14" r="8" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1.2"/>
         <path d="M47 22 H53 V27 H47 Z" fill="${baseColor}"/>
 
         <!-- Upper Back / Traps & Lats -->
-        <path d="M32 28 Q50 25 68 28 L62 58 Q50 64 38 58 Z" fill="${isUpperBack ? activeColor : baseColor}" ${isUpperBack ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <path d="M30 28 Q50 24 70 28 L63 60 Q50 66 37 60 Z" fill="${isUpperBack ? activeColor : baseColor}" stroke="${isUpperBack ? activeStroke : strokeColor}" stroke-width="1"/>
 
-        <!-- Arms -->
-        <rect x="23" y="32" width="7" height="20" rx="3.5" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1"/>
-        <rect x="70" y="32" width="7" height="20" rx="3.5" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1"/>
+        <!-- Triceps / Arms -->
+        <rect x="22" y="32" width="7" height="22" rx="3.5" fill="${isTriceps ? activeColor : baseColor}" stroke="${isTriceps ? activeStroke : strokeColor}" stroke-width="1"/>
+        <rect x="71" y="32" width="7" height="22" rx="3.5" fill="${isTriceps ? activeColor : baseColor}" stroke="${isTriceps ? activeStroke : strokeColor}" stroke-width="1"/>
 
         <!-- Glutes -->
-        <path d="M36 68 Q49 68 49 80 Q38 82 36 68 Z" fill="${isGlutes ? activeColor : baseColor}" ${isGlutes ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
-        <path d="M64 68 Q51 68 51 80 Q62 82 64 68 Z" fill="${isGlutes ? activeColor : baseColor}" ${isGlutes ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <path d="M35 68 Q49 68 49 80 Q37 82 35 68 Z" fill="${isGlutes ? activeColor : baseColor}" stroke="${isGlutes ? activeStroke : strokeColor}" stroke-width="1"/>
+        <path d="M65 68 Q51 68 51 80 Q63 82 65 68 Z" fill="${isGlutes ? activeColor : baseColor}" stroke="${isGlutes ? activeStroke : strokeColor}" stroke-width="1"/>
 
         <!-- Hamstrings -->
-        <path d="M36 84 L34 110 Q40 112 45 110 L47 84 Z" fill="${isHamstrings ? activeColor : baseColor}" ${isHamstrings ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
-        <path d="M64 84 L66 110 Q60 112 55 110 L53 84 Z" fill="${isHamstrings ? activeColor : baseColor}" ${isHamstrings ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <path d="M35 83 L33 110 Q40 112 46 110 L48 83 Z" fill="${isHamstrings ? activeColor : baseColor}" stroke="${isHamstrings ? activeStroke : strokeColor}" stroke-width="1"/>
+        <path d="M65 83 L67 110 Q60 112 54 110 L52 83 Z" fill="${isHamstrings ? activeColor : baseColor}" stroke="${isHamstrings ? activeStroke : strokeColor}" stroke-width="1"/>
 
         <!-- Calves -->
-        <rect x="35" y="114" width="8" height="20" rx="3" fill="${isCalves ? activeColor : baseColor}" ${isCalves ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
-        <rect x="57" y="114" width="8" height="20" rx="3" fill="${isCalves ? activeColor : baseColor}" ${isCalves ? glowFilter : ''} stroke="${strokeColor}" stroke-width="1"/>
+        <rect x="34" y="114" width="8" height="22" rx="3.5" fill="${isCalves ? activeColor : baseColor}" stroke="${isCalves ? activeStroke : strokeColor}" stroke-width="1"/>
+        <rect x="58" y="114" width="8" height="22" rx="3.5" fill="${isCalves ? activeColor : baseColor}" stroke="${isCalves ? activeStroke : strokeColor}" stroke-width="1"/>
       </svg>
     </div>`;
 
   return `
-    <div style="display:flex; justify-content:center; align-items:center; gap:20px; width:100%;">
+    <div style="display:flex; justify-content:center; align-items:center; gap:24px; width:100%; padding:4px 0;">
       ${frontSvg}
       ${backSvg}
     </div>`;
@@ -1443,21 +1458,21 @@ function renderHomeView() {
         </div>
       </div>
 
-      <!-- Slot 3: Muscle Focus Card (Anatomical Vector Diagrams) -->
-      <div class="home-muscle-card" onclick="openBiomechanicsModal()" style="cursor:pointer;" title="Click to view full Biomechanics & Technique Guide">
+      <!-- Slot 3: Muscle Focus Card (Dynamic Custom SVG Body Map) -->
+      <div class="home-muscle-card" onclick="openBiomechanicsModal()" style="cursor:pointer;" title="Click to view Biomechanics & Movement Guide">
         <div class="home-muscle-head">
           <span class="home-muscle-tag">Muscle Focus</span>
-          <span style="font-size:11px; font-weight:700; color:var(--text-muted); display:flex; align-items:center; gap:4px;">
+          <span style="font-size:11px; font-weight:700; color:var(--accent); display:flex; align-items:center; gap:4px;">
             ${renderIcon('info', 'cx-icon cx-icon-xs')} Guide
           </span>
         </div>
 
         <div class="home-muscle-body-wrap" id="home-muscle-body-container">
-          <img src="${(resolved?.workout?.name || '').toLowerCase().includes('leg') ? 'assets/legs_anatomy.jpg' : 'assets/upper_anatomy.jpg'}" alt="Muscle Focus Anatomy" class="home-muscle-anatomy-img" />
+          ${renderDualMuscleBodySvg(_currentWorkoutMuscles)}
         </div>
 
         <div class="home-muscle-target-list">
-          <span style="color:#eab308; font-weight:700;">Target:</span> ${_currentWorkoutMuscles.label || 'Legs, Glutes, Core'}
+          <span style="color:var(--text-muted); font-weight:600;">Target:</span> <strong style="color:#ffffff; font-weight:700; margin-left:4px;">${_currentWorkoutMuscles.label}</strong>
         </div>
       </div>
     </div>`;
@@ -3948,7 +3963,7 @@ function renderActiveWorkoutView() {
             ` : ''}
           </div>
           <div class="runner-stage-art" onclick="openBiomechanicsModal()" title="Click to view Anatomy & Technique Guide">
-            <img src="${(activeEx.exercise_name.toLowerCase().includes('leg') || activeEx.exercise_name.toLowerCase().includes('squat')) ? 'assets/legs_anatomy.jpg' : 'assets/upper_anatomy.jpg'}" alt="Exercise Guide" class="runner-stage-img" />
+            ${renderDualMuscleBodySvg(getWorkoutMuscleTargets({ name: activeEx.exercise_name, exercises: [activeEx] }))}
           </div>
         </div>
 
@@ -4673,16 +4688,16 @@ function renderBiomechanicsTabContent(tab) {
     return `
       <div style="display:flex; flex-direction:column; gap:16px;">
         <p style="font-size:13px; color:var(--text-muted); margin:0;">
-          Targeted muscle groups with color-coded anatomical activation lines. Green represents primary movers, cyan/amber represents secondary stabilizers, and orange/red highlights core and synergistic muscle engagement.
+          Targeted muscle groups with dynamic anatomical activation. Highlighted regions indicate primary agonists and secondary stabilizers for each training split.
         </p>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
-          <div class="card" style="padding:14px; text-align:center; background:var(--surface-2);">
-            <span style="font-size:12px; font-weight:700; color:var(--text); text-transform:uppercase; margin-bottom:8px; display:block;">Upper Body & Push / Pull Muscles</span>
-            <img src="assets/upper_anatomy.jpg" alt="Upper Body Anatomy" style="width:100%; max-height:280px; object-fit:contain; border-radius:var(--radius);" />
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px;">
+          <div class="card" style="padding:18px; text-align:center; background:var(--surface-2);">
+            <span style="font-size:12px; font-weight:700; color:var(--text); text-transform:uppercase; margin-bottom:12px; display:block;">Upper Body (Push & Pull)</span>
+            ${renderDualMuscleBodySvg({ label: 'Chest, Back, Arms', frontMuscles: ['chest', 'shoulders', 'biceps', 'triceps', 'abs'], backMuscles: ['upper_back', 'lats', 'triceps'] })}
           </div>
-          <div class="card" style="padding:14px; text-align:center; background:var(--surface-2);">
-            <span style="font-size:12px; font-weight:700; color:var(--text); text-transform:uppercase; margin-bottom:8px; display:block;">Lower Body & Leg Muscles</span>
-            <img src="assets/legs_anatomy.jpg" alt="Lower Body Anatomy" style="width:100%; max-height:280px; object-fit:contain; border-radius:var(--radius);" />
+          <div class="card" style="padding:18px; text-align:center; background:var(--surface-2);">
+            <span style="font-size:12px; font-weight:700; color:var(--text); text-transform:uppercase; margin-bottom:12px; display:block;">Lower Body (Legs & Posterior)</span>
+            ${renderDualMuscleBodySvg({ label: 'Quads, Glutes, Calves', frontMuscles: ['quads', 'abs'], backMuscles: ['glutes', 'hamstrings', 'calves'] })}
           </div>
         </div>
       </div>`;

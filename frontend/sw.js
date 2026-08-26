@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calisthenix-v2.2';
+const CACHE_NAME = 'calisthenix-v2.3';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -7,8 +7,6 @@ const STATIC_ASSETS = [
   './manifest.json',
   './icon.svg',
   './assets/avatar.jpg',
-  './assets/upper_anatomy.jpg',
-  './assets/legs_anatomy.jpg',
   './assets/pushup_form.jpg',
   './assets/tempo_guide.jpg',
   './assets/grip_guide.jpg',
