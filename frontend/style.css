@@ -3303,7 +3303,7 @@ body::before {
   display: grid;
   grid-template-columns: 1.7fr 1fr;
   gap: 28px;
-  align-items: start;
+  align-items: stretch;
 }
 
 @media (max-width: 1080px) {
@@ -3319,7 +3319,8 @@ body::before {
   border-radius: var(--radius-hero);
   position: relative;
   overflow: hidden;
-  padding: 24px 28px;
+  padding: 32px 36px;
+  min-height: 380px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   transition: all var(--transition);
 }
@@ -3332,23 +3333,25 @@ body::before {
 .home-hero-grid {
   display: grid;
   grid-template-columns: 1.15fr 1fr;
-  gap: 24px;
-  align-items: start;
+  gap: 32px;
+  align-items: stretch;
   width: 100%;
+  height: 100%;
 }
 
 @media (max-width: 900px) {
   .home-hero-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 24px;
   }
 }
 
 .home-hero-content {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 18px;
+  justify-content: space-between;
+  height: 100%;
+  gap: 20px;
 }
 
 .home-hero-tag {
