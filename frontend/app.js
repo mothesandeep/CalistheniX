@@ -1219,19 +1219,49 @@ function renderHomeView() {
       </div>` : '';
 
     todayHeroHtml = `
-      <div class="home-hero-card fade-in-up stagger-1" onmousemove="handleHeroParallax(event)" onmouseleave="resetHeroParallax(event)">
-        <div class="home-hero-content">
-          <div>
-            <span class="home-hero-tag" style="color:var(--success);">REST & RECOVERY · ${splitName.toUpperCase()}</span>
-            <h1 class="home-hero-title">${dayName} — Rest Day</h1>
-            <p class="home-hero-slogan">
-              Muscles adapt and rebuild during recovery. Focus on clean hydration, light mobility, and deep sleep.
-            </p>
+      <div class="home-hero-card fade-in-up stagger-1">
+        <div class="home-hero-grid">
+          <div class="home-hero-content">
+            <div>
+              <span class="home-hero-tag" style="color:var(--success);">${renderIcon('moon', 'cx-icon cx-icon-xs cx-icon-inline')} REST & RECOVERY · ${splitName.toUpperCase()}</span>
+              <h1 class="home-hero-title">${dayName} — Rest Day</h1>
+              <p class="home-hero-slogan">
+                Muscles adapt and rebuild during recovery. Focus on clean hydration, light mobility, and deep sleep.
+              </p>
+            </div>
+            <div>
+              <div class="home-hero-metrics">
+                <div class="home-hero-metric-pill">
+                  <span class="icon">${renderIcon('moon', 'cx-icon cx-icon-sm')}</span>
+                  <span>Active Recovery</span>
+                </div>
+                <div class="home-hero-metric-pill">
+                  <span class="icon">${renderIcon('activity', 'cx-icon cx-icon-sm')}</span>
+                  <span>Mobility & Sleep</span>
+                </div>
+              </div>
+            </div>
           </div>
-          ${nextTeaserHtml}
-        </div>
-        <div class="home-hero-visual-wrap">
-          <img src="assets/hero_athlete.jpg" alt="Athlete" class="home-hero-img" />
+
+          <div class="home-hero-preview-col">
+            <div class="home-hero-preview-header">
+              <span class="home-hero-preview-tag">Scheduled Next</span>
+              <span class="home-hero-preview-count mono">${next ? next.day_name : 'Upcoming'}</span>
+            </div>
+            ${next ? `
+              <div class="home-hero-rest-next-card">
+                <div>
+                  <div class="home-hero-rest-next-name">${next.workout_name}</div>
+                  <p class="home-hero-rest-next-sub">Next scheduled training session in your ${splitName} program.</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="startWorkoutFromId(${next.workout_id})" style="width:fit-content; margin-top:12px;">
+                  ${renderIcon('zap', 'cx-icon cx-icon-inline cx-icon-xs')} Start Workout Early
+                </button>
+              </div>
+            ` : `
+              <div class="empty-state" style="padding:20px 0;">No upcoming workout in queue.</div>
+            `}
+          </div>
         </div>
       </div>`;
   } else {
@@ -1266,39 +1296,70 @@ function renderHomeView() {
       }
     }
 
-    todayHeroHtml = `
-      <div class="home-hero-card fade-in-up stagger-1" onmousemove="handleHeroParallax(event)" onmouseleave="resetHeroParallax(event)">
-        <div class="home-hero-content">
-          <div>
-            <span class="home-hero-tag">${heroStatusTag}</span>
-            <h1 class="home-hero-title">${workout.name}</h1>
-            <p class="home-hero-slogan">
-              Build strength. Build discipline.<br>Become unstoppable.
-            </p>
-          </div>
+    const heroExercises = (workout.exercises || []).slice(0, 4);
+    const heroExListHtml = heroExercises.map((ex, idx) => {
+      const isHold = ex.exercise_type === 'duration';
+      const targetStr = isHold ? `${ex.duration_sec || 30}s hold` : `${ex.reps || 8} reps`;
+      const ssText = ex.superset_group ? `<span class="home-hero-ex-ss">[SS${ex.superset_group}]</span>` : '';
 
-          <div>
-            <div class="home-hero-metrics">
-              <div class="home-hero-metric-pill">
-                <span class="icon">${renderIcon('timer', 'cx-icon cx-icon-sm')}</span>
-                <span>${workout.exercises?.length || 6} Exercises</span>
-              </div>
-              <div class="home-hero-metric-pill">
-                <span class="icon">${renderIcon('barChart', 'cx-icon cx-icon-sm')}</span>
-                <span>${workout.total_sets || 18} Sets</span>
-              </div>
-              <div class="home-hero-metric-pill">
-                <span class="icon">${renderIcon('timer', 'cx-icon cx-icon-sm')}</span>
-                <span>~${estDurationMin || 45} min</span>
-              </div>
+      return `
+        <div class="home-hero-ex-item" onclick="startWorkoutFromResolved()">
+          <div class="home-hero-ex-left">
+            <span class="home-hero-ex-num mono">${String(idx + 1).padStart(2, '0')}</span>
+            <div class="home-hero-ex-info">
+              <span class="home-hero-ex-name">${ex.exercise_name}${ssText}</span>
+              <span class="home-hero-ex-sub">${ex.sets || 3} sets · ${ex.tempo ? `${ex.tempo} tempo` : `${ex.rest_sec || 90}s rest`}</span>
+            </div>
+          </div>
+          <div class="home-hero-ex-target mono">${targetStr}</div>
+        </div>`;
+    }).join('');
+
+    const moreExCount = (workout.exercises?.length || 0) - heroExercises.length;
+    const moreExNote = moreExCount > 0 ? `<div style="font-size:11px; color:var(--text-dim); text-align:center; padding-top:2px;">+${moreExCount} more movements in session</div>` : '';
+
+    todayHeroHtml = `
+      <div class="home-hero-card fade-in-up stagger-1">
+        <div class="home-hero-grid">
+          <div class="home-hero-content">
+            <div>
+              <span class="home-hero-tag">${heroStatusTag}</span>
+              <h1 class="home-hero-title">${workout.name}</h1>
+              <p class="home-hero-slogan">
+                Targeted calisthenics overload. Log sets, tempo, and holds in live runner.
+              </p>
             </div>
 
-            ${heroBtnHtml}
-          </div>
-        </div>
+            <div>
+              <div class="home-hero-metrics">
+                <div class="home-hero-metric-pill">
+                  <span class="icon">${renderIcon('pullup', 'cx-icon cx-icon-sm')}</span>
+                  <span>${workout.exercises?.length || 6} Movements</span>
+                </div>
+                <div class="home-hero-metric-pill">
+                  <span class="icon">${renderIcon('barChart', 'cx-icon cx-icon-sm')}</span>
+                  <span>${workout.total_sets || 18} Sets</span>
+                </div>
+                <div class="home-hero-metric-pill">
+                  <span class="icon">${renderIcon('timer', 'cx-icon cx-icon-sm')}</span>
+                  <span>~${estDurationMin || 45} min</span>
+                </div>
+              </div>
 
-        <div class="home-hero-visual-wrap">
-          <img src="assets/hero_athlete.jpg" alt="Athlete" class="home-hero-img" />
+              ${heroBtnHtml}
+            </div>
+          </div>
+
+          <div class="home-hero-preview-col">
+            <div class="home-hero-preview-header">
+              <span class="home-hero-preview-tag">Session Routine</span>
+              <span class="home-hero-preview-count mono">${workout.exercises?.length || 0} exercises</span>
+            </div>
+            <div class="home-hero-preview-list">
+              ${heroExListHtml}
+              ${moreExNote}
+            </div>
+          </div>
         </div>
       </div>`;
   }
