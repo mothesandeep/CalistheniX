@@ -1530,8 +1530,10 @@ def get_dashboard_summary():
     sessions_list = [dict(r) for r in sessions]
     ex_map = {e['id']: dict(e) for e in exercises}
 
-    today = datetime.now(timezone.utc).date()
-    today_str = today.isoformat()
+    today_utc = datetime.now(timezone.utc).date()
+    today_local = datetime.now().date()
+    today_str_utc = today_utc.isoformat()
+    today_str_local = today_local.isoformat()
 
     # Collect all distinct dates with at least one log or completed workout session
     logged_dates = set()
@@ -1545,29 +1547,45 @@ def get_dashboard_summary():
         if len(ts) >= 10:
             logged_dates.add(ts[:10])
 
+    # Choose anchor date for today (match local or UTC if logged today)
+    if today_str_local in logged_dates:
+        today = today_local
+    elif today_str_utc in logged_dates:
+        today = today_utc
+    else:
+        today = today_local
+    today_str = today.isoformat()
+
     # 1. streak_days: count consecutive calendar days with >=1 log or session entry.
     # If athlete logged today, count backwards from today; if not yet today, count from yesterday.
     streak_days = 0
-    if today_str in logged_dates:
+    if today_str in logged_dates or today_str_utc in logged_dates or today_str_local in logged_dates:
         curr = today
         while curr.isoformat() in logged_dates:
             streak_days += 1
             curr -= timedelta(days=1)
     else:
-        yesterday = today - timedelta(days=1)
-        if yesterday.isoformat() in logged_dates:
-            curr = yesterday
+        yesterday_local = today_local - timedelta(days=1)
+        yesterday_utc = today_utc - timedelta(days=1)
+        if yesterday_local.isoformat() in logged_dates:
+            curr = yesterday_local
+            while curr.isoformat() in logged_dates:
+                streak_days += 1
+                curr -= timedelta(days=1)
+        elif yesterday_utc.isoformat() in logged_dates:
+            curr = yesterday_utc
             while curr.isoformat() in logged_dates:
                 streak_days += 1
                 curr -= timedelta(days=1)
 
     # 2. week_sessions: count distinct calendar days with >=1 log/session in last 7 days (today - 6 days to today)
     cutoff_7 = (today - timedelta(days=6)).isoformat()
-    week_sessions = len([d for d in logged_dates if cutoff_7 <= d <= today_str])
+    week_sessions = len([d for d in logged_dates if cutoff_7 <= d <= max(today_str, today_str_utc, today_str_local)])
 
     # 3. week_sets: total count of completed sets from logs and workout_sessions in last 7 days
-    week_sets_logs = sum(1 for l in logs_list if cutoff_7 <= str(l.get('timestamp') or '')[:10] <= today_str)
-    week_sets_sessions = sum(int(s.get('completed_sets') or s.get('total_sets') or 0) for s in sessions_list if cutoff_7 <= str(s.get('completed_at') or s.get('started_at') or '')[:10] <= today_str)
+    max_today_str = max(today_str, today_str_utc, today_str_local)
+    week_sets_logs = sum(1 for l in logs_list if cutoff_7 <= str(l.get('timestamp') or '')[:10] <= max_today_str)
+    week_sets_sessions = sum(int(s.get('completed_sets') or s.get('total_sets') or 0) for s in sessions_list if cutoff_7 <= str(s.get('completed_at') or s.get('started_at') or '')[:10] <= max_today_str)
     week_sets = max(week_sets_logs, week_sets_sessions, week_sets_logs + week_sets_sessions)
 
     # 4. top_movers: array of up to 3 objects { exercise_id, exercise_name, metric_current, metric_2wk_ago, pct_change }
@@ -2146,7 +2164,7 @@ def import_logs():
 @app.route('/dashboard/records', methods=['GET'])
 @app.route('/api/recent-prs', methods=['GET'])
 def get_personal_records():
-    """Return all-time Personal Records (PRs) across all exercises."""
+    """Return all-time Personal Records (PRs) across all exercises with dynamic relative date labels."""
     with get_db() as conn:
         rows = conn.execute(
             '''
@@ -2157,14 +2175,46 @@ def get_personal_records():
                 MAX(l.reps)         AS max_reps,
                 MAX(l.duration_sec) AS max_duration_sec,
                 MAX(l.weight_kg)    AS max_weight_kg,
+                MAX(l.timestamp)    AS last_achieved_at,
                 COUNT(l.id)         AS total_logs
             FROM exercises e
             JOIN logs l ON l.exercise_id = e.id
             GROUP BY e.id, e.name, e.type
-            ORDER BY total_logs DESC
+            ORDER BY last_achieved_at DESC, total_logs DESC
             '''
         ).fetchall()
-        return jsonify([dict(r) for r in rows])
+
+    today_utc = datetime.now(timezone.utc).date()
+    today_local = datetime.now().date()
+    today_str_utc = today_utc.isoformat()
+    today_str_local = today_local.isoformat()
+    yesterday_str_utc = (today_utc - timedelta(days=1)).isoformat()
+    yesterday_str_local = (today_local - timedelta(days=1)).isoformat()
+
+    results = []
+    for r in rows:
+        d = dict(r)
+        ts = str(d.get('last_achieved_at') or '')
+        ts_date = ts[:10]
+        if ts_date in (today_str_utc, today_str_local):
+            d['date_label'] = 'Today'
+        elif ts_date in (yesterday_str_utc, yesterday_str_local):
+            d['date_label'] = 'Yesterday'
+        elif len(ts_date) == 10:
+            try:
+                dt_obj = datetime.strptime(ts_date, '%Y-%m-%d').date()
+                diff_days = (today_local - dt_obj).days
+                if 1 < diff_days <= 6:
+                    d['date_label'] = f'{diff_days} days ago'
+                else:
+                    d['date_label'] = dt_obj.strftime('%d %b')
+            except Exception:
+                d['date_label'] = ts_date
+        else:
+            d['date_label'] = 'Recent'
+        results.append(d)
+
+    return jsonify(results)
 
 
 @app.route('/dashboard/activity', methods=['GET'])

@@ -882,6 +882,79 @@ class TestCalistheniXBackend(unittest.TestCase):
         self.assertGreaterEqual(import_res['imported_splits'], 1)
         self.assertGreaterEqual(import_res['imported_workouts'], 1)
 
+    def test_dashboard_summary_and_records_consistency(self):
+        """Verify synchronization and timezone consistency between /dashboard/summary and /dashboard/records."""
+        # 1. Zero state check
+        res_sum_zero = self.client.get('/dashboard/summary')
+        self.assertEqual(res_sum_zero.status_code, 200)
+        sum_zero = res_sum_zero.get_json()
+        self.assertEqual(sum_zero['streak_days'], 0)
+        self.assertEqual(sum_zero['week_sets'], 0)
+        self.assertEqual(sum_zero['week_sessions'], 0)
+
+        res_rec_zero = self.client.get('/dashboard/records')
+        self.assertEqual(res_rec_zero.status_code, 200)
+        self.assertEqual(len(res_rec_zero.get_json()), 0)
+
+        # 2. Log a set TODAY (reps exercise: Bulgarian Split Squats ID=23 or Diamond Push-ups ID=1)
+        with get_db() as conn:
+            ex_row = conn.execute("SELECT id, name, type FROM exercises WHERE name LIKE '%Push%' OR name LIKE '%Squat%' LIMIT 1").fetchone()
+            ex_id = ex_row['id']
+            ex_name = ex_row['name']
+
+        today_ts = datetime.now(timezone.utc).isoformat()
+        res_log = self.client.post('/logs', json={
+            'exercise_id': ex_id,
+            'reps': 16,
+            'timestamp': today_ts,
+            'client_uuid': str(uuid.uuid4())
+        })
+        self.assertEqual(res_log.status_code, 201)
+
+        # 3. Check /dashboard/summary: streak, sets, sessions MUST reflect today's log
+        res_sum = self.client.get('/dashboard/summary')
+        self.assertEqual(res_sum.status_code, 200)
+        sum_data = res_sum.get_json()
+        self.assertEqual(sum_data['streak_days'], 1)
+        self.assertEqual(sum_data['week_sets'], 1)
+        self.assertEqual(sum_data['week_sessions'], 1)
+
+        # 4. Check /dashboard/records: PR MUST be returned with 'Today' date_label
+        res_rec = self.client.get('/dashboard/records')
+        self.assertEqual(res_rec.status_code, 200)
+        rec_data = res_rec.get_json()
+        self.assertEqual(len(rec_data), 1)
+        self.assertEqual(rec_data[0]['exercise_id'], ex_id)
+        self.assertEqual(rec_data[0]['max_reps'], 16)
+        self.assertEqual(rec_data[0]['date_label'], 'Today')
+        self.assertIsNotNone(rec_data[0]['last_achieved_at'])
+
+        # 5. Log a set yesterday to verify multi-day streak and 'Yesterday' date_label
+        yesterday_ts = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+        with get_db() as conn:
+            ex_row2 = conn.execute("SELECT id FROM exercises WHERE id != ? LIMIT 1", (ex_id,)).fetchone()
+            ex_id2 = ex_row2['id']
+
+        self.client.post('/logs', json={
+            'exercise_id': ex_id2,
+            'reps': 20,
+            'timestamp': yesterday_ts,
+            'client_uuid': str(uuid.uuid4())
+        })
+
+        res_sum2 = self.client.get('/dashboard/summary')
+        sum_data2 = res_sum2.get_json()
+        self.assertEqual(sum_data2['streak_days'], 2)
+        self.assertEqual(sum_data2['week_sets'], 2)
+        self.assertEqual(sum_data2['week_sessions'], 2)
+
+        res_rec2 = self.client.get('/dashboard/records')
+        rec_data2 = res_rec2.get_json()
+        self.assertEqual(len(rec_data2), 2)
+        rec_map = {r['exercise_id']: r for r in rec_data2}
+        self.assertEqual(rec_map[ex_id]['date_label'], 'Today')
+        self.assertEqual(rec_map[ex_id2]['date_label'], 'Yesterday')
+
 
 if __name__ == '__main__':
     unittest.main()

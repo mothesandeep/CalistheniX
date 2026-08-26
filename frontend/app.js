@@ -1617,45 +1617,41 @@ function renderHomeView() {
     }).join('');
   }
 
-  // PR items
+  // PR items (Dynamically synced with /dashboard/records)
   let prsItemsHtml = '';
   if (state.dashboardRecords && state.dashboardRecords.length > 0) {
-    prsItemsHtml = state.dashboardRecords.slice(0, 3).map(r => `
-      <div class="home-pr-item" onclick="openHistoryView(${r.exercise_id})">
-        <div class="home-pr-left">
-          <span class="home-pr-trophy-icon">${renderIcon('trophy', 'cx-icon cx-icon-gold')}</span>
-          <div>
-            <div class="home-pr-title">${r.exercise_name}</div>
-            <div class="home-pr-new-tag">New best!</div>
+    prsItemsHtml = state.dashboardRecords.slice(0, 3).map(r => {
+      const dateLabel = r.date_label || (r.last_achieved_at ? r.last_achieved_at.slice(0, 10) : 'Recent');
+      const valStr = r.max_reps != null && r.max_reps > 0 ? `${r.max_reps} reps` : `${r.max_duration_sec || 0}s`;
+      return `
+        <div class="home-pr-item" onclick="openHistoryView(${r.exercise_id})">
+          <div class="home-pr-left">
+            <span class="home-pr-trophy-icon">${renderIcon('trophy', 'cx-icon cx-icon-gold')}</span>
+            <div>
+              <div class="home-pr-title">${r.exercise_name}</div>
+              <div class="home-pr-new-tag">${dateLabel === 'Today' ? 'New best!' : 'Personal Record'}</div>
+            </div>
           </div>
-        </div>
-        <div class="home-pr-val-wrap">
-          <div class="home-pr-val">${r.max_reps ? `${r.max_reps} reps` : `${r.max_duration_sec}s`}</div>
-          <div class="home-pr-date">Today</div>
-        </div>
-      </div>
-    `).join('');
+          <div class="home-pr-val-wrap">
+            <div class="home-pr-val">${valStr}</div>
+            <div class="home-pr-date">${dateLabel}</div>
+          </div>
+        </div>`;
+    }).join('');
   } else {
-    const demoPrs = [
-      { name: 'Bulgarian Split Squat', val: '16 reps', date: 'Today' },
-      { name: 'Plank Hold', val: '1:45 min', date: 'Yesterday' },
-      { name: 'Calf Raises', val: '25 reps', date: '2 days ago' }
-    ];
-    prsItemsHtml = demoPrs.map(p => `
-      <div class="home-pr-item" onclick="switchView('prs')">
+    prsItemsHtml = `
+      <div class="home-pr-item" onclick="startWorkoutFromResolved()" style="border-style:dashed; cursor:pointer; padding:12px 14px;" title="Click to start today's workout">
         <div class="home-pr-left">
-          <span class="home-pr-trophy-icon">${renderIcon('trophy', 'cx-icon cx-icon-gold')}</span>
+          <span class="home-pr-trophy-icon">${renderIcon('trophy', 'cx-icon cx-icon-muted')}</span>
           <div>
-            <div class="home-pr-title">${p.name}</div>
-            <div class="home-pr-new-tag">New best!</div>
+            <div class="home-pr-title">No Personal Records Yet</div>
+            <div class="home-pr-new-tag" style="color:var(--text-dim);">Hit target reps today to record your first PR</div>
           </div>
         </div>
         <div class="home-pr-val-wrap">
-          <div class="home-pr-val">${p.val}</div>
-          <div class="home-pr-date">${p.date}</div>
+          <div class="home-pr-val" style="color:var(--accent); font-size:12px; font-weight:700;">Start →</div>
         </div>
-      </div>
-    `).join('');
+      </div>`;
   }
 
   // Upcoming Workouts Timeline (Phase.md Section 26)
