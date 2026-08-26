@@ -1254,7 +1254,7 @@ function renderHomeView() {
       circleClass = 'home-week-circle today';
     }
 
-    return `<div class="${circleClass}" title="${DAY_NAMES[idx]}: ${schedule[idx]?.workout_name || 'Rest'}">${content}</div>`;
+    return `<div class="${circleClass}" onclick="switchView('split')" title="${DAY_NAMES[idx]}: ${schedule[idx]?.workout_name || 'Rest'} (Click to view schedule)" style="cursor:pointer;">${content}</div>`;
   }).join('');
 
   // 2. Hero Section (Today's Workout Dominates)
@@ -1425,7 +1425,7 @@ function renderHomeView() {
   const sideColHtml = `
     <div class="home-side-col fade-in-up stagger-2">
       <!-- Slot 1: Weekly Progress Card (Replaces Stronger Banner) -->
-      <div class="home-weekly-card">
+      <div class="home-weekly-card" onclick="switchView('split')" style="cursor:pointer;" title="Click to view weekly training schedule">
         <div>
           <div class="home-weekly-head">
             <span class="home-weekly-tag">Weekly Progress</span>
