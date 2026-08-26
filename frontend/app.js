@@ -1710,7 +1710,7 @@ function renderHomeView() {
           <div>
             <div class="home-section-head">
               <span class="home-section-head-title">${renderIcon('trophy', 'cx-icon cx-icon-inline cx-icon-gold')} Recent PRs</span>
-              <a href="#progress" class="home-section-link" onclick="switchView('prs')">View all ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</a>
+              <a href="#prs" class="home-section-link" onclick="switchView('prs')">View all ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</a>
             </div>
             <div class="home-prs-list">
               ${prsItemsHtml}
