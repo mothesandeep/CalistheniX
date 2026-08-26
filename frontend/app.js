@@ -1540,19 +1540,19 @@ function renderHomeView() {
           <div class="home-timeline-title">${title}</div>
           <div class="home-timeline-muscles">${muscles}</div>
         </div>
-        <div>
-          ${isWorkout ? '<span class="badge badge-reps" style="font-size:10px;">Workout</span>' : '<span class="badge badge-duration" style="font-size:10px;">Rest</span>'}
+        <div style="font-size:12px; font-weight:600; color:var(--text-muted);">
+          ${isWorkout ? '<span style="color:#22c55e;">Workout</span>' : '<span style="color:var(--text-dim);">Rest Day</span>'}
         </div>
       </div>`;
   }).join('');
 
   const threeColGridHtml = `
     <div class="home-three-col-grid fade-in-up stagger-4">
-      <!-- Column 1: Exercise Progress -->
-      <div class="home-section-card">
+      <!-- Left Featured Column: Exercise Progress Overload (1.55fr) -->
+      <div class="home-section-card home-section-card-featured">
         <div>
           <div class="home-section-head">
-            <span class="home-section-head-title">${renderIcon('trendingUp', 'cx-icon cx-icon-inline cx-icon-success')} Exercise Progress</span>
+            <span class="home-section-head-title">${renderIcon('trendingUp', 'cx-icon cx-icon-inline cx-icon-success')} Exercise Progression</span>
             <a href="#progress" class="home-section-link" onclick="switchView('progress')">View all progress ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</a>
           </div>
           <div class="home-progress-list">
@@ -1561,28 +1561,31 @@ function renderHomeView() {
         </div>
       </div>
 
-      <!-- Column 2: Recent PRs -->
-      <div class="home-section-card">
-        <div>
-          <div class="home-section-head">
-            <span class="home-section-head-title">${renderIcon('trophy', 'cx-icon cx-icon-inline cx-icon-gold')} Recent PRs</span>
-            <a href="#progress" class="home-section-link" onclick="switchView('prs')">View all PRs ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</a>
-          </div>
-          <div class="home-prs-list">
-            ${prsItemsHtml}
+      <!-- Right Column: Stacked Recent PRs & Upcoming Workouts (1fr) -->
+      <div class="home-side-col" style="gap: 20px;">
+        <!-- Stack 1: Recent PRs -->
+        <div class="home-section-card">
+          <div>
+            <div class="home-section-head">
+              <span class="home-section-head-title">${renderIcon('trophy', 'cx-icon cx-icon-inline cx-icon-gold')} Recent PRs</span>
+              <a href="#progress" class="home-section-link" onclick="switchView('prs')">View all ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</a>
+            </div>
+            <div class="home-prs-list">
+              ${prsItemsHtml}
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Column 3: Upcoming Workouts (Timeline) -->
-      <div class="home-section-card">
-        <div>
-          <div class="home-section-head">
-            <span class="home-section-head-title">${renderIcon('calendar', 'cx-icon cx-icon-inline cx-icon-accent')} Upcoming Workouts</span>
-            <a href="#calendar" class="home-section-link" onclick="switchView('calendar')">View calendar ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</a>
-          </div>
-          <div class="home-timeline-list">
-            ${timelineItemsHtml}
+        <!-- Stack 2: Upcoming Workouts Timeline -->
+        <div class="home-section-card">
+          <div>
+            <div class="home-section-head">
+              <span class="home-section-head-title">${renderIcon('calendar', 'cx-icon cx-icon-inline cx-icon-accent')} Upcoming Workouts</span>
+              <a href="#calendar" class="home-section-link" onclick="switchView('calendar')">Schedule ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</a>
+            </div>
+            <div class="home-timeline-list">
+              ${timelineItemsHtml}
+            </div>
           </div>
         </div>
       </div>
