@@ -318,23 +318,48 @@ function toggleMute() {
   });
 }
 
-// Lazy AudioContext — created on first user interaction to satisfy autoplay policy.
+// Lazy AudioContext with iOS WebKit gesture unlocker
 let _audioCtx = null;
 function getAudioCtx() {
   if (!_audioCtx) {
-    try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-    catch { _audioCtx = null; }
+    try {
+      const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtxClass) {
+        _audioCtx = new AudioCtxClass();
+      }
+    } catch {
+      _audioCtx = null;
+    }
+  }
+  if (_audioCtx && _audioCtx.state === 'suspended') {
+    _audioCtx.resume().catch(() => {});
   }
   return _audioCtx;
 }
 
-// Play a synthesised beep.
+// Global user-gesture audio unlock for iOS Safari autoplay restrictions
+function setupAudioUnlock() {
+  const unlock = () => {
+    try {
+      const ctx = getAudioCtx();
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+    } catch {}
+    window.removeEventListener('click', unlock);
+    window.removeEventListener('touchstart', unlock);
+  };
+  window.addEventListener('click', unlock, { once: true, passive: true });
+  window.addEventListener('touchstart', unlock, { once: true, passive: true });
+}
+
+// Play a synthesised beep with full feature-detection and silent degradation.
 // freq: Hz | durationMs: ms | volume: 0–1 | type: OscillatorType
 function beep(freq = 880, durationMs = 80, volume = 0.4, type = 'sine') {
   if (isMuted()) return;
-  const ctx = getAudioCtx();
-  if (!ctx) return;
   try {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
     const osc  = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.connect(gain);
@@ -346,13 +371,21 @@ function beep(freq = 880, durationMs = 80, volume = 0.4, type = 'sine') {
     gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationMs / 1000);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + durationMs / 1000);
-  } catch { /* AudioContext may be suspended on some browsers */ }
+  } catch {
+    // Graceful degradation on unsupported browsers or backgrounded tabs
+  }
 }
 
-// Short haptic pulse (no-op if navigator.vibrate not supported).
-function vibrate(ms = 200) {
+// Safe haptic pulse with explicit iOS Safari feature-detection (silent no-op on iOS)
+function vibrate(pattern = 200) {
   if (isMuted()) return;
-  try { navigator.vibrate?.(ms); } catch { }
+  try {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(pattern);
+    }
+  } catch {
+    // Gracefully catch any security or permissions policy restrictions
+  }
 }
 
 // ── Named cues ───────────────────────────────────────────────────────────────
@@ -5265,6 +5298,7 @@ async function handleCreateCustomExercise(event) {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   applyHash();
+  setupAudioUnlock();
   startSyncLoop();
   getActiveSession();
   if (state.view === 'workout') startWorkoutDurationTimer();
