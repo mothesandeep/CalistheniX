@@ -451,6 +451,21 @@ async function loadWorkoutDetail(workoutId) {
   }
 }
 
+function renderStreakSparklineSvg(streak) {
+  if (!streak || streak <= 0) {
+    return `
+      <svg class="home-streak-graph-svg" viewBox="0 0 320 36" preserveAspectRatio="none">
+        <line x1="10" y1="24" x2="310" y2="24" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <circle cx="310" cy="24" r="3" fill="rgba(255, 255, 255, 0.25)"/>
+      </svg>`;
+  }
+  return `
+    <svg class="home-streak-graph-svg" viewBox="0 0 320 50" preserveAspectRatio="none">
+      <path d="M 10 42 L 38 36 L 68 40 L 92 30 L 120 38 L 148 35 L 175 37 L 202 40 L 218 34 L 246 28 L 272 30 L 302 12" stroke="rgba(255, 255, 255, 0.35)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="302" cy="12" r="4" fill="#ffffff"/>
+    </svg>`;
+}
+
 function updateGlobalStreakDisplays(streakDays) {
   const streak = streakDays != null ? Number(streakDays) : 0;
   const sidebarStreakEl = document.getElementById('sidebar-streak-val');
@@ -464,6 +479,14 @@ function updateGlobalStreakDisplays(streakDays) {
   const cardDaysEl = document.querySelector('.home-streak-card-days');
   if (cardDaysEl) {
     cardDaysEl.textContent = `${streak} days`;
+  }
+  const cardSubEl = document.querySelector('.home-streak-card-sub');
+  if (cardSubEl) {
+    cardSubEl.textContent = streak > 0 ? 'Keep going! Don\'t break the chain.' : 'Start Day 1 by completing today\'s workout session.';
+  }
+  const graphWrapEl = document.querySelector('.home-streak-graph-wrap');
+  if (graphWrapEl) {
+    graphWrapEl.innerHTML = renderStreakSparklineSvg(streak);
   }
 }
 
@@ -1418,7 +1441,7 @@ function renderHomeView() {
         </div>
       </div>
 
-      <!-- Slot 2: Current Streak Card (Matching Reference Design) -->
+      <!-- Slot 2: Current Streak Card (Dynamic Matching) -->
       <div class="home-streak-card">
         <div>
           <span class="home-streak-card-tag">CURRENT STREAK</span>
@@ -1426,14 +1449,11 @@ function renderHomeView() {
             <span class="home-streak-flame">${renderIcon('flame', 'cx-icon cx-icon-fire cx-icon-lg cx-icon-inline')}</span>
             <span class="home-streak-card-days">${streakDays} days</span>
           </div>
-          <div class="home-streak-card-sub">Keep going! Don't break the chain.</div>
+          <div class="home-streak-card-sub">${streakDays > 0 ? 'Keep going! Don\'t break the chain.' : 'Start Day 1 by completing today\'s workout session.'}</div>
         </div>
 
         <div class="home-streak-graph-wrap">
-          <svg class="home-streak-graph-svg" viewBox="0 0 320 50" preserveAspectRatio="none">
-            <path d="M 10 42 L 38 36 L 68 40 L 92 30 L 120 38 L 148 35 L 175 37 L 202 40 L 218 34 L 246 28 L 272 30 L 302 12" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="302" cy="12" r="3.5" fill="#ffffff"/>
-          </svg>
+          ${renderStreakSparklineSvg(streakDays)}
         </div>
       </div>
 
