@@ -21,6 +21,7 @@ class TestCalistheniXBackend(unittest.TestCase):
         reseed_data()
         with get_db() as conn:
             conn.execute('DELETE FROM logs')
+            conn.execute('DELETE FROM workout_sessions')
             conn.commit()
 
     def test_progressions_table_removed(self):

@@ -451,6 +451,22 @@ async function loadWorkoutDetail(workoutId) {
   }
 }
 
+function updateGlobalStreakDisplays(streakDays) {
+  const streak = streakDays != null ? Number(streakDays) : 0;
+  const sidebarStreakEl = document.getElementById('sidebar-streak-val');
+  if (sidebarStreakEl) {
+    sidebarStreakEl.innerHTML = `${renderIcon('flame', 'cx-icon cx-icon-fire cx-icon-sm')} <span>${streak} day streak</span>`;
+  }
+  const pillNumEl = document.querySelector('.home-streak-pill-num');
+  if (pillNumEl) {
+    pillNumEl.textContent = streak;
+  }
+  const cardDaysEl = document.querySelector('.home-streak-card-days');
+  if (cardDaysEl) {
+    cardDaysEl.textContent = `${streak} days`;
+  }
+}
+
 async function loadDashboardSummary() {
   try {
     const [sum, rec, act] = await Promise.allSettled([
@@ -466,6 +482,7 @@ async function loadDashboardSummary() {
     state.dashboardRecords  = [];
     state.dashboardActivity = [];
   }
+  updateGlobalStreakDisplays(state.dashboardSummary?.streak_days);
 }
 
 // Fetch the last log for every exercise in today's day.
@@ -1365,7 +1382,7 @@ function renderHomeView() {
   }
 
     // 3. Weekly Progress, Current Streak, & Muscle Focus Side Column
-  const streakDays = summary.streak_days || 12;
+  const streakDays = summary.streak_days != null ? summary.streak_days : 0;
 
   const sideColHtml = `
     <div class="home-side-col fade-in-up stagger-2">

@@ -1524,21 +1524,28 @@ def get_dashboard_summary():
     with get_db() as conn:
         logs = conn.execute('SELECT * FROM logs ORDER BY timestamp ASC').fetchall()
         exercises = conn.execute('SELECT * FROM exercises').fetchall()
+        sessions = conn.execute("SELECT * FROM workout_sessions WHERE status = 'completed' ORDER BY completed_at ASC").fetchall()
 
     logs_list = [dict(r) for r in logs]
+    sessions_list = [dict(r) for r in sessions]
     ex_map = {e['id']: dict(e) for e in exercises}
 
     today = datetime.now(timezone.utc).date()
     today_str = today.isoformat()
 
-    # Collect all distinct dates with at least one log
+    # Collect all distinct dates with at least one log or completed workout session
     logged_dates = set()
     for l in logs_list:
         ts = str(l.get('timestamp') or '')
         if len(ts) >= 10:
             logged_dates.add(ts[:10])
 
-    # 1. streak_days: count consecutive calendar days with >=1 log entry.
+    for s in sessions_list:
+        ts = str(s.get('completed_at') or s.get('started_at') or '')
+        if len(ts) >= 10:
+            logged_dates.add(ts[:10])
+
+    # 1. streak_days: count consecutive calendar days with >=1 log or session entry.
     # If athlete logged today, count backwards from today; if not yet today, count from yesterday.
     streak_days = 0
     if today_str in logged_dates:
@@ -1554,12 +1561,14 @@ def get_dashboard_summary():
                 streak_days += 1
                 curr -= timedelta(days=1)
 
-    # 2. week_sessions: count distinct calendar days with >=1 log in last 7 days (today - 6 days to today)
+    # 2. week_sessions: count distinct calendar days with >=1 log/session in last 7 days (today - 6 days to today)
     cutoff_7 = (today - timedelta(days=6)).isoformat()
     week_sessions = len([d for d in logged_dates if cutoff_7 <= d <= today_str])
 
-    # 3. week_sets: total count of log rows in last 7 days
-    week_sets = sum(1 for l in logs_list if cutoff_7 <= str(l.get('timestamp') or '')[:10] <= today_str)
+    # 3. week_sets: total count of completed sets from logs and workout_sessions in last 7 days
+    week_sets_logs = sum(1 for l in logs_list if cutoff_7 <= str(l.get('timestamp') or '')[:10] <= today_str)
+    week_sets_sessions = sum(int(s.get('completed_sets') or s.get('total_sets') or 0) for s in sessions_list if cutoff_7 <= str(s.get('completed_at') or s.get('started_at') or '')[:10] <= today_str)
+    week_sets = max(week_sets_logs, week_sets_sessions, week_sets_logs + week_sets_sessions)
 
     # 4. top_movers: array of up to 3 objects { exercise_id, exercise_name, metric_current, metric_2wk_ago, pct_change }
     logs_by_ex = {}
