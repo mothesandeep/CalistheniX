@@ -36,11 +36,19 @@
   --font-heading: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
   --mono:         'JetBrains Mono', monospace;
 
-  --radius-xs: 5px;
-  --radius-sm: 8px;
-  --radius:    14px;
-  --radius-lg: 20px;
-  --radius-xl: 26px;
+  --radius-xs:    4px;
+  --radius-sm:    6px;
+  --radius:       14px;
+  --radius-lg:    18px;
+  --radius-xl:    24px;
+
+  /* Component-specific tailored radius hierarchy */
+  --radius-btn:   6px;
+  --radius-input: 6px;
+  --radius-badge: 4px;
+  --radius-card:  16px;
+  --radius-hero:  20px;
+  --radius-modal: 20px;
 
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
@@ -71,11 +79,11 @@ body {
 body::before {
   content: '';
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  display: none;
-  z-index: 0;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 99999;
+  opacity: 0.65;
 }
 
 /* ── Sleek Minimalist Scrollbars ───────────────────────────────────────────── */
@@ -379,9 +387,10 @@ body::before {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   overflow: hidden;
   margin-bottom: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 .card-header {
   display: flex;
@@ -3308,7 +3317,7 @@ body::before {
 .home-hero-card {
   background: #121217;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-hero);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -3316,7 +3325,7 @@ body::before {
   justify-content: space-between;
   padding: 36px 40px;
   min-height: 420px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   transition: all var(--transition);
 }
 
@@ -3409,13 +3418,16 @@ body::before {
   color: #ffffff;
   background: var(--accent);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius);
+  border-radius: var(--radius-btn);
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  transition: all 200ms ease;
+  transition: all 180ms ease;
   width: fit-content;
   text-decoration: none;
   letter-spacing: -0.2px;
+}
+.home-hero-btn:active {
+  transform: scale(0.985);
 }
 
 .home-hero-btn:hover {

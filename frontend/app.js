@@ -14,6 +14,10 @@ const API_BASE = 'http://127.0.0.1:5001';
 // ─── Modern SVG Icon System ──────────────────────────────────────────────────
 const ICONS = {
   home: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  pullup: '<path d="M3 4h18"/><path d="M6 4v5"/><path d="M18 4v5"/><path d="M9 13v7"/><path d="M15 13v7"/><path d="M9 13h6"/>',
+  rings: '<circle cx="7" cy="15" r="3.5"/><circle cx="17" cy="15" r="3.5"/><line x1="7" y1="3" x2="7" y2="11.5"/><line x1="17" y1="3" x2="17" y2="11.5"/>',
+  tempo: '<path d="m14 3-5 18h10l-5-18z"/><line x1="12" y1="3" x2="8" y2="12"/><circle cx="8" cy="12" r="1.5"/>',
+  rpe: '<path d="M12 4a9 9 0 0 0-9 9 9 9 0 0 0 13.5 7.8M21 13a9 9 0 0 0-3.5-7.1"/><line x1="12" y1="13" x2="16" y2="9"/>',
   zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
   calendar: '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/>',
   calendarDays: '<rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/>',
