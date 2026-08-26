@@ -3333,7 +3333,7 @@ body::before {
   display: grid;
   grid-template-columns: 1.15fr 1fr;
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
   width: 100%;
 }
 
@@ -3341,14 +3341,16 @@ body::before {
   .home-hero-grid {
     grid-template-columns: 1fr;
     gap: 20px;
+    align-items: start;
   }
 }
 
 .home-hero-content {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 18px;
+  justify-content: space-between;
+  height: 100%;
+  gap: 16px;
 }
 
 .home-hero-tag {
@@ -3380,19 +3382,19 @@ body::before {
 }
 
 .home-hero-slogan {
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text-muted);
   font-weight: 400;
-  line-height: 1.55;
+  line-height: 1.5;
   margin-top: 6px;
-  max-width: 380px;
+  max-width: 420px;
 }
 
 .home-hero-metrics {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin: 10px 0 16px;
+  margin: 8px 0 12px;
 }
 
 .home-hero-metric-pill {
@@ -3411,6 +3413,52 @@ body::before {
 .home-hero-metric-pill .icon {
   font-size: 15px;
   color: var(--accent);
+}
+
+/* ── Hero Live & Coaching Directives Box ──────────────────────────────────── */
+.home-hero-live-box,
+.home-hero-coaching-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin: 10px 0 14px;
+}
+
+.home-hero-coaching-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.home-hero-coaching-cues {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.home-hero-cue-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.home-hero-cue-dot {
+  width: 5px;
+  height: 5px;
+  background: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+  transform: translateY(-2px);
 }
 
 .home-hero-btn {

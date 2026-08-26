@@ -1351,6 +1351,56 @@ function renderHomeView() {
       }
     }
 
+    let heroDirectivesHtml = '';
+    if (isThisActive && active) {
+      const exList = active.exercises || [];
+      const completedSetsCount = exList.reduce((acc, ex) => acc + (ex.sets || []).filter(s => s.completed).length, 0);
+      const totalSetsCount = exList.reduce((acc, ex) => acc + (ex.sets || []).length, 0);
+      const progressPct = totalSetsCount > 0 ? Math.round((completedSetsCount / totalSetsCount) * 100) : 0;
+
+      let nextSetInfo = 'All sets completed · Ready to finish';
+      for (const ex of exList) {
+        const sIdx = (ex.sets || []).findIndex(s => !s.completed);
+        if (sIdx !== -1) {
+          nextSetInfo = `Current: Set ${sIdx + 1} of ${ex.exercise_name}`;
+          break;
+        }
+      }
+
+      heroDirectivesHtml = `
+        <div class="home-hero-live-box">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:11px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:0.06em;">Session Progress</span>
+            <span style="font-size:12px; font-weight:700; color:var(--accent); font-family:var(--mono);">${completedSetsCount}/${totalSetsCount} sets (${progressPct}%)</span>
+          </div>
+          <div style="width:100%; height:4px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; margin-bottom:8px;">
+            <div style="width:${progressPct}%; height:100%; background:var(--accent); border-radius:2px; transition:width 300ms ease;"></div>
+          </div>
+          <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+            ${renderIcon('activity', 'cx-icon cx-icon-xs cx-icon-accent')}
+            <span>${nextSetInfo}</span>
+          </div>
+        </div>`;
+    } else {
+      heroDirectivesHtml = `
+        <div class="home-hero-coaching-box">
+          <div class="home-hero-coaching-title">
+            ${renderIcon('zap', 'cx-icon cx-icon-xs cx-icon-accent')}
+            <span>Session Directives</span>
+          </div>
+          <div class="home-hero-coaching-cues">
+            <div class="home-hero-cue-item">
+              <span class="home-hero-cue-dot"></span>
+              <span><strong>Cadence:</strong> 3s eccentric tempo on compounds.</span>
+            </div>
+            <div class="home-hero-cue-item">
+              <span class="home-hero-cue-dot"></span>
+              <span><strong>Effort:</strong> RPE 8.0 · 1-2 reps in reserve for strict form.</span>
+            </div>
+          </div>
+        </div>`;
+    }
+
     const heroExercises = (workout.exercises || []).slice(0, 6);
     const heroExListHtml = heroExercises.map((ex, idx) => {
       const isHold = ex.exercise_type === 'duration';
@@ -1400,6 +1450,8 @@ function renderHomeView() {
                   <span>~${estDurationMin || 45} min</span>
                 </div>
               </div>
+
+              ${heroDirectivesHtml}
 
               ${heroBtnHtml}
             </div>
