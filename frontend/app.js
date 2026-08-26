@@ -1286,49 +1286,7 @@ function renderHomeView() {
                   <div class="home-hero-rest-next-name">${next.workout_name}</div>
                   <p class="home-hero-rest-next-sub">Next scheduled training session in your ${splitName} program.</p>
                 </div>
-                <button class="btn btn-secondary btn-sm" onclick="startWorkoutFromId(${next.workout_id})" style="width:fit-content; margin-top:12px;">
-                  ${renderIcon('zap', 'cx-icon cx-icon-inline cx-icon-xs')} Start Workout Early
-                </button>
-              </div>
-            ` : `
-              <div class="empty-state" style="padding:20px 0;">No upcoming workout in queue.</div>
-            `}
-          </div>
-        </div>
-      </div>`;
-  } else {
-    // Workout Day
-    const workout = resolved.workout;
-    const splitName = resolved.split_name || currentSplit?.name || 'Active Split';
-    const dayName = resolved.day_name || DAY_NAMES[todayDow];
-    const estDurationMin = Math.round((workout.total_sets * 90) / 60);
-
-    let heroBtnHtml = `
-      <button class="home-hero-btn" onclick="startWorkoutFromResolved()">
-        <span>${renderIcon('zap', 'cx-icon cx-icon-inline')} Start Workout</span>
-        <span class="arrow-icon">${renderIcon('arrowRight', 'cx-icon cx-icon-sm')}</span>
-      </button>`;
-
-    let heroStatusTag = 'TODAY\'S WORKOUT';
-    if (isThisActive) {
-      if (active.status === 'paused') {
-        heroStatusTag = 'WORKOUT PAUSED';
-        heroBtnHtml = `
-          <button class="home-hero-btn" onclick="openWorkoutView()">
-            <span>${renderIcon('play', 'cx-icon cx-icon-inline cx-icon-sm')} Resume Workout</span>
-            <span class="arrow-icon">${renderIcon('arrowRight', 'cx-icon cx-icon-sm')}</span>
-          </button>`;
-      } else {
-        heroStatusTag = 'WORKOUT IN PROGRESS';
-        heroBtnHtml = `
-          <button class="home-hero-btn" onclick="openWorkoutView()">
-            <span>${renderIcon('zap', 'cx-icon cx-icon-inline')} Continue Workout</span>
-            <span class="arrow-icon">${renderIcon('arrowRight', 'cx-icon cx-icon-sm')}</span>
-          </button>`;
-      }
-    }
-
-    const heroExercises = (workout.exercises || []).slice(0, 4);
+                const heroExercises = (workout.exercises || []).slice(0, 6);
     const heroExListHtml = heroExercises.map((ex, idx) => {
       const isHold = ex.exercise_type === 'duration';
       const targetStr = isHold ? `${ex.duration_sec || 30}s hold` : `${ex.reps || 8} reps`;
@@ -1355,10 +1313,10 @@ function renderHomeView() {
         <div class="home-hero-grid">
           <div class="home-hero-content">
             <div>
-              <span class="home-hero-tag">${heroStatusTag}</span>
+              <span class="home-hero-tag">${heroStatusTag} · ${(splitName || 'Active Split').toUpperCase()}</span>
               <h1 class="home-hero-title">${workout.name}</h1>
               <p class="home-hero-slogan">
-                Targeted calisthenics overload. Log sets, tempo, and holds in live runner.
+                ${workout.description || 'Targeted calisthenics progressive overload. Track sets, tempo, and reps live.'}
               </p>
             </div>
 
@@ -1396,8 +1354,21 @@ function renderHomeView() {
       </div>`;
   }
 
-    // 3. Weekly Progress, Current Streak, & Muscle Focus Side Column
+  // 3. Weekly Progress, Current Streak, & Muscle Focus Side Column
   const streakDays = summary.streak_days != null ? summary.streak_days : 0;
+  const streakGraphSvg = streakDays > 0
+    ? `<svg class="home-streak-graph-svg" viewBox="0 0 320 44" preserveAspectRatio="none">
+        <path d="M 10 38 L 38 34 L 68 36 L 92 28 L 120 34 L 148 30 L 175 32 L 202 36 L 218 28 L 246 22 L 272 26 L 302 10" stroke="rgba(255, 255, 255, 0.35)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="302" cy="10" r="4" fill="#ffffff"/>
+      </svg>`
+    : `<svg class="home-streak-graph-svg" viewBox="0 0 320 36" preserveAspectRatio="none">
+        <line x1="10" y1="24" x2="310" y2="24" stroke="rgba(255, 255, 255, 0.12)" stroke-width="1.5" stroke-dasharray="4 4"/>
+        <circle cx="310" cy="24" r="3" fill="rgba(255, 255, 255, 0.25)"/>
+      </svg>`;
+
+  const streakSubText = streakDays > 0
+    ? `Active streak! Keep your training chain unbroken.`
+    : `Start Day 1 by logging today's workout session.`;
 
   const sideColHtml = `
     <div class="home-side-col fade-in-up stagger-2">
@@ -1418,7 +1389,7 @@ function renderHomeView() {
         </div>
       </div>
 
-      <!-- Slot 2: Current Streak Card (Matching Reference Design) -->
+      <!-- Slot 2: Current Streak Card (Dynamic Matching) -->
       <div class="home-streak-card">
         <div>
           <span class="home-streak-card-tag">CURRENT STREAK</span>
@@ -1426,14 +1397,11 @@ function renderHomeView() {
             <span class="home-streak-flame">${renderIcon('flame', 'cx-icon cx-icon-fire cx-icon-lg cx-icon-inline')}</span>
             <span class="home-streak-card-days">${streakDays} days</span>
           </div>
-          <div class="home-streak-card-sub">Keep going! Don't break the chain.</div>
+          <div class="home-streak-card-sub">${streakSubText}</div>
         </div>
 
         <div class="home-streak-graph-wrap">
-          <svg class="home-streak-graph-svg" viewBox="0 0 320 50" preserveAspectRatio="none">
-            <path d="M 10 42 L 38 36 L 68 40 L 92 30 L 120 38 L 148 35 L 175 37 L 202 40 L 218 34 L 246 28 L 272 30 L 302 12" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="302" cy="12" r="3.5" fill="#ffffff"/>
-          </svg>
+          ${streakGraphSvg}
         </div>
       </div>
 
@@ -1456,10 +1424,38 @@ function renderHomeView() {
       </div>
     </div>`;
 
-  // 4. 4-Metric Training Strip (Phase.md Section 21, 22)
-  const avgWorkoutMin = 46;
+  // 4. 4-Metric Training Strip (Zero-State Aware Consistency)
+  const hasWeeklyActivity = (summary.week_sessions || 0) > 0 || (summary.week_sets || 0) > 0;
   const trainingVolumeKg = (summary.week_sets || 0) * 115;
-  const volumeStr = trainingVolumeKg > 0 ? `${trainingVolumeKg.toLocaleString()} kg` : `${summary.week_sets * 10} reps`;
+
+  const card1Sub = hasWeeklyActivity ? `/ ${plannedWorkoutsCount} planned` : `<span style="color:var(--accent); cursor:pointer;" onclick="startWorkoutFromResolved()">Start workout today →</span>`;
+  const card1Spark = hasWeeklyActivity
+    ? `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 25 Q 20 22, 40 16 T 80 6" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" fill="none"/></svg>`
+    : `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><line x1="0" y1="20" x2="80" y2="20" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" stroke-dasharray="3 3"/></svg>`;
+
+  const card2Val = summary.week_sets || 0;
+  const card2Sub = hasWeeklyActivity
+    ? `<span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} active</span>`
+    : `0 sets logged this week`;
+  const card2Spark = hasWeeklyActivity
+    ? `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 28 Q 25 24, 50 14 T 80 4" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" fill="none"/></svg>`
+    : `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><line x1="0" y1="20" x2="80" y2="20" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" stroke-dasharray="3 3"/></svg>`;
+
+  const card3Val = hasWeeklyActivity ? `${trainingVolumeKg.toLocaleString()} kg` : `—`;
+  const card3Sub = hasWeeklyActivity
+    ? `<span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} volume</span>`
+    : `No volume logged yet`;
+  const card3Spark = hasWeeklyActivity
+    ? `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 24 Q 25 20, 50 12 T 80 5" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1.8" fill="none"/></svg>`
+    : `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><line x1="0" y1="20" x2="80" y2="20" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" stroke-dasharray="3 3"/></svg>`;
+
+  const card4Val = hasWeeklyActivity ? `46 min` : `—`;
+  const card4Sub = hasWeeklyActivity
+    ? `Avg session pacing`
+    : `Target pacing: ~45 min`;
+  const card4Spark = hasWeeklyActivity
+    ? `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 26 Q 20 22, 50 15 T 80 8" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" fill="none"/></svg>`
+    : `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><line x1="0" y1="20" x2="80" y2="20" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" stroke-dasharray="3 3"/></svg>`;
 
   const metricsStripHtml = `
     <div class="home-metrics-strip fade-in-up stagger-3">
@@ -1470,8 +1466,8 @@ function renderHomeView() {
           <div class="home-metric-icon">${renderIcon('dumbbell', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
         </div>
         <div class="home-metric-val">${summary.week_sessions || 0}</div>
-        <div class="home-metric-sub">/ ${plannedWorkoutsCount} planned</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 25 Q 20 22, 40 16 T 80 6" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.8" fill="none"/></svg>
+        <div class="home-metric-sub">${card1Sub}</div>
+        ${card1Spark}
       </div>
 
       <!-- Card 2: Total Sets -->
@@ -1480,9 +1476,9 @@ function renderHomeView() {
           <span class="home-metric-lbl">Total Sets</span>
           <div class="home-metric-icon">${renderIcon('barChart', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
         </div>
-        <div class="home-metric-val">${summary.week_sets || 0}</div>
-        <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 18%</span> vs last week</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 28 Q 25 24, 50 14 T 80 4" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.8" fill="none"/></svg>
+        <div class="home-metric-val">${card2Val}</div>
+        <div class="home-metric-sub">${card2Sub}</div>
+        ${card2Spark}
       </div>
 
       <!-- Card 3: Training Volume -->
@@ -1491,9 +1487,9 @@ function renderHomeView() {
           <span class="home-metric-lbl">Training Volume</span>
           <div class="home-metric-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
         </div>
-        <div class="home-metric-val">${volumeStr}</div>
-        <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 22%</span> capacity</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 24 Q 25 20, 50 12 T 80 5" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1.8" fill="none"/></svg>
+        <div class="home-metric-val">${card3Val}</div>
+        <div class="home-metric-sub">${card3Sub}</div>
+        ${card3Spark}
       </div>
 
       <!-- Card 4: Avg. Workout Time -->
@@ -1502,13 +1498,13 @@ function renderHomeView() {
           <span class="home-metric-lbl">Avg. Workout Time</span>
           <div class="home-metric-icon">${renderIcon('timer', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
         </div>
-        <div class="home-metric-val">${avgWorkoutMin} min</div>
-        <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 5 min</span> target pacing</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 26 Q 20 22, 50 15 T 80 8" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" fill="none"/></svg>
+        <div class="home-metric-val">${card4Val}</div>
+        <div class="home-metric-sub">${card4Sub}</div>
+        ${card4Spark}
       </div>
     </div>`;
 
-    // 5. Three-Column Lower Grid: Exercise Progress, Recent PRs, Upcoming Workouts (Phase.md Section 23, 25, 26)
+  // 5. Three-Column Lower Grid: Exercise Progress, Recent PRs, Upcoming Workouts (Zero-State Aware)
   let progressItemsHtml = '';
   if (summary.top_movers && summary.top_movers.length > 0) {
     progressItemsHtml = summary.top_movers.slice(0, 4).map(m => {
@@ -1533,33 +1529,28 @@ function renderHomeView() {
         </div>`;
     }).join('');
   } else {
-    // Calibrated dynamic movements for active split
-    const demoProgress = [
-      { name: 'Bulgarian Split Squat', best: '16 reps', from: 12, to: 16, unit: 'reps', pct: 33 },
-      { name: 'Walking Lunges', best: '20 reps', from: 16, to: 20, unit: 'reps', pct: 25 },
-      { name: 'Glute Bridges Single Leg', best: '14 reps', from: 10, to: 14, unit: 'reps', pct: 40 },
-      { name: 'Standing Calf Raises', best: '24 reps', from: 20, to: 24, unit: 'reps', pct: 20 }
+    // Intentional baseline movements for active split
+    const baselineMovements = [
+      { name: 'Bulgarian Split Squat', target: '3 × 12-16 reps', focus: 'Quads & Glutes' },
+      { name: 'Walking Lunges', target: '3 × 16-20 reps', focus: 'Glutes & Legs' },
+      { name: 'Glute Bridges Single Leg', target: '3 × 10-14 reps', focus: 'Hamstrings' },
+      { name: 'Standing Calf Raises', target: '4 × 20-24 reps', focus: 'Calves' }
     ];
-    progressItemsHtml = demoProgress.map(e => {
-      const pctChange = e.pct || (e.from > 0 ? Math.round(((e.to - e.from) / e.from) * 100) : 25);
-      // Calibrate bar fill directly proportional to overload growth percentage (+20% -> 53%, +25% -> 60%, +33% -> 71%, +40% -> 81%)
-      const barFillPct = Math.min(100, Math.max(15, Math.round(25 + (pctChange * 1.4))));
-
-      return `
-        <div class="home-progress-item" onclick="switchView('progress')">
-          <div class="home-progress-name-wrap">
-            <div class="home-progress-name">${e.name}</div>
-            <div class="home-progress-best">Best: ${e.best}</div>
+    progressItemsHtml = baselineMovements.map(e => `
+      <div class="home-progress-item" onclick="switchView('progress')">
+        <div class="home-progress-name-wrap">
+          <div class="home-progress-name">${e.name}</div>
+          <div class="home-progress-best">${e.focus}</div>
+        </div>
+        <div class="home-progress-bar-wrap">
+          <div class="home-progress-bar-numbers">${e.target}</div>
+          <div class="home-progress-bar-track">
+            <div class="home-progress-bar-fill" style="width: 45%;"></div>
           </div>
-          <div class="home-progress-bar-wrap">
-            <div class="home-progress-bar-numbers">${e.from} → ${e.to} ${e.unit || 'reps'}</div>
-            <div class="home-progress-bar-track">
-              <div class="home-progress-bar-fill" style="width: ${barFillPct}%;"></div>
-            </div>
-          </div>
-          <div class="home-progress-delta-badge">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} +${pctChange}%</div>
-        </div>`;
-    }).join('');
+        </div>
+        <div class="home-progress-delta-badge" style="color:var(--text-dim); background:rgba(255,255,255,0.06);">Target</div>
+      </div>
+    `).join('');
   }
 
   // PR items
@@ -1581,26 +1572,19 @@ function renderHomeView() {
       </div>
     `).join('');
   } else {
-    const demoPrs = [
-      { name: 'Bulgarian Split Squat', val: '16 reps', date: 'Today' },
-      { name: 'Plank Hold', val: '1:45 min', date: 'Yesterday' },
-      { name: 'Calf Raises', val: '25 reps', date: '2 days ago' }
-    ];
-    prsItemsHtml = demoPrs.map(p => `
-      <div class="home-pr-item" onclick="switchView('prs')">
+    prsItemsHtml = `
+      <div class="home-pr-item" onclick="startWorkoutFromResolved()" style="border-style:dashed; cursor:pointer;" title="Click to start today's workout">
         <div class="home-pr-left">
-          <span class="home-pr-trophy-icon">${renderIcon('trophy', 'cx-icon cx-icon-gold')}</span>
+          <span class="home-pr-trophy-icon">${renderIcon('trophy', 'cx-icon cx-icon-muted')}</span>
           <div>
-            <div class="home-pr-title">${p.name}</div>
-            <div class="home-pr-new-tag">New best!</div>
+            <div class="home-pr-title">No PRs Logged Yet</div>
+            <div class="home-pr-new-tag" style="color:var(--text-dim);">Hit target reps today to record your first PR</div>
           </div>
         </div>
         <div class="home-pr-val-wrap">
-          <div class="home-pr-val">${p.val}</div>
-          <div class="home-pr-date">${p.date}</div>
+          <div class="home-pr-val" style="color:var(--accent); font-size:11px;">Start →</div>
         </div>
-      </div>
-    `).join('');
+      </div>`;
   }
 
   // Upcoming Workouts Timeline (Phase.md Section 26)
