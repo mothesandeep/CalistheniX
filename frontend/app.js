@@ -1147,7 +1147,7 @@ function openNotifModal() {
             <span>${renderIcon('flame', 'cx-icon cx-icon-lg cx-icon-fire')}</span>
             <div>
               <strong style="color:#ffffff; font-size:13px;">Active Streak Check</strong>
-              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Consistency builds champions. Keep your streak chain unbroken.</div>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Consistency drives progressive overload. Keep your training chain unbroken.</div>
             </div>
           </div>
         </div>
