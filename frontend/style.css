@@ -136,7 +136,7 @@ body::before {
 .cx-icon-accent { color: var(--accent); }
 .cx-icon-success { color: var(--success); }
 .cx-icon-danger { color: var(--danger); }
-.cx-icon-gold { color: #eab308; }
+.cx-icon-gold { color: #c4b5fd; }
 .cx-icon-fire { color: #f97316; }
 .cx-icon-cyan { color: #06b6d4; }
 .cx-icon-muted { color: var(--text-muted); }
@@ -1730,7 +1730,7 @@ body::before {
 
 .workout-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), #22c55e);
+  background: var(--accent);
   transition: width 300ms ease;
 }
 
@@ -2070,9 +2070,9 @@ body::before {
 }
 
 .today-status-active {
-  background: rgba(234, 179, 8, 0.15);
-  color: #facc15;
-  border: 1px solid rgba(234, 179, 8, 0.3);
+  background: var(--accent-dim);
+  color: var(--accent-light);
+  border: 1px solid var(--border-accent);
 }
 
 .today-status-done {
@@ -2125,8 +2125,8 @@ body::before {
   align-items: center;
   gap: 14px;
   padding: 14px 18px;
-  background: rgba(234, 179, 8, 0.1);
-  border: 1px solid rgba(234, 179, 8, 0.35);
+  background: var(--surface-2);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius);
   margin-bottom: 20px;
   animation: restSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2850,7 +2850,7 @@ body::before {
 }
 .runner-progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent) 0%, #22c55e 100%);
+  background: var(--accent);
   transition: width 300ms ease;
 }
 
@@ -3279,16 +3279,16 @@ body::before {
 
 .home-streak-pill {
   background: var(--surface);
-  border: 1px solid rgba(249, 115, 22, 0.35);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 8px 14px;
   font-size: 13px;
-  font-weight: 700;
-  color: #f97316;
+  font-weight: 600;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 0 14px rgba(249, 115, 22, 0.12);
+  box-shadow: none;
 }
 
 .home-streak-pill-num {
@@ -3592,7 +3592,7 @@ body::before {
 /* ── Current Streak Card (Matching User Reference Image) ────────────────────── */
 .home-streak-card {
   background: var(--surface);
-  border: 1px solid rgba(249, 115, 22, 0.3);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 20px 22px 16px;
   display: flex;
@@ -3601,19 +3601,19 @@ body::before {
   gap: 10px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), inset 0 0 24px rgba(249, 115, 22, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.07);
   transition: all var(--transition);
 }
 
 .home-streak-card:hover {
-  border-color: rgba(249, 115, 22, 0.55);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 20px rgba(249, 115, 22, 0.2);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
 .home-streak-card-tag {
   font-size: 11px;
-  font-weight: 800;
-  color: #f97316;
+  font-weight: 700;
+  color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.1em;
   display: block;

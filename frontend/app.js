@@ -1431,29 +1431,8 @@ function renderHomeView() {
 
         <div class="home-streak-graph-wrap">
           <svg class="home-streak-graph-svg" viewBox="0 0 320 50" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="streakGlowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stop-color="#f97316" stop-opacity="0.7"/>
-                <stop offset="100%" stop-color="#fb923c" stop-opacity="1"/>
-              </linearGradient>
-              <filter id="orangeDotGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="3" result="blur"/>
-                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-              </filter>
-            </defs>
-            <path d="M 10 42 L 38 36 L 68 40 L 92 30 L 120 38 L 148 35 L 175 37 L 202 40 L 218 34 L 246 28 L 272 30 L 302 12" stroke="url(#streakGlowGrad)" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="10" cy="42" r="3" fill="#fb923c"/>
-            <circle cx="38" cy="36" r="3" fill="#fb923c"/>
-            <circle cx="68" cy="40" r="3" fill="#fb923c"/>
-            <circle cx="92" cy="30" r="3" fill="#fb923c"/>
-            <circle cx="120" cy="38" r="3" fill="#fb923c"/>
-            <circle cx="148" cy="35" r="3" fill="#fb923c"/>
-            <circle cx="175" cy="37" r="3" fill="#fb923c"/>
-            <circle cx="202" cy="40" r="3" fill="#fb923c"/>
-            <circle cx="218" cy="34" r="3" fill="#fb923c"/>
-            <circle cx="246" cy="28" r="3" fill="#fb923c"/>
-            <circle cx="272" cy="30" r="3" fill="#fb923c"/>
-            <circle cx="302" cy="12" r="5" fill="#fed7aa" stroke="#f97316" stroke-width="2" filter="url(#orangeDotGlow)"/>
+            <path d="M 10 42 L 38 36 L 68 40 L 92 30 L 120 38 L 148 35 L 175 37 L 202 40 L 218 34 L 246 28 L 272 30 L 302 12" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="302" cy="12" r="3.5" fill="#ffffff"/>
           </svg>
         </div>
       </div>
@@ -1492,7 +1471,7 @@ function renderHomeView() {
         </div>
         <div class="home-metric-val">${summary.week_sessions || 0}</div>
         <div class="home-metric-sub">/ ${plannedWorkoutsCount} planned</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 25 Q 20 22, 40 16 T 80 6" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" fill="none"/></svg>
+        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 25 Q 20 22, 40 16 T 80 6" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.8" fill="none"/></svg>
       </div>
 
       <!-- Card 2: Total Sets -->
@@ -1503,7 +1482,7 @@ function renderHomeView() {
         </div>
         <div class="home-metric-val">${summary.week_sets || 0}</div>
         <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 18%</span> vs last week</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 28 Q 25 24, 50 14 T 80 4" stroke="#10b981" stroke-width="1.8" fill="none"/></svg>
+        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 28 Q 25 24, 50 14 T 80 4" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.8" fill="none"/></svg>
       </div>
 
       <!-- Card 3: Training Volume -->
