@@ -1,24 +1,24 @@
 /* ── Design tokens ─────────────────────────────────────────────────────────── */
 :root {
-  --bg:           #06060a;
-  --surface:      #0d0d16;
-  --surface-glass:rgba(14, 14, 24, 0.75);
-  --surface-2:    #12121e;
-  --surface-3:    #19192b;
-  --border:       rgba(255, 255, 255, 0.07);
+  --bg:           #09090b;
+  --surface:      #121217;
+  --surface-glass:rgba(18, 18, 23, 0.85);
+  --surface-2:    #181820;
+  --surface-3:    #22222c;
+  --border:       rgba(255, 255, 255, 0.08);
   --border-light: rgba(255, 255, 255, 0.12);
-  --border-focus: rgba(168, 85, 247, 0.6);
-  --border-accent:rgba(168, 85, 247, 0.35);
+  --border-focus: rgba(255, 255, 255, 0.28);
+  --border-accent:rgba(124, 92, 252, 0.4);
 
   --text:         #f8fafc;
   --text-muted:   #94a3b8;
   --text-dim:     #475569;
 
-  --accent:       #8b5cf6;
-  --accent-light: #a855f7;
-  --accent-hover: #c084fc;
-  --accent-dim:   rgba(139, 92, 246, 0.14);
-  --accent-glow:  rgba(168, 85, 247, 0.4);
+  --accent:       #7c5cfc;
+  --accent-light: #8b5cf6;
+  --accent-hover: #6947eb;
+  --accent-dim:   rgba(124, 92, 252, 0.08);
+  --accent-glow:  none;
 
   --success:      #10b981;
   --success-dim:  rgba(16, 185, 129, 0.15);
@@ -27,10 +27,10 @@
   --warning:      #f97316;
   --warning-dim:  rgba(249, 115, 22, 0.15);
 
-  --badge-reps-bg:  rgba(16, 185, 129, 0.15);
-  --badge-reps-fg:  #10b981;
-  --badge-hold-bg:  rgba(168, 85, 247, 0.18);
-  --badge-hold-fg:  #c4b5fd;
+  --badge-reps-bg:  rgba(255, 255, 255, 0.06);
+  --badge-reps-fg:  #e4e4e7;
+  --badge-hold-bg:  rgba(255, 255, 255, 0.06);
+  --badge-hold-fg:  #e4e4e7;
 
   --sans:         'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-heading: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
@@ -44,7 +44,7 @@
 
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
-  --shadow-lg: 0 16px 44px rgba(0, 0, 0, 0.7), 0 0 30px rgba(139, 92, 246, 0.15);
+  --shadow-lg: 0 16px 44px rgba(0, 0, 0, 0.8);
   --shadow-glass: 0 12px 36px -4px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 
   --transition: 200ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -74,9 +74,7 @@ body::before {
   top: 0;
   left: 0;
   right: 0;
-  height: 480px;
-  background: radial-gradient(circle at 45% -10%, rgba(139, 92, 246, 0.12) 0%, rgba(6, 182, 212, 0.04) 40%, transparent 80%);
-  pointer-events: none;
+  display: none;
   z-index: 0;
 }
 
@@ -91,13 +89,13 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.3);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 999px;
   transition: background var(--transition);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.6);
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* ── SVG Icon System ───────────────────────────────────────────────────────── */
@@ -196,7 +194,7 @@ body::before {
 }
 .logo-x {
   color: var(--accent);
-  text-shadow: 0 0 12px var(--accent-glow);
+  /* restrained */
 }
 
 .sidebar-nav {
@@ -231,8 +229,9 @@ body::before {
 
 .sidebar-nav-item.active {
   color: #ffffff;
-  background: linear-gradient(90deg, rgba(139, 92, 246, 0.2) 0%, rgba(139, 92, 246, 0.05) 100%);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 2.5px solid var(--accent);
   font-weight: 600;
 }
 
@@ -271,8 +270,8 @@ body::before {
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid var(--accent);
-  box-shadow: 0 0 10px var(--accent-glow);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: none;
 }
 
 .sidebar-athlete-info {
@@ -520,11 +519,11 @@ body::before {
 .btn-primary {
   background: var(--accent);
   color: #fff;
-  box-shadow: 0 0 0 0 var(--accent-glow);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 .btn-primary:hover {
   background: var(--accent-hover);
-  box-shadow: 0 0 16px var(--accent-glow);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 .btn-icon {
@@ -771,13 +770,13 @@ body::before {
   font-size: 26px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 0 0 0 var(--accent-glow);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   transition: background var(--transition), box-shadow var(--transition), transform 100ms;
   letter-spacing: -0.5px;
 }
 .timer-btn:hover {
   background: var(--accent-hover);
-  box-shadow: 0 0 32px var(--accent-glow);
+  box-shadow: none;
 }
 .timer-btn:active { transform: scale(0.96); }
 .timer-btn-running {
@@ -876,12 +875,12 @@ body::before {
   font-weight: 700;
   cursor: pointer;
   letter-spacing: -0.2px;
-  box-shadow: 0 0 0 0 var(--accent-glow);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   transition: background var(--transition), box-shadow var(--transition), transform 100ms;
 }
 .btn-save:hover {
   background: var(--accent-hover);
-  box-shadow: 0 0 24px var(--accent-glow);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 .btn-save:active { transform: scale(0.98); }
 
@@ -1051,8 +1050,8 @@ body::before {
 }
 
 .progression-banner-progress {
-  border-color: rgba(124, 92, 252, 0.3);
-  background: rgba(124, 92, 252, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .prog-icon {
@@ -1411,13 +1410,13 @@ body::before {
 }
 
 .heatmap-1 {
-  background: rgba(124, 92, 252, 0.35);
-  border-color: rgba(124, 92, 252, 0.5);
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .heatmap-2 {
-  background: rgba(124, 92, 252, 0.75);
-  border-color: #7c5cfc;
+  background: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 .heatmap-3 {
@@ -1539,7 +1538,7 @@ body::before {
 .set-pip-active {
   background: var(--accent);
   border-color: var(--accent);
-  box-shadow: 0 0 8px var(--accent-glow);
+  box-shadow: none;
 }
 
 /* ── Rest countdown screen ───────────────────────────────────────────────────── */
@@ -1982,8 +1981,8 @@ body::before {
 
 /* ── Today Execution Hub Styles (Phase 2 Separation) ──────────────────────── */
 .today-hero-card {
-  background: linear-gradient(135deg, rgba(124, 92, 252, 0.12) 0%, rgba(59, 130, 246, 0.06) 100%);
-  border: 1px solid rgba(124, 92, 252, 0.3);
+  background: #121217;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius);
   padding: 24px 20px;
   margin-bottom: 24px;
@@ -2131,7 +2130,7 @@ body::before {
   background: rgba(20, 20, 24, 0.95);
   border: 1px solid var(--accent);
   border-radius: var(--radius);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 20px var(--accent-glow);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
   overflow: hidden;
   backdrop-filter: blur(16px);
   animation: restSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2290,7 +2289,7 @@ body::before {
 
 .dashboard-today-card-active {
   border-color: var(--accent);
-  box-shadow: 0 0 16px var(--accent-glow);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 /* ── Responsive & Mobile Ergonomics ───────────────────────────────────────── */
@@ -3078,7 +3077,7 @@ body::before {
 
 .modal-card {
   background: #0d0d16;
-  border: 1px solid rgba(168, 85, 247, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
   max-width: 820px;
   width: 95%;
@@ -3086,7 +3085,7 @@ body::before {
   display: flex;
   flex-direction: column;
   padding: 24px 28px;
-  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.88), 0 0 40px rgba(168, 85, 247, 0.22);
+  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.88);
   position: relative;
   z-index: 10000;
   animation: modalPopIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -3155,7 +3154,7 @@ body::before {
 }
 .settings-modal {
   background: #0d0d16;
-  border: 1px solid rgba(168, 85, 247, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
   max-width: 500px;
   width: 100%;
@@ -3237,9 +3236,9 @@ body::before {
   right: 9px;
   width: 7px;
   height: 7px;
-  background: #8b5cf6;
+  background: var(--accent);
   border-radius: 50%;
-  box-shadow: 0 0 8px #8b5cf6;
+  box-shadow: none;
 }
 
 .home-week-select-pill {
@@ -3299,8 +3298,8 @@ body::before {
 
 /* ── Hero Card (Dominant Component) ───────────────────────────────────────── */
 .home-hero-card {
-  background: radial-gradient(circle at 85% 35%, rgba(147, 51, 234, 0.22) 0%, rgba(12, 12, 20, 0.96) 68%), #0a0a12;
-  border: 1px solid rgba(168, 85, 247, 0.32);
+  background: #121217;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
   position: relative;
   overflow: hidden;
@@ -3309,13 +3308,13 @@ body::before {
   justify-content: space-between;
   padding: 32px 32px;
   min-height: 390px;
-  box-shadow: 0 20px 48px -10px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 30px rgba(139, 92, 246, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   transition: all var(--transition);
 }
 
 .home-hero-card:hover {
-  border-color: rgba(168, 85, 247, 0.55);
-  box-shadow: 0 24px 56px -10px rgba(0, 0, 0, 0.9), 0 0 36px rgba(168, 85, 247, 0.25);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
 }
 
 .home-hero-content {
@@ -3399,11 +3398,11 @@ body::before {
   font-size: 16px;
   font-weight: 700;
   color: #ffffff;
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-  border: none;
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
   cursor: pointer;
-  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.45);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   transition: all 200ms ease;
   width: fit-content;
   text-decoration: none;
@@ -3412,8 +3411,8 @@ body::before {
 
 .home-hero-btn:hover {
   transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 10px 32px rgba(139, 92, 246, 0.65);
-  background: linear-gradient(135deg, #9b6df7 0%, #7c3aed 100%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  background: var(--accent-hover);
 }
 
 .home-hero-btn:hover .arrow-icon {
@@ -3551,7 +3550,7 @@ body::before {
 }
 
 .home-weekly-card:hover {
-  border-color: rgba(168, 85, 247, 0.35);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .home-weekly-head {
@@ -3593,7 +3592,7 @@ body::before {
 
 .home-weekly-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7c3aed 0%, #8b5cf6 60%, #c4b5fd 100%);
+  background: var(--accent);
   border-radius: 4px;
   transition: width 800ms cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -3623,10 +3622,10 @@ body::before {
 }
 
 .home-week-circle.today {
-  background: rgba(139, 92, 246, 0.25);
-  border: 2px solid var(--accent);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid var(--accent);
   color: #ffffff;
-  box-shadow: 0 0 10px var(--accent-glow);
+  box-shadow: none;
 }
 
 .home-week-circle.future {
@@ -3652,8 +3651,8 @@ body::before {
 }
 
 .home-muscle-card:hover {
-  border-color: rgba(168, 85, 247, 0.4);
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 20px rgba(168, 85, 247, 0.15);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 .home-muscle-head {
@@ -3708,7 +3707,7 @@ body::before {
 .home-muscle-svg {
   width: 76px;
   height: 105px;
-  filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.25));
+  filter: none;
 }
 
 .home-muscle-target-list {
@@ -3716,8 +3715,8 @@ body::before {
   font-weight: 600;
   color: #c4b5fd;
   text-align: center;
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.25);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   padding: 6px 12px;
   border-radius: var(--radius-sm);
 }
@@ -3758,9 +3757,9 @@ body::before {
 }
 
 .home-metric-card:hover {
-  border-color: rgba(168, 85, 247, 0.4);
-  transform: translateY(-3px);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(139, 92, 246, 0.15);
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 .home-metric-top {
@@ -3854,8 +3853,8 @@ body::before {
 }
 
 .home-section-card:hover {
-  border-color: rgba(168, 85, 247, 0.35);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6), 0 0 24px rgba(139, 92, 246, 0.1);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6);
 }
 
 .home-section-head {
@@ -3909,8 +3908,8 @@ body::before {
 }
 
 .home-progress-item:hover {
-  border-color: rgba(139, 92, 246, 0.35);
-  background: rgba(139, 92, 246, 0.05);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .home-progress-name-wrap {
@@ -3951,7 +3950,7 @@ body::before {
 
 .home-progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7c3aed 0%, #8b5cf6 100%);
+  background: var(--accent);
   border-radius: 3px;
 }
 
@@ -4048,8 +4047,8 @@ body::before {
 }
 
 .home-timeline-item:hover {
-  border-color: rgba(139, 92, 246, 0.35);
-  background: rgba(139, 92, 246, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .home-timeline-date-box {
@@ -4060,8 +4059,8 @@ body::before {
   width: 44px;
   height: 44px;
   border-radius: var(--radius-sm);
-  background: rgba(139, 92, 246, 0.12);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -4103,8 +4102,8 @@ body::before {
 
 /* ── Motivational Closing Banner ─────────────────────────────────────────── */
 .home-quote-banner {
-  background: linear-gradient(90deg, #100f1c 0%, #161228 100%);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 16px 24px;
   display: flex;
@@ -4129,8 +4128,8 @@ body::before {
 .home-quote-btn {
   padding: 10px 22px;
   border-radius: var(--radius);
-  background: rgba(139, 92, 246, 0.25);
-  border: 1px solid var(--accent);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   color: #ffffff;
   font-weight: 700;
   cursor: pointer;
@@ -4139,12 +4138,12 @@ body::before {
   align-items: center;
   gap: 8px;
   text-decoration: none;
-  box-shadow: 0 0 14px var(--accent-glow);
+  box-shadow: none;
 }
 
 .home-quote-btn:hover {
-  background: var(--accent);
-  box-shadow: 0 0 24px rgba(139, 92, 246, 0.6);
+  background: var(--surface-3);
+  border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-1px);
 }
 
@@ -4232,7 +4231,7 @@ body::before {
 }
 
 .prs-filter-btn.active {
-  background: rgba(139, 92, 246, 0.2);
+  background: rgba(255, 255, 255, 0.08);
   border-color: var(--accent);
 }
 
@@ -4386,8 +4385,8 @@ body::before {
 }
 
 .calendar-day-cell:hover {
-  border-color: var(--accent);
-  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--surface-3);
 }
 
 .calendar-day-cell.other-month {
@@ -4396,8 +4395,8 @@ body::before {
 
 .calendar-day-cell.is-today {
   border-color: var(--accent);
-  box-shadow: 0 0 14px var(--accent-glow);
-  background: rgba(139, 92, 246, 0.15);
+  box-shadow: none;
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .calendar-day-cell.is-selected {
@@ -4441,9 +4440,9 @@ body::before {
 }
 
 .calendar-day-badge-workout {
-  background: rgba(139, 92, 246, 0.2);
-  color: var(--accent);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e4e4e7;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .calendar-day-badge-done {
@@ -4491,7 +4490,7 @@ body::before {
   border-radius: var(--radius);
   overflow: hidden;
   position: relative;
-  border: 1px solid rgba(139, 92, 246, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
@@ -4510,14 +4509,14 @@ body::before {
 .sidebar-visual-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(139, 92, 246, 0.1) 0%, rgba(9, 9, 16, 0.6) 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(9, 9, 16, 0.8) 100%);
   pointer-events: none;
 }
 
 .sidebar-athlete-badge {
   font-size: 11px;
   font-weight: 700;
-  color: #a855f7;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 3px;
@@ -4529,20 +4528,20 @@ body::before {
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  border: 1px solid rgba(168, 85, 247, 0.35);
-  background: #090910;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #121217;
   height: 96px;
   display: flex;
   align-items: center;
   justify-content: flex-end;
   padding: 0 20px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 0 30px rgba(139, 92, 246, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   transition: all var(--transition);
 }
 
 .home-stronger-card:hover {
-  border-color: rgba(168, 85, 247, 0.6);
-  box-shadow: 0 10px 30px rgba(139, 92, 246, 0.25);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
 }
 
 .home-stronger-bg-wrap {
@@ -4579,7 +4578,7 @@ body::before {
   font-weight: 900;
   color: #ffffff;
   letter-spacing: 0.08em;
-  text-shadow: 0 0 12px rgba(168, 85, 247, 0.8);
+  text-shadow: none;
 }
 
 .home-stronger-sub {
@@ -4612,7 +4611,7 @@ body::before {
   max-height: 220px;
   object-fit: contain;
   border-radius: var(--radius);
-  filter: drop-shadow(0 0 14px rgba(168, 85, 247, 0.2));
+  filter: none;
   transition: transform var(--transition);
 }
 
@@ -4741,8 +4740,8 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 700;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(109, 40, 217, 0.1) 100%);
-  border: 1px solid rgba(168, 85, 247, 0.4);
+  background: var(--surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #ffffff;
   border-radius: var(--radius);
   cursor: pointer;
@@ -4753,9 +4752,9 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 }
 
 .runner-finish-btn:hover {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(124, 58, 237, 0.2) 100%);
-  border-color: rgba(168, 85, 247, 0.7);
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  background: var(--surface-3);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
 }
 
 /* ── 2. Segmented Progress Bar ────────────────────────────────────────────── */
@@ -4775,7 +4774,7 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 .runner-set-counter {
   font-size: 13px;
   font-weight: 800;
-  color: #c084fc;
+  color: #ffffff;
   letter-spacing: 0.06em;
 }
 
@@ -4805,8 +4804,8 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 }
 
 .runner-seg-dot.done {
-  background: #a855f7;
-  box-shadow: 0 0 8px rgba(168, 85, 247, 0.5);
+  background: #10b981;
+  box-shadow: none;
 }
 
 .runner-seg-dot.active {
@@ -4816,10 +4815,10 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 
 /* ── 3. Active Exercise Stage Card ────────────────────────────────────────── */
 .runner-stage-card {
-  background: rgba(14, 14, 24, 0.85);
+  background: var(--surface);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(168, 85, 247, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-lg);
   padding: 28px 28px 24px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -4841,7 +4840,7 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
   display: inline-block;
   font-size: 11px;
   font-weight: 800;
-  color: #c084fc;
+  color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: 6px;
@@ -4882,9 +4881,9 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 }
 
 .runner-stage-art:hover {
-  border-color: rgba(168, 85, 247, 0.6);
-  transform: scale(1.05);
-  box-shadow: 0 0 16px rgba(168, 85, 247, 0.3);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.03);
+  box-shadow: none;
 }
 
 .runner-stage-img {
@@ -4965,7 +4964,7 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
   width: 100%;
   height: 100%;
   transform: rotate(-90deg);
-  filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.45));
+  filter: none;
 }
 
 .runner-circle-bg {
@@ -5123,8 +5122,8 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 }
 
 .runner-reps-btn:hover {
-  background: rgba(168, 85, 247, 0.2);
-  border-color: rgba(168, 85, 247, 0.5);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
   transform: scale(1.08);
 }
 
@@ -5158,11 +5157,11 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
   font-weight: 800;
   letter-spacing: 0.04em;
   color: #ffffff;
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-  border: none;
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius);
   cursor: pointer;
-  box-shadow: 0 10px 30px rgba(124, 58, 237, 0.45);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   transition: all var(--transition);
   display: flex;
   align-items: center;
@@ -5172,8 +5171,8 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 }
 
 .runner-complete-action-btn:hover {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-  box-shadow: 0 14px 40px rgba(139, 92, 246, 0.65);
+  background: var(--accent-hover);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
   transform: translateY(-2px);
 }
 
@@ -5279,9 +5278,9 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 }
 
 .runner-queue-item.active {
-  background: rgba(139, 92, 246, 0.12);
-  border-color: rgba(168, 85, 247, 0.5);
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: none;
 }
 
 .runner-queue-item.completed {
@@ -5348,8 +5347,8 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 }
 
 .runner-coach-tip {
-  background: rgba(139, 92, 246, 0.08);
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px 18px;
   display: flex;

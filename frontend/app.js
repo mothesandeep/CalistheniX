@@ -998,20 +998,12 @@ function renderDualMuscleBodySvg(muscles) {
   const isUpperBack = backList.includes('upper_back') || backList.includes('lats');
   const isGlutes = backList.includes('glutes');
   const isHamstrings = backList.includes('hamstrings');
-  const isCalves = backList.includes('calves');
+  const activeColor = '#7c5cfc';
+  const glowFilter = '';
+  const baseColor = '#14141c';
+  const strokeColor = 'rgba(255, 255, 255, 0.12)';
 
-  const activeColor = '#a855f7';
-  const glowFilter = 'filter="url(#muscleGlow)"';
-  const baseColor = '#1c182a';
-  const strokeColor = 'rgba(168, 85, 247, 0.25)';
-
-  const defs = `
-    <defs>
-      <filter id="muscleGlow" x="-20%" y="-20%" width="140%" height="140%">
-        <feGaussianBlur stdDeviation="2.5" result="blur" />
-        <feComposite in="SourceGraphic" in2="blur" operator="over" />
-      </filter>
-    </defs>`;
+  const defs = '';
 
   const frontSvg = `
     <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
@@ -1375,7 +1367,7 @@ function renderHomeView() {
       <div class="home-muscle-card" onclick="openBiomechanicsModal()" style="cursor:pointer;" title="Click to view full Biomechanics & Technique Guide">
         <div class="home-muscle-head">
           <span class="home-muscle-tag">Muscle Focus</span>
-          <span style="font-size:11px; font-weight:700; color:#a855f7; display:flex; align-items:center; gap:4px;">
+          <span style="font-size:11px; font-weight:700; color:var(--text-muted); display:flex; align-items:center; gap:4px;">
             ${renderIcon('info', 'cx-icon cx-icon-xs')} Guide
           </span>
         </div>
@@ -1401,44 +1393,44 @@ function renderHomeView() {
       <div class="home-metric-card">
         <div class="home-metric-top">
           <span class="home-metric-lbl">Workouts This Week</span>
-          <div class="home-metric-icon">${renderIcon('dumbbell', 'cx-icon cx-icon-lg cx-icon-accent')}</div>
+          <div class="home-metric-icon">${renderIcon('dumbbell', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
         </div>
         <div class="home-metric-val">${summary.week_sessions || 0}</div>
         <div class="home-metric-sub">/ ${plannedWorkoutsCount} planned</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 25 Q 20 22, 40 16 T 80 6" stroke="#8b5cf6" stroke-width="2" fill="none"/></svg>
+        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 25 Q 20 22, 40 16 T 80 6" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" fill="none"/></svg>
       </div>
 
       <!-- Card 2: Total Sets -->
       <div class="home-metric-card">
         <div class="home-metric-top">
           <span class="home-metric-lbl">Total Sets</span>
-          <div class="home-metric-icon">${renderIcon('barChart', 'cx-icon cx-icon-lg cx-icon-cyan')}</div>
+          <div class="home-metric-icon">${renderIcon('barChart', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
         </div>
         <div class="home-metric-val">${summary.week_sets || 0}</div>
         <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 18%</span> vs last week</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 28 Q 25 24, 50 14 T 80 4" stroke="#10b981" stroke-width="2" fill="none"/></svg>
+        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 28 Q 25 24, 50 14 T 80 4" stroke="#10b981" stroke-width="1.8" fill="none"/></svg>
       </div>
 
       <!-- Card 3: Training Volume -->
       <div class="home-metric-card">
         <div class="home-metric-top">
           <span class="home-metric-lbl">Training Volume</span>
-          <div class="home-metric-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-lg cx-icon-success')}</div>
+          <div class="home-metric-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
         </div>
         <div class="home-metric-val">${volumeStr}</div>
         <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 22%</span> capacity</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 24 Q 25 20, 50 12 T 80 5" stroke="#a78bfa" stroke-width="2" fill="none"/></svg>
+        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 24 Q 25 20, 50 12 T 80 5" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1.8" fill="none"/></svg>
       </div>
 
       <!-- Card 4: Avg. Workout Time -->
       <div class="home-metric-card">
         <div class="home-metric-top">
           <span class="home-metric-lbl">Avg. Workout Time</span>
-          <div class="home-metric-icon">${renderIcon('timer', 'cx-icon cx-icon-lg cx-icon-accent')}</div>
+          <div class="home-metric-icon">${renderIcon('timer', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
         </div>
         <div class="home-metric-val">${avgWorkoutMin} min</div>
         <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 5 min</span> target pacing</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 26 Q 20 22, 50 15 T 80 8" stroke="#8b5cf6" stroke-width="2" fill="none"/></svg>
+        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 26 Q 20 22, 50 15 T 80 8" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" fill="none"/></svg>
       </div>
     </div>`;
 
@@ -3884,14 +3876,14 @@ function renderActiveWorkoutView() {
             <span class="runner-bench-label">TARGET</span>
             <div class="runner-bench-val-row">
               <span class="runner-bench-val mono">${targetVal} <span class="runner-bench-unit">${isHold ? 'sec' : 'reps'}</span></span>
-              <span class="runner-bench-icon">${renderIcon('timer', 'cx-icon cx-icon-accent')}</span>
+              <span class="runner-bench-icon">${renderIcon('timer', 'cx-icon cx-icon-muted')}</span>
             </div>
           </div>
           <div class="runner-benchmark-card">
             <span class="runner-bench-label">LAST SESSION</span>
             <div class="runner-bench-val-row">
               <span class="runner-bench-val mono">${lastPerfDesc}</span>
-              <span class="runner-bench-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-cyan')}</span>
+              <span class="runner-bench-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-muted')}</span>
             </div>
             <span class="runner-bench-sub">2 days ago</span>
           </div>
@@ -3904,8 +3896,8 @@ function renderActiveWorkoutView() {
               <svg class="runner-circular-svg" viewBox="0 0 200 200">
                 <defs>
                   <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#a855f7"/>
-                    <stop offset="100%" stop-color="#38bdf8"/>
+                    <stop offset="0%" stop-color="#7c5cfc"/>
+                    <stop offset="100%" stop-color="#7c5cfc"/>
                   </linearGradient>
                 </defs>
                 <circle class="runner-circle-bg" cx="100" cy="100" r="88" />
@@ -4605,11 +4597,11 @@ function renderBiomechanicsTabContent(tab) {
         </p>
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
           <div class="card" style="padding:14px; text-align:center; background:var(--surface-2);">
-            <span style="font-size:12px; font-weight:700; color:#a855f7; text-transform:uppercase; margin-bottom:8px; display:block;">Upper Body & Push / Pull Muscles</span>
+            <span style="font-size:12px; font-weight:700; color:var(--text); text-transform:uppercase; margin-bottom:8px; display:block;">Upper Body & Push / Pull Muscles</span>
             <img src="assets/upper_anatomy.jpg" alt="Upper Body Anatomy" style="width:100%; max-height:280px; object-fit:contain; border-radius:var(--radius);" />
           </div>
           <div class="card" style="padding:14px; text-align:center; background:var(--surface-2);">
-            <span style="font-size:12px; font-weight:700; color:#eab308; text-transform:uppercase; margin-bottom:8px; display:block;">Lower Body & Leg Muscles</span>
+            <span style="font-size:12px; font-weight:700; color:var(--text); text-transform:uppercase; margin-bottom:8px; display:block;">Lower Body & Leg Muscles</span>
             <img src="assets/legs_anatomy.jpg" alt="Lower Body Anatomy" style="width:100%; max-height:280px; object-fit:contain; border-radius:var(--radius);" />
           </div>
         </div>
