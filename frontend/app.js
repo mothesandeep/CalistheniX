@@ -1532,44 +1532,55 @@ function renderHomeView() {
     // 5. Three-Column Lower Grid: Exercise Progress, Recent PRs, Upcoming Workouts (Phase.md Section 23, 25, 26)
   let progressItemsHtml = '';
   if (summary.top_movers && summary.top_movers.length > 0) {
-    progressItemsHtml = summary.top_movers.slice(0, 4).map(m => `
-      <div class="home-progress-item" onclick="openHistoryView(${m.exercise_id})">
-        <div class="home-progress-name-wrap">
-          <div class="home-progress-name">${m.exercise_name}</div>
-          <div class="home-progress-best">Best: ${m.metric_current} reps</div>
-        </div>
-        <div class="home-progress-bar-wrap">
-          <div class="home-progress-bar-numbers">${m.metric_2wk_ago || Math.max(1, m.metric_current - 4)} → ${m.metric_current} reps</div>
-          <div class="home-progress-bar-track">
-            <div class="home-progress-bar-fill" style="width: ${Math.min(100, Math.max(35, m.pct_change + 50))}%;"></div>
+    progressItemsHtml = summary.top_movers.slice(0, 4).map(m => {
+      const pastVal = m.metric_2wk_ago || Math.max(1, m.metric_current - 4);
+      const currentVal = m.metric_current;
+      const pctChange = m.pct_change != null ? Math.round(m.pct_change) : (pastVal > 0 ? Math.round(((currentVal - pastVal) / pastVal) * 100) : 25);
+      const barFillPct = Math.min(100, Math.max(15, Math.round(25 + (pctChange * 1.4))));
+
+      return `
+        <div class="home-progress-item" onclick="openHistoryView(${m.exercise_id})">
+          <div class="home-progress-name-wrap">
+            <div class="home-progress-name">${m.exercise_name}</div>
+            <div class="home-progress-best">Best: ${currentVal} reps</div>
           </div>
-        </div>
-        <div class="home-progress-delta-badge">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} +${m.pct_change}%</div>
-      </div>
-    `).join('');
+          <div class="home-progress-bar-wrap">
+            <div class="home-progress-bar-numbers">${pastVal} → ${currentVal} reps</div>
+            <div class="home-progress-bar-track">
+              <div class="home-progress-bar-fill" style="width: ${barFillPct}%;"></div>
+            </div>
+          </div>
+          <div class="home-progress-delta-badge">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} +${pctChange}%</div>
+        </div>`;
+    }).join('');
   } else {
-    // Default Legs A / active exercises
+    // Calibrated dynamic movements for active split
     const demoProgress = [
-      { name: 'Bulgarian Split Squat', best: '16 reps', from: '12', to: '16 reps', pct: '+33%' },
-      { name: 'Walking Lunges', best: '20 reps', from: '16', to: '20 reps', pct: '+25%' },
-      { name: 'Glute Bridges Single Leg', best: '15 reps', from: '12', to: '15 reps', pct: '+25%' },
-      { name: 'Calf Raises', best: '25 reps', from: '20', to: '25 reps', pct: '+25%' }
+      { name: 'Bulgarian Split Squat', best: '16 reps', from: 12, to: 16, unit: 'reps', pct: 33 },
+      { name: 'Walking Lunges', best: '20 reps', from: 16, to: 20, unit: 'reps', pct: 25 },
+      { name: 'Glute Bridges Single Leg', best: '14 reps', from: 10, to: 14, unit: 'reps', pct: 40 },
+      { name: 'Standing Calf Raises', best: '24 reps', from: 20, to: 24, unit: 'reps', pct: 20 }
     ];
-    progressItemsHtml = demoProgress.map((e, idx) => `
-      <div class="home-progress-item" onclick="switchView('progress')">
-        <div class="home-progress-name-wrap">
-          <div class="home-progress-name">${e.name}</div>
-          <div class="home-progress-best">Best: ${e.best}</div>
-        </div>
-        <div class="home-progress-bar-wrap">
-          <div class="home-progress-bar-numbers">${e.from} → ${e.to}</div>
-          <div class="home-progress-bar-track">
-            <div class="home-progress-bar-fill" style="width: ${65 + idx * 10}%;"></div>
+    progressItemsHtml = demoProgress.map(e => {
+      const pctChange = e.pct || (e.from > 0 ? Math.round(((e.to - e.from) / e.from) * 100) : 25);
+      // Calibrate bar fill directly proportional to overload growth percentage (+20% -> 53%, +25% -> 60%, +33% -> 71%, +40% -> 81%)
+      const barFillPct = Math.min(100, Math.max(15, Math.round(25 + (pctChange * 1.4))));
+
+      return `
+        <div class="home-progress-item" onclick="switchView('progress')">
+          <div class="home-progress-name-wrap">
+            <div class="home-progress-name">${e.name}</div>
+            <div class="home-progress-best">Best: ${e.best}</div>
           </div>
-        </div>
-        <div class="home-progress-delta-badge">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} ${e.pct}</div>
-      </div>
-    `).join('');
+          <div class="home-progress-bar-wrap">
+            <div class="home-progress-bar-numbers">${e.from} → ${e.to} ${e.unit || 'reps'}</div>
+            <div class="home-progress-bar-track">
+              <div class="home-progress-bar-fill" style="width: ${barFillPct}%;"></div>
+            </div>
+          </div>
+          <div class="home-progress-delta-badge">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} +${pctChange}%</div>
+        </div>`;
+    }).join('');
   }
 
   // PR items
