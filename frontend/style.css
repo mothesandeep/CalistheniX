@@ -332,10 +332,10 @@ body::before {
 /* ── View header ───────────────────────────────────────────────────────────── */
 .view-header { margin-bottom: 24px; }
 .view-title {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.4px;
-  color: var(--text);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
 }
 .view-subtitle {
   margin-top: 4px;
@@ -391,10 +391,10 @@ body::before {
   border-bottom: 1px solid var(--border);
 }
 .card-title {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text);
-  letter-spacing: -0.2px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.015em;
 }
 .card-count {
   font-family: var(--mono);
@@ -602,12 +602,13 @@ body::before {
 }
 .today-ex-row:hover { background: var(--surface-2); }
 
-.today-order { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
-.today-name  { font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.today-order { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--text-dim); }
+.today-name  { font-size: 14px; font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .today-sets, .today-target, .today-tempo, .today-rest {
   font-family: var(--mono);
-  font-size: 12px;
-  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  color: #e4e4e7;
 }
 
 /* Superset block */
@@ -751,10 +752,11 @@ body::before {
 }
 
 .timer-display {
-  font-size: 72px;
-  font-weight: 600;
-  letter-spacing: -2px;
-  color: var(--text);
+  font-family: var(--mono);
+  font-size: 80px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #ffffff;
   line-height: 1;
   user-select: none;
 }
@@ -895,11 +897,11 @@ body::before {
 }
 
 .home-day-name {
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: -0.8px;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
   line-height: 1.1;
-  color: var(--text);
+  color: #ffffff;
 }
 
 .home-date {
@@ -2201,12 +2203,12 @@ body::before {
 }
 
 .workout-rest-time {
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--accent-hover);
-  letter-spacing: -0.02em;
-  line-height: 1;
   font-family: var(--mono);
+  font-size: 40px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
 .workout-rest-controls {
@@ -2964,9 +2966,9 @@ body::before {
   border-radius: var(--radius);
   font-size: 16px;
   font-weight: 700;
-  background: rgba(124, 106, 247, 0.15);
-  border: 1px solid var(--accent);
-  color: var(--accent);
+  background: var(--surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2984,22 +2986,25 @@ body::before {
   width: 100%;
   padding: 18px;
   border-radius: var(--radius);
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
-  border: none;
+  letter-spacing: 0.04em;
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #ffffff;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(124, 106, 247, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   transition: all var(--transition);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  text-transform: uppercase;
 }
 .runner-complete-btn-lg:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(124, 106, 247, 0.5);
+  transform: translateY(-1px);
+  background: var(--accent-hover);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 .runner-complete-btn-lg:active {
   transform: scale(0.98);
@@ -3033,8 +3038,8 @@ body::before {
 
 /* Active Rest Countdown Box */
 .runner-rest-box {
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 24px;
   text-align: center;
@@ -3043,9 +3048,10 @@ body::before {
 }
 .runner-rest-num {
   font-family: var(--mono);
-  font-size: 48px;
+  font-size: 52px;
   font-weight: 800;
-  color: #22c55e;
+  color: #ffffff;
+  letter-spacing: -0.03em;
   line-height: 1;
   margin: 10px 0 16px;
 }
@@ -3188,18 +3194,19 @@ body::before {
 }
 
 .home-greeting-title {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
   color: #ffffff;
-  letter-spacing: -0.6px;
-  line-height: 1.2;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
 }
 
 .home-greeting-sub {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-muted);
   margin-top: 4px;
-  font-weight: 500;
+  font-weight: 400;
+  line-height: 1.5;
 }
 
 .home-header-controls {
@@ -3351,17 +3358,18 @@ body::before {
   font-size: 38px;
   font-weight: 800;
   color: #ffffff;
-  letter-spacing: -0.8px;
-  line-height: 1.1;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
   margin-top: 2px;
 }
 
 .home-hero-slogan {
   font-size: 14px;
-  color: #9494b8;
-  line-height: 1.45;
+  color: var(--text-muted);
+  font-weight: 400;
+  line-height: 1.55;
   margin-top: 6px;
-  max-width: 360px;
+  max-width: 380px;
 }
 
 .home-hero-metrics {
@@ -3504,10 +3512,12 @@ body::before {
 }
 
 .home-streak-card-days {
-  font-size: 28px;
+  font-family: var(--mono);
+  font-size: 36px;
   font-weight: 800;
   color: #ffffff;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
 .home-streak-card-sub {
@@ -3782,17 +3792,20 @@ body::before {
 }
 
 .home-metric-lbl {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
 }
 
 .home-metric-val {
   font-family: var(--mono);
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 800;
   color: #ffffff;
-  line-height: 1.2;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .home-metric-sub {
@@ -4066,7 +4079,7 @@ body::before {
 
 .home-timeline-date-num {
   font-family: var(--mono);
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 800;
   color: #ffffff;
   line-height: 1;
@@ -4299,9 +4312,11 @@ body::before {
 
 .pr-card-primary-val {
   font-family: var(--mono);
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 800;
-  color: #eab308;
+  letter-spacing: -0.02em;
+  color: #f4f4f5;
+  line-height: 1;
 }
 
 .pr-card-sub-vals {
@@ -4623,9 +4638,11 @@ body::before {
 
 
 
-h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-title, .modal-title, .app-logo {
+h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-title, .modal-title, .app-logo {
   font-family: var(--font-heading);
-  letter-spacing: -0.025em;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
 }
 
 
@@ -4848,11 +4865,11 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 
 .runner-exercise-name {
   font-family: var(--font-heading);
-  font-size: 32px;
-  font-weight: 900;
+  font-size: 34px;
+  font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.03em;
-  line-height: 1.1;
+  line-height: 1.05;
   margin: 0;
 }
 
@@ -4925,9 +4942,12 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 }
 
 .runner-bench-val {
-  font-size: 24px;
+  font-family: var(--mono);
+  font-size: 26px;
   font-weight: 800;
+  letter-spacing: -0.02em;
   color: #ffffff;
+  line-height: 1.1;
 }
 
 .runner-bench-unit {
@@ -4992,10 +5012,11 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 }
 
 .runner-circle-digits {
-  font-size: 38px;
-  font-weight: 900;
+  font-family: var(--mono);
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
   color: #ffffff;
-  letter-spacing: -0.04em;
   line-height: 1;
 }
 
@@ -5135,8 +5156,10 @@ h1, h2, h3, .view-title, .home-greeting-title, .home-hero-title, .home-card-titl
 }
 
 .runner-reps-num {
-  font-size: 56px;
-  font-weight: 900;
+  font-family: var(--mono);
+  font-size: 68px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
   color: #ffffff;
   line-height: 1;
 }
