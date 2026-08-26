@@ -1476,10 +1476,45 @@ function renderHomeView() {
       </div>
     </div>`;
 
-  // 4. 4-Metric Training Strip (Phase.md Section 21, 22)
-  const avgWorkoutMin = 46;
-  const trainingVolumeKg = (summary.week_sets || 0) * 115;
-  const volumeStr = trainingVolumeKg > 0 ? `${trainingVolumeKg.toLocaleString()} kg` : `${summary.week_sets * 10} reps`;
+  // 4. 4-Metric Training Strip (Zero-State Consistent)
+  const weekSessions = summary.week_sessions || 0;
+  const weekSets = summary.week_sets || 0;
+  const hasWeeklyActivity = weekSessions > 0 || weekSets > 0;
+
+  // Card 1: Workouts This Week
+  const card1Val = weekSessions;
+  const card1Sub = hasWeeklyActivity ? `/ ${plannedWorkoutsCount} planned` : `0 of ${plannedWorkoutsCount} planned`;
+  const card1Spark = hasWeeklyActivity
+    ? `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 25 Q 20 22, 40 16 T 80 6" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" fill="none"/></svg>`
+    : `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><line x1="0" y1="20" x2="80" y2="20" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" stroke-dasharray="3 3"/></svg>`;
+
+  // Card 2: Total Sets
+  const card2Val = weekSets;
+  const card2Sub = hasWeeklyActivity
+    ? `<span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} active</span>`
+    : `0 sets logged this week`;
+  const card2Spark = hasWeeklyActivity
+    ? `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 28 Q 25 24, 50 14 T 80 4" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" fill="none"/></svg>`
+    : `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><line x1="0" y1="20" x2="80" y2="20" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" stroke-dasharray="3 3"/></svg>`;
+
+  // Card 3: Training Volume
+  const trainingVolumeKg = weekSets * 115;
+  const card3Val = hasWeeklyActivity ? `${trainingVolumeKg.toLocaleString()} kg` : `—`;
+  const card3Sub = hasWeeklyActivity
+    ? `<span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} volume</span>`
+    : `No volume logged yet`;
+  const card3Spark = hasWeeklyActivity
+    ? `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 24 Q 25 20, 50 12 T 80 5" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1.8" fill="none"/></svg>`
+    : `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><line x1="0" y1="20" x2="80" y2="20" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" stroke-dasharray="3 3"/></svg>`;
+
+  // Card 4: Avg. Workout Time
+  const card4Val = hasWeeklyActivity ? `46 min` : `—`;
+  const card4Sub = hasWeeklyActivity
+    ? `Avg session pacing`
+    : `Target pacing: ~45 min`;
+  const card4Spark = hasWeeklyActivity
+    ? `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 26 Q 20 22, 50 15 T 80 8" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" fill="none"/></svg>`
+    : `<svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><line x1="0" y1="20" x2="80" y2="20" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.5" stroke-dasharray="3 3"/></svg>`;
 
   const metricsStripHtml = `
     <div class="home-metrics-strip fade-in-up stagger-3">
@@ -1489,9 +1524,9 @@ function renderHomeView() {
           <span class="home-metric-lbl">Workouts This Week</span>
           <div class="home-metric-icon">${renderIcon('dumbbell', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
         </div>
-        <div class="home-metric-val">${summary.week_sessions || 0}</div>
-        <div class="home-metric-sub">/ ${plannedWorkoutsCount} planned</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 25 Q 20 22, 40 16 T 80 6" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.8" fill="none"/></svg>
+        <div class="home-metric-val">${card1Val}</div>
+        <div class="home-metric-sub">${card1Sub}</div>
+        ${card1Spark}
       </div>
 
       <!-- Card 2: Total Sets -->
@@ -1500,9 +1535,9 @@ function renderHomeView() {
           <span class="home-metric-lbl">Total Sets</span>
           <div class="home-metric-icon">${renderIcon('barChart', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
         </div>
-        <div class="home-metric-val">${summary.week_sets || 0}</div>
-        <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 18%</span> vs last week</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 28 Q 25 24, 50 14 T 80 4" stroke="rgba(255, 255, 255, 0.22)" stroke-width="1.8" fill="none"/></svg>
+        <div class="home-metric-val">${card2Val}</div>
+        <div class="home-metric-sub">${card2Sub}</div>
+        ${card2Spark}
       </div>
 
       <!-- Card 3: Training Volume -->
@@ -1511,9 +1546,9 @@ function renderHomeView() {
           <span class="home-metric-lbl">Training Volume</span>
           <div class="home-metric-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
         </div>
-        <div class="home-metric-val">${volumeStr}</div>
-        <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 22%</span> capacity</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 24 Q 25 20, 50 12 T 80 5" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1.8" fill="none"/></svg>
+        <div class="home-metric-val">${card3Val}</div>
+        <div class="home-metric-sub">${card3Sub}</div>
+        ${card3Spark}
       </div>
 
       <!-- Card 4: Avg. Workout Time -->
@@ -1522,9 +1557,9 @@ function renderHomeView() {
           <span class="home-metric-lbl">Avg. Workout Time</span>
           <div class="home-metric-icon">${renderIcon('timer', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
         </div>
-        <div class="home-metric-val">${avgWorkoutMin} min</div>
-        <div class="home-metric-sub"><span class="home-metric-delta-up">${renderIcon('trendingUp', 'cx-icon cx-icon-xs cx-icon-inline')} 5 min</span> target pacing</div>
-        <svg class="home-metric-sparkline-svg" viewBox="0 0 80 30"><path d="M0 26 Q 20 22, 50 15 T 80 8" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" fill="none"/></svg>
+        <div class="home-metric-val">${card4Val}</div>
+        <div class="home-metric-sub">${card4Sub}</div>
+        ${card4Spark}
       </div>
     </div>`;
 
