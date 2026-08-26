@@ -34,21 +34,21 @@ Mainstream workout loggers fail to represent these dimensions naturally. **Calis
 
 | ID | Requirement | Category | Priority | Status |
 |:---|:---|:---|:---|:---|
-| **F1** | Pre-seeded calisthenics progression database (Push, Pull, Legs, Core) | Data Model | P0 | ✅ Complete |
-| **F2** | Log repetition-based sets: reps, optional added weight (kg), optional RPE (1–10) | Logging | P0 | ✅ Complete |
-| **F3** | Log isometric hold sets: one-tap start/stop timer with millisecond resolution & auto-save | Logging | P0 | ✅ Complete |
-| **F4** | Single-tap historical trend charts per exercise (Chart.js volume / hold metrics & toggles) | Analytics | P0 | ✅ Complete |
-| **F5** | Local-first persistence (`localStorage`) with background idempotent sync (`client_uuid`) | Resilience | P0 | ✅ Complete |
-| **F6** | Full database JSON export and backup restoration / import (`POST /import`) | Data Portability | P0 | ✅ Complete |
-| **F7** | Multi-tier routine & level management (`routine_levels`, `level_exercises`, tempo, rest, supersets) | Routines | P0 | ✅ Complete |
-| **F8** | Rolling 7-day PPL A/B calendar split with automatic daily resolution | Scheduling | P0 | ✅ Complete |
-| **F9** | Dashboard analytics hub: streak counter, weekly volume, weekly sets, top movers | Analytics | P0 | ✅ Complete |
-| **F10** | Sensory feedback cues (Web Audio API synthetics + Vibration API haptic pulses) | UX / Cues | P0 | ✅ Complete |
-| **F11** | Exercise progression evaluation engine (`/exercises/:id/progression-status`) & auto-promotion | Progression | P0 | ✅ Complete |
-| **F12** | Interactive routine editor (add, edit, delete, re-order, configure supersets, custom movements) | Routine Mgmt | P0 | ✅ Complete |
-| **F13** | Live Active Workout Execution Runner with Target vs. Actual tracking & live session timer | Workout Runner | P0 | ✅ Complete |
-| **F14** | All-Time Personal Records (PRs) hub & 4-week Training Consistency Activity Heatmap | Analytics | P1 | ✅ Complete |
-| **F15** | Progressive Web App (PWA) manifest & service worker for 100% offline mobile app install | PWA / Mobile | P1 | ✅ Complete |
+| **F1** | Repetition-based exercise set logging with optional added weight (+kg) & RPE scale (1–10) | Core Logging | P0 | Complete |
+| **F2** | Dedicated isometric hold duration timer (handstand, planche, L-sit, levers) | Core Logging | P0 | Complete |
+| **F3** | High-contrast countdown rest timer with audio ticks, skip option, and auto-dismissal | Timer & UX | P0 | Complete |
+| **F4** | Single-tap historical trend charts per exercise (Chart.js volume / hold metrics & toggles) | Analytics | P0 | Complete |
+| **F5** | Local-first persistence (`localStorage`) with background idempotent sync (`client_uuid`) | Resilience | P0 | Complete |
+| **F6** | Full database JSON export and backup restoration / import (`POST /import`) | Data Portability | P0 | Complete |
+| **F7** | Multi-tier routine & level management (`routine_levels`, `level_exercises`, tempo, rest, supersets) | Routines | P0 | Complete |
+| **F8** | Rolling 7-day PPL A/B calendar split with automatic daily resolution | Scheduling | P0 | Complete |
+| **F9** | Dashboard analytics hub: streak counter, weekly volume, weekly sets, top movers | Analytics | P0 | Complete |
+| **F10** | Sensory feedback cues (Web Audio API synthetics + Vibration API haptic pulses) | UX / Cues | P0 | Complete |
+| **F11** | Exercise progression evaluation engine (`/exercises/:id/progression-status`) & auto-promotion | Progression | P0 | Complete |
+| **F12** | Interactive routine editor (add, edit, delete, re-order, configure supersets, custom movements) | Routine Mgmt | P0 | Complete |
+| **F13** | Live Active Workout Execution Runner with Target vs. Actual tracking & live session timer | Workout Runner | P0 | Complete |
+| **F14** | All-Time Personal Records (PRs) hub & 4-week Training Consistency Activity Heatmap | Analytics | P1 | Complete |
+| **F15** | Progressive Web App (PWA) manifest & service worker for 100% offline mobile app install | PWA / Mobile | P1 | Complete |
 
 ---
 

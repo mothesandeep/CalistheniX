@@ -2132,18 +2132,18 @@ function checkAndCelebratePR(exerciseId, val, weightKg = null) {
   if (isHold) {
     if (rec.max_duration_sec && val > rec.max_duration_sec) {
       isNewPR = true;
-      prMsg = `NEW PR! ${ex?.name || 'Exercise'}: ${val}s hold (beat previous ${rec.max_duration_sec}s)`;
+      prMsg = `🏆 NEW PR! ${ex?.name || 'Exercise'}: ${val}s hold (beat previous ${rec.max_duration_sec}s)`;
     }
   } else {
     if (rec.max_reps && val > rec.max_reps) {
       isNewPR = true;
-      prMsg = `NEW PR! ${ex?.name || 'Exercise'}: ${val} reps (beat previous ${rec.max_reps})`;
+      prMsg = `🏆 NEW PR! ${ex?.name || 'Exercise'}: ${val} reps (beat previous ${rec.max_reps})`;
     }
   }
 
   if (weightKg && (!rec.max_weight_kg || weightKg > rec.max_weight_kg)) {
     isNewPR = true;
-    prMsg = `NEW WEIGHT PR! ${ex?.name || 'Exercise'}: +${weightKg}kg`;
+    prMsg = `🏆 NEW WEIGHT PR! ${ex?.name || 'Exercise'}: +${weightKg}kg`;
   }
 
   if (isNewPR) {

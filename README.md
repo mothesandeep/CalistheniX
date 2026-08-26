@@ -1,7 +1,7 @@
-# CalistheniX 🤸‍♂️⚡
+# CalistheniX
 
 > [!WARNING]  
-> **🚧 WORK IN PROGRESS — ACTIVE DEVELOPMENT**  
+> **WORK IN PROGRESS — ACTIVE DEVELOPMENT**  
 > This repository contains the actively developed version of CalistheniX. Features may change, bugs and incomplete functionality may exist, and it should NOT be considered a stable production release. Stable/release versions will be maintained separately.
 
 > **A local-first, aesthetic calisthenics progression tracker, custom weekly schedule builder, and live workout runner engineered for progressive overload and skill mastery.**
@@ -18,58 +18,58 @@ CalistheniX is engineered specifically for bodyweight athletes, gymnasts, and ca
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 📅 Custom Training Splits & 7-Day Weekly Schedules
+### Custom Training Splits & 7-Day Weekly Schedules
 - **User-Defined Training Splits**: Create, name, and manage multiple training splits (e.g. *Push Pull Legs*, *Upper / Lower 4-Day*, *Skill & Strength*, *Full Body*). Switch your active split with one tap.
 - **7-Day Monday–Sunday Weekly Grid**: Assign each day of the week independently to a **Workout Session** or a **Rest Day**.
 - **Dynamic Today Resolver (`GET /today`)**: The app automatically determines your active split and day of week. On workout days, it launches today's workout directly. On rest days, it presents recovery guidance and previews your next scheduled training session with an early-start option.
 
-### 🏋️ Reusable Workouts & Movement Library
+### Reusable Workouts & Movement Library
 - **Modular Workout Builder**: Build reusable training workouts (`Push A`, `Pull A`, `Upper Power`, etc.) independent of fixed days.
 - **Granular Exercise Parameters**: Configure sets, reps or hold duration targets, rest intervals (sec), tempo codes (e.g., `3010`), superset groupings (`SS1`, `SS2`), and coaching cue annotations.
-- **One-Tap Duplication (`⎘ Duplicate`)**: Clone existing workouts to rapidly experiment with variations without starting from scratch.
+- **One-Tap Duplication (`Duplicate`)**: Clone existing workouts to rapidly experiment with variations without starting from scratch.
 - **Global Exercise Catalog**: Add custom exercises with progression links and target benchmarks.
 
-### ⚡ Live Active Workout Runner (`#workout`)
+### Live Active Workout Runner (`#workout`)
 - **Live Session Stopwatch**: Live elapsed workout timer (`MM:SS`) with pause, resume, and accurate active duration accounting.
-- **Active Exercise Spotlight**: Focused card highlighting (`.workout-ex-card-active` + `⚡ Focus` badge) keeps you dialed into your current exercise.
+- **Active Exercise Spotlight**: Focused card highlighting (`.workout-ex-card-active` + `Focus` badge) keeps you dialed into your current exercise.
 - **Side-by-Side Target vs. Actual Steppers**: Intuitive `+` / `-` steppers and direct number inputs for rapid logging between sets.
 - **Dedicated Hold Stopwatch**: In-runner stopwatch for isometric holds (planche, front lever, handstands) automatically recording your exact measured hold time.
 - **Automatic Rest Countdown**: Rest interval countdown with audio ticks (3s, 2s, 1s) and skip button.
 - **Crash-Resistant State**: Active session state auto-persists in `localStorage` (`cx_active_session`) for crash recovery and background multi-tasking.
 
-### 🏆 In-Workout Personal Record (PR) Detection
+### In-Workout Personal Record (PR) Detection
 - **Multi-Dimensional PR Tracking**: Real-time evaluation across **Max Reps**, **Longest Hold Duration**, and **Heaviest Added Load (+kg)**.
-- **Live Celebration Banner**: Instant audio chime and gold highlight banner when a set breaks an all-time personal best.
+- **Live Celebration Banner**: Instant audio chime and gold highlight toast (`🏆 NEW PR!`) when a set breaks an all-time personal best.
 - **Dashboard PR Leaderboard**: Quick-access PR dashboard showing best historical achievements with links to trend charts.
 
-### 📖 Immutable Workout History & Session Logs
+### Immutable Workout History & Session Logs
 - **Canonical Session Lifecycle**: Dedicated `workout_sessions` table storing immutable snapshots of completed workouts with duration and volume totals.
 - **Chronological History Feed (`#history`)**: Clean workout log cards with drilldown into exact recorded sets (`#session-<uuid>`).
 - **Historical Data Safety**: Modifying or deleting future workouts or schedules **never** mutates or corrupts past completed workout history.
 
-### 🚀 Automated Progression Promotion Engine
+### Automated Progression Promotion Engine
 - **Weighted Readiness Scoring**: Evaluates athlete readiness using a 60% target hit-rate and 40% RPE fatigue credit.
 - **Fatigue Guard**: Automatically prevents premature progression if average RPE $\ge 9$, protecting athletes from overuse injury.
 - **One-Tap Promotion (`POST /exercises/:id/promote`)**: Seamlessly promotes your movement slots to the next progression step.
 
-### 📊 Consistency Heatmap & Analytics
+### Consistency Heatmap & Analytics
 - **4-Week Activity Heatmap**: Visualizes workout density, weekly set volume, and training momentum.
 - **Dynamic Streak Calculation**: Preserves yesterday's streak until today's workout is completed.
 - **Chart.js Performance Trends**: Progression trend lines with 2-week rolling delta percentages.
 
-### 📱 100% Offline Progressive Web App (PWA)
+### 100% Offline Progressive Web App (PWA)
 - Web App Manifest (`manifest.json`) and service worker (`sw.js`) enabling installable app experience on iOS, Android, macOS, and Windows with dark mode aesthetic (`#0a0a0f`).
 - Optimistic UI caching and local sync loop for seamless offline logging.
 
-### 💾 Backup & Idempotent Restore (v2.1)
+### Backup & Idempotent Restore (v2.1)
 - Full JSON backup export (`GET /export`) bundling training splits, weekly schedules, reusable workouts, exercises, sessions, and logs.
 - Multi-entity idempotent restore (`POST /import`) with deduplication.
 
 ---
 
-## 🏗️ Architecture & Technology Stack
+## Architecture & Technology Stack
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -105,7 +105,7 @@ CalistheniX is engineered specifically for bodyweight athletes, gymnasts, and ca
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.10+
@@ -138,11 +138,11 @@ python3 -m http.server 8080 --directory frontend
 ```
 
 Open your browser and navigate to:
-👉 **`http://localhost:8080`**
+**`http://localhost:8080`**
 
 ---
 
-## 🧪 Automated Testing
+## Automated Testing
 
 Run the full automated test suite covering all backend APIs, custom splits, weekly schedules, workout duplication, progression scoring, workout session lifecycles, and backup/restore:
 
@@ -152,7 +152,7 @@ PYTHONPATH=. ./venv/bin/python -m unittest -v backend/test_app.py
 
 ---
 
-## 📡 REST API Reference
+## REST API Reference
 
 ### Dynamic Today Resolver
 | Method | Endpoint | Description |
@@ -209,7 +209,7 @@ PYTHONPATH=. ./venv/bin/python -m unittest -v backend/test_app.py
 
 ---
 
-## 📱 Application Screens
+## Application Screens
 
 - **Dashboard (`#dashboard`)**: Training command center featuring streak counter, weekly volume, top movers, all-time PRs, 4-week activity heatmap, today's workout launcher, and JSON backup export/restore.
 - **Today (`#home`)**: Dynamic execution entry point displaying today's scheduled workout or rest day with recovery guidance and early workout launcher.
@@ -221,5 +221,5 @@ PYTHONPATH=. ./venv/bin/python -m unittest -v backend/test_app.py
 
 ---
 
-## 📄 License
+## License
 MIT License. Created by [Sandeep Mothe](https://github.com/mothesandeep).

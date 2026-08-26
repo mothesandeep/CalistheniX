@@ -1,4 +1,4 @@
-# Design System & UI Specification — CalistheniX v2.0 🎨⚡
+# Design System & UI Specification — CalistheniX v2.0
 
 ## 1. Design Philosophy
 
@@ -51,9 +51,9 @@
 ---
 
 ### Screen 1: Today's Execution Launcher (`#home`)
-- **Today Hero Card (`.today-hero-card`)**: High-impact split banner with current day tag (`Push A`), estimated workout duration, ~total sets, and live status badge (`Ready to Crush It 🔥` vs `Workout Completed ✓`).
+- **Today Hero Card (`.today-hero-card`)**: High-impact split banner with current day tag (`Push A`), estimated workout duration, ~total sets, and live status badge (`Ready to Train` vs `Workout Completed`).
 - **Exercise Preview List (`.today-ex-preview-card`)**: Clean, distraction-free exercise preview order with movement tags, set count, target prescriptions, and last logged session stats.
-- **Action Buttons**: Primary **"Start Today's Workout ➔"** (or **"Resume Workout ➔"**) button launching the live runner.
+- **Action Buttons**: Primary **"Start Today's Workout"** (or **"Resume Workout"**) button launching the live runner.
 
 ---
 
@@ -72,13 +72,13 @@
 ---
 
 ### Screen 4: Active Workout Runner (`#workout`)
-- **Session Topbar**: Real-time duration timer (`MM:SS`), Pause/Resume toggle (`⏸ Pause` / `▶ Resume`), Leave button, and Finish Workout CTA.
+- **Session Topbar**: Real-time duration timer (`MM:SS`), Pause/Resume toggle (`Pause` / `Resume`), Leave button, and Finish Workout CTA.
 - **Dynamic Progress Bar**: Live set completion ratio (`X / Y Sets Completed`) with smooth gradient fill.
-- **Active Exercise Focus Spotlight (`.workout-ex-card-active`)**: Current in-progress exercise card glows with a purple accent border and displays an animated `⚡ Focus` badge.
+- **Active Exercise Focus Spotlight (`.workout-ex-card-active`)**: Current in-progress exercise card glows with a purple accent border and displays an animated `Focus` badge.
 - **Tempo Prescriptions**: Inline pill badge (e.g. `Tempo: 3010`) maintaining strict eccentric/isometric form guidance.
 - **Frictionless Set Adjustments**: Inline `+` and `-` stepper buttons alongside direct numerical input for instant set adjustments without mobile keyboard popups.
-- **Dedicated Hold Stopwatch**: Hold-type exercises feature a prominent **"⏱ Start Hold"** button that runs a millisecond stopwatch and saves exact measured seconds upon clicking **"⏹ Stop"**.
-- **Live In-Workout PR Detection**: Beating a previous all-time personal record instantly triggers a two-tone celebratory fanfare chime and a gold alert toast (`🏆 NEW PR!`).
+- **Dedicated Hold Stopwatch**: Hold-type exercises feature a prominent **"Start Hold"** button that runs a millisecond stopwatch and saves exact measured seconds upon clicking **"Stop"**.
+- **Live In-Workout PR Detection**: Beating a previous all-time personal record instantly triggers a celebratory fanfare chime and a gold alert toast (`🏆 NEW PR!`).
 - **Automated Rest Countdown**: Automatic rest timer overlay with countdown numerals, tick sounds (3s, 2s, 1s), and quick skip option.
 
 ---
@@ -93,7 +93,7 @@
 ### Screen 6: Exercise History & Chart View (`#history-<id>`)
 - **Performance Chart**: Interactive line chart (Chart.js) rendering historical progress over time.
 - **Metric Mode Switch**: Toggle between **[Best Set / Max Hold]** and **[Total Volume / Total Duration]**.
-- **Progression Banner & Promotion**: Surfaces weighted readiness scoring (60% hit-rate + 40% fatigue credit) and a one-tap **"Promote 🚀"** action when criteria are satisfied.
+- **Progression Banner & Promotion**: Surfaces weighted readiness scoring (60% hit-rate + 40% fatigue credit) and a one-tap **"Promote"** action when criteria are satisfied.
 
 ---
 

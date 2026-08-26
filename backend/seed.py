@@ -35,7 +35,7 @@ def main():
         level_count = conn.execute("SELECT COUNT(*) FROM routine_levels").fetchone()[0]
         slot_count = conn.execute("SELECT COUNT(*) FROM level_exercises").fetchone()[0]
 
-    print(f"✓ Success: {ex_count} exercises, {level_count} routine levels, {slot_count} level exercise slots seeded.")
+    print(f"Success: {ex_count} exercises, {level_count} routine levels, {slot_count} level exercise slots seeded.")
 
 
 if __name__ == '__main__':
