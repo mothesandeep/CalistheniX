@@ -1328,7 +1328,7 @@ function renderHomeView() {
       }
     }
 
-    const heroExercises = (workout.exercises || []).slice(0, 4);
+    const heroExercises = (workout.exercises || []).slice(0, 6);
     const heroExListHtml = heroExercises.map((ex, idx) => {
       const isHold = ex.exercise_type === 'duration';
       const targetStr = isHold ? `${ex.duration_sec || 30}s hold` : `${ex.reps || 8} reps`;
@@ -1355,10 +1355,10 @@ function renderHomeView() {
         <div class="home-hero-grid">
           <div class="home-hero-content">
             <div>
-              <span class="home-hero-tag">${heroStatusTag}</span>
+              <span class="home-hero-tag">${heroStatusTag} · ${(splitName || 'Active Split').toUpperCase()}</span>
               <h1 class="home-hero-title">${workout.name}</h1>
               <p class="home-hero-slogan">
-                Targeted calisthenics overload. Log sets, tempo, and holds in live runner.
+                ${workout.description || 'Targeted calisthenics progressive overload. Track sets, tempo, and reps live.'}
               </p>
             </div>
 
