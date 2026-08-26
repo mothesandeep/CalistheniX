@@ -1098,9 +1098,9 @@ function renderDualMuscleBodySvg(muscles) {
   const activeStroke = '#7c5cfc';
 
   const frontSvg = `
-    <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-      <span style="font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em;">Front</span>
-      <svg class="home-muscle-svg" viewBox="0 0 100 145" fill="none" style="width:72px; height:105px;">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+      <span style="font-size:9.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em;">Front</span>
+      <svg class="home-muscle-svg" viewBox="0 0 100 145" fill="none">
         <!-- Head & Neck -->
         <circle cx="50" cy="14" r="8" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1.2"/>
         <path d="M47 22 H53 V27 H47 Z" fill="${baseColor}"/>
@@ -1136,9 +1136,9 @@ function renderDualMuscleBodySvg(muscles) {
     </div>`;
 
   const backSvg = `
-    <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-      <span style="font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em;">Back</span>
-      <svg class="home-muscle-svg" viewBox="0 0 100 145" fill="none" style="width:72px; height:105px;">
+    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+      <span style="font-size:9.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em;">Back</span>
+      <svg class="home-muscle-svg" viewBox="0 0 100 145" fill="none">
         <!-- Head & Neck -->
         <circle cx="50" cy="14" r="8" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1.2"/>
         <path d="M47 22 H53 V27 H47 Z" fill="${baseColor}"/>
@@ -1460,7 +1460,7 @@ function renderHomeView() {
       <div class="home-hero-card fade-in-up stagger-1">
         <div class="home-hero-grid">
           <div class="home-hero-content">
-            <div>
+            <div class="home-hero-main-info">
               <span class="home-hero-tag">${heroStatusTag} · ${(splitName || 'Active Split').toUpperCase()}</span>
               <h1 class="home-hero-title">${workout.name}</h1>
               <p class="home-hero-slogan">
@@ -1468,26 +1468,24 @@ function renderHomeView() {
               </p>
             </div>
 
-            <div>
-              <div class="home-hero-metrics">
-                <div class="home-hero-metric-pill">
-                  <span class="icon">${renderIcon('pullup', 'cx-icon cx-icon-sm')}</span>
-                  <span>${workout.exercises?.length || 6} Movements</span>
-                </div>
-                <div class="home-hero-metric-pill">
-                  <span class="icon">${renderIcon('barChart', 'cx-icon cx-icon-sm')}</span>
-                  <span>${workout.total_sets || 18} Sets</span>
-                </div>
-                <div class="home-hero-metric-pill">
-                  <span class="icon">${renderIcon('timer', 'cx-icon cx-icon-sm')}</span>
-                  <span>~${estDurationMin || 45} min</span>
-                </div>
+            <div class="home-hero-metrics">
+              <div class="home-hero-metric-pill">
+                <span class="icon">${renderIcon('pullup', 'cx-icon cx-icon-sm')}</span>
+                <span>${workout.exercises?.length || 6} Movements</span>
               </div>
-
-              ${heroDirectivesHtml}
-
-              ${heroBtnHtml}
+              <div class="home-hero-metric-pill">
+                <span class="icon">${renderIcon('barChart', 'cx-icon cx-icon-sm')}</span>
+                <span>${workout.total_sets || 18} Sets</span>
+              </div>
+              <div class="home-hero-metric-pill">
+                <span class="icon">${renderIcon('timer', 'cx-icon cx-icon-sm')}</span>
+                <span>~${estDurationMin || 45} min</span>
+              </div>
             </div>
+
+            ${heroDirectivesHtml}
+
+            ${heroBtnHtml}
           </div>
 
           <div class="home-hero-preview-col">
@@ -1785,7 +1783,7 @@ function renderHomeView() {
       </div>
 
       <!-- Right Column: Stacked Recent PRs & Upcoming Workouts (1fr) -->
-      <div class="home-side-col" style="gap: 20px;">
+      <div class="home-lower-side-col">
         <!-- Stack 1: Recent PRs -->
         <div class="home-section-card">
           <div>
