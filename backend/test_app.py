@@ -955,6 +955,62 @@ class TestCalistheniXBackend(unittest.TestCase):
         self.assertEqual(rec_map[ex_id]['date_label'], 'Today')
         self.assertEqual(rec_map[ex_id2]['date_label'], 'Yesterday')
 
+    def test_offline_to_online_replay_and_deduplication(self):
+        """Offline-first: Verify offline session & set queuing, replay idempotency, and zero duplication."""
+        session_id = f"test-offline-session-{uuid.uuid4()}"
+        client_uuid_1 = f"client-set-1-{uuid.uuid4()}"
+        client_uuid_2 = f"client-set-2-{uuid.uuid4()}"
+
+        with get_db() as conn:
+            ex_row = conn.execute("SELECT id FROM exercises LIMIT 1").fetchone()
+            ex_id = ex_row['id']
+
+        offline_session_payload = {
+            "id": session_id,
+            "routine": "Push A",
+            "level": 1,
+            "startTime": 1000000,
+            "completed_at": datetime.now(timezone.utc).isoformat(),
+            "duration_sec": 2400,
+            "status": "completed",
+            "exercises": [
+                {
+                    "exercise_id": ex_id,
+                    "exercise_type": "reps",
+                    "sets": [
+                        {"set_num": 1, "target_val": 10, "actual_val": 12, "completed": True, "client_uuid": client_uuid_1},
+                        {"set_num": 2, "target_val": 10, "actual_val": 11, "completed": True, "client_uuid": client_uuid_2}
+                    ]
+                }
+            ]
+        }
+
+        # 1. First sync replay when reconnecting
+        res_sync_1 = self.client.post('/workout_sessions', json=offline_session_payload)
+        self.assertEqual(res_sync_1.status_code, 201)
+
+        # 2. Replay duplicate individual set from background sync queue
+        res_log_replay = self.client.post('/logs', json={
+            "exercise_id": ex_id,
+            "reps": 12,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "client_uuid": client_uuid_1,
+            "session_uuid": session_id
+        })
+        self.assertIn(res_log_replay.status_code, (200, 201))
+
+        # 3. Replay full session payload again (retried request)
+        res_sync_2 = self.client.post('/workout_sessions', json=offline_session_payload)
+        self.assertEqual(res_sync_2.status_code, 200)
+
+        # 4. Assert zero duplicates in database
+        with get_db() as conn:
+            sess_cnt = conn.execute("SELECT COUNT(*) as cnt FROM workout_sessions WHERE session_uuid = ?", (session_id,)).fetchone()['cnt']
+            self.assertEqual(sess_cnt, 1, "Workout session must never be duplicated!")
+
+            log_cnt = conn.execute("SELECT COUNT(*) as cnt FROM logs WHERE session_uuid = ?", (session_id,)).fetchone()['cnt']
+            self.assertEqual(log_cnt, 2, "Completed sets must never be duplicated on offline sync replay!")
+
 
 if __name__ == '__main__':
     unittest.main()
