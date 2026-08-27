@@ -8,8 +8,6 @@
    All functions in global scope for inline event handlers.
    ============================================================ */
 
-const API_BASE = 'http://127.0.0.1:5001';
-
 
 // ─── Modern SVG Icon System ──────────────────────────────────────────────────
 const ICONS = {
@@ -174,16 +172,7 @@ const state = {
   selectedCalendarDate: todayISO(),
 };
 
-// ─── API helper ───────────────────────────────────────────────────────────────
-async function api(method, path, body = null) {
-  const opts = { method, headers: { 'Content-Type': 'application/json' } };
-  if (body !== null) opts.body = JSON.stringify(body);
-  const res = await fetch(`${API_BASE}${path}`, opts);
-  if (res.status === 204) return null;
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-  return data;
-}
+// API client functions are loaded from js/api.js (window.API)
 
 // ─── UUID generator (crypto.randomUUID with fallback) ─────────────────────────
 function newUUID() {
@@ -259,7 +248,7 @@ async function lsSyncPending() {
     let sessionRecord;
     try { sessionRecord = JSON.parse(localStorage.getItem(key)); } catch { continue; }
     try {
-      await api('POST', '/workout_sessions', sessionRecord);
+      await API.createWorkoutSession(sessionRecord);
       localStorage.removeItem(key);
     } catch {
       // Leave in localStorage for next retry
@@ -272,7 +261,7 @@ async function lsSyncPending() {
     try { record = JSON.parse(localStorage.getItem(key)); } catch { continue; }
     if (record.synced) { localStorage.removeItem(key); continue; }
     try {
-      await api('POST', '/logs', record);
+      await API.createLog(record);
       localStorage.removeItem(key); // clean up confirmed entries
     } catch {
       // Network unavailable — leave in localStorage, will retry on next sync.
@@ -418,12 +407,12 @@ function cueExerciseComplete() {
 
 // ─── Data loading ─────────────────────────────────────────────────────────────
 async function loadExercises() {
-  state.exercises = await api('GET', '/exercises');
+  state.exercises = await API.getExercises();
 }
 
 async function loadTodayResolved() {
   try {
-    const data = await api('GET', '/today');
+    const data = await API.getTodayWorkout();
     state.todayResolved = data;
     return data;
   } catch (e) {
@@ -434,7 +423,7 @@ async function loadTodayResolved() {
 
 async function loadSplits() {
   try {
-    const data = await api('GET', '/splits');
+    const data = await API.getSplits();
     state.splits = data || [];
     const active = state.splits.find(s => s.is_active === 1) || state.splits[0];
     state.activeSplit = active;
@@ -452,7 +441,7 @@ async function loadSplits() {
 
 async function loadSplitDetail(splitId) {
   try {
-    const data = await api('GET', `/splits/${splitId}`);
+    const data = await API.getSplitDetail(splitId);
     state.selectedSplitDetail = data;
     return data;
   } catch (e) {
@@ -462,7 +451,7 @@ async function loadSplitDetail(splitId) {
 
 async function loadWorkouts() {
   try {
-    const data = await api('GET', '/workouts');
+    const data = await API.getWorkouts();
     state.workouts = data || [];
     if (!state.selectedWorkoutId && state.workouts.length) {
       state.selectedWorkoutId = state.workouts[0].id;
@@ -478,7 +467,7 @@ async function loadWorkouts() {
 
 async function loadWorkoutDetail(workoutId) {
   try {
-    const data = await api('GET', `/workouts/${workoutId}`);
+    const data = await API.getWorkoutDetail(workoutId);
     state.selectedWorkoutDetail = data;
     return data;
   } catch (e) {
@@ -528,9 +517,9 @@ function updateGlobalStreakDisplays(streakDays) {
 async function loadDashboardSummary() {
   try {
     const [sum, rec, act] = await Promise.allSettled([
-      api('GET', '/dashboard/summary'),
-      api('GET', '/dashboard/records'),
-      api('GET', '/dashboard/activity')
+      API.getDashboardSummary(),
+      API.getDashboardRecords(),
+      API.getDashboardActivity()
     ]);
     state.dashboardSummary  = sum.status === 'fulfilled' ? sum.value : { streak_days: 0, week_sessions: 0, week_sets: 0, top_movers: [] };
     state.dashboardRecords  = rec.status === 'fulfilled' ? rec.value : [];
@@ -552,7 +541,7 @@ async function loadTodayLogs() {
   const dayExercises = state.exercises.filter(e => e.day === todayDay);
   const results = await Promise.allSettled(
     dayExercises.map(ex =>
-      api('GET', `/exercises/${ex.id}/logs`)
+      API.getExerciseLogs(ex.id)
         .then(logs => ({ id: ex.id, log: logs.length ? logs[logs.length - 1] : null }))
     )
   );
@@ -563,7 +552,7 @@ async function loadTodayLogs() {
 }
 
 async function loadLevel() {
-  const all = await api('GET', `/routines/${encodeURIComponent(state.routine)}/levels`);
+  const all = await API.getRoutineLevels(state.routine);
   const found = all.find(l => l.level === state.level);
   if (found) {
     state.levelId        = found.id;
@@ -577,7 +566,7 @@ async function loadLevel() {
 // Auto-creates the routine_level row on first add — idempotent on backend.
 async function ensureLevel() {
   if (state.levelId !== null) return;
-  const row = await api('POST', '/routine_levels', {
+  const row = await API.createRoutineLevel({
     routine_name: state.routine,
     level: state.level,
   });
@@ -588,19 +577,19 @@ async function ensureLevel() {
 async function addExercise(payload) {
   await ensureLevel();
   payload.order_index = state.levelExercises.length + 1;
-  await api('POST', `/routine_levels/${state.levelId}/exercises`, payload);
+  await API.addLevelExercise(state.levelId, payload);
   state.editingId = null;
   await loadLevel();
 }
 
 async function updateExercise(leId, payload) {
-  await api('PUT', `/level_exercises/${leId}`, payload);
+  await API.updateLevelExercise(leId, payload);
   state.editingId = null;
   await loadLevel();
 }
 
 async function deleteExercise(leId) {
-  await api('DELETE', `/level_exercises/${leId}`);
+  await API.deleteLevelExercise(leId);
   if (state.editingId === leId) state.editingId = null;
   await loadLevel();
 }
@@ -2189,7 +2178,7 @@ async function importData(input) {
   try {
     const text = await file.text();
     const json = JSON.parse(text);
-    const result = await api('POST', '/import', json);
+    const result = await API.importBackupData(json);
     showToast(`Restored: ${result.imported} logs imported (${result.skipped} existing)`);
     input.value = '';
     await loadDashboardSummary();
@@ -2357,7 +2346,7 @@ function handleSaveReps(event) {
 
 async function loadWorkoutSessions() {
   try {
-    state.workoutSessions = await api('GET', '/workout_sessions');
+    state.workoutSessions = await API.getWorkoutSessions();
   } catch (e) {
     state.workoutSessions = [];
   }
@@ -2377,7 +2366,7 @@ async function openSessionDetailView(sessionUuid) {
   window.location.hash = `session-${sessionUuid}`;
   render();
   try {
-    state.selectedSessionDetail = await api('GET', `/workout_sessions/${sessionUuid}`);
+    state.selectedSessionDetail = await API.getWorkoutSessionDetail(sessionUuid);
   } catch (e) {
     showToast(`Error loading session: ${e.message}`, true);
   }
@@ -2593,7 +2582,7 @@ async function handleCreateSplit(event) {
     is_active: data.get('is_active') ? 1 : 0
   };
   try {
-    const created = await api('POST', '/splits', payload);
+    const created = await API.createSplit(payload);
     state.showCreateSplitModal = false;
     showToast(`Created Split "${created.name}"`);
     await loadSplits();
@@ -2614,7 +2603,7 @@ async function selectSplit(splitId) {
 
 async function activateSplit(splitId) {
   try {
-    await api('PUT', `/splits/${splitId}`, { is_active: 1 });
+    await API.activateSplit(splitId);
     showToast('Split set as Active');
     await loadSplits();
     await loadTodayResolved();
@@ -2627,7 +2616,7 @@ async function activateSplit(splitId) {
 async function handleDeleteSplit(splitId, splitName) {
   if (!confirm(`Are you sure you want to delete "${splitName}"?\nCompleted workout sessions and logs will NOT be deleted.`)) return;
   try {
-    await api('DELETE', `/splits/${splitId}`);
+    await API.deleteSplit(splitId);
     showToast(`Deleted split "${splitName}"`);
     state.selectedSplitId = null;
     await loadSplits();
@@ -2664,7 +2653,7 @@ async function handleSaveScheduleDay(event, splitId, dayIndex) {
   }
 
   try {
-    await api('PUT', `/splits/${splitId}/schedule/${dayIndex}`, {
+    await API.updateScheduleDay(splitId, dayIndex, {
       day_type: dayType,
       workout_id: workoutId
     });
@@ -2704,7 +2693,7 @@ async function handleCreateWorkout(event) {
     exercises: []
   };
   try {
-    const created = await api('POST', '/workouts', payload);
+    const created = await API.createWorkout(payload);
     state.showCreateWorkoutModal = false;
     showToast(`Created Workout "${created.name}"`);
     await loadWorkouts();
@@ -2718,7 +2707,7 @@ async function handleCreateWorkout(event) {
 
 async function handleDuplicateWorkout(workoutId) {
   try {
-    const dup = await api('POST', `/workouts/${workoutId}/duplicate`);
+    const dup = await API.duplicateWorkout(workoutId);
     showToast(`Duplicated into "${dup.name}"`);
     await loadWorkouts();
     state.selectedWorkoutId = dup.id;
@@ -2732,7 +2721,7 @@ async function handleDuplicateWorkout(workoutId) {
 async function handleDeleteWorkout(workoutId, workoutName) {
   if (!confirm(`Are you sure you want to delete "${workoutName}"?\nAny schedule days assigned to this workout will be converted to Rest days.\nHistorical completed workout logs will NOT be affected.`)) return;
   try {
-    await api('DELETE', `/workouts/${workoutId}`);
+    await API.deleteWorkout(workoutId);
     showToast(`Deleted workout "${workoutName}"`);
     state.selectedWorkoutId = null;
     await loadWorkouts();
@@ -2831,7 +2820,7 @@ async function handleSaveWorkout(event, workoutId) {
   }
 
   try {
-    await api('PUT', `/workouts/${workoutId}`, {
+    await API.updateWorkout(workoutId, {
       name,
       description: desc,
       exercises
@@ -2859,7 +2848,7 @@ async function startWorkoutFromResolved() {
 
 async function startWorkoutFromId(workoutId) {
   try {
-    const w = await api('GET', `/workouts/${workoutId}`);
+    const w = await API.getWorkoutDetail(workoutId);
     if (!w || !w.exercises || !w.exercises.length) {
       showToast(`No exercises found in workout "${w?.name || workoutId}"`, true);
       return;
@@ -2935,7 +2924,7 @@ async function startWorkoutSession(routineName, levelNum = 1) {
 
   let exercises = [];
   try {
-    const levels = await api('GET', `/routines/${encodeURIComponent(routineName)}/levels`);
+    const levels = await API.getRoutineLevels(routineName);
     const lvl = levels.find(l => l.level === levelNum) || levels[0];
     if (lvl) exercises = lvl.exercises;
   } catch (e) {
@@ -3333,7 +3322,7 @@ async function finishWorkoutSession() {
 
   // 1. Post to backend /workout_sessions endpoint (with local outbox safety)
   try {
-    await api('POST', '/workout_sessions', session);
+    await API.createWorkoutSession(session);
   } catch (e) {
     console.warn('Direct session sync failed, queued locally:', e);
     localStorage.setItem(`${LS_SESSION_PREFIX}${session.id}`, JSON.stringify(session));
@@ -3460,7 +3449,7 @@ async function promoteProgression(exerciseId, nextId) {
   const leRows = state.levelExercises.filter(le => le.exercise_id === exerciseId);
   try {
     for (const le of leRows) {
-      await api('PUT', `/level_exercises/${le.id}`, { exercise_id: nextId });
+      await API.updateLevelExercise(le.id, { exercise_id: nextId });
     }
     await loadLevel();
     await loadExercises();
@@ -4980,7 +4969,7 @@ async function handleDelete(leId) {
 // ─── Data Export (Phase 1 F6) ────────────────────────────────────────────────
 async function exportData() {
   try {
-    const data = await api('GET', '/export');
+    const data = await API.getExportData();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -5003,7 +4992,7 @@ async function importData(inputEl) {
   reader.onload = async (e) => {
     try {
       const jsonContent = JSON.parse(e.target.result);
-      const res = await api('POST', '/import', jsonContent);
+      const res = await API.importBackupData(jsonContent);
       showToast(`Import successful! ${res.imported_logs || 0} sets & ${res.imported_sessions || 0} sessions restored.`);
       await loadDashboardSummary();
       await loadExercises();
@@ -5116,7 +5105,7 @@ async function handleCreateCustomExercise(event) {
   }
 
   try {
-    const newEx = await api('POST', '/exercises', payload);
+    const newEx = await API.createExercise(payload);
     await loadExercises();
     showToast(`Created "${newEx.name}"`);
     form.reset();
