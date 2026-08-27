@@ -2,9 +2,9 @@
 seed.py — Populate the database with canonical calisthenics routines and progression data.
 
 Usage:
-    python backend/seed.py
-    # or from backend directory:
-    python seed.py
+    python backend/scripts/seed.py
+    # or with venv:
+    ./venv/bin/python backend/scripts/seed.py
 
 Idempotent: clears exercises, routine levels, and level exercises, then populates
 full Push A/B, Pull A/B, Legs A/B splits with tempo, rest periods, and superset groupings.
@@ -13,15 +13,19 @@ full Push A/B, Pull A/B, Legs A/B splits with tempo, rest periods, and superset 
 import sys
 import os
 
-# Ensure backend package can be imported regardless of execution directory
+# Ensure backend package and project root can be imported
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
-if CURRENT_DIR not in sys.path:
-    sys.path.insert(0, CURRENT_DIR)
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+BACKEND_DIR = os.path.dirname(CURRENT_DIR)
+PROJECT_ROOT = os.path.dirname(BACKEND_DIR)
 
-from app import init_db, reseed_data, get_db
+for p in (CURRENT_DIR, BACKEND_DIR, PROJECT_ROOT):
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
+try:
+    from backend.app import init_db, reseed_data, get_db
+except ImportError:
+    from app import init_db, reseed_data, get_db
 
 
 def main():
