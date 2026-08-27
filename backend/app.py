@@ -2,31 +2,33 @@ import sqlite3
 import json
 import os
 from datetime import datetime, timedelta, timezone
-from contextlib import contextmanager
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
-app = Flask(__name__)
-CORS(app)
+try:
+    from backend.config import Config
+    from backend.db import get_db, get_db_connection, DB_PATH
+except ImportError:
+    from config import Config
+    from db import get_db, get_db_connection, DB_PATH
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tracker.db')
 
-def get_db_connection():
-    """Create and return a raw SQLite database connection with row factory and FK enabled."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute('PRAGMA foreign_keys = ON')
-    return conn
+def create_app(config_class=Config):
+    """Application factory creating and configuring Flask app instance."""
+    flask_app = Flask(__name__)
+    if isinstance(config_class, type) or hasattr(config_class, '__dict__'):
+        flask_app.config.from_object(config_class)
+    elif isinstance(config_class, dict):
+        flask_app.config.from_mapping(config_class)
 
-@contextmanager
-def get_db():
-    """Context manager for SQLite connections.
-    Guarantees conn.close() is called on block exit, normal return, or exception."""
-    conn = get_db_connection()
-    try:
-        yield conn
-    finally:
-        conn.close()
+    cors_origins = flask_app.config.get('CORS_ORIGINS', '*')
+    CORS(flask_app, resources={r"/*": {"origins": cors_origins}})
+    return flask_app
+
+
+# Default application instance for backward compatibility and test runners
+app = create_app()
+
 
 
 def _parse_int(val, field_name, min_val=None, allow_none=False):
@@ -2389,5 +2391,4 @@ def create_or_sync_workout_session():
 
 
 if __name__ == '__main__':
-    debug = os.environ.get('FLASK_DEBUG', 'False') == 'True'
-    app.run(debug=debug, port=5001)
+    app.run(debug=Config.DEBUG, port=Config.PORT)
