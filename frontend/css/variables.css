@@ -1,0 +1,63 @@
+/* ============================================================
+   variables.css — Theme Tokens & Custom Properties
+   ============================================================ */
+
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --bg:           #09090b;
+  --surface:      #121217;
+  --surface-glass:rgba(18, 18, 23, 0.85);
+  --surface-2:    #181820;
+  --surface-3:    #22222c;
+  --border:       rgba(255, 255, 255, 0.08);
+  --border-light: rgba(255, 255, 255, 0.12);
+  --border-focus: rgba(255, 255, 255, 0.28);
+  --border-accent:rgba(124, 92, 252, 0.4);
+
+  --text:         #f8fafc;
+  --text-muted:   #94a3b8;
+  --text-dim:     #8e8ea0;
+
+  --accent:       #7c5cfc;
+  --accent-light: #8b5cf6;
+  --accent-hover: #6947eb;
+  --accent-dim:   rgba(124, 92, 252, 0.08);
+  --accent-glow:  none;
+
+  --success:      #10b981;
+  --success-dim:  rgba(16, 185, 129, 0.15);
+  --danger:       #f43f5e;
+  --danger-dim:   rgba(244, 63, 94, 0.15);
+  --warning:      #f97316;
+  --warning-dim:  rgba(249, 115, 22, 0.15);
+
+  --badge-reps-bg:  rgba(255, 255, 255, 0.06);
+  --badge-reps-fg:  #e4e4e7;
+  --badge-hold-bg:  rgba(255, 255, 255, 0.06);
+  --badge-hold-fg:  #e4e4e7;
+
+  --sans:         'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --mono:         'JetBrains Mono', monospace;
+
+  --radius-xs:    4px;
+  --radius-sm:    6px;
+  --radius:       14px;
+  --radius-lg:    18px;
+  --radius-xl:    24px;
+
+  /* Component-specific tailored radius hierarchy */
+  --radius-btn:   6px;
+  --radius-input: 6px;
+  --radius-badge: 4px;
+  --radius-card:  16px;
+  --radius-hero:  20px;
+  --radius-modal: 20px;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 16px 44px rgba(0, 0, 0, 0.8);
+  --shadow-glass: 0 12px 36px -4px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  --transition: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}

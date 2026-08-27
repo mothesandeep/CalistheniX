@@ -1,0 +1,127 @@
+/* ============================================================
+   base.css — Global Resets, Typography & Core Elements
+   ============================================================ */
+
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 99999;
+  opacity: 0.65;
+}
+
+/* ── Sleek Minimalist Scrollbars ───────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(6, 6, 10, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  transition: background var(--transition);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ── SVG Icon System ───────────────────────────────────────────────────────── */
+.cx-icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+  stroke: currentColor;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: transform var(--transition), stroke var(--transition), color var(--transition);
+}
+
+.cx-icon-xs { width: 12px; height: 12px; stroke-width: 2.2; }
+.cx-icon-sm { width: 14px; height: 14px; stroke-width: 2; }
+.cx-icon-md { width: 18px; height: 18px; stroke-width: 2; }
+.cx-icon-lg { width: 22px; height: 22px; stroke-width: 1.8; }
+.cx-icon-2xl { width: 36px; height: 36px; stroke-width: 1.5; }
+
+.cx-icon-inline {
+  margin-right: 6px;
+  vertical-align: -2px;
+}
+
+.cx-icon-accent { color: var(--accent); }
+.cx-icon-success { color: var(--success); }
+.cx-icon-danger { color: var(--danger); }
+.cx-icon-gold { color: #c4b5fd; }
+.cx-icon-fire { color: #f97316; }
+.cx-icon-cyan { color: #06b6d4; }
+.cx-icon-muted { color: var(--text-muted); }
+
+/* ── Toast ─────────────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 400ms ease, transform 400ms ease;
+}
+.toast-hidden { opacity: 0; transform: translateX(-50%) translateY(12px); pointer-events: none; }
+.toast-success { background: var(--success); color: #fff; }
+.toast-error   { background: var(--danger);  color: #fff; }
+
+/* ── Error banner ──────────────────────────────────────────────────────────── */
+.error-banner {
+  margin: 40px auto;
+  max-width: 520px;
+  padding: 24px;
+  background: var(--danger-dim);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.error-banner code {
+  font-family: var(--mono);
+  background: rgba(0,0,0,0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ── Misc utilities ────────────────────────────────────────────────────────── */
+.mono { font-family: var(--mono) !important; }
