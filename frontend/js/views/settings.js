@@ -876,8 +876,8 @@ function renderBiomechanicsTabContent(tab) {
         <p style="font-size:13px; color:var(--text-muted); margin:0;">
           Step-by-step movement stages breakdown: Maintain a strict plank from head to heels, descend under control to a full hover, and push explosively through the palms while keeping elbows tucked.
         </p>
-        <div class="card" style="padding:16px; background:var(--surface-2); text-align:center;">
-          <img src="assets/pushup_form.jpg" alt="Exercise Form Execution Stages" style="width:100%; max-height:360px; object-fit:contain; border-radius:var(--radius);" />
+        <div class="card" style="padding:12px; background:var(--surface-2); text-align:center; border:1px solid rgba(255,255,255,0.06);">
+          <img src="assets/movement-stages.svg" alt="Exercise Form Execution Stages" style="width:100%; max-height:420px; object-fit:contain; border-radius:var(--radius);" />
         </div>
       </div>`;
   } else if (tab === 'tempo') {
@@ -886,8 +886,8 @@ function renderBiomechanicsTabContent(tab) {
         <p style="font-size:13px; color:var(--text-muted); margin:0;">
           Biomechanical tempo and posture analysis: Slower eccentric lowering (3–4s) builds maximum tendon strength and hypertrophic tension, while avoiding sagging hips or compromised spinal alignment.
         </p>
-        <div class="card" style="padding:16px; background:var(--surface-2); text-align:center;">
-          <img src="assets/tempo_guide.jpg" alt="Tempo & Posture Standards" style="width:100%; max-height:360px; object-fit:contain; border-radius:var(--radius);" />
+        <div class="card" style="padding:12px; background:var(--surface-2); text-align:center; border:1px solid rgba(255,255,255,0.06);">
+          <img src="assets/tempo-guide.svg" alt="Tempo & Posture Standards" style="width:100%; max-height:420px; object-fit:contain; border-radius:var(--radius);" />
         </div>
       </div>`;
   } else {
@@ -896,8 +896,8 @@ function renderBiomechanicsTabContent(tab) {
         <p style="font-size:13px; color:var(--text-muted); margin:0;">
           Hand placement & grip width comparison: Adjusting your grip alters the primary torque vector between chest pectoralis major, anterior deltoids, and triceps brachii.
         </p>
-        <div class="card" style="padding:16px; background:var(--surface-2); text-align:center;">
-          <img src="assets/grip_guide.jpg" alt="Hand Placement Grip Width Guide" style="width:100%; max-height:360px; object-fit:contain; border-radius:var(--radius);" />
+        <div class="card" style="padding:12px; background:var(--surface-2); text-align:center; border:1px solid rgba(255,255,255,0.06);">
+          <img src="assets/grip-guide.svg" alt="Hand Placement Grip Width Guide" style="width:100%; max-height:420px; object-fit:contain; border-radius:var(--radius);" />
         </div>
       </div>`;
   }
