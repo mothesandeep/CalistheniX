@@ -221,5 +221,17 @@ PYTHONPATH=. ./venv/bin/python -m unittest -v backend/test_app.py
 
 ---
 
+## Project Documentation
+
+Detailed design documents, specifications, and architecture records are located in the [`docs/`](docs/) directory:
+
+- [**PRD (Product Requirements Document)**](docs/PRD.md): Product vision, core user stories, and feature requirements.
+- [**Architecture & System Design**](docs/architecture.md): Technical architecture, offline sync data flows, and database schema.
+- [**Design System & UI Guidelines**](docs/design.md): Color tokens, typography, glassmorphism specs, and mobile ergonomics.
+- [**Development Memory & Decisions**](docs/memory.md): Engineering log, key architectural decisions, and bugfixes.
+- [**Project Milestones & Phases**](docs/phases.md): Completed development phases and milestone ledger.
+
+---
+
 ## License
 MIT License. Created by [Sandeep Mothe](https://github.com/mothesandeep).

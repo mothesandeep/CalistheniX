@@ -116,7 +116,7 @@ Phase 13: Documentation & Project Knowledge Base (Complete)
 - Web App Manifest (`manifest.json`) with `#0a0a0f` dark mode theme and app shortcuts.
 
 ### Phase 13 — Documentation & Project Knowledge Base
-- Complete production [`README.md`](README.md), [`memory.md`](memory.md), and [`walkthrough.md`](walkthrough.md).
+- Complete production [`README.md`](../README.md) and [`memory.md`](memory.md).
 
 ---
 
