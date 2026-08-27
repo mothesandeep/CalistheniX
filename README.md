@@ -147,7 +147,7 @@ Open your browser and navigate to:
 Run the full automated test suite covering all backend APIs, custom splits, weekly schedules, workout duplication, progression scoring, workout session lifecycles, and backup/restore:
 
 ```bash
-PYTHONPATH=. ./venv/bin/python -m unittest -v backend/test_app.py
+PYTHONPATH=. ./venv/bin/python -m unittest discover -s backend/tests
 ```
 
 ---
