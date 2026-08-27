@@ -16,7 +16,14 @@ class TestPhase1Hardening(unittest.TestCase):
         self.app = app
         self.client = self.app.test_client()
         init_db()
-        reseed_data()
+        reseed_data(force=True)
+        with get_db() as conn:
+            conn.execute('DELETE FROM logs')
+            conn.execute('DELETE FROM workout_sessions')
+            conn.commit()
+
+    def tearDown(self):
+        reseed_data(force=True)
         with get_db() as conn:
             conn.execute('DELETE FROM logs')
             conn.execute('DELETE FROM workout_sessions')
@@ -196,6 +203,20 @@ class TestPhase1Hardening(unittest.TestCase):
             self.assertIn('idx_logs_session_uuid', indexes)
             self.assertIn('idx_sessions_started_at', indexes)
             self.assertIn('idx_sessions_completed_at', indexes)
+
+    def test_movement_pattern_migration_step(self):
+        """Verify movement_pattern column migration and backfill logic."""
+        from backend.app import _migrate_movement_pattern_column
+        with get_db() as conn:
+            cols = [row[1] for row in conn.execute('PRAGMA table_info(exercises)').fetchall()]
+            self.assertIn('movement_pattern', cols)
+
+            # Re-running migration is safe (idempotent)
+            _migrate_movement_pattern_column()
+
+            # Confirm no null values exist
+            null_count = conn.execute("SELECT COUNT(*) FROM exercises WHERE movement_pattern IS NULL").fetchone()[0]
+            self.assertEqual(null_count, 0)
 
 
 if __name__ == '__main__':

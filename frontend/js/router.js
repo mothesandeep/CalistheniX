@@ -30,6 +30,10 @@ function render() {
       break;
     case 'workout':
       root.innerHTML = renderActiveWorkoutView();
+      const currentActiveSession = getActiveSession();
+      if (currentActiveSession && currentActiveSession.status === 'in_progress' && typeof startWorkoutDurationTimer === 'function') {
+        startWorkoutDurationTimer();
+      }
       break;
     case 'split':
     case 'routine':
@@ -92,7 +96,12 @@ function switchView(view) {
     _chartInstance = null;
   }
   window.location.hash = view;
-  if (view === 'dashboard' || view === 'prs') {
+  if (view === 'workout') {
+    const s = getActiveSession();
+    if (s && s.status === 'in_progress' && typeof startWorkoutDurationTimer === 'function') {
+      startWorkoutDurationTimer();
+    }
+  } else if (view === 'dashboard' || view === 'prs') {
     loadDashboardSummary().then(render);
   } else if (view === 'calendar') {
     loadWorkoutSessions().then(render);

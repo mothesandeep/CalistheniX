@@ -2883,24 +2883,42 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
 
 /* ── Sleek Non-Blocking Rest Timer Card ───────────────────────────────────── */
 .runner-rest-card {
-  background: rgba(124, 92, 252, 0.08);
-  border: 1px solid rgba(124, 92, 252, 0.28);
-  border-radius: var(--radius);
-  padding: 10px 14px 8px;
+  background: linear-gradient(135deg, rgba(124, 92, 252, 0.16) 0%, rgba(13, 13, 24, 0.95) 100%);
+  border: 1.5px solid rgba(124, 92, 252, 0.38);
+  border-radius: var(--radius-card, 16px);
+  padding: 16px 20px 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-  animation: runnerRestSlideIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: runnerRestSlideIn 240ms cubic-bezier(0.16, 1, 0.3, 1);
   transition: all 200ms ease;
+}
+
+.runner-rest-card.is-pulse-alert {
+  border-color: #f59e0b !important;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(20, 15, 10, 0.95) 100%) !important;
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  animation: restCardPulse 800ms infinite ease-in-out !important;
+}
+
+@keyframes restCardPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.35);
+  }
+  50% {
+    transform: scale(1.015);
+    box-shadow: 0 0 36px rgba(245, 158, 11, 0.65);
+  }
 }
 
 @keyframes runnerRestSlideIn {
   from {
     opacity: 0;
-    transform: translateY(-3px);
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
@@ -2919,20 +2937,20 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
 .runner-rest-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .runner-rest-tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 10px;
+  gap: 5px;
+  font-size: 11px;
   font-weight: 800;
   color: var(--accent-light, #a78bfa);
-  background: rgba(124, 92, 252, 0.18);
-  border: 1px solid rgba(124, 92, 252, 0.32);
-  padding: 2px 6px;
+  background: rgba(124, 92, 252, 0.2);
+  border: 1px solid rgba(124, 92, 252, 0.4);
+  padding: 3px 8px;
   border-radius: var(--radius-sm);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2940,17 +2958,30 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
 
 .runner-rest-digits {
   font-family: var(--mono);
-  font-size: 22px;
+  font-size: 32px;
   font-weight: 800;
   color: #ffffff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 2px 10px rgba(124, 92, 252, 0.4);
+  transition: all 180ms ease;
+}
+
+.runner-rest-digits.pulse-digits {
+  color: #fbbf24 !important;
+  text-shadow: 0 0 16px rgba(245, 158, 11, 0.8) !important;
+  animation: digitsCountPulse 800ms infinite ease-in-out !important;
+}
+
+@keyframes digitsCountPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
 }
 
 .runner-rest-next {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -2960,15 +2991,15 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
 .runner-rest-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .runner-rest-btn {
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-sm);
-  padding: 4px 8px;
-  font-size: 11px;
+  padding: 6px 11px;
+  font-size: 12px;
   font-weight: 700;
   color: #cbd5e1;
   cursor: pointer;
@@ -2977,8 +3008,8 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
 }
 
 .runner-rest-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.25);
   color: #ffffff;
 }
 
@@ -2987,30 +3018,71 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
 }
 
 .runner-rest-skip-btn {
-  background: var(--accent);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(135deg, var(--accent) 0%, #6366f1 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: var(--radius-sm);
-  padding: 4px 12px;
-  font-size: 11px;
+  padding: 7px 16px;
+  font-size: 12px;
   font-weight: 800;
   color: #ffffff;
   cursor: pointer;
   transition: all var(--transition);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 10px rgba(124, 92, 252, 0.35);
 }
 
 .runner-rest-skip-btn:hover {
-  background: var(--accent-hover);
+  background: linear-gradient(135deg, var(--accent-hover) 0%, #4f46e5 100%);
   transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(124, 92, 252, 0.5);
 }
 
 .runner-rest-skip-btn:active {
   transform: scale(0.96);
 }
 
+.runner-rest-feedback-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  animation: feedbackSlideIn 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes feedbackSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.runner-rest-feedback-icon {
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.runner-rest-feedback-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ecfdf5;
+  line-height: 1.35;
+}
+
 .runner-rest-bar-track {
   width: 100%;
-  height: 3px;
+  height: 4px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 99px;
   overflow: hidden;
@@ -3018,7 +3090,7 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
 
 .runner-rest-bar-fill {
   height: 100%;
-  background: var(--accent);
+  background: linear-gradient(90deg, var(--accent) 0%, #10b981 100%);
   border-radius: 99px;
   transition: width 1s linear;
 }
@@ -3061,6 +3133,62 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.runner-set-stepper-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  margin-bottom: 2px;
+}
+
+.runner-set-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-light, #a78bfa);
+  background: rgba(124, 92, 252, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.runner-set-pips-track {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.runner-set-pip {
+  height: 6px;
+  border-radius: 99px;
+  transition: all 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.runner-set-pip.completed {
+  width: 14px;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.45);
+  animation: pipCompleteBounce 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pipCompleteBounce {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.runner-set-pip.current {
+  width: 22px;
+  background: var(--accent, #7c5cfc);
+  box-shadow: 0 0 10px rgba(124, 92, 252, 0.55);
+}
+
+.runner-set-pip.upcoming {
+  width: 10px;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .runner-set-pill {
@@ -3279,6 +3407,57 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
   margin-top: 2px;
 }
 
+/* ── Quick-Fill Performance Shortcut Chips ────────────────────────────────── */
+.runner-quick-fill-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.runner-quick-fill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.runner-quick-fill-chip:hover:not(:disabled) {
+  background: rgba(124, 92, 252, 0.14);
+  border-color: rgba(124, 92, 252, 0.38);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.runner-quick-fill-chip:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.runner-quick-fill-chip.active {
+  background: rgba(124, 92, 252, 0.18);
+  border-color: rgba(124, 92, 252, 0.45);
+  color: var(--accent-light, #a78bfa);
+  box-shadow: 0 0 12px rgba(124, 92, 252, 0.22);
+}
+
+.runner-quick-fill-chip:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .runner-ring-btn {
   padding: 6px 16px;
   font-size: 11px;
@@ -3324,22 +3503,45 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
   border-radius: var(--radius);
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(124, 92, 252, 0.3);
-  transition: transform 120ms ease, background 150ms ease, box-shadow 150ms ease;
+  transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1), background 160ms ease, box-shadow 160ms ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   text-transform: uppercase;
+  user-select: none;
 }
 
-.runner-complete-action-btn:hover {
+.runner-complete-action-btn:hover:not(:disabled) {
   background: var(--accent-hover);
   box-shadow: 0 6px 20px rgba(124, 92, 252, 0.45);
   transform: translateY(-1px);
 }
 
-.runner-complete-action-btn:active {
-  transform: scale(0.985);
+.runner-complete-action-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.runner-complete-action-btn.btn-pop {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  box-shadow: 0 0 24px rgba(16, 185, 129, 0.55), 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+  animation: btnCompleteSpring 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.runner-complete-action-btn.btn-pop .runner-check-icon {
+  animation: checkmarkPop 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes btnCompleteSpring {
+  0% { transform: scale(0.95); }
+  50% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+
+@keyframes checkmarkPop {
+  0% { transform: scale(0.6) rotate(-20deg); }
+  60% { transform: scale(1.4) rotate(8deg); }
+  100% { transform: scale(1) rotate(0deg); }
 }
 
 /* ── 5. Set Details Accordion ─────────────────────────────────────────────── */
@@ -3507,11 +3709,27 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
   letter-spacing: 0.02em;
 }
 
-/* 1. COMPLETED: visually quieter, checkmark, reduced emphasis, reviewable */
+/* 1. COMPLETED: visually quieter, checkmark, reduced emphasis, reviewable with satisfying completion entry */
 .runner-seq-row.completed {
   background: rgba(255, 255, 255, 0.015);
   border: 1px solid rgba(255, 255, 255, 0.04);
   opacity: 0.72;
+  animation: rowCompletedFlash 450ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes rowCompletedFlash {
+  0% {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: rgba(16, 185, 129, 0.5);
+    opacity: 1;
+    transform: scale(1.015);
+  }
+  100% {
+    background: rgba(255, 255, 255, 0.015);
+    border-color: rgba(255, 255, 255, 0.04);
+    opacity: 0.72;
+    transform: scale(1);
+  }
 }
 
 .runner-seq-row.completed:hover {
@@ -3522,6 +3740,13 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
 
 .runner-seq-row.completed .runner-seq-icon {
   color: #10b981;
+  animation: checkBounce 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes checkBounce {
+  0% { transform: scale(0.5) rotate(-15deg); }
+  60% { transform: scale(1.3) rotate(6deg); }
+  100% { transform: scale(1) rotate(0deg); }
 }
 
 .runner-seq-row.completed .runner-seq-name {
@@ -3812,3 +4037,1136 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
     transition: none !important;
   }
 }
+
+/* ── Minimalist Movement Animation Stick-Figure Component ─────────── */
+.cx-exercise-animation {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  overflow: visible;
+  box-sizing: border-box;
+  user-select: none;
+  flex-shrink: 0;
+  transition: transform var(--transition), filter var(--transition);
+}
+
+.cx-exercise-animation.cx-anim-card-badge {
+  background: rgba(124, 92, 252, 0.06);
+  border: 1px solid rgba(124, 92, 252, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 6px;
+  border-radius: var(--radius);
+}
+
+.cx-anim-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(124, 92, 252, 0.3));
+}
+
+.cx-anim-bone {
+  vector-effect: non-scaling-stroke;
+}
+
+.cx-anim-head {
+  filter: drop-shadow(0 0 6px rgba(124, 92, 252, 0.6));
+}
+
+.cx-anim-joint {
+  opacity: 0.85;
+}
+
+.cx-anim-ambient-glow {
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.cx-anim-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-align: center;
+}
+
+.card:hover .cx-exercise-animation .cx-anim-svg,
+.workout-exercise-item:hover .cx-exercise-animation .cx-anim-svg,
+.runner-stage-card:hover .cx-exercise-animation .cx-anim-svg {
+  filter: drop-shadow(0 4px 16px rgba(124, 92, 252, 0.55));
+}
+
+/* ── 2-Column Responsive Layout for Workout Runner ────────────────────────── */
+.runner-screen-widescreen {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 26px;
+  align-items: start;
+  padding: 4px 0 32px;
+}
+
+/* ── Mobile Breakpoint (< 768px): Hide Sticky Side Panel for focused zero-clutter mobile experience ── */
+@media (max-width: 767px) {
+  .runner-screen-widescreen {
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    gap: 14px;
+    padding: 0 0 24px;
+  }
+  .runner-sticky-visual-panel {
+    display: none !important;
+  }
+  .runner-main-controls-col {
+    width: 100%;
+  }
+}
+
+/* ── Tablet Breakpoint (768px - 1023px): Fluid single-column stacked card ── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .runner-screen-widescreen {
+    display: flex;
+    flex-direction: column;
+    max-width: 680px;
+    gap: 18px;
+  }
+  .runner-sticky-visual-panel {
+    position: static !important;
+    width: 100%;
+  }
+}
+
+/* ── Paused Workout State Synchronisation ─────────────────────────────────── */
+.cx-anim-paused,
+.cx-anim-paused * {
+  animation-play-state: paused !important;
+}
+
+.cx-anim-paused .cx-anim-svg {
+  opacity: 0.55;
+  filter: grayscale(0.35) drop-shadow(0 2px 4px rgba(124, 92, 252, 0.15));
+  transition: opacity 200ms ease, filter 200ms ease;
+}
+
+.cx-anim-pause-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 9, 16, 0.6);
+  backdrop-filter: blur(1.5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius, 12px);
+  z-index: 5;
+  animation: fadeIn 150ms ease;
+}
+
+.cx-anim-pause-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.18);
+  border: 1px solid rgba(249, 115, 22, 0.38);
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.runner-timer-pill.paused {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.35);
+  color: #fb923c;
+}
+
+.runner-live-dot.paused {
+  background: #f97316;
+  box-shadow: 0 0 6px #f97316;
+  animation: none;
+  opacity: 0.8;
+}
+
+.runner-sticky-card.is-paused {
+  border-color: rgba(249, 115, 22, 0.2);
+}
+
+/* ── Sticky Left Visual Panel ─────────────────────────────────────────────── */
+.runner-sticky-visual-panel {
+  position: sticky;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+}
+
+.runner-sticky-card {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-card, 18px);
+  padding: 18px 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+  animation: runnerStickyFadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes runnerStickyFadeIn {
+  from {
+    opacity: 0.8;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.runner-sticky-card::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(124, 92, 252, 0.18) 0%, rgba(124, 92, 252, 0) 70%);
+  pointer-events: none;
+  border-radius: 50%;
+}
+
+.runner-sticky-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-sticky-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.runner-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent, #7c5cfc);
+  box-shadow: 0 0 8px var(--accent, #7c5cfc);
+  animation: runnerLiveDotPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes runnerLiveDotPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.5;
+  }
+}
+
+.runner-pattern-badge {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-badge, 5px);
+  background: rgba(124, 92, 252, 0.14);
+  border: 1px solid rgba(124, 92, 252, 0.32);
+  color: var(--accent-light, #a78bfa);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.runner-sticky-anim-stage {
+  width: 100%;
+  min-height: 230px;
+  background: radial-gradient(circle at 50% 50%, rgba(124, 92, 252, 0.09) 0%, rgba(0, 0, 0, 0.45) 80%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius, 14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.55);
+}
+
+.runner-sticky-anim-stage .cx-exercise-animation {
+  width: 92% !important;
+  height: 92% !important;
+  max-width: 270px !important;
+  max-height: 220px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-sticky-anim-stage .cx-anim-svg {
+  width: 100% !important;
+  height: 100% !important;
+  filter: drop-shadow(0 6px 20px rgba(124, 92, 252, 0.35));
+}
+
+.runner-sticky-anim-stage.is-muscle-view {
+  height: auto !important;
+  min-height: 220px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-sticky-anim-stage.is-muscle-view .cx-muscle-map-wrapper {
+  width: 100%;
+}
+
+.runner-sticky-anim-stage.is-muscle-view .cx-muscle-figure-card {
+  height: 142px;
+}
+
+.runner-sticky-anim-stage.is-muscle-view .cx-muscle-svg {
+  max-height: 132px;
+}
+
+.runner-sticky-cue {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(124, 92, 252, 0.08);
+  border: 1px solid rgba(124, 92, 252, 0.18);
+  border-radius: var(--radius-sm, 10px);
+  padding: 10px 14px;
+  margin-top: 0;
+}
+
+.runner-sticky-cue-icon {
+  color: var(--accent-light, #a78bfa);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.runner-sticky-cue-text {
+  font-size: 12px;
+  color: var(--text-secondary, #cbd5e1);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ── Up Next Preview Card (Left Panel Bottom) ────────────────────────────── */
+.runner-upnext-card {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-card, 16px);
+  padding: 12px 16px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 180ms ease;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+  animation: runnerStickyFadeIn 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.runner-upnext-card:hover {
+  background: rgba(124, 92, 252, 0.06);
+  border-color: rgba(124, 92, 252, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6), 0 0 20px rgba(124, 92, 252, 0.15);
+}
+
+.runner-upnext-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px 0 0 99px;
+  opacity: 0.85;
+}
+
+.runner-upnext-card.finish-preview::before {
+  background: #10b981;
+}
+
+.runner-upnext-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-upnext-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.runner-upnext-tag.finish {
+  color: #10b981;
+}
+
+.runner-upnext-pattern {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(124, 92, 252, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  color: var(--accent-light, #a78bfa);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.runner-upnext-pattern.finish {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.runner-upnext-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.runner-upnext-thumb {
+  width: 60px;
+  height: 52px;
+  min-width: 60px;
+  border-radius: var(--radius-sm, 10px);
+  background: radial-gradient(circle at 50% 50%, rgba(124, 92, 252, 0.12) 0%, rgba(0, 0, 0, 0.5) 80%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+.runner-upnext-thumb .cx-exercise-animation {
+  width: 56px !important;
+  height: 46px !important;
+}
+
+.runner-upnext-finish-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-upnext-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.runner-upnext-name {
+  font-family: var(--font-heading);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-upnext-target {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.runner-main-controls-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ─── Anatomical Muscle Map Component ───────────────────────────────────────── */
+.cx-muscle-map-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cx-muscle-map-dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.cx-muscle-map-dual.view-front,
+.cx-muscle-map-dual.view-back {
+  grid-template-columns: 1fr;
+  max-width: 180px;
+  margin: 0 auto;
+}
+
+.cx-muscle-figure-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cx-muscle-view-label {
+  font-family: var(--mono, monospace);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+}
+
+.cx-muscle-figure-card {
+  width: 100%;
+  height: 180px;
+  background: radial-gradient(circle at center, rgba(124, 92, 252, 0.08) 0%, rgba(15, 17, 26, 0.6) 80%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm, 10px);
+  padding: 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.cx-muscle-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 164px;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+
+.cx-body-base {
+  fill: #1a1d29;
+}
+
+.cx-muscle-part,
+.muscle {
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: all 250ms ease;
+  cursor: pointer;
+}
+
+/* Inactive Muscle Part (Dark charcoal anatomical segment) */
+.cx-muscle-part.is-inactive,
+.muscle.is-inactive,
+.muscle:not(.active):not(.is-primary):not(.is-secondary) {
+  fill: #232838;
+  stroke: #161924;
+  stroke-width: 1px;
+}
+
+.cx-muscle-part.is-inactive:hover,
+.muscle.is-inactive:hover,
+.muscle:not(.active):not(.is-primary):not(.is-secondary):hover {
+  fill: #363d54;
+  stroke: #485270;
+}
+
+/* Primary Target Muscle (Vibrant Neon Violet/Purple Glow) */
+.cx-muscle-part.is-primary,
+.cx-muscle-part.active,
+.muscle.is-primary,
+.muscle.active,
+[data-active="primary"] {
+  fill: #8b5cf6 !important;
+  stroke: #c4b5fd !important;
+  stroke-width: 1.4px;
+  filter: drop-shadow(0 0 7px rgba(139, 92, 246, 0.85));
+}
+
+.cx-muscle-part.is-primary:hover,
+.cx-muscle-part.active:hover,
+.muscle.is-primary:hover,
+.muscle.active:hover {
+  fill: #a78bfa !important;
+  stroke: #ddd6fe !important;
+  filter: drop-shadow(0 0 11px rgba(167, 139, 250, 1));
+}
+
+/* Secondary Target Muscle (Warm Amber/Gold Glow) */
+.cx-muscle-part.is-secondary,
+.muscle.is-secondary,
+[data-active="secondary"] {
+  fill: #f59e0b !important;
+  stroke: #fde68a !important;
+  stroke-width: 1.2px;
+  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.75));
+}
+
+.cx-muscle-part.is-secondary:hover,
+.muscle.is-secondary:hover {
+  fill: #fbbf24 !important;
+  stroke: #fef08a !important;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.95));
+}
+
+/* Non-muscular joint/head parts */
+.cx-muscle-part.head.is-inactive,
+.cx-muscle-part.neck.is-inactive,
+.cx-muscle-part.hand.is-inactive,
+.cx-muscle-part.foot.is-inactive,
+.cx-muscle-part.knee.is-inactive,
+.neutral-joint {
+  fill: #1a1d28;
+  stroke: #141620;
+  stroke-width: 0.8px;
+  cursor: default;
+}
+
+/* ── Muscle Map Legend ── */
+.cx-muscle-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm, 8px);
+  padding: 6px 10px;
+}
+
+.cx-muscle-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary, #cbd5e1);
+  line-height: 1.3;
+}
+
+.cx-muscle-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cx-muscle-legend-dot.primary {
+  background: #8b5cf6;
+  box-shadow: 0 0 6px rgba(139, 92, 246, 0.9);
+}
+
+.cx-muscle-legend-dot.secondary {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.85);
+}
+
+.cx-muscle-legend-label strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* ── Stage View Switch Tabs (Form & Motion vs Target Muscles) ── */
+.runner-stage-tabs {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.runner-stage-tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  font-family: var(--font-heading, sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.runner-stage-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.runner-stage-tab-btn.is-active {
+  color: #ffffff;
+  background: rgba(124, 92, 252, 0.22);
+  border: 1px solid rgba(124, 92, 252, 0.4);
+  box-shadow: 0 2px 8px rgba(124, 92, 252, 0.25);
+}
+
+/* ── Interactive Muscle Explorer Guide Modal Styles ── */
+.bio-guide-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bio-guide-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bio-guide-view-tabs {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.bio-guide-view-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 180ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bio-guide-view-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.bio-guide-view-btn.active {
+  color: #fff;
+  background: var(--accent, #8b5cf6);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+}
+
+.bio-chips-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  max-height: 110px;
+  overflow-y: auto;
+}
+
+.bio-muscle-chip {
+  background: #191c28;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted, #94a3b8);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.bio-muscle-chip:hover {
+  color: #fff;
+  border-color: rgba(139, 92, 246, 0.5);
+  background: #252b3d;
+  transform: translateY(-1px);
+}
+
+.bio-muscle-chip.active {
+  color: #fff;
+  background: rgba(139, 92, 246, 0.25);
+  border-color: var(--accent, #8b5cf6);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.45);
+  font-weight: 700;
+}
+
+.bio-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background 200ms ease;
+}
+
+.bio-muscle-chip.active .bio-chip-dot {
+  background: var(--accent, #8b5cf6);
+  box-shadow: 0 0 6px var(--accent, #8b5cf6);
+}
+
+.bio-guide-main-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .bio-guide-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bio-diagram-card {
+  background: var(--surface-2, #141721);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 320px;
+}
+
+.bio-details-card {
+  background: var(--surface-2, #141721);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bio-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 12px;
+}
+
+.bio-detail-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 2px 0;
+}
+
+.bio-detail-latin {
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  font-style: italic;
+}
+
+.bio-detail-badge {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: var(--accent, #8b5cf6);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.bio-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.bio-field-text {
+  font-size: 13px;
+  color: var(--text, #e2e8f0);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.bio-exercises-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.bio-ex-tag {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 180ms ease;
+}
+
+.bio-ex-tag:hover {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+/* ── Database Exercise Targeting Discovery List ── */
+.bio-db-ex-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.bio-db-ex-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 4px;
+}
+
+.bio-ex-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.bio-ex-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 8px 12px;
+  transition: all 180ms ease;
+  gap: 10px;
+}
+
+.bio-ex-item:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.35);
+  transform: translateX(2px);
+}
+
+.bio-ex-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bio-ex-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.bio-ex-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--text-dim, #64748b);
+}
+
+.bio-ex-split-tag {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted, #94a3b8);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.bio-ex-role {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.bio-ex-role.primary {
+  background: rgba(139, 92, 246, 0.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+}
+
+.bio-ex-role.secondary {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+/* ── Mobile Viewport Optimizations (375px - 412px) ── */
+@media (max-width: 640px) {
+  .bio-guide-container {
+    gap: 12px;
+  }
+
+  .bio-guide-controls-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .bio-guide-view-tabs {
+    width: 100%;
+    display: flex;
+  }
+
+  .bio-guide-view-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 4px;
+    font-size: 11px;
+    min-height: 36px;
+    text-align: center;
+  }
+
+  .prs-filter-pills {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  .prs-filter-btn {
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .bio-chips-wrapper {
+    max-height: 120px;
+    padding: 8px;
+    gap: 5px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bio-muscle-chip {
+    font-size: 11px;
+    padding: 6px 10px;
+    min-height: 32px;
+    touch-action: manipulation;
+  }
+
+  .bio-diagram-card {
+    min-height: 280px;
+    padding: 12px 6px;
+  }
+
+  .bio-details-card {
+    padding: 14px 12px;
+    gap: 12px;
+  }
+
+  .bio-detail-title {
+    font-size: 15px;
+  }
+
+  .bio-detail-latin {
+    font-size: 11px;
+  }
+
+  .bio-ex-list {
+    max-height: 180px;
+  }
+
+  .bio-ex-item {
+    padding: 7px 10px;
+  }
+
+  .bio-ex-name {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .bio-guide-view-btn {
+    font-size: 10px;
+    padding: 6px 2px;
+  }
+
+  .bio-muscle-chip {
+    font-size: 10.5px;
+    padding: 5px 8px;
+  }
+}
+
+
+

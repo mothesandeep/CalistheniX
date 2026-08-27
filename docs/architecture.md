@@ -58,6 +58,7 @@ Defines the global catalog of calisthenics exercises and their progression chain
 | `name` | `TEXT` | `NOT NULL` | Exercise name (e.g. "Diamond Push-ups") |
 | `day` | `TEXT` | `NOT NULL` | Associated split category (`Push A`, `Pull A`, `Legs A`, etc.) |
 | `type` | `TEXT` | `NOT NULL` | `reps` or `duration` |
+| `movement_pattern` | `TEXT` | `NOT NULL DEFAULT 'push_horizontal'` | Biomechanical movement pattern category (`push_horizontal`, `push_vertical`, `pull_vertical`, `pull_horizontal`, `squat`, `lunge`, `hinge`, `core`, `hanging`, `hold_isometric`, `isolation`) |
 | `prerequisite_id` | `INTEGER` | `FOREIGN KEY → exercises.id` | Previous progression step |
 | `next_id` | `INTEGER` | `FOREIGN KEY → exercises.id` | Next progression step |
 | `progression_target_reps` | `INTEGER` | `NULLABLE` | Rep threshold required to advance |

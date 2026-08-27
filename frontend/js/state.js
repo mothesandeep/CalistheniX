@@ -163,7 +163,32 @@ const state = {
   calendarYear:      new Date().getFullYear(),
   calendarMonth:     new Date().getMonth(),
   selectedCalendarDate: todayISO(),
+  // Live Movement Pattern & Active Animation Tracking
+  currentMovementPattern: 'push',
+  currentExerciseId:      null,
+  currentExerciseName:    '',
 };
+
+/**
+ * Track and update the active exercise movement pattern in state.
+ * Emits custom event 'cx:movement-pattern-changed' when pattern changes.
+ */
+function setCurrentMovementPattern(pattern, exerciseId = null, exerciseName = '') {
+  const normalized = (typeof window !== 'undefined' && window.ExerciseAnimation)
+    ? window.ExerciseAnimation.getPatternKey(pattern)
+    : (pattern || 'push');
+  const hasChanged = state.currentMovementPattern !== normalized || state.currentExerciseId !== exerciseId;
+  state.currentMovementPattern = normalized;
+  state.currentExerciseId = exerciseId;
+  if (exerciseName) state.currentExerciseName = exerciseName;
+
+  if (hasChanged && typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new CustomEvent('cx:movement-pattern-changed', {
+      detail: { pattern: normalized, exerciseId, exerciseName }
+    }));
+  }
+  return normalized;
+}
 
 // API client functions are loaded from js/api.js (window.API)
 
@@ -337,6 +362,46 @@ function setupAudioUnlock() {
   window.addEventListener('touchstart', unlock, { once: true, passive: true });
 }
 
+// ─── Screen Wake Lock API System ──────────────────────────────────────────
+// Prevents mobile/tablet screen from locking or sleeping during active workouts.
+let _screenWakeLock = null;
+
+async function acquireScreenWakeLock() {
+  if (typeof navigator !== 'undefined' && navigator.wakeLock && typeof navigator.wakeLock.request === 'function') {
+    try {
+      if (!_screenWakeLock || _screenWakeLock.released) {
+        _screenWakeLock = await navigator.wakeLock.request('screen');
+        _screenWakeLock.addEventListener('release', () => {
+          _screenWakeLock = null;
+        });
+      }
+    } catch {
+      // Graceful silent fallback on low battery or system restrictions
+    }
+  }
+}
+
+async function releaseScreenWakeLock() {
+  if (_screenWakeLock) {
+    try {
+      await _screenWakeLock.release();
+    } catch {}
+    _screenWakeLock = null;
+  }
+}
+
+// Auto-reacquire wake lock when tab returns to foreground if workout is in progress
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      const session = typeof getActiveSession === 'function' ? getActiveSession() : null;
+      if (session && (session.status === 'in_progress' || session.status === 'active')) {
+        acquireScreenWakeLock();
+      }
+    }
+  });
+}
+
 // Play a synthesised beep with full feature-detection and silent degradation.
 // freq: Hz | durationMs: ms | volume: 0–1 | type: OscillatorType
 function beep(freq = 880, durationMs = 80, volume = 0.4, type = 'sine') {
@@ -389,6 +454,13 @@ function cueTick() {
 function cueHoldSave() {
   beep(1047, 100, 0.4, 'sine'); // C6 — higher/lighter
   vibrate(150);
+}
+
+// Single set completed: crisp upward chime + subtle haptic pulse
+function cueSetComplete() {
+  beep(587.33, 60, 0.45, 'sine'); // D5
+  setTimeout(() => beep(880, 90, 0.5, 'sine'), 65); // A5 upward chime
+  vibrate([40, 30, 60]);
 }
 
 // All sets of an exercise complete: two-beep fanfare.
@@ -471,10 +543,17 @@ function saveActiveSession(session) {
 }
 
 function getSessionElapsedSec(session) {
-  if (!session || !session.startedAt) return 0;
+  if (!session) return 0;
+  const start = session.startTime || session.startedAt;
+  if (!start) return 0;
+
   const now = Date.now();
-  const rawElapsed = Math.floor((now - session.startedAt) / 1000);
-  return Math.max(0, rawElapsed - (session.pausedTotalSec || 0));
+  let pausedMs = session.totalPausedMs || (session.pausedTotalSec ? session.pausedTotalSec * 1000 : 0);
+  if (session.status === 'paused' && session.pausedAt) {
+    pausedMs += (now - session.pausedAt);
+  }
+  const rawElapsedMs = now - start - pausedMs;
+  return Math.max(0, Math.floor(rawElapsedMs / 1000));
 }
 
 const EXERCISE_COACHING_TIPS = {

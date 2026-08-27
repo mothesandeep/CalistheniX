@@ -47,63 +47,30 @@ function getWorkoutMuscleTargets(workout) {
   if (!workout) {
     return {
       label: 'Active Recovery & Mobility',
-      frontMuscles: [],
-      backMuscles: []
+      primary: ['abs'],
+      secondary: ['lower_back', 'calves'],
+      frontMuscles: ['abs'],
+      backMuscles: ['lower_back', 'calves']
     };
   }
 
-  const wName = (workout.name || '').toLowerCase();
-  const exNames = (workout.exercises || []).map(e => (e.exercise_name || e.name || '').toLowerCase()).join(' ');
-  const combined = `${wName} ${exNames}`;
-
-  let front = [];
-  let back = [];
-  let targets = [];
-
-  // Legs / Lower Body
-  if (combined.includes('leg') || combined.includes('squat') || combined.includes('lunge') || combined.includes('calf') || combined.includes('pistol') || combined.includes('glute')) {
-    front.push('quads');
-    back.push('glutes', 'hamstrings', 'calves');
-    targets.push('Legs', 'Glutes', 'Hamstrings', 'Calves');
-  }
-
-  // Push / Chest / Shoulders / Triceps
-  if (combined.includes('push') || combined.includes('dip') || combined.includes('press') || combined.includes('chest') || combined.includes('hspu') || combined.includes('tricep') || combined.includes('pike')) {
-    front.push('chest', 'shoulders', 'triceps');
-    back.push('triceps');
-    targets.push('Chest', 'Shoulders', 'Triceps');
-  }
-
-  // Pull / Lats / Back / Biceps
-  if (combined.includes('pull') || combined.includes('chin') || combined.includes('row') || combined.includes('lever') || combined.includes('muscle-up') || combined.includes('bicep') || combined.includes('lat')) {
-    front.push('biceps', 'forearms');
-    back.push('upper_back', 'lats', 'forearms');
-    targets.push('Lats', 'Upper Back', 'Biceps');
-  }
-
-  // Core / Abs
-  if (combined.includes('plank') || combined.includes('sit') || combined.includes('flag') || combined.includes('core') || combined.includes('hollow') || combined.includes('v-up')) {
-    front.push('abs', 'obliques');
-    targets.push('Core', 'Abs');
-  }
-
-  if (targets.length === 0) {
-    if (wName.includes('rest') || wName.includes('recovery')) {
-      return {
-        label: 'Active Recovery & Mobility',
-        frontMuscles: [],
-        backMuscles: []
-      };
-    }
-    targets.push('Full Body');
-    front.push('chest', 'shoulders', 'abs', 'quads');
-    back.push('upper_back', 'glutes');
+  if (typeof window !== 'undefined' && window.MuscleMap) {
+    const resolved = window.MuscleMap.resolveMuscles(workout);
+    return {
+      label: resolved.label || 'Full Body',
+      primary: resolved.primary || [],
+      secondary: resolved.secondary || [],
+      frontMuscles: resolved.primary || [],
+      backMuscles: resolved.secondary || []
+    };
   }
 
   return {
-    label: Array.from(new Set(targets)).slice(0, 3).join(', '),
-    frontMuscles: Array.from(new Set(front)),
-    backMuscles: Array.from(new Set(back))
+    label: 'Full Body',
+    primary: ['chest', 'triceps'],
+    secondary: ['front_delts', 'abs'],
+    frontMuscles: ['chest', 'triceps'],
+    backMuscles: ['traps']
   };
 }
 
@@ -120,97 +87,13 @@ function setMuscleBodyView(view) {
 }
 
 function renderDualMuscleBodySvg(muscles) {
-  const frontList = muscles?.frontMuscles || [];
-  const backList = muscles?.backMuscles || [];
-
-  const isChest = frontList.includes('chest');
-  const isShoulders = frontList.includes('shoulders');
-  const isBiceps = frontList.includes('biceps');
-  const isTriceps = frontList.includes('triceps') || backList.includes('triceps');
-  const isAbs = frontList.includes('abs');
-  const isQuads = frontList.includes('quads');
-
-  const isUpperBack = backList.includes('upper_back') || backList.includes('lats');
-  const isGlutes = backList.includes('glutes');
-  const isHamstrings = backList.includes('hamstrings');
-  const isCalves = backList.includes('calves');
-
-  const activeColor = '#7c5cfc';
-  const baseColor = '#181822';
-  const strokeColor = 'rgba(255, 255, 255, 0.12)';
-  const activeStroke = '#7c5cfc';
-
-  const frontSvg = `
-    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-      <span style="font-size:9.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em;">Front</span>
-      <svg class="home-muscle-svg" viewBox="0 0 100 145" fill="none">
-        <!-- Head & Neck -->
-        <circle cx="50" cy="14" r="8" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1.2"/>
-        <path d="M47 22 H53 V27 H47 Z" fill="${baseColor}"/>
-
-        <!-- Shoulders -->
-        <path d="M28 28 Q38 25 46 27 L44 35 Q34 34 28 28 Z" fill="${isShoulders ? activeColor : baseColor}" stroke="${isShoulders ? activeStroke : strokeColor}" stroke-width="1"/>
-        <path d="M72 28 Q62 25 54 27 L56 35 Q66 34 72 28 Z" fill="${isShoulders ? activeColor : baseColor}" stroke="${isShoulders ? activeStroke : strokeColor}" stroke-width="1"/>
-
-        <!-- Chest (Pecs) -->
-        <path d="M35 34 Q50 33 49 46 Q37 46 35 34 Z" fill="${isChest ? activeColor : baseColor}" stroke="${isChest ? activeStroke : strokeColor}" stroke-width="1"/>
-        <path d="M65 34 Q50 33 51 46 Q63 46 65 34 Z" fill="${isChest ? activeColor : baseColor}" stroke="${isChest ? activeStroke : strokeColor}" stroke-width="1"/>
-
-        <!-- Biceps / Arms -->
-        <rect x="22" y="32" width="7" height="22" rx="3.5" fill="${isBiceps || isTriceps ? activeColor : baseColor}" stroke="${isBiceps || isTriceps ? activeStroke : strokeColor}" stroke-width="1"/>
-        <rect x="71" y="32" width="7" height="22" rx="3.5" fill="${isBiceps || isTriceps ? activeColor : baseColor}" stroke="${isBiceps || isTriceps ? activeStroke : strokeColor}" stroke-width="1"/>
-
-        <!-- Abs / Core -->
-        <rect x="42" y="49" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" stroke="${isAbs ? activeStroke : strokeColor}" stroke-width="0.8"/>
-        <rect x="51" y="49" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" stroke="${isAbs ? activeStroke : strokeColor}" stroke-width="0.8"/>
-        <rect x="42" y="59" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" stroke="${isAbs ? activeStroke : strokeColor}" stroke-width="0.8"/>
-        <rect x="51" y="59" width="7" height="8" rx="2" fill="${isAbs ? activeColor : baseColor}" stroke="${isAbs ? activeStroke : strokeColor}" stroke-width="0.8"/>
-        <rect x="43" y="69" width="6" height="7" rx="2" fill="${isAbs ? activeColor : baseColor}" stroke="${isAbs ? activeStroke : strokeColor}" stroke-width="0.8"/>
-        <rect x="51" y="69" width="6" height="7" rx="2" fill="${isAbs ? activeColor : baseColor}" stroke="${isAbs ? activeStroke : strokeColor}" stroke-width="0.8"/>
-
-        <!-- Quads / Legs -->
-        <path d="M35 79 L33 110 Q40 112 46 110 L48 79 Z" fill="${isQuads ? activeColor : baseColor}" stroke="${isQuads ? activeStroke : strokeColor}" stroke-width="1"/>
-        <path d="M65 79 L67 110 Q60 112 54 110 L52 79 Z" fill="${isQuads ? activeColor : baseColor}" stroke="${isQuads ? activeStroke : strokeColor}" stroke-width="1"/>
-
-        <!-- Calves -->
-        <rect x="34" y="114" width="8" height="22" rx="3.5" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1"/>
-        <rect x="58" y="114" width="8" height="22" rx="3.5" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1"/>
-      </svg>
-    </div>`;
-
-  const backSvg = `
-    <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-      <span style="font-size:9.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em;">Back</span>
-      <svg class="home-muscle-svg" viewBox="0 0 100 145" fill="none">
-        <!-- Head & Neck -->
-        <circle cx="50" cy="14" r="8" fill="${baseColor}" stroke="${strokeColor}" stroke-width="1.2"/>
-        <path d="M47 22 H53 V27 H47 Z" fill="${baseColor}"/>
-
-        <!-- Upper Back / Traps & Lats -->
-        <path d="M30 28 Q50 24 70 28 L63 60 Q50 66 37 60 Z" fill="${isUpperBack ? activeColor : baseColor}" stroke="${isUpperBack ? activeStroke : strokeColor}" stroke-width="1"/>
-
-        <!-- Triceps / Arms -->
-        <rect x="22" y="32" width="7" height="22" rx="3.5" fill="${isTriceps ? activeColor : baseColor}" stroke="${isTriceps ? activeStroke : strokeColor}" stroke-width="1"/>
-        <rect x="71" y="32" width="7" height="22" rx="3.5" fill="${isTriceps ? activeColor : baseColor}" stroke="${isTriceps ? activeStroke : strokeColor}" stroke-width="1"/>
-
-        <!-- Glutes -->
-        <path d="M35 68 Q49 68 49 80 Q37 82 35 68 Z" fill="${isGlutes ? activeColor : baseColor}" stroke="${isGlutes ? activeStroke : strokeColor}" stroke-width="1"/>
-        <path d="M65 68 Q51 68 51 80 Q63 82 65 68 Z" fill="${isGlutes ? activeColor : baseColor}" stroke="${isGlutes ? activeStroke : strokeColor}" stroke-width="1"/>
-
-        <!-- Hamstrings -->
-        <path d="M35 83 L33 110 Q40 112 46 110 L48 83 Z" fill="${isHamstrings ? activeColor : baseColor}" stroke="${isHamstrings ? activeStroke : strokeColor}" stroke-width="1"/>
-        <path d="M65 83 L67 110 Q60 112 54 110 L52 83 Z" fill="${isHamstrings ? activeColor : baseColor}" stroke="${isHamstrings ? activeStroke : strokeColor}" stroke-width="1"/>
-
-        <!-- Calves -->
-        <rect x="34" y="114" width="8" height="22" rx="3.5" fill="${isCalves ? activeColor : baseColor}" stroke="${isCalves ? activeStroke : strokeColor}" stroke-width="1"/>
-        <rect x="58" y="114" width="8" height="22" rx="3.5" fill="${isCalves ? activeColor : baseColor}" stroke="${isCalves ? activeStroke : strokeColor}" stroke-width="1"/>
-      </svg>
-    </div>`;
+  if (typeof window !== 'undefined' && window.MuscleMap) {
+    return window.MuscleMap.renderDualMuscleBodySvg(muscles || _currentWorkoutMuscles);
+  }
 
   return `
     <div style="display:flex; justify-content:center; align-items:center; gap:24px; width:100%; padding:4px 0;">
-      ${frontSvg}
-      ${backSvg}
+      <span>Muscle Map</span>
     </div>`;
 }
 

@@ -18,7 +18,14 @@ class TestCalistheniXBackend(unittest.TestCase):
         self.app = app
         self.client = self.app.test_client()
         init_db()
-        reseed_data()
+        reseed_data(force=True)
+        with get_db() as conn:
+            conn.execute('DELETE FROM logs')
+            conn.execute('DELETE FROM workout_sessions')
+            conn.commit()
+
+    def tearDown(self):
+        reseed_data(force=True)
         with get_db() as conn:
             conn.execute('DELETE FROM logs')
             conn.execute('DELETE FROM workout_sessions')
@@ -1010,6 +1017,50 @@ class TestCalistheniXBackend(unittest.TestCase):
 
             log_cnt = conn.execute("SELECT COUNT(*) as cnt FROM logs WHERE session_uuid = ?", (session_id,)).fetchone()['cnt']
             self.assertEqual(log_cnt, 2, "Completed sets must never be duplicated on offline sync replay!")
+
+    def test_canonical_exercises_movement_patterns(self):
+        """Verify all canonical exercises have their expected movement_pattern populated."""
+        res = self.client.get('/exercises')
+        self.assertEqual(res.status_code, 200)
+        exercises = res.get_json()
+        self.assertGreaterEqual(len(exercises), 34)
+
+        ex_patterns = {e['name']: e.get('movement_pattern') for e in exercises}
+
+        # Check all 34 canonical exercises
+        from backend.app import EXERCISE_MOVEMENT_PATTERNS
+        for name, expected_pattern in EXERCISE_MOVEMENT_PATTERNS.items():
+            self.assertIn(name, ex_patterns, f"Canonical exercise '{name}' missing from database")
+            self.assertEqual(ex_patterns[name], expected_pattern, f"Pattern mismatch for '{name}'")
+
+        # Verify no exercise has null or empty movement pattern
+        for e in exercises:
+            self.assertIsNotNone(e.get('movement_pattern'), f"Exercise {e['name']} has None movement_pattern")
+            self.assertTrue(len(e['movement_pattern']) > 0, f"Exercise {e['name']} has empty movement_pattern")
+
+    def test_create_exercise_with_movement_pattern(self):
+        """Verify custom exercise creation preserves explicit or inferred movement_pattern."""
+        # 1. With explicit movement_pattern
+        res = self.client.post('/exercises', json={
+            "name": "Dragon Flag",
+            "day": "Pull B",
+            "type": "reps",
+            "movement_pattern": "core"
+        })
+        self.assertEqual(res.status_code, 201)
+        data = res.get_json()
+        self.assertEqual(data['name'], "Dragon Flag")
+        self.assertEqual(data['movement_pattern'], "core")
+
+        # 2. With inferred movement_pattern from Day
+        res2 = self.client.post('/exercises', json={
+            "name": "Custom Incline Press",
+            "day": "Push A",
+            "type": "reps"
+        })
+        self.assertEqual(res2.status_code, 201)
+        data2 = res2.get_json()
+        self.assertEqual(data2['movement_pattern'], "push_horizontal")
 
 
 if __name__ == '__main__':

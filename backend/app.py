@@ -62,12 +62,16 @@ def init_db():
 
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS exercises (
-            id               INTEGER PRIMARY KEY AUTOINCREMENT,
-            name             TEXT NOT NULL,
-            day              TEXT NOT NULL,
-            type             TEXT NOT NULL,
-            prerequisite_id  INTEGER,
-            next_id          INTEGER,
+            id                          INTEGER PRIMARY KEY AUTOINCREMENT,
+            name                        TEXT NOT NULL,
+            day                         TEXT NOT NULL,
+            type                        TEXT NOT NULL,
+            movement_pattern            TEXT NOT NULL DEFAULT 'push_horizontal',
+            prerequisite_id             INTEGER,
+            next_id                     INTEGER,
+            progression_target_reps     INTEGER,
+            progression_target_duration INTEGER,
+            progression_sessions_needed INTEGER NOT NULL DEFAULT 2,
             FOREIGN KEY(prerequisite_id) REFERENCES exercises(id),
             FOREIGN KEY(next_id)         REFERENCES exercises(id)
         )
@@ -212,6 +216,8 @@ def init_db():
     _migrate_progression_columns()
     # Add session_uuid column to logs if missing (safe on re-run).
     _migrate_session_uuid_column()
+    # Add movement_pattern column to exercises if missing and backfill (safe on re-run).
+    _migrate_movement_pattern_column()
 
 
 def _migrate_session_uuid_column():
@@ -250,70 +256,132 @@ def _migrate_progression_columns():
         conn.commit()
 
 
+def _migrate_movement_pattern_column():
+    """Add `movement_pattern` TEXT column to exercises table if missing and backfill existing rows."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cols = [row[1] for row in cursor.execute('PRAGMA table_info(exercises)').fetchall()]
+        if 'movement_pattern' not in cols:
+            cursor.execute("ALTER TABLE exercises ADD COLUMN movement_pattern TEXT NOT NULL DEFAULT 'push_horizontal'")
+            conn.commit()
+
+        # Update all known canonical exercises to their correct movement pattern
+        for name, pattern in EXERCISE_MOVEMENT_PATTERNS.items():
+            cursor.execute('UPDATE exercises SET movement_pattern = ? WHERE name = ?', (pattern, name))
+
+        # Fallback for custom or unmapped exercises
+        cursor.execute("UPDATE exercises SET movement_pattern = 'push_horizontal' WHERE movement_pattern IS NULL OR movement_pattern = ''")
+        conn.commit()
+
+
+# ── Canonical Movement Pattern Mapping ───────────────────────────────────────
+EXERCISE_MOVEMENT_PATTERNS = {
+    # Push A & Push B
+    'Diamond Push-ups':             'push_horizontal',
+    'Wide Push-ups':                'push_horizontal',
+    'Decline Push-ups':             'push_horizontal',
+    'Pike Push-ups':                'push_incline',
+    'Triceps Dips':                 'push_dip',
+    'Plank':                        'core',
+    'Pike Push-ups Elevated':       'push_incline',
+    'Handstand Push-up Progression': 'push_vertical',
+    'Archer Push-ups':              'push_archer',
+    'Lateral Raise':                'isolation_lateral',
+    'Hollow Body Hold':             'core',
+
+    # Pull A & Pull B
+    'Dead Hang':                    'hanging',
+    'Pull-ups Wide Grip':           'pull_vertical',
+    'Chin-ups':                     'pull_vertical',
+    'Negative Pull-ups':            'pull_vertical',
+    'Scapular Pulls':               'pull_vertical',
+    'Hanging Knee Raises':          'core',
+    'Pull-ups Close Grip':          'pull_vertical',
+    'Commando Pull-ups':            'pull_vertical',
+    'Face Pulls':                   'pull_horizontal',
+    'Prone Y-raises':               'pull_horizontal',
+    'Wall Angels':                  'pull_horizontal',
+    'L-sit Hang':                   'core',
+
+    # Legs A & Legs B
+    'Bulgarian Split Squats':       'lunge',
+    'Walking Lunges':               'lunge',
+    'Glute Bridges Single Leg':     'hinge',
+    'Calf Raises':                  'isolation_calf',
+    'Side Plank':                   'core',
+    'Pistol Squat Progression':     'squat',
+    'Jump Squats':                  'squat',
+    'Single-leg Glute Bridge Hold': 'hold_isometric',
+    'Wall Sit':                     'hold_isometric',
+    'Hanging Leg Raises':           'core',
+    'Russian Twists':               'core',
+}
+
+
 # ── PPL A/B seed data ─────────────────────────────────────────────────────────
 # Structured as a list of (routine_name, exercises_list) where each exercise is:
 #   (name, ex_type, sets, reps_or_none, duration_sec_or_none, rest_sec, notes_or_none)
-# All levels are 1 (no L1-L5 progression tiers in this plan).
+# 6 days training, 1 rest — Push A → Pull A → Legs A → Push B → Pull B → Legs B → Rest
+# Daily core frequency (1 dedicated core slot per training day)
 
-_SEED_VERSION = 'custom-split-v1'  # bump to re-seed without deleting the DB
+_SEED_VERSION = 'custom-split-v5'  # bump to re-seed without deleting the DB
 
 _SEED = [
     ('Push A', [
-        ('Diamond Push-ups',      'reps',     4, 15, None, 90, 'Your strong point — track progress'),
+        ('Diamond Push-ups',      'reps',     4, 15, None, 90, 'Your strong point — track progress (12-15 reps)'),
         ('Wide Push-ups',         'reps',     3, 15, None, 90, 'Chest width'),
-        ('Decline Push-ups',      'reps',     3, 12, None, 90, 'Upper chest, feet elevated'),
+        ('Decline Push-ups',      'reps',     3, 12, None, 90, 'Upper chest (feet elevated, 10-12 reps)'),
         ('Pike Push-ups',         'reps',     3, 10, None, 90, 'Front delt'),
-        ('Triceps Dips',          'reps',     3, 15, None, 90, 'Arm definition'),
-        ('Plank to Push-up',      'reps',     3, 10, None, 90, 'Core + shoulder stability'),
+        ('Triceps Dips',          'reps',     3, 15, None, 90, 'Arm definition (12-15 reps)'),
+        ('Plank',                 'duration', 3, None, 45, 90, 'Daily core slot'),
     ]),
     ('Push B', [
-        ('Pike Push-ups Elevated',         'reps', 4, 12, None, 90, 'Side/front delt, feet elevated'),
-        ('Handstand Push-up Progression',  'reps', 3,  8, None, 90, 'Wall-assisted, build carefully'),
-        ('Diamond Push-ups',               'reps', 3, 12, None, 90, 'Triceps'),
-        ('Archer Push-ups',                'reps', 3,  8, None, 90, 'Unilateral + chest detail'),
-        ('Lateral Raise',                  'reps', 3, 15, None, 90, 'Water bottles, key for V-taper'),
-        ('Triceps Dips',                   'reps', 3, 15, None, 90, None),
+        ('Pike Push-ups Elevated',         'reps',     4, 12, None, 90, 'Side/front delt (feet elevated, 10-12 reps)'),
+        ('Handstand Push-up Progression',  'reps',     3,  8, None, 90, 'Wall-assisted — build carefully (5-8 reps)'),
+        ('Diamond Push-ups',               'reps',     3, 12, None, 90, 'Triceps'),
+        ('Archer Push-ups',                'reps',     3,  8, None, 90, 'Unilateral + chest detail (8/side)'),
+        ('Lateral Raise',                  'reps',     3, 15, None, 90, 'Water bottles — key for V-taper'),
+        ('Hollow Body Hold',               'duration', 3, None, 30, 90, 'Daily core slot (20-30 sec)'),
     ]),
     ('Pull A', [
-        ('Dead Hang',          'duration', 2, None, 45, 90, 'Warm-up, grip + shoulder health'),
-        ('Pull-ups Wide Grip', 'reps',     4,    6, None, 90, 'Primary width builder'),
-        ('Chin-ups',           'reps',     3, None, None, 90, 'Bicep + lat'),
-        ('Negative Pull-ups',  'reps',     3,    5, None, 90, 'Slow 5-sec descent, after max sets'),
-        ('Scapular Pulls',     'reps',     3,   10, None, 90, 'Pull-up strength foundation'),
-        ('Superman Hold',      'duration', 3, None, 20,  90, 'Lower back/posture'),
+        ('Dead Hang',            'duration', 2, None, 45, 90, 'Warm-up, grip + shoulder health (30-45 sec)'),
+        ('Pull-ups Wide Grip',   'reps',     4,    6, None, 90, 'Primary width builder (max 5-6 currently)'),
+        ('Chin-ups',             'reps',     3,    6, None, 90, 'Underhand — bicep + lat (max reps)'),
+        ('Negative Pull-ups',    'reps',     3,    5, None, 90, 'Slow 5-sec descent — builds beyond current max'),
+        ('Scapular Pulls',       'reps',     3,   10, None, 90, 'Pull-up strength foundation (hang & pull blades)'),
+        ('Hanging Knee Raises',  'reps',     3,   15, None, 90, 'Daily core slot — uses the hang you\'re already in (12-15 reps)'),
     ]),
     ('Pull B', [
-        ('Pull-ups Close Grip', 'reps',     4, None, None, 90, 'Thickness focus'),
-        ('Commando Pull-ups',   'reps',     3,    8, None, 90, 'Side-to-side, lat variation'),
-        ('L-sit Hang',          'duration', 3, None, 20,  90, 'Or tucked knees; core + grip + shoulder'),
-        ('Face Pulls',          'reps',     3,   15, None, 90, 'Band/towel-resisted, critical for posture, don\'t skip'),
-        ('Prone Y-raises',      'reps',     3,   15, None, 90, 'Face down, arms in Y; rear delt + upper back'),
+        ('Pull-ups Close Grip', 'reps',     4,    6, None, 90, 'Thickness focus (max reps)'),
+        ('Commando Pull-ups',   'reps',     3,    8, None, 90, 'Side-to-side lat variation (6-8 reps)'),
+        ('Face Pulls',          'reps',     3,   15, None, 90, 'Band/towel-resisted — critical for posture, don\'t skip'),
+        ('Prone Y-raises',      'reps',     3,   15, None, 90, 'Face down, arms in Y — rear delt + upper back'),
         ('Wall Angels',         'reps',     3,   12, None, 90, 'Posture correction drill'),
+        ('L-sit Hang',          'duration', 3, None, 20, 90, 'Daily core slot (or tucked knees, 15-20 sec)'),
     ]),
     ('Legs A', [
-        ('Bulgarian Split Squats',    'reps',     3, 12, None, 90, 'Chair support; quad + glute'),
-        ('Walking Lunges',            'reps',     3, 16, None, 90, None),
-        ('Glute Bridges Single Leg',  'reps',     3, 15, None, 90, 'Posterior chain'),
+        ('Bulgarian Split Squats',    'reps',     3, 12, None, 90, 'Chair support — quad + glute (12/leg)'),
+        ('Walking Lunges',            'reps',     3, 16, None, 90, '8 reps per leg'),
+        ('Glute Bridges Single Leg',  'reps',     3, 15, None, 90, 'Posterior chain (15/leg)'),
         ('Calf Raises',               'reps',     4, 20, None, 90, 'Slow tempo'),
-        ('Hanging Knee Raises',       'reps',     3, 15, None, 90, 'Loft slab; core + hip flexor'),
-        ('Plank',                     'duration', 3, None, 45, 90, None),
+        ('Side Plank',                'duration', 3, None, 30, 90, 'Daily core slot — obliques (30 sec/side)'),
     ]),
     ('Legs B', [
-        ('Pistol Squat Progression',      'reps',     3,  8, None, 90, 'Assisted/box; bottleneck exercise, priority'),
-        ('Jump Squats',                   'reps',     3, 15, None, 90, 'Explosive/power element'),
-        ('Single-leg Glute Bridge Hold',  'duration', 3, None, 20, 90, 'Isometric variation'),
-        ('Wall Sit',                      'duration', 3, None, 40, 90, 'Quad endurance'),
-        ('Hanging Leg Raises',            'reps',     3, 12, None, 90, 'Straight leg, loft slab; harder than knee raises'),
-        ('Side Plank',                    'duration', 3, None, 30, 90, 'Obliques'),
+        ('Pistol Squat Progression',     'reps',     3,  8, None, 90, 'Assisted/box — bottleneck exercise, priority (6-8/leg)'),
+        ('Jump Squats',                  'reps',     3, 15, None, 90, 'Explosive / power element'),
+        ('Single-leg Glute Bridge Hold', 'duration', 3, None, 20, 90, 'Isometric variation (20 sec/leg)'),
+        ('Wall Sit',                     'duration', 3, None, 40, 90, 'Quad endurance (30-40 sec)'),
+        ('Hanging Leg Raises',           'reps',     3, 12, None, 90, 'Straight leg, loft slab — core carryover from leg work (10-12 reps)'),
+        ('Russian Twists',               'reps',     3, 20, None, 90, 'Daily core slot — rotational/oblique work (10/side)'),
     ]),
 ]
 
 DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 
-def reseed_data():
+def reseed_data(force=False):
     """Clear exercises/routine_levels/level_exercises and repopulate with _SEED.
-    Logs are NOT touched. Idempotent: checks seed version stored in DB first."""
+    Logs are NOT touched. Idempotent: checks seed version stored in DB first unless force=True."""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute('PRAGMA foreign_keys = OFF')  # allow truncation with FKs
@@ -321,7 +389,7 @@ def reseed_data():
         # Use meta table as a key-value store for the seed version tag.
         cursor.execute('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)')
         row = cursor.execute("SELECT value FROM meta WHERE key = 'seed_version'").fetchone()
-        if row and row['value'] == _SEED_VERSION:
+        if not force and row and row['value'] == _SEED_VERSION:
             return  # already at current seed — skip
 
         # ── Clear dependent tables in safe order ──────────────────────────────────
@@ -340,9 +408,19 @@ def reseed_data():
         for routine_name, exercises in _SEED:
             for (name, ex_type, sets, reps, dur, rest, notes) in exercises:
                 if name not in ex_id_by_name:
+                    pattern = EXERCISE_MOVEMENT_PATTERNS.get(name)
+                    if not pattern:
+                        if 'Push' in routine_name:
+                            pattern = 'push_horizontal'
+                        elif 'Pull' in routine_name:
+                            pattern = 'pull_vertical'
+                        elif 'Leg' in routine_name:
+                            pattern = 'squat'
+                        else:
+                            pattern = 'push_horizontal'
                     cursor.execute(
-                        'INSERT INTO exercises (name, day, type) VALUES (?, ?, ?)',
-                        (name, routine_name, ex_type)
+                        'INSERT INTO exercises (name, day, type, movement_pattern) VALUES (?, ?, ?, ?)',
+                        (name, routine_name, ex_type, pattern)
                     )
                     ex_id_by_name[name] = cursor.lastrowid
                 else:
@@ -385,22 +463,22 @@ def reseed_data():
                     (w_id, ex_id, idx, sets, reps, dur, rest, notes)
                 )
 
-        # ── Insert Default Training Split: Push Pull Legs (PPL) ───────────────────
+        # ── Insert Default Training Split: Pure PPL A/B + Daily Core ───────────────
         cursor.execute(
             '''INSERT INTO training_splits (name, description, is_active)
-               VALUES ('Push Pull Legs (PPL)', 'Classic 6-day PPL cycle with mid-week rest', 1)'''
+               VALUES ('Push Pull Legs (PPL) — Pure A/B + Daily Core', '6 days training, 1 rest — Push A → Pull A → Legs A → Push B → Pull B → Legs B → Rest', 1)'''
         )
         split_id = cursor.lastrowid
 
-        # 7-day schedule: Mon=Push A, Tue=Pull A, Wed=Legs A, Thu=Rest, Fri=Push B, Sat=Pull B, Sun=Legs B
+        # 7-day schedule: Mon=Push A, Tue=Pull A, Wed=Legs A, Thu=Push B, Fri=Pull B, Sat=Legs B, Sun=Rest
         schedule_map = [
             (0, 'workout', workout_ids.get('Push A')),
             (1, 'workout', workout_ids.get('Pull A')),
             (2, 'workout', workout_ids.get('Legs A')),
-            (3, 'rest', None),
-            (4, 'workout', workout_ids.get('Push B')),
-            (5, 'workout', workout_ids.get('Pull B')),
-            (6, 'workout', workout_ids.get('Legs B')),
+            (3, 'workout', workout_ids.get('Push B')),
+            (4, 'workout', workout_ids.get('Pull B')),
+            (5, 'workout', workout_ids.get('Legs B')),
+            (6, 'rest', None),
         ]
         for day_idx, day_type, w_id in schedule_map:
             cursor.execute(

@@ -24,6 +24,16 @@ async function startWorkoutFromId(workoutId) {
   }
 }
 
+let _runnerStageTab = 'motion'; // 'motion' | 'muscles'
+
+function setRunnerStageTab(tab) {
+  _runnerStageTab = tab;
+  render();
+}
+if (typeof window !== 'undefined') {
+  window.setRunnerStageTab = setRunnerStageTab;
+}
+
 function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
   const active = getActiveSession();
   if (active && (active.status === 'in_progress' || active.status === 'paused') && active.routine === workoutName) {
@@ -39,6 +49,7 @@ function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
     workout_id: workoutId,
     level: 1,
     startTime: Date.now(),
+    startedAt: Date.now(),
     pausedAt: null,
     totalPausedMs: 0,
     endTime: null,
@@ -143,8 +154,13 @@ function pauseWorkoutSession() {
     clearInterval(_workoutTimerInterval);
     _workoutTimerInterval = null;
   }
+  if (typeof releaseScreenWakeLock === 'function') {
+    releaseScreenWakeLock();
+  }
   saveActiveSession(session);
-  showToast('Workout Paused');
+  if (typeof window !== 'undefined' && window.ExerciseAnimation) {
+    window.ExerciseAnimation.pauseAll();
+  }
   render();
 }
 
@@ -157,18 +173,50 @@ function resumeWorkoutSession() {
   session.pausedAt = null;
   saveActiveSession(session);
   startWorkoutDurationTimer();
-  showToast('Workout Resumed');
+  if (typeof acquireScreenWakeLock === 'function') {
+    acquireScreenWakeLock();
+  }
+  if (typeof window !== 'undefined' && window.ExerciseAnimation) {
+    window.ExerciseAnimation.resumeAll();
+  }
   render();
 }
 
+function togglePauseWorkoutSession() {
+  const session = getActiveSession();
+  if (!session) return;
+  if (session.status === 'paused') {
+    resumeWorkoutSession();
+  } else {
+    pauseWorkoutSession();
+  }
+}
+
 function startWorkoutDurationTimer() {
-  if (_workoutTimerInterval) clearInterval(_workoutTimerInterval);
+  if (typeof acquireScreenWakeLock === 'function') {
+    acquireScreenWakeLock();
+  }
+  if (_workoutTimerInterval) {
+    clearInterval(_workoutTimerInterval);
+    _workoutTimerInterval = null;
+  }
   _workoutTimerInterval = setInterval(() => {
     if (state.view === 'workout') {
-      const timerEl = document.getElementById('workout-elapsed-time');
       const session = getActiveSession();
-      if (timerEl && session && session.startTime && session.status !== 'paused') {
-        timerEl.textContent = fmtSecs(getSessionElapsedSec(session));
+      if (session && (session.startTime || session.startedAt) && session.status !== 'paused') {
+        const elapsedSec = getSessionElapsedSec(session);
+        const valEl = document.getElementById('workout-elapsed-val');
+        if (valEl) {
+          valEl.textContent = fmtSecs(elapsedSec);
+        } else {
+          const timerEl = document.getElementById('workout-elapsed-time');
+          if (timerEl) {
+            const span = timerEl.querySelector('.runner-timer-text') || timerEl.querySelector('span');
+            if (span) {
+              span.textContent = fmtSecs(elapsedSec);
+            }
+          }
+        }
       }
     }
   }, 1000);
@@ -179,14 +227,34 @@ function startWorkoutDurationTimer() {
 function getNextSetDescription(session, exIdx, setIdx) {
   if (!session || !session.exercises) return '';
   const currentEx = session.exercises[exIdx];
-  if (currentEx && setIdx + 1 < currentEx.sets.length) {
-    return `Next: Set ${setIdx + 2} · ${currentEx.exercise_name}`;
-  } else if (session.exercises[exIdx + 1]) {
-    const nextEx = session.exercises[exIdx + 1];
-    return `Next: Set 1 · ${nextEx.exercise_name}`;
-  } else {
-    return 'Next: Workout Finish';
+  if (!currentEx) return '';
+
+  // 1. Check for remaining uncompleted set in current exercise
+  const nextSetInCur = currentEx.sets.findIndex((s, i) => i > setIdx && !s.completed);
+  if (nextSetInCur !== -1) {
+    return `Next: Set ${nextSetInCur + 1} · ${currentEx.exercise_name}`;
   }
+
+  // 2. Check for next uncompleted exercise downstream
+  const nextExIdx = session.exercises.findIndex((ex, idx) => idx > exIdx && ex.sets.some(s => !s.completed));
+  if (nextExIdx !== -1) {
+    const nextEx = session.exercises[nextExIdx];
+    const nextSetIdx = nextEx.sets.findIndex(s => !s.completed);
+    const setNum = nextSetIdx !== -1 ? nextSetIdx + 1 : 1;
+    return `Next: Set ${setNum} · ${nextEx.exercise_name}`;
+  }
+
+  // 3. Check for any uncompleted exercise earlier in the session
+  const anyExIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed));
+  if (anyExIdx !== -1) {
+    const anyEx = session.exercises[anyExIdx];
+    const anySetIdx = anyEx.sets.findIndex(s => !s.completed);
+    const setNum = anySetIdx !== -1 ? anySetIdx + 1 : 1;
+    return `Next: Set ${setNum} · ${anyEx.exercise_name}`;
+  }
+
+  // 4. All sets across all exercises are complete
+  return 'Next: Workout Finish 🎉';
 }
 
 function startWorkoutHold(exIdx, setIdx) {
@@ -249,34 +317,77 @@ function stopWorkoutHold(saveAndComplete = true) {
       saveActiveSession(session);
 
       cueHoldSave(); // audio/vibration feedback
-      checkAndCelebratePR(session.exercises[exIdx].exercise_id, finalVal, set.weight_kg);
+      if (typeof checkAndCelebratePR === 'function') {
+        checkAndCelebratePR(session.exercises[exIdx].exercise_id, finalVal, set.weight_kg);
+      }
 
       // If final set of the hold exercise is completed, auto-advance to next uncompleted exercise
       const currentEx = session.exercises[exIdx];
       const isExDone = currentEx.sets.every(s => s.completed);
       if (isExDone) {
         const nextUncompletedIdx = session.exercises.findIndex((ex, idx) => idx > exIdx && ex.sets.some(s => !s.completed));
+        let nextIdx = -1;
         if (nextUncompletedIdx !== -1) {
-          _selectedWorkoutExIdx = nextUncompletedIdx;
+          nextIdx = nextUncompletedIdx;
         } else {
           const anyUncompletedIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed));
           if (anyUncompletedIdx !== -1) {
-            _selectedWorkoutExIdx = anyUncompletedIdx;
+            nextIdx = anyUncompletedIdx;
           }
+        }
+        if (nextIdx !== -1) {
+          _selectedWorkoutExIdx = nextIdx;
+          const nextEx = session.exercises[nextIdx];
+          const nextCat = state.exercises.find(e => e.id === nextEx.exercise_id || e.name === nextEx.exercise_name);
+          const nextPattern = nextCat?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(nextEx.exercise_name) : 'push');
+          setCurrentMovementPattern(nextPattern, nextEx.exercise_id, nextEx.exercise_name);
         }
       }
 
       // Trigger Rest Countdown
       const restSec = currentEx.rest_sec || 90;
       const nextInfo = getNextSetDescription(session, exIdx, setIdx);
-      startWorkoutRest(restSec, nextInfo);
+      const feedback = generateSetCompletionFeedback(session, exIdx, setIdx, finalVal);
+      startWorkoutRest(restSec, nextInfo, feedback);
     }
   }
 
   render();
 }
 
-function startWorkoutRest(sec, nextInfo = '') {
+function generateSetCompletionFeedback(session, exIdx, setIdx, actualVal) {
+  if (!session || !session.exercises[exIdx] || !session.exercises[exIdx].sets[setIdx]) return 'Solid set logged.';
+  const currentEx = session.exercises[exIdx];
+  const set = currentEx.sets[setIdx];
+  const targetVal = set.target_val;
+  const isHold = currentEx.exercise_type === 'duration';
+  const unit = isHold ? 's' : ' reps';
+  const remainingSets = currentEx.sets.filter((s, idx) => idx > setIdx && !s.completed).length;
+  const diff = actualVal - targetVal;
+
+  if (diff > 0) {
+    if (remainingSets > 0) {
+      return `+${diff} over target 💪 (${actualVal}${unit}) · ${remainingSets} more to go!`;
+    } else {
+      return `+${diff} over target! 🚀 Crushed all sets for ${currentEx.exercise_name}`;
+    }
+  } else if (diff === 0) {
+    if (remainingSets > 0) {
+      return `Solid set. ${remainingSets} more to go 🔥`;
+    } else {
+      return `Target matched (${actualVal}${unit}) · ${currentEx.exercise_name} complete! 🎯`;
+    }
+  } else {
+    // diff < 0
+    if (remainingSets > 0) {
+      return `Solid work (${actualVal}/${targetVal}${unit}). ${remainingSets} more to go — focus on clean form!`;
+    } else {
+      return `Good effort on ${currentEx.exercise_name}. Quality reps logged.`;
+    }
+  }
+}
+
+function startWorkoutRest(sec, nextInfo = '', feedback = '') {
   stopWorkoutRest();
   if (!sec || sec <= 0) return;
 
@@ -285,23 +396,36 @@ function startWorkoutRest(sec, nextInfo = '') {
     remaining: sec,
     total: sec,
     nextInfo: nextInfo,
+    feedback: feedback,
   };
 
   _workoutRestInterval = setInterval(() => {
     if (!_workoutRestState.active) return;
     _workoutRestState.remaining--;
 
+    const isLast3s = _workoutRestState.remaining > 0 && _workoutRestState.remaining <= 3;
+
     // Audible warning tick for last 3 seconds
-    if (_workoutRestState.remaining > 0 && _workoutRestState.remaining <= 3) {
+    if (isLast3s) {
       cueTick();
     }
 
     if (typeof document !== 'undefined') {
+      const cardEl = document.getElementById('workout-rest-card-container');
       const timerEl = document.getElementById('workout-rest-timer-val');
       const barEl = document.getElementById('workout-rest-timer-bar');
+
+      if (cardEl) {
+        if (isLast3s) cardEl.classList.add('is-pulse-alert');
+        else cardEl.classList.remove('is-pulse-alert');
+      }
+
       if (timerEl) {
         timerEl.textContent = fmtSecs(Math.max(0, _workoutRestState.remaining));
+        if (isLast3s) timerEl.classList.add('pulse-digits');
+        else timerEl.classList.remove('pulse-digits');
       }
+
       if (barEl && _workoutRestState.total > 0) {
         const pct = Math.max(0, Math.min(100, (_workoutRestState.remaining / _workoutRestState.total) * 100));
         barEl.style.width = `${pct}%`;
@@ -311,7 +435,6 @@ function startWorkoutRest(sec, nextInfo = '') {
     if (_workoutRestState.remaining <= 0) {
       cueRestEnd();
       stopWorkoutRest();
-      showToast('Rest complete! Ready for next set');
     }
   }, 1000);
 
@@ -332,12 +455,24 @@ function adjustWorkoutRest(deltaSec) {
   _workoutRestState.remaining = Math.max(0, _workoutRestState.remaining + deltaSec);
   _workoutRestState.total = Math.max(_workoutRestState.total, _workoutRestState.remaining);
 
+  const isLast3s = _workoutRestState.remaining > 0 && _workoutRestState.remaining <= 3;
+
   if (typeof document !== 'undefined') {
+    const cardEl = document.getElementById('workout-rest-card-container');
     const timerEl = document.getElementById('workout-rest-timer-val');
     const barEl = document.getElementById('workout-rest-timer-bar');
+
+    if (cardEl) {
+      if (isLast3s) cardEl.classList.add('is-pulse-alert');
+      else cardEl.classList.remove('is-pulse-alert');
+    }
+
     if (timerEl) {
       timerEl.textContent = fmtSecs(_workoutRestState.remaining);
+      if (isLast3s) timerEl.classList.add('pulse-digits');
+      else timerEl.classList.remove('pulse-digits');
     }
+
     if (barEl && _workoutRestState.total > 0) {
       const pct = Math.max(0, Math.min(100, (_workoutRestState.remaining / _workoutRestState.total) * 100));
       barEl.style.width = `${pct}%`;
@@ -360,6 +495,20 @@ function adjustWorkoutSetActual(exIdx, setIdx, delta) {
   render();
 }
 
+function setWorkoutSetActualDirect(exIdx, setIdx, exactVal) {
+  const session = getActiveSession();
+  if (!session || !session.exercises[exIdx] || !session.exercises[exIdx].sets[setIdx]) return;
+  const num = Number(exactVal);
+  if (isNaN(num) || num < 0) return;
+  session.exercises[exIdx].sets[setIdx].actual_val = num;
+  saveActiveSession(session);
+
+  if (typeof beep === 'function') beep(740, 40, 0.25, 'sine');
+  if (typeof vibrate === 'function') vibrate(30);
+
+  render();
+}
+
 
 function updateWorkoutSetWeight(exIdx, setIdx, val) {
   const session = getActiveSession();
@@ -378,6 +527,16 @@ function updateWorkoutSetRPE(exIdx, setIdx, val) {
   saveActiveSession(session);
 }
 
+function handleCompleteSetClick(event, exIdx, setIdx) {
+  const btn = event.currentTarget || (event.target && event.target.closest ? event.target.closest('.runner-complete-action-btn') : null);
+  if (btn) {
+    btn.classList.add('btn-pop');
+  }
+  setTimeout(() => {
+    toggleWorkoutSet(exIdx, setIdx);
+  }, 100);
+}
+
 function toggleWorkoutSet(exIdx, setIdx) {
   const session = getActiveSession();
   if (!session || !session.exercises[exIdx] || !session.exercises[exIdx].sets[setIdx]) return;
@@ -387,29 +546,44 @@ function toggleWorkoutSet(exIdx, setIdx) {
   saveActiveSession(session);
 
   if (set.completed) {
-    cueRestEnd(); // audio/vibration feedback
-    const actualVal = Number(set.actual_val !== null && set.actual_val !== undefined && set.actual_val !== '' ? set.actual_val : set.target_val);
-    checkAndCelebratePR(session.exercises[exIdx].exercise_id, actualVal, set.weight_kg);
-
-    // If final set of the exercise is completed, auto-advance to next uncompleted exercise
     const currentEx = session.exercises[exIdx];
     const isExDone = currentEx.sets.every(s => s.completed);
     if (isExDone) {
+      cueExerciseComplete();
+    } else {
+      cueSetComplete();
+    }
+    const actualVal = Number(set.actual_val !== null && set.actual_val !== undefined && set.actual_val !== '' ? set.actual_val : set.target_val);
+    if (typeof checkAndCelebratePR === 'function') {
+      checkAndCelebratePR(session.exercises[exIdx].exercise_id, actualVal, set.weight_kg);
+    }
+
+    // If final set of the exercise is completed, auto-advance to next uncompleted exercise
+    if (isExDone) {
       const nextUncompletedIdx = session.exercises.findIndex((ex, idx) => idx > exIdx && ex.sets.some(s => !s.completed));
+      let nextIdx = -1;
       if (nextUncompletedIdx !== -1) {
-        _selectedWorkoutExIdx = nextUncompletedIdx;
+        nextIdx = nextUncompletedIdx;
       } else {
         const anyUncompletedIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed));
         if (anyUncompletedIdx !== -1) {
-          _selectedWorkoutExIdx = anyUncompletedIdx;
+          nextIdx = anyUncompletedIdx;
         }
+      }
+      if (nextIdx !== -1) {
+        _selectedWorkoutExIdx = nextIdx;
+        const nextEx = session.exercises[nextIdx];
+        const nextCat = state.exercises.find(e => e.id === nextEx.exercise_id || e.name === nextEx.exercise_name);
+        const nextPattern = nextCat?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(nextEx.exercise_name) : 'push');
+        setCurrentMovementPattern(nextPattern, nextEx.exercise_id, nextEx.exercise_name);
       }
     }
 
-    // Start Rest Timer for this exercise
+    // Start Rest Timer for this exercise with contextual feedback
     const restSec = currentEx.rest_sec || 90;
     const nextInfo = getNextSetDescription(session, exIdx, setIdx);
-    startWorkoutRest(restSec, nextInfo);
+    const feedback = generateSetCompletionFeedback(session, exIdx, setIdx, actualVal);
+    startWorkoutRest(restSec, nextInfo, feedback);
   } else {
     stopWorkoutRest();
   }
@@ -493,6 +667,10 @@ async function finishWorkoutSession() {
   if (_workoutTimerInterval) {
     clearInterval(_workoutTimerInterval);
     _workoutTimerInterval = null;
+  }
+
+  if (typeof releaseScreenWakeLock === 'function') {
+    releaseScreenWakeLock();
   }
 
   showToast(`Workout Complete! ${completedSets}/${totalSets} sets done (${Math.round(durationSec / 60)}m)`);
@@ -594,6 +772,9 @@ function confirmDiscardWorkout() {
   if (_workoutTimerInterval) {
     clearInterval(_workoutTimerInterval);
     _workoutTimerInterval = null;
+  }
+  if (typeof releaseScreenWakeLock === 'function') {
+    releaseScreenWakeLock();
   }
   showToast('Workout discarded');
   state.view = 'dashboard';
@@ -832,6 +1013,10 @@ function selectWorkoutQueueExercise(exIdx) {
   const session = getActiveSession();
   if (!session || !session.exercises[exIdx]) return;
   _selectedWorkoutExIdx = exIdx;
+  const newEx = session.exercises[exIdx];
+  const catalogEx = state.exercises.find(e => e.id === newEx.exercise_id || e.name === newEx.exercise_name);
+  const pattern = catalogEx?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(newEx.exercise_name) : 'push');
+  setCurrentMovementPattern(pattern, newEx.exercise_id, newEx.exercise_name);
   render();
 }
 
@@ -892,16 +1077,21 @@ function renderActiveWorkoutView() {
   const targetDesc = isHold ? `${targetVal} sec` : `${targetVal} reps`;
 
   const lastLog = state.todayLogs[activeEx.exercise_id];
+  let lastVal = null;
   let lastPerfDesc = '—';
   if (lastLog) {
-    lastPerfDesc = isHold ? `${lastLog.duration_sec} sec` : `${lastLog.reps} reps`;
+    lastVal = isHold ? (lastLog.duration_sec ?? lastLog.reps) : (lastLog.reps ?? lastLog.duration_sec);
+    lastPerfDesc = isHold ? `${lastVal} sec` : `${lastVal} reps`;
     if (lastLog.weight_kg) lastPerfDesc += ` (+${lastLog.weight_kg}kg)`;
   } else {
-    lastPerfDesc = isHold ? `${Math.max(10, targetVal - 7)} sec` : `${Math.max(1, targetVal - 2)} reps`;
+    lastVal = isHold ? Math.max(10, targetVal - 7) : Math.max(1, targetVal - 2);
+    lastPerfDesc = isHold ? `${lastVal} sec` : `${lastVal} reps`;
   }
 
   // Context: Notes + Muscle Targets / Equipment
-  const muscleTargets = getWorkoutMuscleTargets({ name: activeEx.exercise_name, exercises: [activeEx] });
+  const muscleTargets = typeof getWorkoutMuscleTargets === 'function'
+    ? getWorkoutMuscleTargets({ name: activeEx.exercise_name, exercises: [activeEx] })
+    : null;
   let contextParts = [];
   if (activeEx.notes && activeEx.notes.trim()) {
     contextParts.push(activeEx.notes.trim());
@@ -915,6 +1105,15 @@ function renderActiveWorkoutView() {
   }
   const exerciseContextText = contextParts.join(' · ');
   const activeExTip = getExerciseContextualTip(activeEx);
+
+  // Movement pattern lookup for active animation
+  const catalogEx = state.exercises.find(e => e.id === activeEx.exercise_id || e.name === activeEx.exercise_name);
+  const activePattern = catalogEx?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(activeEx.exercise_name) : 'push');
+  setCurrentMovementPattern(activePattern, activeEx.exercise_id, activeEx.exercise_name);
+  const patternDisplayLabel = (activePattern || 'push').replace(/_/g, ' ').toUpperCase();
+  const animationSvgHtml = (typeof window !== 'undefined' && window.ExerciseAnimation)
+    ? window.ExerciseAnimation.render(activePattern, { size: 'xl', showFloor: true, paused: isPaused })
+    : '';
 
   const unitText = isHold ? 'SEC' : 'REPS';
   const stepDelta = isHold ? 5 : 1;
@@ -936,227 +1135,356 @@ function renderActiveWorkoutView() {
     ? Math.max(0, Math.min(100, (_workoutRestState.remaining / _workoutRestState.total) * 100))
     : 0;
 
+  const isLast3s = _workoutRestState.remaining > 0 && _workoutRestState.remaining <= 3;
   const restCountdownHtml = _workoutRestState.active ? `
-    <div class="runner-rest-card" role="region" aria-label="Rest Timer">
+    <div class="runner-rest-card ${isLast3s ? 'is-pulse-alert' : ''}" id="workout-rest-card-container" role="region" aria-label="Rest Timer">
       <div class="runner-rest-top">
         <div class="runner-rest-info">
           <span class="runner-rest-tag">
             ${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-xs')} REST
           </span>
-          <span class="runner-rest-digits mono" id="workout-rest-timer-val">${fmtSecs(_workoutRestState.remaining)}</span>
+          <span class="runner-rest-digits mono ${isLast3s ? 'pulse-digits' : ''}" id="workout-rest-timer-val">${fmtSecs(_workoutRestState.remaining)}</span>
           ${_workoutRestState.nextInfo ? `<span class="runner-rest-next">${_workoutRestState.nextInfo}</span>` : ''}
         </div>
         <div class="runner-rest-controls">
-          <button class="runner-rest-btn" type="button" onclick="adjustWorkoutRest(-15)" aria-label="Decrease rest by 15 seconds">-15s</button>
-          <button class="runner-rest-btn" type="button" onclick="adjustWorkoutRest(15)" aria-label="Increase rest by 15 seconds">+15s</button>
-          <button class="runner-rest-skip-btn" type="button" onclick="stopWorkoutRest()" aria-label="Skip rest and continue">Skip Rest</button>
+          <button class="runner-rest-btn" type="button" onclick="adjustWorkoutRest(-15)" aria-label="Decrease rest by 15 seconds" title="Decrease rest by 15s">-15s</button>
+          <button class="runner-rest-btn" type="button" onclick="adjustWorkoutRest(15)" aria-label="Increase rest by 15 seconds" title="Increase rest by 15s">+15s</button>
+          <button class="runner-rest-skip-btn" type="button" onclick="stopWorkoutRest()" aria-label="Skip rest and continue" title="Skip rest and start next set">
+            ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} Skip Rest
+          </button>
         </div>
       </div>
+      ${_workoutRestState.feedback ? `
+        <div class="runner-rest-feedback-strip">
+          <span class="runner-rest-feedback-icon">${renderIcon('zap', 'cx-icon cx-icon-xs')}</span>
+          <span class="runner-rest-feedback-text">${_workoutRestState.feedback}</span>
+        </div>
+      ` : ''}
       <div class="runner-rest-bar-track">
         <div class="runner-rest-bar-fill" id="workout-rest-timer-bar" style="width: ${restProgressPct}%;"></div>
       </div>
     </div>` : '';
 
+  // Up Next exercise determination for the bottom of the left sticky panel
+  let upNextCardHtml = '';
+  const nextEx = session.exercises[activeExIdx + 1];
+
+  if (nextEx) {
+    const nextCat = state.exercises.find(e => e.id === nextEx.exercise_id || e.name === nextEx.exercise_name);
+    const nextPattern = nextCat?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(nextEx.exercise_name) : 'push_horizontal');
+    const nextPatternBadge = nextPattern.replace(/_/g, ' ').toUpperCase();
+    const nextIsHold = nextEx.exercise_type === 'duration';
+    const nextTarget = `${nextEx.sets.length} sets × ${nextEx.sets[0]?.target_val || 10}${nextIsHold ? 's hold' : ' reps'}`;
+    
+    const nextAnimHtml = (typeof window !== 'undefined' && window.ExerciseAnimation)
+      ? window.ExerciseAnimation.render(nextPattern, { size: 'sm', showFloor: true, paused: isPaused })
+      : '';
+
+    upNextCardHtml = `
+      <div class="runner-upnext-card" onclick="selectWorkoutQueueExercise(${activeExIdx + 1})" title="Preview next exercise: ${nextEx.exercise_name}">
+        <div class="runner-upnext-header">
+          <span class="runner-upnext-tag">
+            ${renderIcon('arrowRight', 'cx-icon cx-icon-xs cx-icon-inline')} UP NEXT (${activeExIdx + 2} of ${session.exercises.length})
+          </span>
+          <span class="runner-upnext-pattern">${nextPatternBadge}</span>
+        </div>
+        <div class="runner-upnext-body">
+          <div class="runner-upnext-thumb">
+            ${nextAnimHtml}
+          </div>
+          <div class="runner-upnext-info">
+            <h4 class="runner-upnext-name">${nextEx.exercise_name}</h4>
+            <span class="runner-upnext-target mono">${nextTarget}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    // Final exercise of the workout!
+    upNextCardHtml = `
+      <div class="runner-upnext-card finish-preview">
+        <div class="runner-upnext-header">
+          <span class="runner-upnext-tag finish">
+            ${renderIcon('award', 'cx-icon cx-icon-xs cx-icon-inline')} FINAL EXERCISE
+          </span>
+          <span class="runner-upnext-pattern finish">SESSION WRAP-UP</span>
+        </div>
+        <div class="runner-upnext-body">
+          <div class="runner-upnext-finish-icon">
+            ${renderIcon('flag', 'cx-icon cx-icon-sm')}
+          </div>
+          <div class="runner-upnext-info">
+            <h4 class="runner-upnext-name">Workout Complete Ahead!</h4>
+            <span class="runner-upnext-target">Finish strong on these final sets</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   return `
-    <div class="runner-screen">
-      <!-- 1. Top Navigation & Workout Session Header -->
-      <div class="runner-top-bar">
-        <!-- LEFT: Back / Leave + Routine Title + Session Info -->
-        <div class="runner-header-left">
-          <button class="runner-back-btn" onclick="switchView('home')" aria-label="Leave workout and return to Home" title="Leave Workout">
-            ${renderIcon('arrowLeft', 'cx-icon cx-icon-xs')}
-          </button>
-          <div class="runner-header-session-info">
-            <span class="runner-header-routine-title">${session.routine || session.workout_name || 'LEGS A'}</span>
-            <span class="runner-header-session-sub">${session.level ? `Level ${session.level}` : 'In Progress'}</span>
+    <div class="runner-screen runner-screen-widescreen">
+      <!-- LEFT: Sticky Movement Animation & Form Focus Panel + Up Next Preview -->
+      <aside class="runner-sticky-visual-panel" aria-label="Active Exercise Movement Animation and Up Next Preview">
+        <div class="runner-sticky-card ${isPaused ? 'is-paused' : ''}">
+          <div class="runner-sticky-header">
+            <span class="runner-sticky-tag">
+              <span class="runner-live-dot ${isPaused ? 'paused' : ''}"></span> ${isPaused ? 'WORKOUT PAUSED' : 'FORM & MOTION'}
+            </span>
+            <span class="runner-pattern-badge">${patternDisplayLabel}</span>
+          </div>
+
+          <div class="runner-stage-tabs" role="tablist" aria-label="Visual Mode Switcher">
+            <button class="runner-stage-tab-btn ${_runnerStageTab === 'motion' ? 'is-active' : ''}" type="button" role="tab" aria-selected="${_runnerStageTab === 'motion'}" onclick="setRunnerStageTab('motion')">
+              ${renderIcon('activity', 'cx-icon cx-icon-xs cx-icon-inline')} Motion
+            </button>
+            <button class="runner-stage-tab-btn ${_runnerStageTab === 'muscles' ? 'is-active' : ''}" type="button" role="tab" aria-selected="${_runnerStageTab === 'muscles'}" onclick="setRunnerStageTab('muscles')">
+              ${renderIcon('target', 'cx-icon cx-icon-xs cx-icon-inline')} Muscle Map
+            </button>
+          </div>
+
+          <div class="runner-sticky-anim-stage ${_runnerStageTab === 'muscles' ? 'is-muscle-view' : ''}" title="${activeEx.exercise_name} (${_runnerStageTab === 'muscles' ? 'Target Muscles' : patternDisplayLabel})">
+            ${_runnerStageTab === 'muscles'
+              ? ((typeof window !== 'undefined' && window.MuscleMap)
+                  ? window.MuscleMap.render({ exerciseName: activeEx.exercise_name, movementPattern: patternKey, size: 'md', view: 'both', showLegend: true })
+                  : '')
+              : animationSvgHtml}
+          </div>
+
+          <div class="runner-sticky-cue">
+            <span class="runner-sticky-cue-icon">${renderIcon('lightbulb', 'cx-icon cx-icon-xs')}</span>
+            <p class="runner-sticky-cue-text">${activeExTip}</p>
           </div>
         </div>
 
-        <!-- CENTER: Session Timer (Readable, not dominant) -->
-        <div class="runner-header-center">
-          <div class="runner-timer-pill mono" id="workout-elapsed-time" role="timer" aria-label="Session Elapsed Time">
-            ${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-xs')}
-            <span>${fmtSecs(elapsedSec)}</span>
-            ${isPaused ? `<span class="runner-paused-badge">PAUSED</span>` : ''}
-          </div>
-        </div>
+        ${upNextCardHtml}
+      </aside>
 
-        <!-- RIGHT: Secondary Action (Settings/Options) + Finish Workout -->
-        <div class="runner-header-right">
-          <button class="runner-header-opt-btn" onclick="openSettingsModal()" aria-label="Workout Settings & Options" title="Options">
-            ${renderIcon('settings', 'cx-icon cx-icon-xs')}
-          </button>
-          <button class="runner-finish-btn" onclick="finishWorkoutSession()" aria-label="Finish Workout" title="Complete and log session">
-            ${renderIcon('flag', 'cx-icon cx-icon-xs cx-icon-inline')}
-            <span>Finish</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 2. Overall Workout & Exercise Progress Hierarchy -->
-      <div class="runner-progress-container">
-        <div class="runner-progress-labels">
-          <div class="runner-exercise-progress">
-            <span class="runner-exercise-count">Exercise ${activeExIdx + 1} of ${session.exercises.length}</span>
-          </div>
-          <div class="runner-overall-progress">
-            <span class="runner-set-counter mono">${completedSets} / ${totalSets} sets</span>
-            <span class="runner-progress-dot">·</span>
-            <span class="runner-pct mono">${pct}%</span>
-          </div>
-        </div>
-        <div class="runner-progress-bar-track">
-          <div class="runner-progress-bar-fill" style="width: ${pct}%;"></div>
-        </div>
-      </div>
-
-      ${restCountdownHtml}
-
-      <!-- 3. Active Exercise Stage Card -->
-      <div class="runner-stage-card">
-        <!-- 1. Header: Set Pill + Exercise Name + Context -->
-        <div class="runner-stage-header">
-          <div class="runner-stage-title-wrap">
-            <span class="runner-set-pill">SET ${activeSet.set_num} OF ${activeEx.sets.length}</span>
-            <h1 class="runner-exercise-name">${activeEx.exercise_name}</h1>
-            <div class="runner-exercise-context">${exerciseContextText}</div>
-          </div>
-          <div class="runner-stage-art" onclick="openBiomechanicsModal()" title="View Anatomy & Form Guide">
-            ${renderExerciseIllustrationSvg(activeEx)}
-          </div>
-        </div>
-
-        <!-- 2. Target & Last Session Performance Strip -->
-        <div class="runner-benchmarks">
-          <div class="runner-benchmark-col">
-            <span class="runner-benchmark-label">Target</span>
-            <span class="runner-benchmark-val mono">${targetVal} ${isHold ? 'sec' : 'reps'}</span>
-          </div>
-          <div class="runner-benchmark-col runner-benchmark-col-right">
-            <span class="runner-benchmark-label">Last Session</span>
-            <div class="runner-benchmark-val mono">${lastPerfDesc}</div>
-            <span class="runner-benchmark-time">2 days ago</span>
-          </div>
-        </div>
-
-        <!-- 3. Current Input / Counter Zone (Context-Aware Visual Focal Point) -->
-        <div class="runner-hero-counter-zone">
-          <div class="runner-reps-stepper">
-            <button class="runner-reps-btn" type="button" ${isMinDisabled ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, -${stepDelta})" aria-label="Decrease ${unitText.toLowerCase()}">−</button>
-            <div class="runner-reps-digits-box">
-              <span class="runner-reps-num mono" id="workout-active-counter-digits">${isThisHoldRunning ? holdDisplaySec : currentActual}</span>
-              <span class="runner-reps-unit">${unitText}</span>
-              ${weightBadgeHtml}
+      <!-- RIGHT: Interactive Workout Controls Column -->
+      <div class="runner-main-controls-col">
+        <!-- 1. Top Navigation & Workout Session Header -->
+        <div class="runner-top-bar">
+          <!-- LEFT: Back / Leave + Routine Title + Session Info -->
+          <div class="runner-header-left">
+            <button class="runner-back-btn" onclick="switchView('home')" aria-label="Leave workout and return to Home" title="Leave Workout">
+              ${renderIcon('arrowLeft', 'cx-icon cx-icon-xs')}
+            </button>
+            <div class="runner-header-session-info">
+              <span class="runner-header-routine-title">${session.routine || session.workout_name || 'LEGS A'}</span>
+              <span class="runner-header-session-sub">${session.level ? `Level ${session.level}` : 'In Progress'}</span>
             </div>
-            <button class="runner-reps-btn" type="button" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, ${stepDelta})" aria-label="Increase ${unitText.toLowerCase()}">+</button>
           </div>
 
-          ${isHold ? `
-            <div class="runner-hold-live-control">
-              ${isThisHoldRunning ? `
-                <button class="runner-ring-btn running" id="workout-active-hold-btn" type="button" onclick="stopWorkoutHold(true)">
-                  ${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} STOP HOLD (${holdDisplaySec}s)
-                </button>
-              ` : `
-                <button class="runner-ring-btn" id="workout-active-hold-btn" type="button" ${isPaused ? 'disabled' : ''} onclick="startWorkoutHold(${activeExIdx}, ${activeSetIdx})">
-                  ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} START LIVE HOLD TIMER
-                </button>
-              `}
+          <!-- CENTER: Session Timer (Interactive Pause / Resume Toggle) -->
+          <div class="runner-header-center">
+            <div class="runner-timer-pill mono ${isPaused ? 'paused' : ''}" id="workout-elapsed-time" role="timer" aria-label="Session Elapsed Time (Tap to Pause or Resume)" onclick="togglePauseWorkoutSession()" style="cursor:pointer;" title="${isPaused ? 'Click to Resume Workout' : 'Click to Pause Workout'}">
+              ${renderIcon(isPaused ? 'play' : 'timer', 'cx-icon cx-icon-inline cx-icon-xs')}
+              <span id="workout-elapsed-val" class="runner-timer-text">${fmtSecs(elapsedSec)}</span>
+              ${isPaused ? `<span class="runner-paused-badge">PAUSED</span>` : ''}
             </div>
-          ` : ''}
+          </div>
+
+          <!-- RIGHT: Secondary Action (Settings/Options) + Finish Workout -->
+          <div class="runner-header-right">
+            <button class="runner-header-opt-btn" onclick="openSettingsModal()" aria-label="Workout Settings & Options" title="Options">
+              ${renderIcon('settings', 'cx-icon cx-icon-xs')}
+            </button>
+            <button class="runner-finish-btn" onclick="finishWorkoutSession()" aria-label="Finish Workout" title="Complete and log session">
+              ${renderIcon('flag', 'cx-icon cx-icon-xs cx-icon-inline')}
+              <span>Finish</span>
+            </button>
+          </div>
         </div>
 
-        <!-- 4. Primary Action CTA -->
-        <button class="runner-complete-action-btn" ${isPaused ? 'disabled' : ''} onclick="toggleWorkoutSet(${activeExIdx}, ${activeSetIdx})">
-          ${renderIcon('check', 'cx-icon cx-icon-inline cx-icon-md')} COMPLETE SET
-        </button>
-
-        <!-- 5. Set Details Accordion -->
-        <details class="runner-details-accordion">
-          <summary class="runner-details-summary">
-            <div class="runner-details-summary-text">
-              <span class="runner-details-title">Add set details</span>
-              <span class="runner-details-subtitle">Weight · RPE · Notes</span>
+        <!-- 2. Overall Workout & Exercise Progress Hierarchy -->
+        <div class="runner-progress-container">
+          <div class="runner-progress-labels">
+            <div class="runner-exercise-progress">
+              <span class="runner-exercise-count">Exercise ${activeExIdx + 1} of ${session.exercises.length}</span>
             </div>
-            ${renderIcon('chevronDown', 'cx-icon cx-icon-xs cx-icon-muted')}
-          </summary>
-          <div class="runner-details-body">
-            <div class="runner-form-row">
-              <div class="runner-form-field">
-                <label>Added Weight (+kg)</label>
-                <input type="number" min="0" step="0.5" placeholder="0 kg" value="${activeSet.weight_kg || ''}" onchange="updateWorkoutSetWeight(${activeExIdx}, ${activeSetIdx}, this.value)" class="form-input mono">
+            <div class="runner-overall-progress">
+              <span class="runner-set-counter mono">${completedSets} / ${totalSets} sets</span>
+              <span class="runner-progress-dot">·</span>
+              <span class="runner-pct mono">${pct}%</span>
+            </div>
+          </div>
+          <div class="runner-progress-bar-track">
+            <div class="runner-progress-bar-fill" style="width: ${pct}%;"></div>
+          </div>
+        </div>
+
+        ${restCountdownHtml}
+
+        <!-- 3. Active Exercise Stage Card -->
+        <div class="runner-stage-card">
+          <!-- 1. Header: Set Stepper + Exercise Name + Context -->
+          <div class="runner-stage-header">
+            <div class="runner-stage-title-wrap">
+              <div class="runner-set-stepper-wrap">
+                <span class="runner-set-badge mono">SET ${activeSet.set_num} / ${activeEx.sets.length}</span>
+                <div class="runner-set-pips-track" role="progressbar" aria-valuenow="${activeEx.sets.filter(s => s.completed).length}" aria-valuemax="${activeEx.sets.length}" title="${activeEx.sets.filter(s => s.completed).length} of ${activeEx.sets.length} sets completed">
+                  ${activeEx.sets.map((s, sIdx) => {
+                    const isCompleted = s.completed;
+                    const isCurrent = sIdx === activeSetIdx;
+                    let pipClass = 'upcoming';
+                    if (isCompleted) pipClass = 'completed';
+                    else if (isCurrent) pipClass = 'current';
+                    return `<div class="runner-set-pip ${pipClass}" title="Set ${sIdx + 1}: ${isCompleted ? 'Completed' : (isCurrent ? 'Current' : 'Upcoming')}"></div>`;
+                  }).join('')}
+                </div>
               </div>
-              <div class="runner-form-field">
-                <label>RPE (1–10 Effort)</label>
-                <select onchange="updateWorkoutSetRPE(${activeExIdx}, ${activeSetIdx}, this.value)" class="form-input form-select mono">
-                  <option value="">RPE (Optional)</option>
-                  <option value="6" ${activeSet.rpe == 6 ? 'selected' : ''}>RPE 6 (~4 in reserve)</option>
-                  <option value="7" ${activeSet.rpe == 7 ? 'selected' : ''}>RPE 7 (~3 in reserve)</option>
-                  <option value="8" ${activeSet.rpe == 8 ? 'selected' : ''}>RPE 8 (~2 in reserve)</option>
-                  <option value="9" ${activeSet.rpe == 9 ? 'selected' : ''}>RPE 9 (~1 in reserve)</option>
-                  <option value="10" ${activeSet.rpe == 10 ? 'selected' : ''}>RPE 10 (Max / Failure)</option>
-                </select>
-              </div>
+              <h1 class="runner-exercise-name">${activeEx.exercise_name}</h1>
+              <div class="runner-exercise-context">${exerciseContextText}</div>
+            </div>
+            <div class="runner-stage-art" onclick="openBiomechanicsModal()" title="View Anatomy & Form Guide">
+              ${renderExerciseIllustrationSvg(activeEx)}
             </div>
           </div>
-        </details>
-      </div>
 
-      <!-- 4. Session Overview Exercise Sequence -->
-      <div class="runner-queue-section">
-        <div class="runner-queue-head">
-          <span class="runner-queue-tag">SESSION</span>
-          <span class="runner-queue-summary mono">${completedSets} / ${totalSets} sets</span>
+          <!-- 2. Target & Last Session Performance Strip -->
+          <div class="runner-benchmarks">
+            <div class="runner-benchmark-col">
+              <span class="runner-benchmark-label">Target</span>
+              <span class="runner-benchmark-val mono">${targetVal} ${isHold ? 'sec' : 'reps'}</span>
+            </div>
+            <div class="runner-benchmark-col runner-benchmark-col-right">
+              <span class="runner-benchmark-label">Last Session</span>
+              <div class="runner-benchmark-val mono">${lastPerfDesc}</div>
+              <span class="runner-benchmark-time">2 days ago</span>
+            </div>
+          </div>
+
+          <!-- 3. Current Input / Counter Zone (Context-Aware Visual Focal Point) -->
+          <div class="runner-hero-counter-zone">
+            <div class="runner-reps-stepper">
+              <button class="runner-reps-btn" type="button" ${isMinDisabled ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, -${stepDelta})" aria-label="Decrease ${unitText.toLowerCase()}">−</button>
+              <div class="runner-reps-digits-box">
+                <span class="runner-reps-num mono" id="workout-active-counter-digits">${isThisHoldRunning ? holdDisplaySec : currentActual}</span>
+                <span class="runner-reps-unit">${unitText}</span>
+                ${weightBadgeHtml}
+              </div>
+              <button class="runner-reps-btn" type="button" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, ${stepDelta})" aria-label="Increase ${unitText.toLowerCase()}">+</button>
+            </div>
+
+            <!-- Quick-Fill Performance Shortcut Chips -->
+            <div class="runner-quick-fill-bar">
+              <button class="runner-quick-fill-chip ${currentActual === lastVal ? 'active' : ''}" type="button" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="setWorkoutSetActualDirect(${activeExIdx}, ${activeSetIdx}, ${lastVal})" title="Fill last session's performance: ${lastVal} ${isHold ? 'sec' : 'reps'}">
+                ${renderIcon('history', 'cx-icon cx-icon-xs cx-icon-inline')} Same as last (${lastVal} ${isHold ? 's' : 'reps'})
+              </button>
+              ${targetVal !== lastVal ? `
+                <button class="runner-quick-fill-chip ${currentActual === targetVal ? 'active' : ''}" type="button" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="setWorkoutSetActualDirect(${activeExIdx}, ${activeSetIdx}, ${targetVal})" title="Reset to target: ${targetVal} ${isHold ? 'sec' : 'reps'}">
+                  ${renderIcon('target', 'cx-icon cx-icon-xs cx-icon-inline')} Target (${targetVal} ${isHold ? 's' : 'reps'})
+                </button>
+              ` : ''}
+            </div>
+
+            ${isHold ? `
+              <div class="runner-hold-live-control">
+                ${isThisHoldRunning ? `
+                  <button class="runner-ring-btn running" id="workout-active-hold-btn" type="button" onclick="stopWorkoutHold(true)">
+                    ${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} STOP HOLD (${holdDisplaySec}s)
+                  </button>
+                ` : `
+                  <button class="runner-ring-btn" id="workout-active-hold-btn" type="button" ${isPaused ? 'disabled' : ''} onclick="startWorkoutHold(${activeExIdx}, ${activeSetIdx})">
+                    ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} START LIVE HOLD TIMER
+                  </button>
+                `}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- 4. Primary Action CTA -->
+          <button class="runner-complete-action-btn" ${isPaused ? 'disabled' : ''} onclick="handleCompleteSetClick(event, ${activeExIdx}, ${activeSetIdx})">
+            ${renderIcon('check', 'cx-icon cx-icon-inline cx-icon-md runner-check-icon')} COMPLETE SET
+          </button>
+
+          <!-- 5. Set Details Accordion -->
+          <details class="runner-details-accordion">
+            <summary class="runner-details-summary">
+              <div class="runner-details-summary-text">
+                <span class="runner-details-title">Add set details</span>
+                <span class="runner-details-subtitle">Weight · RPE · Notes</span>
+              </div>
+              ${renderIcon('chevronDown', 'cx-icon cx-icon-xs cx-icon-muted')}
+            </summary>
+            <div class="runner-details-body">
+              <div class="runner-form-row">
+                <div class="runner-form-field">
+                  <label>Added Weight (+kg)</label>
+                  <input type="number" min="0" step="0.5" placeholder="0 kg" value="${activeSet.weight_kg || ''}" onchange="updateWorkoutSetWeight(${activeExIdx}, ${activeSetIdx}, this.value)" class="form-input mono">
+                </div>
+                <div class="runner-form-field">
+                  <label>RPE (1–10 Effort)</label>
+                  <select onchange="updateWorkoutSetRPE(${activeExIdx}, ${activeSetIdx}, this.value)" class="form-input form-select mono">
+                    <option value="">RPE (Optional)</option>
+                    <option value="6" ${activeSet.rpe == 6 ? 'selected' : ''}>RPE 6 (~4 in reserve)</option>
+                    <option value="7" ${activeSet.rpe == 7 ? 'selected' : ''}>RPE 7 (~3 in reserve)</option>
+                    <option value="8" ${activeSet.rpe == 8 ? 'selected' : ''}>RPE 8 (~2 in reserve)</option>
+                    <option value="9" ${activeSet.rpe == 9 ? 'selected' : ''}>RPE 9 (~1 in reserve)</option>
+                    <option value="10" ${activeSet.rpe == 10 ? 'selected' : ''}>RPE 10 (Max / Failure)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </details>
         </div>
 
-        <div class="runner-queue-list">
-          ${session.exercises.map((ex, exIdx) => {
-            const isDone = ex.sets.every(s => s.completed);
-            const doneCount = ex.sets.filter(s => s.completed).length;
-            const isCurrent = exIdx === activeExIdx;
-            const isHold = ex.exercise_type === 'duration';
-            const targetUnit = isHold ? 's' : ' reps';
-            const targetDisplay = `${ex.sets.length} sets × ${ex.sets[0]?.target_val || 10}${targetUnit}`;
+        <!-- 4. Session Overview Exercise Sequence -->
+        <div class="runner-queue-section">
+          <div class="runner-queue-head">
+            <span class="runner-queue-tag">SESSION</span>
+            <span class="runner-queue-summary mono">${completedSets} / ${totalSets} sets</span>
+          </div>
 
-            let stateClass = 'upcoming';
-            let iconHtml = '<span class="runner-seq-icon upcoming">○</span>';
+          <div class="runner-queue-list">
+            ${session.exercises.map((ex, exIdx) => {
+              const isDone = ex.sets.every(s => s.completed);
+              const doneCount = ex.sets.filter(s => s.completed).length;
+              const isCurrent = exIdx === activeExIdx;
+              const isHold = ex.exercise_type === 'duration';
+              const targetUnit = isHold ? 's' : ' reps';
+              const targetDisplay = `${ex.sets.length} sets × ${ex.sets[0]?.target_val || 10}${targetUnit}`;
 
-            if (isCurrent) {
-              stateClass = 'current';
-              iconHtml = '<span class="runner-seq-icon current">●</span>';
-            } else if (isDone) {
-              stateClass = 'completed';
-              iconHtml = `<span class="runner-seq-icon completed">${renderIcon('check', 'cx-icon cx-icon-xs')}</span>`;
-            }
+              let stateClass = 'upcoming';
+              let iconHtml = '<span class="runner-seq-icon upcoming">○</span>';
 
-            return `
-              <div class="runner-seq-row ${stateClass}" onclick="selectWorkoutQueueExercise(${exIdx})" title="Select ${ex.exercise_name}">
-                <div class="runner-seq-left">
-                  ${iconHtml}
-                  <div class="runner-seq-info">
-                    <span class="runner-seq-name">${ex.exercise_name}</span>
-                    <span class="runner-seq-sub">${targetDisplay}</span>
+              if (isCurrent) {
+                stateClass = 'current';
+                iconHtml = '<span class="runner-seq-icon current">●</span>';
+              } else if (isDone) {
+                stateClass = 'completed';
+                iconHtml = `<span class="runner-seq-icon completed">${renderIcon('check', 'cx-icon cx-icon-xs')}</span>`;
+              }
+
+              return `
+                <div class="runner-seq-row ${stateClass}" onclick="selectWorkoutQueueExercise(${exIdx})" title="Select ${ex.exercise_name}">
+                  <div class="runner-seq-left">
+                    ${iconHtml}
+                    <div class="runner-seq-info">
+                      <span class="runner-seq-name">${ex.exercise_name}</span>
+                      <span class="runner-seq-sub">${targetDisplay}</span>
+                    </div>
+                  </div>
+                  <div class="runner-seq-right">
+                    <span class="runner-seq-count mono">${doneCount}/${ex.sets.length}</span>
                   </div>
                 </div>
-                <div class="runner-seq-right">
-                  <span class="runner-seq-count mono">${doneCount}/${ex.sets.length}</span>
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-
-        <div class="runner-coach-tip">
-          <div class="runner-coach-tip-icon">${renderIcon('lightbulb', 'cx-icon cx-icon-xs')}</div>
-          <div class="runner-coach-tip-text">
-            <strong>Form Cue:</strong> ${activeExTip}
+              `;
+            }).join('')}
           </div>
-        </div>
 
-        <div style="margin-top:20px; display:flex; justify-content:center;">
-          <button class="runner-discard-btn" type="button" onclick="openDiscardWorkoutModal()" aria-label="Discard workout session">
-            ${renderIcon('trash', 'cx-icon cx-icon-xs cx-icon-inline')} Discard workout
-          </button>
+          <div class="runner-coach-tip">
+            <div class="runner-coach-tip-icon">${renderIcon('lightbulb', 'cx-icon cx-icon-xs')}</div>
+            <div class="runner-coach-tip-text">
+              <strong>Form Cue:</strong> ${activeExTip}
+            </div>
+          </div>
+
+          <div style="margin-top:20px; display:flex; justify-content:center;">
+            <button class="runner-discard-btn" type="button" onclick="openDiscardWorkoutModal()" aria-label="Discard workout session">
+              ${renderIcon('trash', 'cx-icon cx-icon-xs cx-icon-inline')} Discard workout
+            </button>
+          </div>
         </div>
       </div>
     </div>`;

@@ -57,6 +57,9 @@ async function init() {
   const savedActive = getActiveSession();
   if (savedActive && savedActive.status === 'in_progress') {
     state.activeSession = savedActive;
+    if (typeof startWorkoutDurationTimer === 'function') {
+      startWorkoutDurationTimer();
+    }
   }
 
   // Restore mute preference from localStorage

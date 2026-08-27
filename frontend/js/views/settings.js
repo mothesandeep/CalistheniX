@@ -391,11 +391,327 @@ function renderCalendarView() {
 
 // ─── Biomechanics & Technique Form Guide Modal ──────────────────────────────
 
+let _guideSelectedMuscle = 'chest';
+let _guideView = 'front'; // 'front' | 'back' | 'both'
+let _guideCategory = 'all'; // 'all' | 'upper' | 'core' | 'lower'
+
+const MUSCLE_ANATOMY_GUIDE = {
+  chest: {
+    key: 'chest',
+    name: 'Chest / Pectorals',
+    latin: 'Pectoralis Major & Minor',
+    view: 'front',
+    category: 'upper',
+    movement_pattern: 'push_horizontal',
+    function: 'Horizontal shoulder adduction, shoulder flexion, and internal rotation during pushing movements.',
+    cue: 'Keep shoulder blades retracted and depressed; push the ground away with intentional chest contraction.',
+    exercises: ['Standard Push-ups', 'Diamond Push-ups', 'Archer Push-ups', 'Decline Push-ups', 'Triceps Dips']
+  },
+  front_delts: {
+    key: 'front_delts',
+    name: 'Front Deltoids',
+    latin: 'Anterior Deltoid',
+    view: 'front',
+    category: 'upper',
+    movement_pattern: 'push_vertical',
+    function: 'Shoulder flexion and overhead vertical pressing power; essential for handstands and pike push-ups.',
+    cue: 'Keep forearms perpendicular to the floor and maintain slight external shoulder torque.',
+    exercises: ['Pike Push-ups', 'Pike Push-ups Elevated', 'Handstand Push-up Progression', 'Standard Push-ups']
+  },
+  side_delts: {
+    key: 'side_delts',
+    name: 'Side Deltoids',
+    latin: 'Lateral Deltoid',
+    view: 'front',
+    category: 'upper',
+    movement_pattern: 'isolation_lateral',
+    function: 'Shoulder abduction; creates lateral shoulder width, aesthetic frame, and upper V-taper symmetry.',
+    cue: 'Lead the movement with elbows slightly higher than hands with a slight torso lean.',
+    exercises: ['Lateral Raise', 'Pike Push-ups', 'Wall Angels', 'Archer Push-ups']
+  },
+  rear_delts: {
+    key: 'rear_delts',
+    name: 'Rear Deltoids',
+    latin: 'Posterior Deltoid',
+    view: 'back',
+    category: 'upper',
+    movement_pattern: 'pull_horizontal',
+    function: 'Horizontal shoulder abduction and external rotation; vital for posture and shoulder health.',
+    cue: 'Pull elbows wide and squeeze shoulder blades back without excessively shrugging traps.',
+    exercises: ['Face Pulls', 'Prone Y-raises', 'Pull-ups Wide Grip', 'Inverted Rows', 'Wall Angels']
+  },
+  biceps: {
+    key: 'biceps',
+    name: 'Biceps Brachii',
+    latin: 'Biceps Brachii & Brachialis',
+    view: 'front',
+    category: 'upper',
+    movement_pattern: 'pull_vertical',
+    function: 'Elbow flexion and forearm supination; heavily recruited in underhand pulling and front levers.',
+    cue: 'Achieve a full dead-hang stretch at the bottom and pull chin cleanly over the bar.',
+    exercises: ['Chin-ups', 'Close-Grip Chin-ups', 'Commando Pull-ups', 'Negative Pull-ups', 'Biceps Curls']
+  },
+  triceps: {
+    key: 'triceps',
+    name: 'Triceps Brachii',
+    latin: 'Triceps Brachii (Long, Lateral, Medial)',
+    view: 'back',
+    category: 'upper',
+    movement_pattern: 'push_dip',
+    function: 'Elbow extension and lockout force across all pushing, dipping, and handstand progressions.',
+    cue: 'Squeeze triceps hard at lockout without locking out elbow joint aggressively.',
+    exercises: ['Triceps Dips', 'Diamond Push-ups', 'Handstand Push-up Progression', 'Standard Push-ups']
+  },
+  forearms: {
+    key: 'forearms',
+    name: 'Forearms & Grip',
+    latin: 'Flexor & Extensor Carpi Complex',
+    view: 'both',
+    category: 'upper',
+    movement_pattern: 'hanging',
+    function: 'Crush grip strength, wrist stabilization, and endurance on pull-up bars and rings.',
+    cue: 'Wrap thumb securely around bar and squeeze with maximum grip tension throughout each rep.',
+    exercises: ['Dead Hang', 'Pull-ups', 'Chin-ups', 'Hanging Knee Raises', 'L-sit Hang']
+  },
+  abs: {
+    key: 'abs',
+    name: 'Abs (Rectus Abdominis)',
+    latin: 'Rectus Abdominis (6-Pack)',
+    view: 'front',
+    category: 'core',
+    movement_pattern: 'core',
+    function: 'Spinal flexion, pelvic stabilization, and anti-extension core rigidity in hollow body holds.',
+    cue: 'Lock in posterior pelvic tilt (tuck tailbone under) and pull belly button firmly toward spine.',
+    exercises: ['Hanging Leg Raises', 'Hanging Knee Raises', 'Hollow Body Hold', 'Plank', 'L-sit Hang']
+  },
+  obliques: {
+    key: 'obliques',
+    name: 'Obliques & Serratus',
+    latin: 'Internal/External Obliques & Serratus',
+    view: 'front',
+    category: 'core',
+    movement_pattern: 'core',
+    function: 'Lateral trunk flexion, rotational power, and ribcage stabilization during asymmetrical holds.',
+    cue: 'Keep hips stacked vertically during side planks; rotate with control from thoracic spine.',
+    exercises: ['Side Plank', 'Russian Twists', 'Hanging Leg Raises', 'L-sit Hang', 'Archer Push-ups']
+  },
+  lats: {
+    key: 'lats',
+    name: 'Lats (V-Taper)',
+    latin: 'Latissimus Dorsi',
+    view: 'back',
+    category: 'upper',
+    movement_pattern: 'pull_vertical',
+    function: 'Shoulder adduction, extension, and scapular depression in vertical pulling.',
+    cue: 'Drive elbows down and back toward your back pockets rather than pulling with the hands.',
+    exercises: ['Pull-ups Wide Grip', 'Pull-ups', 'Chin-ups', 'Dead Hang', 'Negative Pull-ups']
+  },
+  traps: {
+    key: 'traps',
+    name: 'Trapezius',
+    latin: 'Trapezius (Upper, Middle, Lower)',
+    view: 'back',
+    category: 'upper',
+    movement_pattern: 'pull_horizontal',
+    function: 'Scapular elevation, retraction, upward rotation, and upper spine structural stability.',
+    cue: 'Retract scapulae smoothly; avoid tense upper neck shrugging during pulling movements.',
+    exercises: ['Scapular Pulls', 'Prone Y-raises', 'Face Pulls', 'Pike Push-ups Elevated', 'Wall Angels']
+  },
+  lower_back: {
+    key: 'lower_back',
+    name: 'Lower Back',
+    latin: 'Erector Spinae Group',
+    view: 'back',
+    category: 'core',
+    movement_pattern: 'hinge',
+    function: 'Spinal extension, posture retention, and posterior chain core endurance.',
+    cue: 'Maintain neutral lumbar alignment and brace transverse abdominis simultaneously.',
+    exercises: ['Single-leg Glute Bridges', 'Glute Bridges Single Leg', 'Russian Twists', 'Superman Hold']
+  },
+  glutes: {
+    key: 'glutes',
+    name: 'Gluteus Maximus',
+    latin: 'Gluteus Maximus & Medius',
+    view: 'back',
+    category: 'lower',
+    movement_pattern: 'squat',
+    function: 'Hip extension, abduction, external rotation, and explosive single-leg drive.',
+    cue: 'Push forcefully through mid-foot and heel, squeezing glutes hard at the top of each rep.',
+    exercises: ['Bulgarian Split Squats', 'Single-leg Glute Bridges', 'Walking Lunges', 'Pistol Squats']
+  },
+  quads: {
+    key: 'quads',
+    name: 'Quadriceps',
+    latin: 'Rectus Femoris, Vastus Lateralis/Medialis',
+    view: 'front',
+    category: 'lower',
+    movement_pattern: 'squat',
+    function: 'Knee extension and eccentric deceleration in squats, lunges, and wall sits.',
+    cue: 'Keep knee tracking over second toe; maintain tall upright chest posture.',
+    exercises: ['Pistol Squat Progression', 'Bulgarian Split Squats', 'Jump Squats', 'Wall Sit', 'Walking Lunges']
+  },
+  hamstrings: {
+    key: 'hamstrings',
+    name: 'Hamstrings',
+    latin: 'Biceps Femoris & Semitendinosus',
+    view: 'back',
+    category: 'lower',
+    movement_pattern: 'hinge',
+    function: 'Knee flexion, hip extension, and decelerating forward lunge momentum.',
+    cue: 'Control the eccentric descent to feel loaded hamstring tension before driving upward.',
+    exercises: ['Single-leg Glute Bridges', 'Glute Bridges Single Leg', 'Bulgarian Split Squats', 'Walking Lunges']
+  },
+  calves: {
+    key: 'calves',
+    name: 'Calves & Tibialis',
+    latin: 'Gastrocnemius, Soleus & Tibialis Anterior',
+    view: 'both',
+    category: 'lower',
+    movement_pattern: 'isolation_calf',
+    function: 'Ankle plantarflexion and dorsiflexion for balance, sprint propulsion, and jump landings.',
+    cue: 'Full stretch at the bottom followed by a 1-second squeeze at the apex on balls of feet.',
+    exercises: ['Calf Raises', 'Standing Calf Raises', 'Jump Squats', 'Pistol Squats', 'Walking Lunges']
+  }
+};
+
+function getExercisesForMuscle(muscleKey) {
+  const normKey = (muscleKey || '').toLowerCase().replace(/[- ]/g, '_');
+  const allDbExercises = (typeof state !== 'undefined' && Array.isArray(state.exercises) && state.exercises.length)
+    ? state.exercises
+    : [];
+
+  const results = [];
+  const seenNames = new Set();
+
+  // 1. Query database exercises
+  allDbExercises.forEach(ex => {
+    const exName = ex.name || ex.exercise_name || '';
+    const pattern = ex.movement_pattern || '';
+    const m = (typeof window !== 'undefined' && window.MuscleMap)
+      ? window.MuscleMap.getExerciseMuscles(exName, pattern)
+      : { primary: [], secondary: [] };
+
+    const p = (m.primary || []).map(k => k.toLowerCase().replace(/[- ]/g, '_'));
+    const s = (m.secondary || []).map(k => k.toLowerCase().replace(/[- ]/g, '_'));
+
+    const isPrimary = p.includes(normKey) || (normKey === 'chest' && p.some(k => k.includes('chest'))) || (normKey === 'core' && (p.includes('abs') || p.includes('obliques')));
+    const isSecondary = s.includes(normKey) || (normKey === 'chest' && s.some(k => k.includes('chest'))) || (normKey === 'core' && (s.includes('abs') || s.includes('obliques')));
+
+    if (isPrimary || isSecondary) {
+      results.push({
+        id: ex.id,
+        name: exName,
+        day: ex.day || 'Custom Split',
+        type: ex.type === 'duration' ? 'Hold Time' : 'Reps Target',
+        pattern: ex.movement_pattern ? ex.movement_pattern.replace(/_/g, ' ') : '',
+        role: isPrimary ? 'primary' : 'secondary',
+        roleLabel: isPrimary ? 'Primary' : 'Stabilizer'
+      });
+      seenNames.add(exName.toLowerCase());
+    }
+  });
+
+  // 2. Supplement from static map if any are missing
+  if (typeof window !== 'undefined' && window.MuscleMap && window.MuscleMap.EXERCISE_MUSCLE_MAP) {
+    Object.entries(window.MuscleMap.EXERCISE_MUSCLE_MAP).forEach(([exName, mapping]) => {
+      if (!seenNames.has(exName.toLowerCase())) {
+        const p = (mapping.primary || []).map(k => k.toLowerCase().replace(/[- ]/g, '_'));
+        const s = (mapping.secondary || []).map(k => k.toLowerCase().replace(/[- ]/g, '_'));
+        const isPrimary = p.includes(normKey);
+        const isSecondary = s.includes(normKey);
+        if (isPrimary || isSecondary) {
+          results.push({
+            id: null,
+            name: exName,
+            day: 'Catalog',
+            type: 'Reps Target',
+            pattern: '',
+            role: isPrimary ? 'primary' : 'secondary',
+            roleLabel: isPrimary ? 'Primary' : 'Stabilizer'
+          });
+          seenNames.add(exName.toLowerCase());
+        }
+      }
+    });
+  }
+
+  // Sort: Primary agonists first, then by routine day
+  results.sort((a, b) => {
+    if (a.role === 'primary' && b.role !== 'primary') return -1;
+    if (a.role !== 'primary' && b.role === 'primary') return 1;
+    return a.day.localeCompare(b.day);
+  });
+
+  return results;
+}
+
+function selectGuideMuscle(muscleKey) {
+  _guideSelectedMuscle = muscleKey;
+  const muscleData = MUSCLE_ANATOMY_GUIDE[muscleKey];
+
+  if (muscleData) {
+    // Automatically switch view if selected muscle is not visible in current view
+    if (_guideView !== 'both') {
+      if (muscleData.view === 'front' && _guideView !== 'front') {
+        _guideView = 'front';
+      } else if (muscleData.view === 'back' && _guideView !== 'back') {
+        _guideView = 'back';
+      }
+    }
+  }
+
+  const modalBody = document.getElementById('biomechanics-modal-body');
+  if (modalBody && _biomechanicsTab === 'anatomy') {
+    modalBody.innerHTML = renderBiomechanicsTabContent('anatomy');
+    bindGuideSvgInteractions();
+  }
+}
+
+function setGuideView(view) {
+  _guideView = view;
+  const modalBody = document.getElementById('biomechanics-modal-body');
+  if (modalBody && _biomechanicsTab === 'anatomy') {
+    modalBody.innerHTML = renderBiomechanicsTabContent('anatomy');
+    bindGuideSvgInteractions();
+  }
+}
+
+function setGuideCategory(cat) {
+  _guideCategory = cat;
+  const modalBody = document.getElementById('biomechanics-modal-body');
+  if (modalBody && _biomechanicsTab === 'anatomy') {
+    modalBody.innerHTML = renderBiomechanicsTabContent('anatomy');
+    bindGuideSvgInteractions();
+  }
+}
+
+function bindGuideSvgInteractions() {
+  const container = document.getElementById('bio-guide-svg-stage');
+  if (!container) return;
+
+  const parts = container.querySelectorAll('.muscle, .cx-muscle-part, [data-muscle]');
+  parts.forEach(p => {
+    p.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const m = p.dataset.muscle || p.id || '';
+      const norm = m.replace(/_left|_right|_lateral|_medial|_upper|_mid|_lower|_front|_back/g, '');
+      if (MUSCLE_ANATOMY_GUIDE[norm]) {
+        selectGuideMuscle(norm);
+      } else if (MUSCLE_ANATOMY_GUIDE[m]) {
+        selectGuideMuscle(m);
+      }
+    });
+  });
+}
+
 function setBiomechanicsTab(tab) {
   _biomechanicsTab = tab;
   const modalBody = document.getElementById('biomechanics-modal-body');
   if (modalBody) {
     modalBody.innerHTML = renderBiomechanicsTabContent(tab);
+    if (tab === 'anatomy') {
+      bindGuideSvgInteractions();
+    }
   }
   document.querySelectorAll('.bio-tab-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tab);
@@ -404,19 +720,153 @@ function setBiomechanicsTab(tab) {
 
 function renderBiomechanicsTabContent(tab) {
   if (tab === 'anatomy') {
-    return `
-      <div style="display:flex; flex-direction:column; gap:16px;">
-        <p style="font-size:13px; color:var(--text-muted); margin:0;">
-          Targeted muscle groups with dynamic anatomical activation. Highlighted regions indicate primary agonists and secondary stabilizers for each training split.
-        </p>
-        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px;">
-          <div class="card" style="padding:18px; text-align:center; background:var(--surface-2);">
-            <span style="font-size:12px; font-weight:700; color:var(--text); text-transform:uppercase; margin-bottom:12px; display:block;">Upper Body (Push & Pull)</span>
-            ${renderDualMuscleBodySvg({ label: 'Chest, Back, Arms', frontMuscles: ['chest', 'shoulders', 'biceps', 'triceps', 'abs'], backMuscles: ['upper_back', 'lats', 'triceps'] })}
+    const selected = MUSCLE_ANATOMY_GUIDE[_guideSelectedMuscle] || MUSCLE_ANATOMY_GUIDE.chest;
+    const activeMuscles = [selected.key];
+
+    // Filter muscle chips based on category
+    const allMuscles = Object.values(MUSCLE_ANATOMY_GUIDE);
+    const filteredMuscles = allMuscles.filter(m => {
+      if (_guideCategory === 'all') return true;
+      return m.category === _guideCategory;
+    });
+
+    // Generate chips HTML
+    const chipsHtml = filteredMuscles.map(m => {
+      const isAct = m.key === selected.key;
+      return `
+        <button class="bio-muscle-chip ${isAct ? 'active' : ''}" onclick="selectGuideMuscle('${m.key}')" title="Click to view ${m.name}">
+          <span class="bio-chip-dot"></span>
+          <span>${m.name}</span>
+        </button>
+      `;
+    }).join('');
+
+    // Generate SVG Diagram based on current view
+    let svgHtml = '';
+    if (typeof window !== 'undefined' && window.MuscleMap) {
+      if (_guideView === 'front') {
+        svgHtml = `
+          <div style="width:100%; max-width:210px; height:310px; display:flex; flex-direction:column; align-items:center;">
+            <span style="font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Anterior (Front View)</span>
+            ${window.MuscleMap.renderFrontSVG(activeMuscles, [])}
+          </div>`;
+      } else if (_guideView === 'back') {
+        svgHtml = `
+          <div style="width:100%; max-width:210px; height:310px; display:flex; flex-direction:column; align-items:center;">
+            <span style="font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px;">Posterior (Back View)</span>
+            ${window.MuscleMap.renderBackSVG(activeMuscles, [])}
+          </div>`;
+      } else {
+        svgHtml = `
+          <div style="display:flex; justify-content:center; align-items:center; gap:16px; width:100%; height:310px;">
+            <div style="width:48%; max-width:130px; display:flex; flex-direction:column; align-items:center;">
+              <span style="font-size:9px; font-weight:700; color:var(--text-dim); text-transform:uppercase; margin-bottom:2px;">Front</span>
+              ${window.MuscleMap.renderFrontSVG(activeMuscles, [])}
+            </div>
+            <div style="width:48%; max-width:130px; display:flex; flex-direction:column; align-items:center;">
+              <span style="font-size:9px; font-weight:700; color:var(--text-dim); text-transform:uppercase; margin-bottom:2px;">Back</span>
+              ${window.MuscleMap.renderBackSVG(activeMuscles, [])}
+            </div>
+          </div>`;
+      }
+    }
+
+    // Database exercises targeting this muscle
+    const dbExercises = getExercisesForMuscle(selected.key);
+    const dbExListHtml = dbExercises.length ? dbExercises.map(ex => `
+      <div class="bio-ex-item" title="${ex.name} (${ex.day})">
+        <div class="bio-ex-info">
+          <span class="bio-ex-name">${ex.name}</span>
+          <div class="bio-ex-meta">
+            <span class="bio-ex-split-tag">${ex.day}</span>
+            <span>·</span>
+            <span>${ex.type}</span>
+            ${ex.pattern ? `<span>·</span><span style="text-transform:capitalize;">${ex.pattern}</span>` : ''}
           </div>
-          <div class="card" style="padding:18px; text-align:center; background:var(--surface-2);">
-            <span style="font-size:12px; font-weight:700; color:var(--text); text-transform:uppercase; margin-bottom:12px; display:block;">Lower Body (Legs & Posterior)</span>
-            ${renderDualMuscleBodySvg({ label: 'Quads, Glutes, Calves', frontMuscles: ['quads', 'abs'], backMuscles: ['glutes', 'hamstrings', 'calves'] })}
+        </div>
+        <span class="bio-ex-role ${ex.role}">
+          <span style="width:5px; height:5px; border-radius:50%; background:currentColor;"></span>
+          ${ex.roleLabel}
+        </span>
+      </div>
+    `).join('') : `
+      <div style="padding:14px; text-align:center; color:var(--text-muted); font-size:12px; background:rgba(255,255,255,0.02); border-radius:8px;">
+        No specific exercises assigned in current split for this group.
+      </div>
+    `;
+
+    return `
+      <div class="bio-guide-container">
+        <!-- Controls: View Switcher & Category Filter -->
+        <div class="bio-guide-controls-row">
+          <div class="bio-guide-view-tabs" role="tablist" aria-label="Anatomical View Selection">
+            <button class="bio-guide-view-btn ${_guideView === 'front' ? 'active' : ''}" onclick="setGuideView('front')">
+              Front (Anterior)
+            </button>
+            <button class="bio-guide-view-btn ${_guideView === 'back' ? 'active' : ''}" onclick="setGuideView('back')">
+              Back (Posterior)
+            </button>
+            <button class="bio-guide-view-btn ${_guideView === 'both' ? 'active' : ''}" onclick="setGuideView('both')">
+              Both Views
+            </button>
+          </div>
+
+          <div class="prs-filter-pills" style="margin:0;">
+            <button class="prs-filter-btn ${_guideCategory === 'all' ? 'active' : ''}" onclick="setGuideCategory('all')">All</button>
+            <button class="prs-filter-btn ${_guideCategory === 'upper' ? 'active' : ''}" onclick="setGuideCategory('upper')">Upper Body</button>
+            <button class="prs-filter-btn ${_guideCategory === 'core' ? 'active' : ''}" onclick="setGuideCategory('core')">Core</button>
+            <button class="prs-filter-btn ${_guideCategory === 'lower' ? 'active' : ''}" onclick="setGuideCategory('lower')">Lower Body</button>
+          </div>
+        </div>
+
+        <!-- Selectable Muscle Chips / Pills List -->
+        <div class="bio-chips-wrapper" role="region" aria-label="Selectable Muscle Groups">
+          ${chipsHtml}
+        </div>
+
+        <!-- Main Grid: SVG Figure on Left + Biomechanics Info & DB Exercises on Right -->
+        <div class="bio-guide-main-grid">
+          <!-- Diagram Stage (Clickable Vector Anatomy) -->
+          <div class="bio-diagram-card" id="bio-guide-svg-stage" title="Click any muscle directly on the diagram to inspect">
+            ${svgHtml}
+            <div style="font-size:11px; color:var(--text-dim); margin-top:8px; display:flex; align-items:center; gap:5px;">
+              <svg class="cx-icon cx-icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span>Tip: Click any muscle in diagram to inspect</span>
+            </div>
+          </div>
+
+          <!-- Biomechanics Detail & Exercise Discovery Card -->
+          <div class="bio-details-card">
+            <div class="bio-detail-header">
+              <div>
+                <h3 class="bio-detail-title">${selected.name}</h3>
+                <span class="bio-detail-latin">${selected.latin}</span>
+              </div>
+              <span class="bio-detail-badge">${selected.view.toUpperCase()} VIEW · ${selected.category.toUpperCase()}</span>
+            </div>
+
+            <div>
+              <div class="bio-field-label">Anatomical Action & Movement Biomechanics</div>
+              <p class="bio-field-text">${selected.function}</p>
+            </div>
+
+            <div>
+              <div class="bio-field-label">Mind-Muscle Coaching Cue</div>
+              <p class="bio-field-text" style="color:var(--accent); font-weight:500;">
+                "${selected.cue}"
+              </p>
+            </div>
+
+            <!-- Targeted Exercises in CalistheniX Database -->
+            <div class="bio-db-ex-section">
+              <div class="bio-db-ex-header">
+                <span class="bio-field-label" style="margin:0;">Targeting Exercises in Database (${dbExercises.length})</span>
+                <span style="font-size:11px; color:var(--text-dim);">Live Routine Integration</span>
+              </div>
+              <div class="bio-ex-list">
+                ${dbExListHtml}
+              </div>
+            </div>
           </div>
         </div>
       </div>`;
@@ -453,7 +903,17 @@ function renderBiomechanicsTabContent(tab) {
   }
 }
 
-function openBiomechanicsModal() {
+function openBiomechanicsModal(initialTab = 'anatomy', selectedMuscle = null) {
+  if (selectedMuscle && MUSCLE_ANATOMY_GUIDE[selectedMuscle]) {
+    _guideSelectedMuscle = selectedMuscle;
+    const mData = MUSCLE_ANATOMY_GUIDE[selectedMuscle];
+    if (mData && mData.view !== 'both') {
+      _guideView = mData.view;
+    }
+  }
+
+  _biomechanicsTab = initialTab || 'anatomy';
+
   let modal = document.getElementById('biomechanics-modal');
   if (!modal) {
     modal = document.createElement('div');
@@ -466,35 +926,50 @@ function openBiomechanicsModal() {
   }
 
   modal.innerHTML = `
-    <div class="modal-card" style="max-width:820px; width:92%;" onclick="event.stopPropagation()">
+    <div class="modal-card" style="max-width:860px; width:94%;" onclick="event.stopPropagation()">
       <div class="modal-header">
         <div>
           <span style="font-size:11px; font-weight:800; color:var(--accent); text-transform:uppercase; letter-spacing:0.1em;">Calisthenics Biomechanics</span>
-          <h2 class="modal-title" style="margin-top:2px;">Anatomy & Technique Guide</h2>
+          <h2 class="modal-title" style="margin-top:2px;">Anatomy & Technique Explorer</h2>
         </div>
         <button class="modal-close-btn" onclick="closeBiomechanicsModal()" title="Close">${renderIcon('x', 'cx-icon')}</button>
       </div>
 
       <div class="prs-filter-pills" style="margin:16px 0 14px;">
-        <button class="prs-filter-btn bio-tab-btn ${_biomechanicsTab === 'anatomy' ? 'active' : ''}" data-tab="anatomy" onclick="setBiomechanicsTab('anatomy')">Targeted Anatomy</button>
+        <button class="prs-filter-btn bio-tab-btn ${_biomechanicsTab === 'anatomy' ? 'active' : ''}" data-tab="anatomy" onclick="setBiomechanicsTab('anatomy')">Targeted Anatomy Explorer</button>
         <button class="prs-filter-btn bio-tab-btn ${_biomechanicsTab === 'stages' ? 'active' : ''}" data-tab="stages" onclick="setBiomechanicsTab('stages')">Movement Stages</button>
         <button class="prs-filter-btn bio-tab-btn ${_biomechanicsTab === 'tempo' ? 'active' : ''}" data-tab="tempo" onclick="setBiomechanicsTab('tempo')">Tempo & Posture</button>
         <button class="prs-filter-btn bio-tab-btn ${_biomechanicsTab === 'grip' ? 'active' : ''}" data-tab="grip" onclick="setBiomechanicsTab('grip')">Grip & Placement</button>
       </div>
 
-      <div id="biomechanics-modal-body" style="max-height:68vh; overflow-y:auto; padding-right:6px;">
+      <div id="biomechanics-modal-body" style="max-height:72vh; overflow-y:auto; padding-right:4px;">
         ${renderBiomechanicsTabContent(_biomechanicsTab)}
       </div>
     </div>`;
 
   modal.style.display = 'flex';
   if (document.body && document.body.style) document.body.style.overflow = 'hidden';
+
+  if (_biomechanicsTab === 'anatomy') {
+    bindGuideSvgInteractions();
+  }
 }
 
 function closeBiomechanicsModal() {
   const modal = document.getElementById('biomechanics-modal');
   if (modal) modal.style.display = 'none';
   if (document.body && document.body.style) document.body.style.overflow = '';
+}
+
+// Global exports for window access
+if (typeof window !== 'undefined') {
+  window.openBiomechanicsModal = openBiomechanicsModal;
+  window.closeBiomechanicsModal = closeBiomechanicsModal;
+  window.selectGuideMuscle = selectGuideMuscle;
+  window.setGuideView = setGuideView;
+  window.setGuideCategory = setGuideCategory;
+  window.getExercisesForMuscle = getExercisesForMuscle;
+  window.MUSCLE_ANATOMY_GUIDE = MUSCLE_ANATOMY_GUIDE;
 }
 
 

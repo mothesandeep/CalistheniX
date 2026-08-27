@@ -36,16 +36,38 @@ def create_exercise():
     if ex_type not in ('reps', 'duration'):
         return jsonify({'error': "type must be 'reps' or 'duration'"}), 400
 
+    movement_pattern = body.get('movement_pattern')
+    if not movement_pattern:
+        try:
+            from backend.app import EXERCISE_MOVEMENT_PATTERNS
+        except ImportError:
+            try:
+                from app import EXERCISE_MOVEMENT_PATTERNS
+            except ImportError:
+                EXERCISE_MOVEMENT_PATTERNS = {}
+        pattern = EXERCISE_MOVEMENT_PATTERNS.get(name.strip())
+        if pattern:
+            movement_pattern = pattern
+        elif 'Push' in day:
+            movement_pattern = 'push_horizontal'
+        elif 'Pull' in day:
+            movement_pattern = 'pull_vertical'
+        elif 'Leg' in day:
+            movement_pattern = 'squat'
+        else:
+            movement_pattern = 'push_horizontal'
+
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
             '''INSERT INTO exercises
-                   (name, day, type, prerequisite_id, next_id, progression_target_reps, progression_target_duration, progression_sessions_needed)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                   (name, day, type, movement_pattern, prerequisite_id, next_id, progression_target_reps, progression_target_duration, progression_sessions_needed)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
             (
                 name.strip(),
                 day.strip(),
                 ex_type.strip(),
+                movement_pattern.strip(),
                 body.get('prerequisite_id'),
                 body.get('next_id'),
                 body.get('progression_target_reps'),

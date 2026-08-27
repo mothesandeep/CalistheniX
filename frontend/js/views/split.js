@@ -423,6 +423,18 @@ function renderEditViewInner() {
   let workoutEditorHtml = '';
   if (selectedWorkout) {
     const exercises = selectedWorkout.exercises || [];
+
+    const workoutMuscles = { primary: [], secondary: [] };
+    exercises.forEach(ex => {
+      if (typeof window !== 'undefined' && window.MuscleMap) {
+        const m = window.MuscleMap.getExerciseMuscles(ex.exercise_name);
+        if (m && m.primary) workoutMuscles.primary.push(...m.primary);
+        if (m && m.secondary) workoutMuscles.secondary.push(...m.secondary);
+      }
+    });
+    workoutMuscles.primary = Array.from(new Set(workoutMuscles.primary));
+    workoutMuscles.secondary = Array.from(new Set(workoutMuscles.secondary.filter(s => !workoutMuscles.primary.includes(s))));
+
     const exerciseRowsHtml = exercises.map((ex, idx) => {
       const isHold = ex.exercise_type === 'duration';
       const targetVal = isHold ? (ex.duration_sec || 30) : (ex.reps || 10);
@@ -519,6 +531,19 @@ function renderEditViewInner() {
                 </select>
                 <button type="button" class="btn btn-secondary" onclick="addExerciseSlotToWorkout()">+ Add Exercise</button>
               </div>
+            </div>
+
+            <!-- Workout Target Muscle Activation Map -->
+            <div class="card" style="background:var(--surface-2); padding:16px; margin-bottom:20px; border:1px solid rgba(124,92,252,0.18);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-size:12.5px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:0.04em;">
+                  ${renderIcon('target', 'cx-icon cx-icon-xs cx-icon-inline')} Workout Target Muscle Activation Map
+                </span>
+                <span class="badge badge-reps" style="font-size:10.5px;">${workoutMuscles.primary.length} Primary Targets</span>
+              </div>
+              ${(typeof window !== 'undefined' && window.MuscleMap)
+                ? window.MuscleMap.render({ primaryMuscles: workoutMuscles.primary, secondaryMuscles: workoutMuscles.secondary, size: 'sm', view: 'both', showLegend: true })
+                : ''}
             </div>
 
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">

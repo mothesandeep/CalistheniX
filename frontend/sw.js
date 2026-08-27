@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calisthenix-v2.5';
+const CACHE_NAME = 'calisthenix-v2.7';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,7 @@ const STATIC_ASSETS = [
   './css/components.css',
   './js/state.js',
   './js/api.js',
+  './js/components/exerciseAnimation.js',
   './js/views/home.js',
   './js/views/workout.js',
   './js/views/history.js',
