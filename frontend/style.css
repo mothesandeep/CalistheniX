@@ -4816,70 +4816,98 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .runner-screen {
-  max-width: 740px;
+  max-width: 680px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  padding: 4px 0 28px;
 }
 
-/* ── 1. Top Navigation Bar ────────────────────────────────────────────────── */
+/* ── 1. Top Navigation Bar (3-Part Hierarchy: Left / Center / Right) ─────── */
 .runner-top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
+  padding: 4px 0 8px;
 }
 
-.runner-nav-btn {
-  background: rgba(255, 255, 255, 0.04);
+.runner-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.runner-back-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-muted);
-  border-radius: var(--radius);
-  padding: 8px 14px;
-  font-size: 13px;
-  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   transition: all var(--transition);
 }
 
-.runner-nav-btn:hover {
+.runner-back-btn:hover {
   background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.16);
   color: #ffffff;
 }
 
-.runner-header-center {
+.runner-header-session-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  gap: 1px;
+  min-width: 0;
 }
 
-.runner-routine-chip {
+.runner-header-routine-title {
   font-family: var(--font-heading);
   font-size: 15px;
   font-weight: 800;
   color: #ffffff;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-transform: uppercase;
 }
 
-.runner-timer-pill {
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 999px;
-  padding: 4px 14px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #e2e8f0;
+.runner-header-session-sub {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  line-height: 1.2;
+}
+
+.runner-header-center {
   display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.runner-timer-pill {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #cbd5e1;
+  letter-spacing: 0.02em;
 }
 
 .runner-paused-badge {
@@ -4892,17 +4920,20 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
   margin-left: 4px;
 }
 
-.runner-top-actions {
+.runner-header-right {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
-.runner-icon-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.04);
+.runner-header-opt-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-muted);
   cursor: pointer;
@@ -4912,103 +4943,269 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
   transition: all var(--transition);
 }
 
-.runner-icon-btn:hover {
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.2);
+.runner-header-opt-btn:hover {
   background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
 }
 
 .runner-finish-btn {
-  padding: 8px 16px;
-  font-size: 13px;
-  font-weight: 700;
-  background: var(--surface-2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  border-radius: var(--radius);
-  cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(124, 92, 252, 0.14);
+  border: 1px solid rgba(124, 92, 252, 0.32);
+  color: var(--accent-light, #a78bfa);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
   transition: all var(--transition);
+  letter-spacing: 0.02em;
 }
 
 .runner-finish-btn:hover {
-  background: var(--surface-3);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: none;
+  background: rgba(124, 92, 252, 0.24);
+  border-color: rgba(124, 92, 252, 0.5);
+  color: #ffffff;
+  transform: translateY(-1px);
 }
 
-/* ── 2. Segmented Progress Bar ────────────────────────────────────────────── */
+/* ── 2. Workout Overall & Exercise Progress Hierarchy ─────────────────────── */
 .runner-progress-container {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin: 4px 0;
+  margin: 4px 0 6px 0;
 }
 
 .runner-progress-labels {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+}
+
+.runner-exercise-progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.runner-exercise-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.01em;
+}
+
+.runner-overall-progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .runner-set-counter {
-  font-size: 13px;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: 0.06em;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
 }
 
-.runner-set-counter span {
-  color: var(--text-muted);
-  font-weight: 600;
+.runner-progress-dot {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1;
 }
 
 .runner-pct {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--text-muted);
+  color: #ffffff;
 }
 
-.runner-segmented-track {
-  display: flex;
-  gap: 5px;
+.runner-progress-bar-track {
   width: 100%;
-}
-
-.runner-seg-dot {
-  flex: 1;
-  height: 5px;
-  border-radius: 99px;
+  height: 4px;
   background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.runner-progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Sleek Non-Blocking Rest Timer Card ───────────────────────────────────── */
+.runner-rest-card {
+  background: rgba(124, 92, 252, 0.08);
+  border: 1px solid rgba(124, 92, 252, 0.28);
+  border-radius: var(--radius);
+  padding: 10px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  animation: runnerRestSlideIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 200ms ease;
+}
+
+@keyframes runnerRestSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.runner-rest-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.runner-rest-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.runner-rest-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--accent-light, #a78bfa);
+  background: rgba(124, 92, 252, 0.18);
+  border: 1px solid rgba(124, 92, 252, 0.32);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.runner-rest-digits {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.runner-rest-next {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-rest-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.runner-rest-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #cbd5e1;
+  cursor: pointer;
   transition: all var(--transition);
+  font-family: var(--mono);
 }
 
-.runner-seg-dot.done {
-  background: #10b981;
-  box-shadow: none;
+.runner-rest-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
-.runner-seg-dot.active {
-  background: #38bdf8;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.7);
+.runner-rest-btn:active {
+  transform: scale(0.95);
+}
+
+.runner-rest-skip-btn {
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-sm);
+  padding: 4px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all var(--transition);
+  letter-spacing: 0.02em;
+}
+
+.runner-rest-skip-btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.runner-rest-skip-btn:active {
+  transform: scale(0.96);
+}
+
+.runner-rest-bar-track {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.runner-rest-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width 1s linear;
 }
 
 /* ── 3. Active Exercise Stage Card ────────────────────────────────────────── */
 .runner-stage-card {
   background: var(--surface);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
-  padding: 28px 28px 24px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  padding: 22px 24px 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   position: relative;
   overflow: hidden;
+  animation: runnerStageFadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+@keyframes runnerStageFadeIn {
+  from {
+    opacity: 0.75;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .runner-stage-header {
@@ -5018,284 +5215,142 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
   gap: 16px;
 }
 
+.runner-stage-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .runner-set-pill {
-  display: inline-block;
+  display: inline-flex;
+  align-self: flex-start;
   font-size: 11px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--accent-light, #a78bfa);
+  background: rgba(124, 92, 252, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 6px;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
 }
 
 .runner-exercise-name {
   font-family: var(--font-heading);
-  font-size: 34px;
+  font-size: 26px;
   font-weight: 800;
   color: #ffffff;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
   margin: 0;
 }
 
-.runner-stage-notes {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.runner-exercise-context {
   font-size: 13px;
-  color: #cbd5e1;
-  margin-top: 6px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.3;
 }
 
 .runner-stage-art {
-  width: 76px;
-  height: 76px;
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
+  min-height: 58px;
   border-radius: var(--radius);
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   overflow: hidden;
   cursor: pointer;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 5px;
   transition: all var(--transition);
 }
 
 .runner-stage-art:hover {
-  border-color: rgba(255, 255, 255, 0.3);
-  transform: scale(1.03);
-  box-shadow: none;
+  border-color: rgba(124, 92, 252, 0.35);
+  background: rgba(124, 92, 252, 0.06);
+  transform: scale(1.04);
 }
 
-.runner-stage-img {
+.runner-illustration-svg {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  display: block;
 }
 
-/* ── Benchmarks Grid ──────────────────────────────────────────────────────── */
-.runner-benchmark-grid {
+/* ── Benchmarks Strip (Secondary comparison) ──────────────────────────────── */
+.runner-benchmarks {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+  padding: 10px 14px;
 }
 
-.runner-benchmark-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: var(--radius);
-  padding: 14px 18px;
+.runner-benchmark-col {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 2px;
 }
 
-.runner-bench-label {
-  font-size: 11px;
-  font-weight: 800;
+.runner-benchmark-col-right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.runner-benchmark-label {
+  font-size: 10px;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
-.runner-bench-val-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 4px;
-}
-
-.runner-bench-val {
-  font-family: var(--mono);
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+.runner-benchmark-val {
+  font-size: 15px;
+  font-weight: 700;
   color: #ffffff;
-  line-height: 1.1;
+  line-height: 1.2;
 }
 
-.runner-bench-unit {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.runner-bench-sub {
+.runner-benchmark-time {
   font-size: 11px;
+  font-weight: 500;
   color: var(--text-dim);
-  margin-top: 2px;
+  line-height: 1.2;
 }
 
-/* ── Central Circular Zone ────────────────────────────────────────────────── */
+/* ── Central Reps & Hold Counter Zone (Context-Aware Visual Focal Point) ──── */
 .runner-hero-counter-zone {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin: 10px 0;
-}
-
-.runner-circular-ring-wrap {
-  position: relative;
-  width: 220px;
-  height: 220px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.runner-circular-svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-  filter: none;
-}
-
-.runner-circle-bg {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.06);
-  stroke-width: 10;
-}
-
-.runner-circle-progress {
-  fill: none;
-  stroke: url(#ringGrad);
-  stroke-width: 10;
-  stroke-linecap: round;
-  stroke-dasharray: 553;
-  transition: stroke-dashoffset 200ms linear;
-}
-
-.runner-circle-content {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.runner-circle-digits {
-  font-family: var(--mono);
-  font-size: 46px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: #ffffff;
-  line-height: 1;
-}
-
-.runner-circle-label {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin: 6px 0 8px;
-}
-
-.runner-ring-btn {
-  padding: 6px 16px;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: #ffffff;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all var(--transition);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.runner-ring-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-  transform: scale(1.05);
-}
-
-.runner-ring-btn.running {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.45);
-  color: #ef4444;
-}
-
-.runner-adjust-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.runner-adjust-label {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.runner-stepper-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.runner-adjust-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-sm);
-  padding: 8px 14px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #cbd5e1;
-  cursor: pointer;
-  transition: all var(--transition);
-}
-
-.runner-adjust-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-}
-
-.runner-val-input-box {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-sm);
-  padding: 6px 12px;
-}
-
-.runner-hold-input {
-  background: transparent;
-  border: none;
-  font-size: 18px;
-  font-weight: 800;
-  color: #ffffff;
-  width: 64px;
-  text-align: center;
-  outline: none;
-}
-
-/* ── Reps Stepper Zone ────────────────────────────────────────────────────── */
-.runner-reps-counter-wrap {
-  padding: 10px 0;
+  gap: 12px;
+  padding: 6px 0 2px;
 }
 
 .runner-reps-stepper {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 24px;
 }
 
 .runner-reps-btn {
-  width: 54px;
-  height: 54px;
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  min-height: 50px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #ffffff;
   font-size: 24px;
@@ -5305,52 +5360,129 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
   align-items: center;
   justify-content: center;
   transition: all var(--transition);
+  user-select: none;
+  touch-action: manipulation;
 }
 
-.runner-reps-btn:hover {
+.runner-reps-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
-  transform: scale(1.08);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: scale(1.06);
+}
+
+.runner-reps-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.runner-reps-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.runner-reps-btn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .runner-reps-digits-box {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 100px;
+  justify-content: center;
+  min-width: 140px;
+  text-align: center;
 }
 
 .runner-reps-num {
   font-family: var(--mono);
-  font-size: 68px;
+  font-size: 62px;
   font-weight: 800;
   letter-spacing: -0.04em;
   color: #ffffff;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
+  min-width: 2ch;
+  text-align: center;
 }
 
 .runner-reps-unit {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   color: var(--text-muted);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   margin-top: 4px;
+  text-transform: uppercase;
 }
 
-/* ── Primary Complete Action CTA ─────────────────────────────────────────── */
+.runner-weight-pill {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-light, #a78bfa);
+  background: rgba(124, 92, 252, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.04em;
+}
+
+.runner-hold-live-control {
+  display: flex;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.runner-ring-btn {
+  padding: 6px 16px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.runner-ring-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.runner-ring-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.runner-ring-btn.running {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #ef4444;
+}
+
+/* ── 4. Primary Complete Action CTA (Strongest Action) ────────────────────── */
 .runner-complete-action-btn {
   width: 100%;
-  padding: 18px;
-  font-size: 16px;
+  padding: 15px 20px;
+  font-size: 15px;
   font-weight: 800;
   letter-spacing: 0.04em;
   color: #ffffff;
   background: var(--accent);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius);
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  transition: all var(--transition);
+  box-shadow: 0 4px 14px rgba(124, 92, 252, 0.3);
+  transition: transform 120ms ease, background 150ms ease, box-shadow 150ms ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -5360,18 +5492,18 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
 
 .runner-complete-action-btn:hover {
   background: var(--accent-hover);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(124, 92, 252, 0.45);
+  transform: translateY(-1px);
 }
 
 .runner-complete-action-btn:active {
-  transform: scale(0.98);
+  transform: scale(0.985);
 }
 
-/* ── Details Accordion ────────────────────────────────────────────────────── */
+/* ── 5. Set Details Accordion ─────────────────────────────────────────────── */
 .runner-details-accordion {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding-top: 14px;
+  padding-top: 12px;
 }
 
 .runner-details-summary {
@@ -5383,6 +5515,33 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: color var(--transition);
+}
+
+.runner-details-summary:hover {
+  color: #ffffff;
+}
+
+.runner-details-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.runner-details-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.runner-details-summary:hover .runner-details-title {
+  color: #ffffff;
+}
+
+.runner-details-subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
 }
 
 .runner-details-summary::-webkit-details-marker {
@@ -5390,7 +5549,7 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
 }
 
 .runner-details-body {
-  padding-top: 14px;
+  padding-top: 12px;
 }
 
 .runner-form-row {
@@ -5420,129 +5579,394 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 4px;
+  padding: 0 4px 4px 4px;
 }
 
 .runner-queue-tag {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   color: var(--text-muted);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .runner-queue-summary {
   font-size: 12px;
+  font-weight: 600;
   color: var(--text-muted);
-}
-
-.runner-queue-pct {
-  color: #38bdf8;
-  font-weight: 700;
 }
 
 .runner-queue-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
-.runner-queue-item {
-  background: rgba(14, 14, 24, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: var(--radius);
-  padding: 14px 18px;
+/* Base Sequence Row (Compact, strong alignment, not large cards) */
+.runner-seq-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 10px 14px;
+  border-radius: var(--radius);
   cursor: pointer;
+  transition: all 180ms ease;
+  user-select: none;
+}
+
+.runner-seq-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.runner-seq-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.runner-seq-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.runner-seq-name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-seq-sub {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.runner-seq-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.runner-seq-count {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* 1. COMPLETED: visually quieter, checkmark, reduced emphasis, reviewable */
+.runner-seq-row.completed {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  opacity: 0.72;
+}
+
+.runner-seq-row.completed:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.runner-seq-row.completed .runner-seq-icon {
+  color: #10b981;
+}
+
+.runner-seq-row.completed .runner-seq-name {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.runner-seq-row.completed .runner-seq-sub {
+  color: var(--text-dim);
+}
+
+.runner-seq-row.completed .runner-seq-count {
+  color: #10b981;
+}
+
+/* 2. CURRENT: strongest row, subtle active indicator, clearly connected to active card */
+.runner-seq-row.current {
+  background: rgba(124, 92, 252, 0.08);
+  border: 1px solid rgba(124, 92, 252, 0.28);
+  border-left: 3px solid var(--accent);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.runner-seq-row.current:hover {
+  background: rgba(124, 92, 252, 0.12);
+  border-color: rgba(124, 92, 252, 0.38);
+}
+
+.runner-seq-row.current .runner-seq-icon {
+  color: var(--accent-light, #a78bfa);
+  font-size: 13px;
+}
+
+.runner-seq-row.current .runner-seq-name {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.runner-seq-row.current .runner-seq-sub {
+  color: var(--text-muted);
+}
+
+.runner-seq-row.current .runner-seq-count {
+  color: #ffffff;
+}
+
+/* 3. UPCOMING: neutral/subdued, hollow circle, no unnecessary glow */
+.runner-seq-row.upcoming {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.runner-seq-row.upcoming:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.runner-seq-row.upcoming .runner-seq-icon {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.runner-seq-row.upcoming .runner-seq-name {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.runner-seq-row.upcoming .runner-seq-sub {
+  color: var(--text-dim);
+}
+
+.runner-seq-row.upcoming .runner-seq-count {
+  color: var(--text-dim);
+}
+
+.runner-coach-tip {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.runner-coach-tip-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--accent-light, #a78bfa);
+  display: flex;
+  align-items: center;
+}
+
+.runner-coach-tip-text {
+  flex: 1;
+  color: #cbd5e1;
+}
+
+.runner-coach-tip-text strong {
+  color: #ffffff;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+@media (max-width: 640px) {
+  .runner-top-bar {
+    gap: 8px;
+  }
+  .runner-header-routine-title {
+    font-size: 13px;
+  }
+  .runner-header-session-sub {
+    font-size: 10px;
+  }
+  .runner-timer-pill {
+    padding: 4px 9px;
+    font-size: 12px;
+    gap: 4px;
+  }
+  .runner-back-btn,
+  .runner-header-opt-btn {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+  }
+  .runner-finish-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .runner-stage-card {
+    padding: 16px 16px 14px;
+    gap: 14px;
+  }
+  .runner-exercise-name {
+    font-size: 22px;
+  }
+  .runner-exercise-context {
+    font-size: 12px;
+  }
+  .runner-stage-art {
+    width: 48px;
+    height: 48px;
+  }
+  .runner-reps-num {
+    font-size: 52px;
+  }
+  .runner-reps-stepper {
+    gap: 16px;
+  }
+  .runner-reps-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+  .runner-complete-action-btn {
+    padding: 14px 16px;
+    font-size: 14px;
+  }
+  .runner-benchmarks {
+    padding: 8px 12px;
+  }
+  .runner-form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ── Discard Workout Modal & Action Styling ───────────────────────────────── */
+.runner-discard-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   transition: all var(--transition);
 }
 
-.runner-queue-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.12);
-  transform: translateX(3px);
+.runner-discard-btn:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #ef4444;
 }
 
-.runner-queue-item.active {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: none;
+.discard-modal-card {
+  max-width: 440px !important;
+  width: 92% !important;
+  padding: 22px 24px 20px !important;
+  gap: 14px;
 }
 
-.runner-queue-item.completed {
-  opacity: 0.85;
+.discard-modal-header {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
 }
 
-.runner-queue-left {
+.discard-modal-title-group {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.runner-queue-dot {
-  width: 8px;
-  height: 8px;
+.discard-modal-icon-wrap {
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.runner-queue-dot.current {
-  background: #38bdf8;
-  box-shadow: 0 0 10px #38bdf8;
-}
-
-.runner-queue-dot.done {
-  background: #10b981;
-  box-shadow: 0 0 8px #10b981;
-}
-
-.runner-queue-num {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-dim);
-}
-
-.runner-queue-name {
+.discard-modal-desc {
   font-size: 14px;
-  font-weight: 700;
-  color: #ffffff;
-  display: block;
-}
-
-.runner-queue-sub {
-  font-size: 12px;
   color: var(--text-muted);
-  display: block;
-  margin-top: 2px;
+  line-height: 1.45;
+  margin: 0;
 }
 
-.runner-queue-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.discard-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 6px;
 }
 
-.runner-queue-count {
+.discard-modal-btn {
+  padding: 11px 16px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 700;
-  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
 }
 
-.runner-queue-item.completed .runner-queue-count {
-  color: #10b981;
-}
-
-.runner-coach-tip {
+.discard-modal-keep-btn {
   background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 18px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  color: #e2e8f0;
-  margin-top: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.discard-modal-keep-btn:hover {
+  background: var(--surface-3);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.discard-modal-keep-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.discard-modal-danger-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.discard-modal-danger-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .runner-stage-card,
+  .runner-rest-card,
+  .runner-seq-row,
+  .runner-reps-btn,
+  .runner-complete-action-btn,
+  .runner-progress-bar-fill,
+  .modal-card {
+    animation: none !important;
+    transition: none !important;
+  }
 }

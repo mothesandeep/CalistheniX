@@ -36,6 +36,8 @@ const ICONS = {
   copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   trash: '<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>',
   arrowRight: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  arrowLeft: '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
+  moreVertical: '<circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/>',
   chevronRight: '<polyline points="9 18 15 12 9 6"/>',
   chevronLeft: '<polyline points="15 18 9 12 15 6"/>',
   chevronDown: '<polyline points="6 9 12 15 18 9"/>',
@@ -3643,13 +3645,13 @@ function startWorkoutHold(exIdx, setIdx) {
     const elapsed = Math.floor((now - _workoutHoldState.startedAt) / 1000);
     _workoutHoldState.elapsed = elapsed;
 
-    const btn = document.getElementById(`workout-hold-btn-${exIdx}-${setIdx}`);
-    const input = document.getElementById(`workout-set-actual-${exIdx}-${setIdx}`);
-    if (btn) {
-      btn.innerHTML = `${renderIcon('stop', 'cx-icon cx-icon-inline cx-icon-sm')} Stop (${fmtSecs(elapsed)})`;
+    const digitsEl = document.getElementById('workout-active-counter-digits');
+    if (digitsEl) {
+      digitsEl.textContent = elapsed;
     }
-    if (input) {
-      input.value = elapsed;
+    const btn = document.getElementById('workout-active-hold-btn');
+    if (btn) {
+      btn.innerHTML = `${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} STOP HOLD (${elapsed}s)`;
     }
   }, 200);
 
@@ -3680,8 +3682,23 @@ function stopWorkoutHold(saveAndComplete = true) {
       cueHoldSave(); // audio/vibration feedback
       checkAndCelebratePR(session.exercises[exIdx].exercise_id, finalVal, set.weight_kg);
 
+      // If final set of the hold exercise is completed, auto-advance to next uncompleted exercise
+      const currentEx = session.exercises[exIdx];
+      const isExDone = currentEx.sets.every(s => s.completed);
+      if (isExDone) {
+        const nextUncompletedIdx = session.exercises.findIndex((ex, idx) => idx > exIdx && ex.sets.some(s => !s.completed));
+        if (nextUncompletedIdx !== -1) {
+          _selectedWorkoutExIdx = nextUncompletedIdx;
+        } else {
+          const anyUncompletedIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed));
+          if (anyUncompletedIdx !== -1) {
+            _selectedWorkoutExIdx = anyUncompletedIdx;
+          }
+        }
+      }
+
       // Trigger Rest Countdown
-      const restSec = session.exercises[exIdx].rest_sec || 90;
+      const restSec = currentEx.rest_sec || 90;
       const nextInfo = getNextSetDescription(session, exIdx, setIdx);
       startWorkoutRest(restSec, nextInfo);
     }
@@ -3710,14 +3727,16 @@ function startWorkoutRest(sec, nextInfo = '') {
       cueTick();
     }
 
-    const timerEl = document.getElementById('workout-rest-timer-val');
-    const barEl = document.getElementById('workout-rest-timer-bar');
-    if (timerEl) {
-      timerEl.textContent = fmtSecs(Math.max(0, _workoutRestState.remaining));
-    }
-    if (barEl && _workoutRestState.total > 0) {
-      const pct = Math.max(0, Math.min(100, (_workoutRestState.remaining / _workoutRestState.total) * 100));
-      barEl.style.width = `${pct}%`;
+    if (typeof document !== 'undefined') {
+      const timerEl = document.getElementById('workout-rest-timer-val');
+      const barEl = document.getElementById('workout-rest-timer-bar');
+      if (timerEl) {
+        timerEl.textContent = fmtSecs(Math.max(0, _workoutRestState.remaining));
+      }
+      if (barEl && _workoutRestState.total > 0) {
+        const pct = Math.max(0, Math.min(100, (_workoutRestState.remaining / _workoutRestState.total) * 100));
+        barEl.style.width = `${pct}%`;
+      }
     }
 
     if (_workoutRestState.remaining <= 0) {
@@ -3743,10 +3762,19 @@ function adjustWorkoutRest(deltaSec) {
   if (!_workoutRestState.active) return;
   _workoutRestState.remaining = Math.max(0, _workoutRestState.remaining + deltaSec);
   _workoutRestState.total = Math.max(_workoutRestState.total, _workoutRestState.remaining);
-  const timerEl = document.getElementById('workout-rest-timer-val');
-  if (timerEl) {
-    timerEl.textContent = fmtSecs(_workoutRestState.remaining);
+
+  if (typeof document !== 'undefined') {
+    const timerEl = document.getElementById('workout-rest-timer-val');
+    const barEl = document.getElementById('workout-rest-timer-bar');
+    if (timerEl) {
+      timerEl.textContent = fmtSecs(_workoutRestState.remaining);
+    }
+    if (barEl && _workoutRestState.total > 0) {
+      const pct = Math.max(0, Math.min(100, (_workoutRestState.remaining / _workoutRestState.total) * 100));
+      barEl.style.width = `${pct}%`;
+    }
   }
+
   if (_workoutRestState.remaining <= 0) {
     cueRestEnd();
     stopWorkoutRest();
@@ -3777,6 +3805,7 @@ function updateWorkoutSetWeight(exIdx, setIdx, val) {
   const num = parseFloat(val);
   session.exercises[exIdx].sets[setIdx].weight_kg = isNaN(num) || num <= 0 ? null : num;
   saveActiveSession(session);
+  render();
 }
 
 function updateWorkoutSetRPE(exIdx, setIdx, val) {
@@ -3799,8 +3828,24 @@ function toggleWorkoutSet(exIdx, setIdx) {
     cueRestEnd(); // audio/vibration feedback
     const actualVal = Number(set.actual_val !== null && set.actual_val !== undefined && set.actual_val !== '' ? set.actual_val : set.target_val);
     checkAndCelebratePR(session.exercises[exIdx].exercise_id, actualVal, set.weight_kg);
+
+    // If final set of the exercise is completed, auto-advance to next uncompleted exercise
+    const currentEx = session.exercises[exIdx];
+    const isExDone = currentEx.sets.every(s => s.completed);
+    if (isExDone) {
+      const nextUncompletedIdx = session.exercises.findIndex((ex, idx) => idx > exIdx && ex.sets.some(s => !s.completed));
+      if (nextUncompletedIdx !== -1) {
+        _selectedWorkoutExIdx = nextUncompletedIdx;
+      } else {
+        const anyUncompletedIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed));
+        if (anyUncompletedIdx !== -1) {
+          _selectedWorkoutExIdx = anyUncompletedIdx;
+        }
+      }
+    }
+
     // Start Rest Timer for this exercise
-    const restSec = session.exercises[exIdx].rest_sec || 90;
+    const restSec = currentEx.rest_sec || 90;
     const nextInfo = getNextSetDescription(session, exIdx, setIdx);
     startWorkoutRest(restSec, nextInfo);
   } else {
@@ -3895,28 +3940,107 @@ async function finishWorkoutSession() {
   render();
 }
 
-function cancelWorkoutSession() {
-  if (confirm("Are you sure you want to discard this workout session?")) {
-    if (_workoutHoldInterval) {
-      clearInterval(_workoutHoldInterval);
-      _workoutHoldInterval = null;
-      _workoutHoldState = { exIdx: null, setIdx: null, startedAt: null, elapsed: 0 };
-    }
-    if (_workoutRestInterval) {
-      clearInterval(_workoutRestInterval);
-      _workoutRestInterval = null;
-      _workoutRestState = { active: false, remaining: 0, total: 0, nextInfo: '' };
-    }
-    saveActiveSession(null);
-    if (_workoutTimerInterval) {
-      clearInterval(_workoutTimerInterval);
-      _workoutTimerInterval = null;
-    }
-    showToast("Workout cancelled");
-    state.view = 'dashboard';
-    window.location.hash = 'dashboard';
-    render();
+function openDiscardWorkoutModal() {
+  let modal = document.getElementById('discard-workout-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'discard-workout-modal';
+    modal.className = 'modal-backdrop';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'discard-modal-title');
+    modal.onclick = (e) => {
+      if (e.target === modal) closeDiscardWorkoutModal();
+    };
+    document.body.appendChild(modal);
   }
+
+  modal.innerHTML = `
+    <div class="modal-card discard-modal-card" onclick="event.stopPropagation()">
+      <div class="modal-header discard-modal-header">
+        <div class="discard-modal-title-group">
+          <div class="discard-modal-icon-wrap">
+            ${renderIcon('alert', 'cx-icon cx-icon-sm')}
+          </div>
+          <h2 class="modal-title" id="discard-modal-title">Discard this workout?</h2>
+        </div>
+        <button class="modal-close-btn" onclick="closeDiscardWorkoutModal()" aria-label="Cancel and close dialog" title="Close">
+          ${renderIcon('x', 'cx-icon')}
+        </button>
+      </div>
+
+      <div class="discard-modal-body">
+        <p class="discard-modal-desc">
+          Your logged sets from this session will be lost.
+        </p>
+      </div>
+
+      <div class="discard-modal-actions">
+        <button class="discard-modal-btn discard-modal-keep-btn" id="discard-modal-keep-btn" type="button" onclick="closeDiscardWorkoutModal()">
+          Keep Workout
+        </button>
+        <button class="discard-modal-btn discard-modal-danger-btn" type="button" onclick="confirmDiscardWorkout()">
+          Discard
+        </button>
+      </div>
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+
+  // Keyboard accessibility: Focus Keep Workout button & listen for Escape key
+  const keepBtn = document.getElementById('discard-modal-keep-btn');
+  if (keepBtn) {
+    setTimeout(() => keepBtn.focus(), 50);
+  }
+
+  if (window._discardModalKeyHandler) {
+    window.removeEventListener('keydown', window._discardModalKeyHandler);
+  }
+  window._discardModalKeyHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeDiscardWorkoutModal();
+    }
+  };
+  window.addEventListener('keydown', window._discardModalKeyHandler);
+}
+
+function closeDiscardWorkoutModal() {
+  const modal = document.getElementById('discard-workout-modal');
+  if (modal) {
+    modal.remove();
+  }
+  if (window._discardModalKeyHandler) {
+    window.removeEventListener('keydown', window._discardModalKeyHandler);
+    window._discardModalKeyHandler = null;
+  }
+}
+
+function confirmDiscardWorkout() {
+  closeDiscardWorkoutModal();
+  if (_workoutHoldInterval) {
+    clearInterval(_workoutHoldInterval);
+    _workoutHoldInterval = null;
+    _workoutHoldState = { exIdx: null, setIdx: null, startedAt: null, elapsed: 0 };
+  }
+  if (_workoutRestInterval) {
+    clearInterval(_workoutRestInterval);
+    _workoutRestInterval = null;
+    _workoutRestState = { active: false, remaining: 0, total: 0, nextInfo: '' };
+  }
+  saveActiveSession(null);
+  if (_workoutTimerInterval) {
+    clearInterval(_workoutTimerInterval);
+    _workoutTimerInterval = null;
+  }
+  showToast('Workout discarded');
+  state.view = 'dashboard';
+  window.location.hash = 'dashboard';
+  render();
+}
+
+function cancelWorkoutSession() {
+  openDiscardWorkoutModal();
 }
 
 async function promoteProgression(exerciseId, nextId) {
@@ -3939,6 +4063,280 @@ async function promoteProgression(exerciseId, nextId) {
 
 
 let _selectedWorkoutExIdx = null;
+
+const EXERCISE_COACHING_TIPS = {
+  // Push / Chest / Shoulders / Triceps
+  'diamond push-ups': 'Keep your elbows tucked at ~45 degrees and focus on triceps extension at lockout.',
+  'wide push-ups': 'Maintain a rigid body line and squeeze your chest at the peak of each rep.',
+  'decline push-ups': 'Brace your core and control the descent to load the upper chest effectively.',
+  'pike push-ups': 'Keep your hips high in an inverted V and lower your head slightly in front of your hands.',
+  'pike push-ups elevated': 'Elevate your feet securely, stay on your toes, and lower your head in front of your hands.',
+  'handstand push-up progression': 'Maintain full shoulder elevation and control the descent toward the wall.',
+  'handstand push-up': 'Keep your core engaged, elbows tracking in, and press the floor away actively.',
+  'archer push-ups': 'Shift your weight smoothly toward the working arm while keeping the opposite arm straight.',
+  'triceps dips': 'Keep your chest tall, shoulders depressed, and lower until your elbows reach 90 degrees.',
+  'dips': 'Keep your shoulders depressed away from your ears and lean slightly forward for chest engagement.',
+  'ring dips': 'Turn the rings out at the top of each rep and keep the straps close to your body.',
+  'plank to push-up': 'Minimize hip sway as you press up from forearm to palm one side at a time.',
+  'lateral raise': 'Lead with your elbows and maintain a slight forward lean to isolate the lateral delt.',
+  'push-ups': 'Keep your body in a straight line from head to heels and lower until your chest nearly touches the floor.',
+  'pseudo planche push-ups': 'Lean forward over your wrists with depressed scapulae throughout the movement.',
+
+  // Pull / Back / Biceps
+  'dead hang': 'Relax your lower body while keeping your grip firm and breathing deeply to decompress the spine.',
+  'pull-ups wide grip': 'Initiate the pull by depressing your shoulder blades and drive your elbows down toward your ribs.',
+  'pull-ups': 'Engage your lats first, pull your chest to the bar, and lower under control.',
+  'pull-ups close grip': 'Focus on elbow flexion and squeeze your mid-back at the top of each rep.',
+  'chin-ups': 'Keep your core tight, pull your elbows straight down, and achieve a full stretch at the bottom.',
+  'negative pull-ups': 'Jump or step to the top, then resist gravity with a slow 4-5 second controlled descent.',
+  'scapular pulls': 'Keep your arms completely straight and only move by retracting and depressing your shoulder blades.',
+  'commando pull-ups': 'Alternate your head to opposite sides of the bar while maintaining control against torso rotation.',
+  'australian pull-ups': 'Keep your body in a straight plank and pull your chest directly to the bar.',
+  'inverted rows': 'Retract your shoulder blades before bending your elbows and pull your lower chest to the bar.',
+  'face pulls': 'Pull toward your forehead while externally rotating your shoulders so your thumbs point back.',
+  'prone y-raises': 'Lie face down, form a Y with your arms, and lift with your lower traps without arching your neck.',
+  'wall angels': 'Keep your lower back, elbows, and wrists in contact with the wall throughout the slow slide.',
+  'muscle-ups': 'Generate explosive hip drive, lean aggressively over the bar during the transition, and press out smoothly.',
+
+  // Core / Holds
+  'superman hold': 'Squeeze your glutes and lower back to elevate your chest and thighs without straining your neck.',
+  'l-sit hang': 'Depress your shoulders actively and use your hip flexors to keep your legs locked at 90 degrees.',
+  'l-sit': 'Lock your elbows, depress your shoulders, and point your toes with tight quadriceps.',
+  'tuck l-sit': 'Press the floor away with locked arms and pull your knees tight into your chest.',
+  'hanging knee raises': 'Avoid swinging, curl your pelvis upward, and pull your knees all the way to your chest.',
+  'hanging leg raises': 'Engage your lats to prevent swinging and lift with your abdominals to bring your feet to bar height.',
+  'plank': 'Brace your core and keep your hips aligned with your shoulders.',
+  'side plank': 'Stack your feet, press the floor away through your forearm, and keep your hips elevated in a straight line.',
+  'hollow body hold': 'Press your lower back firmly into the floor and reach your arms and legs away in a shallow banana shape.',
+  'dragon flag': 'Pivot from your upper back and lower your entire body as one rigid line without breaking at the hips.',
+  'front lever': 'Pull your shoulder blades down and back while driving your hips upward into a flat horizontal hold.',
+  'back lever': 'Maintain locked elbows, rounded upper back, and breathe steadily into your diaphragm.',
+  'handstand': 'Push tall through your shoulders, squeeze your glutes, and focus your gaze between your fingertips.',
+  'handstand hold': 'Push tall through your shoulders, squeeze your glutes, and focus your gaze between your fingertips.',
+
+  // Legs / Lower Body
+  'bulgarian split squats': 'Keep the front knee tracking naturally and drive through the mid-foot.',
+  'bulgarian split squat': 'Keep the front knee tracking naturally and drive through the mid-foot.',
+  'walking lunges': 'Keep your torso controlled and take consistent stride lengths.',
+  'lunges': 'Keep your torso upright and step forward with controlled knee alignment.',
+  'glute bridges single leg': 'Drive through your heel and pause at the top with your hips level.',
+  'single-leg glute bridge hold': 'Drive through your heel and pause at the top with your hips level.',
+  'glute bridges': 'Drive through your heels, squeeze your glutes at lockout, and avoid hyperextending your lower back.',
+  'glute bridge': 'Drive through your heels, squeeze your glutes at lockout, and avoid hyperextending your lower back.',
+  'calf raises': 'Rise onto your big toes, pause at the apex, and lower down with a controlled stretch.',
+  'pistol squat progression': 'Keep your weight centered over the working mid-foot and reach your arms forward for counterbalance.',
+  'pistol squats': 'Keep your weight centered over the working mid-foot and reach your arms forward for counterbalance.',
+  'pistol squat': 'Keep your weight centered over the working mid-foot and reach your arms forward for counterbalance.',
+  'jump squats': 'Land softly on the mid-foot to absorb impact and immediately transition into the next repetition.',
+  'wall sit': 'Keep your knees at 90 degrees, press your back flat against the wall, and breathe rhythmically.',
+  'air squats': 'Keep your chest proud, push your knees outward in line with your toes, and hit full depth.',
+  'squats': 'Keep your chest proud, push your knees outward in line with your toes, and hit full depth.'
+};
+
+function getExerciseContextualTip(ex) {
+  if (!ex) return 'Focus on steady breathing and controlled movement through full range of motion.';
+
+  const rawName = (ex.exercise_name || ex.name || '').toLowerCase().trim();
+  if (EXERCISE_COACHING_TIPS[rawName]) {
+    return EXERCISE_COACHING_TIPS[rawName];
+  }
+
+  // Check partial key matches
+  for (const [key, tip] of Object.entries(EXERCISE_COACHING_TIPS)) {
+    if (rawName.includes(key) || key.includes(rawName)) {
+      return tip;
+    }
+  }
+
+  // Check category keywords
+  if (rawName.includes('split squat')) return 'Keep the front knee tracking naturally and drive through the mid-foot.';
+  if (rawName.includes('lunge')) return 'Keep your torso controlled and take consistent stride lengths.';
+  if (rawName.includes('plank')) return 'Brace your core and keep your hips aligned with your shoulders.';
+  if (rawName.includes('pull-up') || rawName.includes('chin-up')) return 'Initiate the pull with your shoulder blades and drive your elbows down.';
+  if (rawName.includes('push-up')) return 'Keep your core braced and lower with controlled elbow alignment.';
+  if (rawName.includes('dip')) return 'Depress your shoulders away from your ears and control your descent depth.';
+  if (rawName.includes('squat')) return 'Keep your chest tall and drive evenly through the mid-foot on each ascent.';
+  if (rawName.includes('bridge')) return 'Drive through your heels and squeeze your glutes at full extension.';
+  if (rawName.includes('hang')) return 'Relax your shoulders and breathe deeply to maintain a solid, steady grip.';
+  if (rawName.includes('raise')) return 'Control the tempo on the way down and avoid using momentum to lift.';
+
+  // If notes provide guidance
+  if (ex.notes && typeof ex.notes === 'string' && ex.notes.trim().length > 8) {
+    return ex.notes.trim().replace(/^Note:\s*/i, '');
+  }
+
+  // Neutral contextual fallbacks
+  if (ex.exercise_type === 'duration' || ex.type === 'duration') {
+    return 'Maintain consistent muscle tension and breathe rhythmically throughout the hold.';
+  }
+  return 'Maintain controlled tempo and focus on clean range of motion through each rep.';
+}
+
+function renderExerciseIllustrationSvg(ex) {
+  const rawName = (ex?.exercise_name || ex?.name || '').toLowerCase().trim();
+  const label = ex?.exercise_name || ex?.name || 'Exercise';
+
+  // Base SVG wrapper attributes with unified 64x64 viewbox and consistent 2px stroke
+  const svgOpen = `<svg class="runner-illustration-svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="${label} form illustration">`;
+  const svgClose = `</svg>`;
+
+  // 1. Bulgarian Split Squat / Split Stance
+  if (rawName.includes('split squat') || rawName.includes('bulgarian')) {
+    return `${svgOpen}
+      <line x1="6" y1="56" x2="58" y2="56" stroke="rgba(255,255,255,0.2)"/>
+      <rect x="44" y="42" width="12" height="14" rx="2" stroke="rgba(255,255,255,0.3)"/>
+      <circle cx="26" cy="16" r="3.5" stroke="#ffffff"/>
+      <line x1="26" y1="20" x2="26" y2="36" stroke="#ffffff"/>
+      <line x1="26" y1="25" x2="34" y2="32" stroke="rgba(255,255,255,0.6)"/>
+      <polyline points="26,36 40,40 46,42" stroke="rgba(255,255,255,0.7)"/>
+      <polyline points="26,36 18,44 19,56" stroke="var(--accent)" stroke-width="2.5"/>
+      <circle cx="19" cy="56" r="2" fill="var(--accent)" stroke="var(--accent)"/>
+    ${svgClose}`;
+  }
+
+  // 2. Lunges / Walking Lunges
+  if (rawName.includes('lunge')) {
+    return `${svgOpen}
+      <line x1="6" y1="56" x2="58" y2="56" stroke="rgba(255,255,255,0.2)"/>
+      <circle cx="28" cy="16" r="3.5" stroke="#ffffff"/>
+      <line x1="28" y1="20" x2="28" y2="36" stroke="#ffffff"/>
+      <polyline points="28,36 18,44 18,56" stroke="var(--accent)" stroke-width="2.5"/>
+      <polyline points="28,36 42,42 46,56" stroke="rgba(255,255,255,0.7)"/>
+      <circle cx="18" cy="56" r="2" fill="var(--accent)" stroke="var(--accent)"/>
+    ${svgClose}`;
+  }
+
+  // 3. Pike Push-ups / Handstands / HSPU
+  if (rawName.includes('pike') || rawName.includes('handstand') || rawName.includes('hspu')) {
+    return `${svgOpen}
+      <line x1="6" y1="56" x2="58" y2="56" stroke="rgba(255,255,255,0.2)"/>
+      <line x1="22" y1="56" x2="22" y2="40" stroke="rgba(255,255,255,0.7)"/>
+      <circle cx="22" cy="46" r="3.5" stroke="#ffffff"/>
+      <polyline points="22,40 32,18 48,56" stroke="#ffffff"/>
+      <circle cx="22" cy="38" r="4" fill="rgba(124,92,252,0.25)" stroke="var(--accent)"/>
+    ${svgClose}`;
+  }
+
+  // 4. Push-ups / Diamond / Decline / Archer / Push Variations
+  if (rawName.includes('push-up') || rawName.includes('pushup') || rawName.includes('press')) {
+    return `${svgOpen}
+      <line x1="6" y1="54" x2="58" y2="54" stroke="rgba(255,255,255,0.2)"/>
+      <circle cx="16" cy="30" r="3.5" stroke="#ffffff"/>
+      <line x1="16" y1="34" x2="50" y2="50" stroke="#ffffff"/>
+      <polyline points="22,37 26,46 24,54" stroke="var(--accent)" stroke-width="2.5"/>
+      <circle cx="24" cy="54" r="2" fill="var(--accent)" stroke="var(--accent)"/>
+    ${svgClose}`;
+  }
+
+  // 5. Dips / Triceps Dips / Ring Dips
+  if (rawName.includes('dip')) {
+    return `${svgOpen}
+      <line x1="14" y1="36" x2="14" y2="56" stroke="rgba(255,255,255,0.3)"/>
+      <line x1="50" y1="36" x2="50" y2="56" stroke="rgba(255,255,255,0.3)"/>
+      <circle cx="32" cy="16" r="3.5" stroke="#ffffff"/>
+      <line x1="32" y1="20" x2="32" y2="38" stroke="#ffffff"/>
+      <polyline points="14,36 22,28 32,24" stroke="var(--accent)" stroke-width="2.2"/>
+      <polyline points="50,36 42,28 32,24" stroke="var(--accent)" stroke-width="2.2"/>
+      <polyline points="32,38 36,46 42,46" stroke="rgba(255,255,255,0.7)"/>
+    ${svgClose}`;
+  }
+
+  // 6. Pull-ups / Chin-ups / Dead Hang
+  if (rawName.includes('pull-up') || rawName.includes('pullup') || rawName.includes('chin') || rawName.includes('hang')) {
+    return `${svgOpen}
+      <line x1="8" y1="12" x2="56" y2="12" stroke="rgba(255,255,255,0.3)"/>
+      <circle cx="22" cy="12" r="2" fill="var(--accent)" stroke="var(--accent)"/>
+      <circle cx="42" cy="12" r="2" fill="var(--accent)" stroke="var(--accent)"/>
+      <line x1="22" y1="12" x2="28" y2="22" stroke="rgba(255,255,255,0.7)"/>
+      <line x1="42" y1="12" x2="36" y2="22" stroke="rgba(255,255,255,0.7)"/>
+      <circle cx="32" cy="16" r="3.5" stroke="#ffffff"/>
+      <line x1="32" y1="20" x2="32" y2="38" stroke="#ffffff"/>
+      <path d="M26,26 Q32,23 38,26" stroke="var(--accent)" stroke-width="2"/>
+      <line x1="32" y1="38" x2="30" y2="54" stroke="rgba(255,255,255,0.6)"/>
+      <line x1="32" y1="38" x2="34" y2="54" stroke="rgba(255,255,255,0.6)"/>
+    ${svgClose}`;
+  }
+
+  // 7. Rows / Inverted Rows / Australian Pull-ups / Face Pulls / Y-raises
+  if (rawName.includes('row') || rawName.includes('face pull') || rawName.includes('raise') || rawName.includes('angel')) {
+    return `${svgOpen}
+      <line x1="16" y1="18" x2="48" y2="18" stroke="rgba(255,255,255,0.3)"/>
+      <circle cx="20" cy="24" r="3.5" stroke="#ffffff"/>
+      <line x1="24" y1="28" x2="52" y2="50" stroke="#ffffff"/>
+      <polyline points="32,18 28,28" stroke="var(--accent)" stroke-width="2.5"/>
+      <line x1="10" y1="54" x2="56" y2="54" stroke="rgba(255,255,255,0.2)"/>
+    ${svgClose}`;
+  }
+
+  // 8. Squats / Jump Squats / Pistol Squats / Wall Sit
+  if (rawName.includes('squat') || rawName.includes('wall sit')) {
+    return `${svgOpen}
+      <line x1="6" y1="56" x2="58" y2="56" stroke="rgba(255,255,255,0.2)"/>
+      <circle cx="28" cy="20" r="3.5" stroke="#ffffff"/>
+      <line x1="28" y1="24" x2="24" y2="38" stroke="#ffffff"/>
+      <line x1="28" y1="26" x2="44" y2="24" stroke="rgba(255,255,255,0.6)"/>
+      <polyline points="24,38 36,40 32,56" stroke="var(--accent)" stroke-width="2.5"/>
+      <circle cx="32" cy="56" r="2" fill="var(--accent)" stroke="var(--accent)"/>
+    ${svgClose}`;
+  }
+
+  // 9. Glute Bridge / Single Leg Bridge / Hip Thrust
+  if (rawName.includes('bridge') || rawName.includes('thrust')) {
+    return `${svgOpen}
+      <line x1="6" y1="54" x2="58" y2="54" stroke="rgba(255,255,255,0.2)"/>
+      <circle cx="14" cy="50" r="3.5" stroke="#ffffff"/>
+      <line x1="17" y1="50" x2="34" y2="32" stroke="var(--accent)" stroke-width="2.5"/>
+      <polyline points="34,32 46,42 44,54" stroke="var(--accent)" stroke-width="2.2"/>
+      <circle cx="34" cy="32" r="3.5" fill="rgba(124,92,252,0.3)" stroke="var(--accent)"/>
+    ${svgClose}`;
+  }
+
+  // 10. Plank / Side Plank / Superman / Hollow Body
+  if (rawName.includes('plank') || rawName.includes('superman') || rawName.includes('hollow') || rawName.includes('flag')) {
+    return `${svgOpen}
+      <line x1="6" y1="52" x2="58" y2="52" stroke="rgba(255,255,255,0.2)"/>
+      <polyline points="18,52 18,44 24,44" stroke="rgba(255,255,255,0.7)"/>
+      <circle cx="16" cy="38" r="3.5" stroke="#ffffff"/>
+      <line x1="20" y1="44" x2="52" y2="50" stroke="var(--accent)" stroke-width="2.5"/>
+      <rect x="28" y="41" width="10" height="5" rx="1.5" fill="rgba(124,92,252,0.3)" stroke="var(--accent)"/>
+    ${svgClose}`;
+  }
+
+  // 11. L-Sit / Leg Raises / Knee Raises
+  if (rawName.includes('l-sit') || rawName.includes('sit') || rawName.includes('raise') || rawName.includes('knee')) {
+    return `${svgOpen}
+      <circle cx="22" cy="18" r="3.5" stroke="#ffffff"/>
+      <line x1="22" y1="22" x2="22" y2="42" stroke="#ffffff"/>
+      <line x1="22" y1="26" x2="26" y2="48" stroke="rgba(255,255,255,0.6)"/>
+      <line x1="16" y1="48" x2="34" y2="48" stroke="rgba(255,255,255,0.3)"/>
+      <line x1="22" y1="42" x2="48" y2="42" stroke="var(--accent)" stroke-width="2.5"/>
+      <circle cx="48" cy="42" r="2" fill="var(--accent)" stroke="var(--accent)"/>
+    ${svgClose}`;
+  }
+
+  // 12. Calf Raises / Lower Leg
+  if (rawName.includes('calf')) {
+    return `${svgOpen}
+      <line x1="10" y1="56" x2="54" y2="56" stroke="rgba(255,255,255,0.2)"/>
+      <circle cx="32" cy="16" r="3.5" stroke="#ffffff"/>
+      <line x1="32" y1="20" x2="32" y2="38" stroke="#ffffff"/>
+      <line x1="32" y1="38" x2="30" y2="52" stroke="var(--accent)" stroke-width="2.2"/>
+      <line x1="32" y1="38" x2="34" y2="52" stroke="var(--accent)" stroke-width="2.2"/>
+      <polyline points="28,46 32,42 36,46" stroke="var(--accent)" stroke-width="1.8"/>
+    ${svgClose}`;
+  }
+
+  // 13. Graceful Universal Calisthenics Silhouette Fallback
+  return `${svgOpen}
+    <circle cx="32" cy="18" r="4" stroke="#ffffff"/>
+    <line x1="32" y1="22" x2="32" y2="38" stroke="#ffffff"/>
+    <line x1="32" y1="26" x2="20" y2="34" stroke="rgba(255,255,255,0.7)"/>
+    <line x1="32" y1="26" x2="44" y2="34" stroke="var(--accent)" stroke-width="2.2"/>
+    <line x1="32" y1="38" x2="24" y2="54" stroke="rgba(255,255,255,0.7)"/>
+    <line x1="32" y1="38" x2="40" y2="54" stroke="var(--accent)" stroke-width="2.2"/>
+    <circle cx="32" cy="28" r="3" fill="rgba(124,92,252,0.3)" stroke="var(--accent)"/>
+  ${svgClose}`;
+}
 
 function parseSecs(str) {
   if (!str) return 0;
@@ -4022,65 +4420,113 @@ function renderActiveWorkoutView() {
     lastPerfDesc = isHold ? `${Math.max(10, targetVal - 7)} sec` : `${Math.max(1, targetVal - 2)} reps`;
   }
 
+  // Context: Notes + Muscle Targets / Equipment
+  const muscleTargets = getWorkoutMuscleTargets({ name: activeEx.exercise_name, exercises: [activeEx] });
+  let contextParts = [];
+  if (activeEx.notes && activeEx.notes.trim()) {
+    contextParts.push(activeEx.notes.trim());
+  }
+  if (muscleTargets && muscleTargets.label) {
+    contextParts.push(muscleTargets.label);
+  }
+  if (contextParts.length === 0) {
+    if (activeEx.tempo) contextParts.push(`Tempo ${activeEx.tempo}`);
+    else contextParts.push(isHold ? 'Isometric Hold' : 'Bodyweight');
+  }
+  const exerciseContextText = contextParts.join(' · ');
+  const activeExTip = getExerciseContextualTip(activeEx);
+
+  const unitText = isHold ? 'SEC' : 'REPS';
+  const stepDelta = isHold ? 5 : 1;
+  const minVal = 0;
+
   const currentActual = Number(activeSet.actual_val !== null && activeSet.actual_val !== undefined && activeSet.actual_val !== ''
     ? activeSet.actual_val
-    : (isHold ? targetVal : targetVal));
+    : targetVal);
 
   const isThisHoldRunning = isHold && _workoutHoldState.exIdx === activeExIdx && _workoutHoldState.setIdx === activeSetIdx;
   const holdDisplaySec = isThisHoldRunning ? _workoutHoldState.elapsed : currentActual;
-  const holdProgressPct = targetVal > 0 ? Math.min(100, Math.round((holdDisplaySec / targetVal) * 100)) : 0;
-  const strokeOffset = 553 - (553 * (holdProgressPct / 100));
+  const isMinDisabled = isPaused || isThisHoldRunning || currentActual <= minVal;
+
+  const weightVal = (activeSet.weight_kg != null && activeSet.weight_kg > 0) ? activeSet.weight_kg : null;
+  const weightBadgeHtml = weightVal != null ? `<span class="runner-weight-pill mono">+${weightVal} kg</span>` : '';
 
   // Rest timer banner if active
+  const restProgressPct = _workoutRestState.total > 0
+    ? Math.max(0, Math.min(100, (_workoutRestState.remaining / _workoutRestState.total) * 100))
+    : 0;
+
   const restCountdownHtml = _workoutRestState.active ? `
-    <div class="runner-rest-box">
-      <span class="workout-rest-pill">${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-xs')} REST TIMER ACTIVE</span>
-      <div class="runner-rest-num mono">${fmtSecs(_workoutRestState.remaining)}</div>
-      <div class="runner-rest-sub">${_workoutRestState.nextInfo}</div>
-      <div class="runner-rest-btns">
-        <button class="workout-rest-adjust-btn" onclick="adjustWorkoutRest(-15)">-15s</button>
-        <button class="workout-rest-adjust-btn" onclick="adjustWorkoutRest(15)">+15s</button>
-        <button class="workout-skip-rest-btn" onclick="stopWorkoutRest()">Skip Rest ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</button>
+    <div class="runner-rest-card" role="region" aria-label="Rest Timer">
+      <div class="runner-rest-top">
+        <div class="runner-rest-info">
+          <span class="runner-rest-tag">
+            ${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-xs')} REST
+          </span>
+          <span class="runner-rest-digits mono" id="workout-rest-timer-val">${fmtSecs(_workoutRestState.remaining)}</span>
+          ${_workoutRestState.nextInfo ? `<span class="runner-rest-next">${_workoutRestState.nextInfo}</span>` : ''}
+        </div>
+        <div class="runner-rest-controls">
+          <button class="runner-rest-btn" type="button" onclick="adjustWorkoutRest(-15)" aria-label="Decrease rest by 15 seconds">-15s</button>
+          <button class="runner-rest-btn" type="button" onclick="adjustWorkoutRest(15)" aria-label="Increase rest by 15 seconds">+15s</button>
+          <button class="runner-rest-skip-btn" type="button" onclick="stopWorkoutRest()" aria-label="Skip rest and continue">Skip Rest</button>
+        </div>
+      </div>
+      <div class="runner-rest-bar-track">
+        <div class="runner-rest-bar-fill" id="workout-rest-timer-bar" style="width: ${restProgressPct}%;"></div>
       </div>
     </div>` : '';
 
   return `
     <div class="runner-screen">
-      <!-- 1. Top Navigation Bar -->
+      <!-- 1. Top Navigation & Workout Session Header -->
       <div class="runner-top-bar">
-        <button class="runner-nav-btn" onclick="switchView('home')" title="Exit Workout">
-          ${renderIcon('arrowLeft', 'cx-icon cx-icon-xs cx-icon-inline')} Leave
-        </button>
+        <!-- LEFT: Back / Leave + Routine Title + Session Info -->
+        <div class="runner-header-left">
+          <button class="runner-back-btn" onclick="switchView('home')" aria-label="Leave workout and return to Home" title="Leave Workout">
+            ${renderIcon('arrowLeft', 'cx-icon cx-icon-xs')}
+          </button>
+          <div class="runner-header-session-info">
+            <span class="runner-header-routine-title">${session.routine || session.workout_name || 'LEGS A'}</span>
+            <span class="runner-header-session-sub">${session.level ? `Level ${session.level}` : 'In Progress'}</span>
+          </div>
+        </div>
 
+        <!-- CENTER: Session Timer (Readable, not dominant) -->
         <div class="runner-header-center">
-          <span class="runner-routine-chip">${session.routine || session.workout_name || 'PULL A'}</span>
-          <div class="runner-timer-pill mono" id="workout-elapsed-time">
+          <div class="runner-timer-pill mono" id="workout-elapsed-time" role="timer" aria-label="Session Elapsed Time">
             ${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-xs')}
             <span>${fmtSecs(elapsedSec)}</span>
             ${isPaused ? `<span class="runner-paused-badge">PAUSED</span>` : ''}
           </div>
         </div>
 
-        <div class="runner-top-actions">
-          <button class="runner-icon-btn" onclick="openSettingsModal()" title="Options">
-            ${renderIcon('moreVertical', 'cx-icon')}
+        <!-- RIGHT: Secondary Action (Settings/Options) + Finish Workout -->
+        <div class="runner-header-right">
+          <button class="runner-header-opt-btn" onclick="openSettingsModal()" aria-label="Workout Settings & Options" title="Options">
+            ${renderIcon('settings', 'cx-icon cx-icon-xs')}
           </button>
-          <button class="runner-finish-btn" onclick="finishWorkoutSession()">
-            ${renderIcon('flag', 'cx-icon cx-icon-xs cx-icon-inline')} Finish Workout
+          <button class="runner-finish-btn" onclick="finishWorkoutSession()" aria-label="Finish Workout" title="Complete and log session">
+            ${renderIcon('flag', 'cx-icon cx-icon-xs cx-icon-inline')}
+            <span>Finish</span>
           </button>
         </div>
       </div>
 
-      <!-- 2. Segmented Progress Bar -->
+      <!-- 2. Overall Workout & Exercise Progress Hierarchy -->
       <div class="runner-progress-container">
         <div class="runner-progress-labels">
-          <span class="runner-set-counter">SET ${completedSets + 1} <span>/ ${totalSets}</span></span>
-          <span class="runner-pct mono">${pct}%</span>
+          <div class="runner-exercise-progress">
+            <span class="runner-exercise-count">Exercise ${activeExIdx + 1} of ${session.exercises.length}</span>
+          </div>
+          <div class="runner-overall-progress">
+            <span class="runner-set-counter mono">${completedSets} / ${totalSets} sets</span>
+            <span class="runner-progress-dot">·</span>
+            <span class="runner-pct mono">${pct}%</span>
+          </div>
         </div>
-        <div class="runner-segmented-track">
-          ${Array.from({ length: totalSets }).map((_, idx) => `
-            <div class="runner-seg-dot ${idx < completedSets ? 'done' : (idx === completedSets ? 'active' : '')}"></div>
-          `).join('')}
+        <div class="runner-progress-bar-track">
+          <div class="runner-progress-bar-fill" style="width: ${pct}%;"></div>
         </div>
       </div>
 
@@ -4088,107 +4534,71 @@ function renderActiveWorkoutView() {
 
       <!-- 3. Active Exercise Stage Card -->
       <div class="runner-stage-card">
+        <!-- 1. Header: Set Pill + Exercise Name + Context -->
         <div class="runner-stage-header">
           <div class="runner-stage-title-wrap">
             <span class="runner-set-pill">SET ${activeSet.set_num} OF ${activeEx.sets.length}</span>
             <h1 class="runner-exercise-name">${activeEx.exercise_name}</h1>
-            ${activeEx.notes ? `
-              <div class="runner-stage-notes">
-                ${renderIcon('lightbulb', 'cx-icon cx-icon-gold cx-icon-xs cx-icon-inline')}
-                <span>${activeEx.notes}</span>
-              </div>
-            ` : ''}
+            <div class="runner-exercise-context">${exerciseContextText}</div>
           </div>
-          <div class="runner-stage-art" onclick="openBiomechanicsModal()" title="Click to view Anatomy & Technique Guide">
-            ${renderDualMuscleBodySvg(getWorkoutMuscleTargets({ name: activeEx.exercise_name, exercises: [activeEx] }))}
+          <div class="runner-stage-art" onclick="openBiomechanicsModal()" title="View Anatomy & Form Guide">
+            ${renderExerciseIllustrationSvg(activeEx)}
           </div>
         </div>
 
-        <!-- Benchmarks Grid -->
-        <div class="runner-benchmark-grid">
-          <div class="runner-benchmark-card">
-            <span class="runner-bench-label">TARGET</span>
-            <div class="runner-bench-val-row">
-              <span class="runner-bench-val mono">${targetVal} <span class="runner-bench-unit">${isHold ? 'sec' : 'reps'}</span></span>
-              <span class="runner-bench-icon">${renderIcon('timer', 'cx-icon cx-icon-muted')}</span>
-            </div>
+        <!-- 2. Target & Last Session Performance Strip -->
+        <div class="runner-benchmarks">
+          <div class="runner-benchmark-col">
+            <span class="runner-benchmark-label">Target</span>
+            <span class="runner-benchmark-val mono">${targetVal} ${isHold ? 'sec' : 'reps'}</span>
           </div>
-          <div class="runner-benchmark-card">
-            <span class="runner-bench-label">LAST SESSION</span>
-            <div class="runner-bench-val-row">
-              <span class="runner-bench-val mono">${lastPerfDesc}</span>
-              <span class="runner-bench-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-muted')}</span>
-            </div>
-            <span class="runner-bench-sub">2 days ago</span>
+          <div class="runner-benchmark-col runner-benchmark-col-right">
+            <span class="runner-benchmark-label">Last Session</span>
+            <div class="runner-benchmark-val mono">${lastPerfDesc}</div>
+            <span class="runner-benchmark-time">2 days ago</span>
           </div>
         </div>
 
-        <!-- Central Circular Timer / Reps Counter -->
+        <!-- 3. Current Input / Counter Zone (Context-Aware Visual Focal Point) -->
         <div class="runner-hero-counter-zone">
-          ${isHold ? `
-            <div class="runner-circular-ring-wrap">
-              <svg class="runner-circular-svg" viewBox="0 0 200 200">
-                <defs>
-                  <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#7c5cfc"/>
-                    <stop offset="100%" stop-color="#7c5cfc"/>
-                  </linearGradient>
-                </defs>
-                <circle class="runner-circle-bg" cx="100" cy="100" r="88" />
-                <circle class="runner-circle-progress" cx="100" cy="100" r="88" style="stroke-dashoffset: ${strokeOffset};" />
-              </svg>
-              <div class="runner-circle-content">
-                <div class="runner-circle-digits mono">${fmtSecs(holdDisplaySec)}</div>
-                <span class="runner-circle-label">HOLD TIME</span>
-                ${isThisHoldRunning ? `
-                  <button class="runner-ring-btn running" onclick="stopWorkoutHold(true)">
-                    ${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} PAUSE
-                  </button>
-                ` : `
-                  <button class="runner-ring-btn" ${isPaused ? 'disabled' : ''} onclick="startWorkoutHold(${activeExIdx}, ${activeSetIdx})">
-                    ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} START
-                  </button>
-                `}
-              </div>
+          <div class="runner-reps-stepper">
+            <button class="runner-reps-btn" type="button" ${isMinDisabled ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, -${stepDelta})" aria-label="Decrease ${unitText.toLowerCase()}">−</button>
+            <div class="runner-reps-digits-box">
+              <span class="runner-reps-num mono" id="workout-active-counter-digits">${isThisHoldRunning ? holdDisplaySec : currentActual}</span>
+              <span class="runner-reps-unit">${unitText}</span>
+              ${weightBadgeHtml}
             </div>
+            <button class="runner-reps-btn" type="button" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, ${stepDelta})" aria-label="Increase ${unitText.toLowerCase()}">+</button>
+          </div>
 
-            <!-- Hold Adjuster Stepper -->
-            <div class="runner-adjust-row">
-              <span class="runner-adjust-label">Adjust actual hold time</span>
-              <div class="runner-stepper-wrap">
-                <button class="runner-adjust-btn" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, -5)">-5 sec</button>
-                <div class="runner-val-input-box">
-                  ${renderIcon('timer', 'cx-icon cx-icon-xs cx-icon-muted')}
-                  <input class="runner-hold-input mono" type="text" value="${fmtSecs(currentActual)}" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onchange="updateWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, parseSecs(this.value))">
-                </div>
-                <button class="runner-adjust-btn" ${isPaused || isThisHoldRunning ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, 5)">+5 sec</button>
-              </div>
+          ${isHold ? `
+            <div class="runner-hold-live-control">
+              ${isThisHoldRunning ? `
+                <button class="runner-ring-btn running" id="workout-active-hold-btn" type="button" onclick="stopWorkoutHold(true)">
+                  ${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} STOP HOLD (${holdDisplaySec}s)
+                </button>
+              ` : `
+                <button class="runner-ring-btn" id="workout-active-hold-btn" type="button" ${isPaused ? 'disabled' : ''} onclick="startWorkoutHold(${activeExIdx}, ${activeSetIdx})">
+                  ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} START LIVE HOLD TIMER
+                </button>
+              `}
             </div>
-          ` : `
-            <!-- Reps Counter Display -->
-            <div class="runner-reps-counter-wrap">
-              <div class="runner-reps-stepper">
-                <button class="runner-reps-btn" ${isPaused ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, -1)">-</button>
-                <div class="runner-reps-digits-box">
-                  <span class="runner-reps-num mono">${currentActual}</span>
-                  <span class="runner-reps-unit">REPS</span>
-                </div>
-                <button class="runner-reps-btn" ${isPaused ? 'disabled' : ''} onclick="adjustWorkoutSetActual(${activeExIdx}, ${activeSetIdx}, 1)">+</button>
-              </div>
-            </div>
-          `}
+          ` : ''}
         </div>
 
-        <!-- Primary Action CTA -->
+        <!-- 4. Primary Action CTA -->
         <button class="runner-complete-action-btn" ${isPaused ? 'disabled' : ''} onclick="toggleWorkoutSet(${activeExIdx}, ${activeSetIdx})">
-          ${renderIcon('check', 'cx-icon cx-icon-inline cx-icon-md')} COMPLETE SET ${activeSet.set_num}
+          ${renderIcon('check', 'cx-icon cx-icon-inline cx-icon-md')} COMPLETE SET
         </button>
 
-        <!-- Set Details Accordion -->
+        <!-- 5. Set Details Accordion -->
         <details class="runner-details-accordion">
           <summary class="runner-details-summary">
-            <span>${renderIcon('plus', 'cx-icon cx-icon-xs cx-icon-inline')} Add set details (Weight, RPE, Notes)</span>
-            ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}
+            <div class="runner-details-summary-text">
+              <span class="runner-details-title">Add set details</span>
+              <span class="runner-details-subtitle">Weight · RPE · Notes</span>
+            </div>
+            ${renderIcon('chevronDown', 'cx-icon cx-icon-xs cx-icon-muted')}
           </summary>
           <div class="runner-details-body">
             <div class="runner-form-row">
@@ -4212,11 +4622,11 @@ function renderActiveWorkoutView() {
         </details>
       </div>
 
-      <!-- 4. Session Overview Exercise Queue -->
+      <!-- 4. Session Overview Exercise Sequence -->
       <div class="runner-queue-section">
         <div class="runner-queue-head">
-          <span class="runner-queue-tag">SESSION OVERVIEW</span>
-          <span class="runner-queue-summary">${completedSets} / ${totalSets} sets completed <span class="runner-queue-pct mono">${pct}%</span></span>
+          <span class="runner-queue-tag">SESSION</span>
+          <span class="runner-queue-summary mono">${completedSets} / ${totalSets} sets</span>
         </div>
 
         <div class="runner-queue-list">
@@ -4224,19 +4634,32 @@ function renderActiveWorkoutView() {
             const isDone = ex.sets.every(s => s.completed);
             const doneCount = ex.sets.filter(s => s.completed).length;
             const isCurrent = exIdx === activeExIdx;
+            const isHold = ex.exercise_type === 'duration';
+            const targetUnit = isHold ? 's' : ' reps';
+            const targetDisplay = `${ex.sets.length} sets × ${ex.sets[0]?.target_val || 10}${targetUnit}`;
+
+            let stateClass = 'upcoming';
+            let iconHtml = '<span class="runner-seq-icon upcoming">○</span>';
+
+            if (isCurrent) {
+              stateClass = 'current';
+              iconHtml = '<span class="runner-seq-icon current">●</span>';
+            } else if (isDone) {
+              stateClass = 'completed';
+              iconHtml = `<span class="runner-seq-icon completed">${renderIcon('check', 'cx-icon cx-icon-xs')}</span>`;
+            }
+
             return `
-              <div class="runner-queue-item ${isCurrent ? 'active' : ''} ${isDone ? 'completed' : ''}" onclick="selectWorkoutQueueExercise(${exIdx})">
-                <div class="runner-queue-left">
-                  <span class="runner-queue-dot ${isCurrent ? 'current' : (isDone ? 'done' : '')}"></span>
-                  <span class="runner-queue-num mono">${String(exIdx + 1).padStart(2, '0')}</span>
-                  <div class="runner-queue-meta">
-                    <span class="runner-queue-name">${ex.exercise_name}</span>
-                    <span class="runner-queue-sub">${ex.sets.length} sets × ${ex.sets[0]?.target_val}${ex.exercise_type === 'duration' ? 's hold' : ' reps'}</span>
+              <div class="runner-seq-row ${stateClass}" onclick="selectWorkoutQueueExercise(${exIdx})" title="Select ${ex.exercise_name}">
+                <div class="runner-seq-left">
+                  ${iconHtml}
+                  <div class="runner-seq-info">
+                    <span class="runner-seq-name">${ex.exercise_name}</span>
+                    <span class="runner-seq-sub">${targetDisplay}</span>
                   </div>
                 </div>
-                <div class="runner-queue-right">
-                  <span class="runner-queue-count mono">${doneCount} / ${ex.sets.length}</span>
-                  ${renderIcon('chevronRight', 'cx-icon cx-icon-xs cx-icon-muted')}
+                <div class="runner-seq-right">
+                  <span class="runner-seq-count mono">${doneCount}/${ex.sets.length}</span>
                 </div>
               </div>
             `;
@@ -4244,13 +4667,15 @@ function renderActiveWorkoutView() {
         </div>
 
         <div class="runner-coach-tip">
-          ${renderIcon('zap', 'cx-icon cx-icon-accent cx-icon-inline')}
-          <span><strong>Tip:</strong> Focus on active shoulders, steady breathing, and full range of motion.</span>
+          <div class="runner-coach-tip-icon">${renderIcon('lightbulb', 'cx-icon cx-icon-xs')}</div>
+          <div class="runner-coach-tip-text">
+            <strong>Form Cue:</strong> ${activeExTip}
+          </div>
         </div>
 
         <div style="margin-top:20px; display:flex; justify-content:center;">
-          <button class="btn-cancel-link" onclick="cancelWorkoutSession()">
-            Discard / Cancel Workout
+          <button class="runner-discard-btn" type="button" onclick="openDiscardWorkoutModal()" aria-label="Discard workout session">
+            ${renderIcon('trash', 'cx-icon cx-icon-xs cx-icon-inline')} Discard workout
           </button>
         </div>
       </div>
@@ -4918,6 +5343,7 @@ function closeBiomechanicsModal() {
 // ─── Main Router & Dispatcher ────────────────────────────────────────────────
 function render() {
   const activeView = state.view;
+  const prevScrollY = (activeView === 'workout') ? window.scrollY : null;
 
   document.querySelectorAll('.nav-link, .bottom-nav-item, .sidebar-nav-item').forEach(el => {
     const v = el.dataset.view;
@@ -4971,6 +5397,10 @@ function render() {
       break;
     default:
       root.innerHTML = renderHomeView();
+  }
+
+  if (prevScrollY !== null && activeView === 'workout') {
+    window.scrollTo({ top: prevScrollY, behavior: 'instant' });
   }
 }
 
