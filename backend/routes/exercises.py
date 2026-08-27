@@ -4,9 +4,11 @@ from flask import Blueprint, jsonify, request
 try:
     from backend.db import get_db
     from backend.utils import _parse_int
+    from backend.services.progression_service import calculate_progression_readiness
 except ImportError:
     from db import get_db
     from utils import _parse_int
+    from services.progression_service import calculate_progression_readiness
 
 exercises_bp = Blueprint('exercises', __name__)
 
@@ -66,106 +68,11 @@ def get_progression_status(ex_id):
             return jsonify({'error': 'exercise not found'}), 404
 
         ex = dict(ex)
-        target_reps     = ex.get('progression_target_reps')
-        target_dur      = ex.get('progression_target_duration')
-        sessions_needed = ex.get('progression_sessions_needed') or 2
-
-        if target_reps is None and target_dur is None:
-            return jsonify({
-                'readiness_pct': 0,
-                'status': 'not_ready',
-                'criteria': {
-                    'hold_or_reps_met': False,
-                    'sessions_completed': 0,
-                    'sessions_needed': sessions_needed,
-                    'avg_rpe': None
-                },
-                'next_exercise': None,
-                'no_target': True
-            }), 200
-
         logs = conn.execute(
             'SELECT * FROM logs WHERE exercise_id = ? ORDER BY timestamp DESC',
             (ex_id,)
         ).fetchall()
         logs = [dict(r) for r in logs]
-
-        by_date = {}
-        for log in logs:
-            ts = str(log.get('timestamp') or '')
-            date_str = ts[:10] if len(ts) >= 10 else None
-            if not date_str:
-                continue
-            by_date.setdefault(date_str, []).append(log)
-
-        sorted_dates = sorted(by_date.keys(), reverse=True)
-        sessions_completed = len(sorted_dates)
-
-        sessions_at_target = 0
-        evaluated_rpes = []
-
-        for date_str in sorted_dates[:sessions_needed]:
-            day_logs = by_date[date_str]
-            if ex['type'] == 'duration':
-                best = max((l.get('duration_sec') or 0) for l in day_logs)
-                meets = best >= target_dur if target_dur is not None else False
-            else:
-                best = max((l.get('reps') or 0) for l in day_logs)
-                meets = best >= target_reps if target_reps is not None else False
-
-            if meets:
-                sessions_at_target += 1
-                for l in day_logs:
-                    if l.get('rpe') is not None:
-                        try:
-                            evaluated_rpes.append(float(l['rpe']))
-                        except (ValueError, TypeError):
-                            pass
-            else:
-                for l in day_logs:
-                    if l.get('rpe') is not None:
-                        try:
-                            evaluated_rpes.append(float(l['rpe']))
-                        except (ValueError, TypeError):
-                            pass
-
-        hold_or_reps_met = (sessions_completed >= sessions_needed and sessions_at_target >= sessions_needed)
-        hit_rate = min(1.0, sessions_at_target / sessions_needed) if sessions_needed > 0 else 0.0
-
-        avg_rpe = None
-        if evaluated_rpes:
-            avg_rpe = round(sum(evaluated_rpes) / len(evaluated_rpes), 1)
-
-        if avg_rpe is None:
-            readiness_pct = int(round(hit_rate * 100))
-            readiness_pct = max(0, min(100, readiness_pct))
-            if readiness_pct >= 90 and hold_or_reps_met:
-                status = 'ready'
-            elif readiness_pct >= 60:
-                status = 'almost_ready'
-            else:
-                status = 'not_ready'
-        else:
-            hit_score = hit_rate * 60.0
-            if avg_rpe <= 7.0:
-                rpe_credit = 40.0
-            elif avg_rpe >= 9.0:
-                rpe_credit = max(0.0, 10.0 - (avg_rpe - 9.0) * 10.0)
-            else:
-                rpe_credit = 40.0 - ((avg_rpe - 7.0) / 2.0) * 30.0
-
-            rpe_score = rpe_credit * hit_rate
-            readiness_pct = int(round(hit_score + rpe_score))
-            readiness_pct = max(0, min(100, readiness_pct))
-
-            if avg_rpe >= 9.0:
-                status = 'almost_ready' if readiness_pct >= 60 else 'not_ready'
-            elif readiness_pct >= 90 and avg_rpe <= 8.5 and hold_or_reps_met:
-                status = 'ready'
-            elif readiness_pct >= 60:
-                status = 'almost_ready'
-            else:
-                status = 'not_ready'
 
         next_exercise = None
         if ex.get('next_id'):
@@ -175,20 +82,8 @@ def get_progression_status(ex_id):
             if next_ex:
                 next_exercise = dict(next_ex)
 
-        result = {
-            'readiness_pct': readiness_pct,
-            'status': status,
-            'criteria': {
-                'hold_or_reps_met': hold_or_reps_met,
-                'sessions_completed': sessions_completed,
-                'sessions_needed': sessions_needed,
-                'avg_rpe': avg_rpe
-            },
-            'next_exercise': next_exercise,
-            'no_target': False
-        }
-
-        return jsonify(result), 200
+    result = calculate_progression_readiness(ex, logs, next_exercise)
+    return jsonify(result), 200
 
 
 @exercises_bp.route('/exercises/<int:ex_id>/promote', methods=['POST'])

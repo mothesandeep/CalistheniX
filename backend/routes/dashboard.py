@@ -1,75 +1,28 @@
 from datetime import datetime, timedelta, timezone
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
 
 try:
     from backend.db import get_db
+    from backend.services.dashboard_service import (
+        calculate_streak,
+        calculate_week_stats,
+        calculate_top_movers,
+        format_personal_records,
+        compute_muscle_focus
+    )
 except ImportError:
     from db import get_db
+    from services.dashboard_service import (
+        calculate_streak,
+        calculate_week_stats,
+        calculate_top_movers,
+        format_personal_records,
+        compute_muscle_focus
+    )
 
 DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
 dashboard_bp = Blueprint('dashboard', __name__)
-
-
-# ── Dashboard aggregation helpers ────────────────────────────────────────────
-
-def compute_exercise_progress(ex_type, logs):
-    """Group raw log rows by calendar day and compute daily progress metric."""
-    if not logs:
-        return []
-
-    by_date = {}
-    for log in logs:
-        ts = log.get('timestamp') or ''
-        date_str = str(ts)[:10]
-        if not date_str:
-            continue
-        if date_str not in by_date:
-            by_date[date_str] = []
-        by_date[date_str].append(log)
-
-    sorted_dates = sorted(by_date.keys())
-    points = []
-    for d in sorted_dates:
-        day_logs = by_date[d]
-        if ex_type == 'duration':
-            metric = max((l.get('duration_sec') or 0) for l in day_logs)
-        else:
-            metric = sum(
-                ((l.get('reps') or 0) * l['weight_kg']) if l.get('weight_kg') else (l.get('reps') or 0)
-                for l in day_logs
-            )
-        points.append({'date': d, 'metric': metric})
-    return points
-
-
-def compute_exercise_stats(points, today):
-    """Compute current, 2wk_ago, and pct_change for an exercise.
-    Requires at least 2 logged sessions in the last 2 weeks (or comparing against <= 14d ago)."""
-    if not points or len(points) < 2:
-        return None
-
-    cutoff_14 = (today - timedelta(days=14)).isoformat()
-    points_in_2wk = [p for p in points if p['date'] >= cutoff_14]
-    past_points = [p for p in points if p['date'] <= cutoff_14]
-
-    if past_points:
-        past = past_points[-1]['metric']
-    elif len(points_in_2wk) >= 2:
-        past = points_in_2wk[0]['metric']
-    else:
-        return None
-
-    current = points[-1]['metric']
-
-    if past is not None and past > 0:
-        pct = round((current - past) / past * 100)
-        return {
-            'current': current,
-            'past': past,
-            'pct': pct
-        }
-    return None
 
 
 # ── Today Resolver Endpoint (Custom Split Model) ───────────────────────────────
@@ -217,10 +170,7 @@ def get_dashboard_summary():
 
     today_utc = datetime.now(timezone.utc).date()
     today_local = datetime.now().date()
-    today_str_utc = today_utc.isoformat()
-    today_str_local = today_local.isoformat()
 
-    # Collect all distinct dates with at least one log or completed workout session
     logged_dates = set()
     for l in logs_list:
         ts = str(l.get('timestamp') or '')
@@ -232,72 +182,9 @@ def get_dashboard_summary():
         if len(ts) >= 10:
             logged_dates.add(ts[:10])
 
-    # Choose anchor date for today (match local or UTC if logged today)
-    if today_str_local in logged_dates:
-        today = today_local
-    elif today_str_utc in logged_dates:
-        today = today_utc
-    else:
-        today = today_local
-    today_str = today.isoformat()
-
-    # 1. streak_days: count consecutive calendar days with >=1 log or session entry.
-    streak_days = 0
-    if today_str in logged_dates or today_str_utc in logged_dates or today_str_local in logged_dates:
-        curr = today
-        while curr.isoformat() in logged_dates:
-            streak_days += 1
-            curr -= timedelta(days=1)
-    else:
-        yesterday_local = today_local - timedelta(days=1)
-        yesterday_utc = today_utc - timedelta(days=1)
-        if yesterday_local.isoformat() in logged_dates:
-            curr = yesterday_local
-            while curr.isoformat() in logged_dates:
-                streak_days += 1
-                curr -= timedelta(days=1)
-        elif yesterday_utc.isoformat() in logged_dates:
-            curr = yesterday_utc
-            while curr.isoformat() in logged_dates:
-                streak_days += 1
-                curr -= timedelta(days=1)
-
-    # 2. week_sessions: count distinct calendar days with >=1 log/session in last 7 days
-    cutoff_7 = (today - timedelta(days=6)).isoformat()
-    week_sessions = len([d for d in logged_dates if cutoff_7 <= d <= max(today_str, today_str_utc, today_str_local)])
-
-    # 3. week_sets: total count of completed sets from logs and workout_sessions in last 7 days
-    max_today_str = max(today_str, today_str_utc, today_str_local)
-    week_sets_logs = sum(1 for l in logs_list if cutoff_7 <= str(l.get('timestamp') or '')[:10] <= max_today_str)
-    week_sets_sessions = sum(int(s.get('completed_sets') or s.get('total_sets') or 0) for s in sessions_list if cutoff_7 <= str(s.get('completed_at') or s.get('started_at') or '')[:10] <= max_today_str)
-    week_sets = max(week_sets_logs, week_sets_sessions, week_sets_logs + week_sets_sessions)
-
-    # 4. top_movers: array of up to 3 objects
-    logs_by_ex = {}
-    for l in logs_list:
-        eid = l['exercise_id']
-        if eid not in logs_by_ex:
-            logs_by_ex[eid] = []
-        logs_by_ex[eid].append(l)
-
-    movers = []
-    for eid, ex_logs in logs_by_ex.items():
-        ex = ex_map.get(eid)
-        if not ex:
-            continue
-        points = compute_exercise_progress(ex['type'], ex_logs)
-        stats = compute_exercise_stats(points, today)
-        if stats and stats['pct'] is not None:
-            movers.append({
-                'exercise_id': eid,
-                'exercise_name': ex['name'],
-                'metric_current': stats['current'],
-                'metric_2wk_ago': stats['past'],
-                'pct_change': stats['pct']
-            })
-
-    movers.sort(key=lambda m: abs(m['pct_change']), reverse=True)
-    top_movers = movers[:3]
+    streak_days, today = calculate_streak(logged_dates, today_local, today_utc)
+    week_sessions, week_sets = calculate_week_stats(logged_dates, logs_list, sessions_list, today, today_local, today_utc)
+    top_movers = calculate_top_movers(logs_list, ex_map, today, limit=3)
 
     return jsonify({
         'streak_days': streak_days,
@@ -367,36 +254,10 @@ def get_muscle_focus():
             return jsonify({'muscle_label': 'Active Recovery & Mobility', 'front': ['abs'], 'back': ['lower_back', 'calves']})
 
         workout = conn.execute('SELECT * FROM workouts WHERE id = ?', (sched['workout_id'],)).fetchone()
-        desc = workout['description'] if workout else ''
-        name = workout['name'] if workout else ''
-        text = f"{name} {desc}".lower()
+        workout_name = workout['name'] if workout else ''
+        workout_desc = workout['description'] if workout else ''
 
-        front = []
-        back = []
-        labels = []
-        if any(w in text for w in ['push', 'dip', 'press', 'chest']):
-            front.extend(['chest', 'shoulders', 'triceps', 'abs'])
-            labels.append('Chest, Shoulders, Triceps')
-        if any(w in text for w in ['pull', 'chin', 'row', 'back', 'lever']):
-            back.extend(['lats', 'upper_back', 'biceps'])
-            front.append('biceps')
-            labels.append('Back, Biceps, Lats')
-        if any(w in text for w in ['leg', 'squat', 'lunge', 'calf']):
-            front.append('quads')
-            back.extend(['glutes', 'hamstrings', 'calves'])
-            labels.append('Legs, Glutes, Calves')
-
-        if not labels:
-            labels.append('Full Body Conditioning')
-            front.extend(['chest', 'abs', 'shoulders'])
-            back.extend(['upper_back', 'lats'])
-
-        return jsonify({
-            'workout_name': name,
-            'muscle_label': ', '.join(labels),
-            'front': list(set(front)),
-            'back': list(set(back))
-        })
+    return jsonify(compute_muscle_focus(workout_name, workout_desc))
 
 
 @dashboard_bp.route('/api/exercise-progress', methods=['GET'])
@@ -410,29 +271,8 @@ def get_exercise_progress_api():
     ex_map = {e['id']: dict(e) for e in exercises}
     today = datetime.now(timezone.utc).date()
 
-    logs_by_ex = {}
-    for l in logs_list:
-        eid = l['exercise_id']
-        logs_by_ex.setdefault(eid, []).append(l)
-
-    movers = []
-    for eid, ex_logs in logs_by_ex.items():
-        ex = ex_map.get(eid)
-        if not ex:
-            continue
-        points = compute_exercise_progress(ex['type'], ex_logs)
-        stats = compute_exercise_stats(points, today)
-        if stats and stats['pct'] is not None:
-            movers.append({
-                'exercise_id': eid,
-                'exercise_name': ex['name'],
-                'current_reps': stats['current'],
-                'past_reps': stats['past'],
-                'pct_change': stats['pct']
-            })
-
-    movers.sort(key=lambda m: abs(m['pct_change']), reverse=True)
-    return jsonify(movers[:4])
+    movers = calculate_top_movers(logs_list, ex_map, today, limit=4)
+    return jsonify(movers)
 
 
 @dashboard_bp.route('/api/upcoming-workouts', methods=['GET'])
@@ -498,34 +338,8 @@ def get_personal_records():
 
     today_utc = datetime.now(timezone.utc).date()
     today_local = datetime.now().date()
-    today_str_utc = today_utc.isoformat()
-    today_str_local = today_local.isoformat()
-    yesterday_str_utc = (today_utc - timedelta(days=1)).isoformat()
-    yesterday_str_local = (today_local - timedelta(days=1)).isoformat()
 
-    results = []
-    for r in rows:
-        d = dict(r)
-        ts = str(d.get('last_achieved_at') or '')
-        ts_date = ts[:10]
-        if ts_date in (today_str_utc, today_str_local):
-            d['date_label'] = 'Today'
-        elif ts_date in (yesterday_str_utc, yesterday_str_local):
-            d['date_label'] = 'Yesterday'
-        elif len(ts_date) == 10:
-            try:
-                dt_obj = datetime.strptime(ts_date, '%Y-%m-%d').date()
-                diff_days = (today_local - dt_obj).days
-                if 1 < diff_days <= 6:
-                    d['date_label'] = f'{diff_days} days ago'
-                else:
-                    d['date_label'] = dt_obj.strftime('%d %b')
-            except Exception:
-                d['date_label'] = ts_date
-        else:
-            d['date_label'] = 'Recent'
-        results.append(d)
-
+    results = format_personal_records(rows, today_local, today_utc)
     return jsonify(results)
 
 
