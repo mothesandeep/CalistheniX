@@ -1,8 +1,18 @@
-const CACHE_NAME = 'calisthenix-v2.3';
+const CACHE_NAME = 'calisthenix-v2.4';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './style.css',
+  './js/state.js',
+  './js/api.js',
+  './js/views/home.js',
+  './js/views/workout.js',
+  './js/views/history.js',
+  './js/views/progress.js',
+  './js/views/prs.js',
+  './js/views/split.js',
+  './js/views/settings.js',
+  './js/router.js',
   './app.js',
   './manifest.json',
   './icon.svg',
