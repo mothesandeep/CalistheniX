@@ -161,7 +161,6 @@ function resumeWorkoutSession() {
   render();
 }
 
-let _workoutTimerInterval = null;
 function startWorkoutDurationTimer() {
   if (_workoutTimerInterval) clearInterval(_workoutTimerInterval);
   _workoutTimerInterval = setInterval(() => {
@@ -176,12 +175,6 @@ function startWorkoutDurationTimer() {
 }
 
 // ─── Workout Hold & Rest Timer Management ────────────────────────────────────
-
-let _workoutHoldInterval = null;
-let _workoutHoldState = { exIdx: null, setIdx: null, startedAt: null, elapsed: 0 };
-
-let _workoutRestInterval = null;
-let _workoutRestState = { active: false, remaining: 0, total: 0, nextInfo: '' };
 
 function getNextSetDescription(session, exIdx, setIdx) {
   if (!session || !session.exercises) return '';
@@ -628,76 +621,6 @@ async function promoteProgression(exerciseId, nextId) {
 // ─── Phase: Athlete-First Workout Runner (Priority P0) ──────────────────────
 
 
-let _selectedWorkoutExIdx = null;
-
-const EXERCISE_COACHING_TIPS = {
-  // Push / Chest / Shoulders / Triceps
-  'diamond push-ups': 'Keep your elbows tucked at ~45 degrees and focus on triceps extension at lockout.',
-  'wide push-ups': 'Maintain a rigid body line and squeeze your chest at the peak of each rep.',
-  'decline push-ups': 'Brace your core and control the descent to load the upper chest effectively.',
-  'pike push-ups': 'Keep your hips high in an inverted V and lower your head slightly in front of your hands.',
-  'pike push-ups elevated': 'Elevate your feet securely, stay on your toes, and lower your head in front of your hands.',
-  'handstand push-up progression': 'Maintain full shoulder elevation and control the descent toward the wall.',
-  'handstand push-up': 'Keep your core engaged, elbows tracking in, and press the floor away actively.',
-  'archer push-ups': 'Shift your weight smoothly toward the working arm while keeping the opposite arm straight.',
-  'triceps dips': 'Keep your chest tall, shoulders depressed, and lower until your elbows reach 90 degrees.',
-  'dips': 'Keep your shoulders depressed away from your ears and lean slightly forward for chest engagement.',
-  'ring dips': 'Turn the rings out at the top of each rep and keep the straps close to your body.',
-  'plank to push-up': 'Minimize hip sway as you press up from forearm to palm one side at a time.',
-  'lateral raise': 'Lead with your elbows and maintain a slight forward lean to isolate the lateral delt.',
-  'push-ups': 'Keep your body in a straight line from head to heels and lower until your chest nearly touches the floor.',
-  'pseudo planche push-ups': 'Lean forward over your wrists with depressed scapulae throughout the movement.',
-
-  // Pull / Back / Biceps
-  'dead hang': 'Relax your lower body while keeping your grip firm and breathing deeply to decompress the spine.',
-  'pull-ups wide grip': 'Initiate the pull by depressing your shoulder blades and drive your elbows down toward your ribs.',
-  'pull-ups': 'Engage your lats first, pull your chest to the bar, and lower under control.',
-  'pull-ups close grip': 'Focus on elbow flexion and squeeze your mid-back at the top of each rep.',
-  'chin-ups': 'Keep your core tight, pull your elbows straight down, and achieve a full stretch at the bottom.',
-  'negative pull-ups': 'Jump or step to the top, then resist gravity with a slow 4-5 second controlled descent.',
-  'scapular pulls': 'Keep your arms completely straight and only move by retracting and depressing your shoulder blades.',
-  'commando pull-ups': 'Alternate your head to opposite sides of the bar while maintaining control against torso rotation.',
-  'australian pull-ups': 'Keep your body in a straight plank and pull your chest directly to the bar.',
-  'inverted rows': 'Retract your shoulder blades before bending your elbows and pull your lower chest to the bar.',
-  'face pulls': 'Pull toward your forehead while externally rotating your shoulders so your thumbs point back.',
-  'prone y-raises': 'Lie face down, form a Y with your arms, and lift with your lower traps without arching your neck.',
-  'wall angels': 'Keep your lower back, elbows, and wrists in contact with the wall throughout the slow slide.',
-  'muscle-ups': 'Generate explosive hip drive, lean aggressively over the bar during the transition, and press out smoothly.',
-
-  // Core / Holds
-  'superman hold': 'Squeeze your glutes and lower back to elevate your chest and thighs without straining your neck.',
-  'l-sit hang': 'Depress your shoulders actively and use your hip flexors to keep your legs locked at 90 degrees.',
-  'l-sit': 'Lock your elbows, depress your shoulders, and point your toes with tight quadriceps.',
-  'tuck l-sit': 'Press the floor away with locked arms and pull your knees tight into your chest.',
-  'hanging knee raises': 'Avoid swinging, curl your pelvis upward, and pull your knees all the way to your chest.',
-  'hanging leg raises': 'Engage your lats to prevent swinging and lift with your abdominals to bring your feet to bar height.',
-  'plank': 'Brace your core and keep your hips aligned with your shoulders.',
-  'side plank': 'Stack your feet, press the floor away through your forearm, and keep your hips elevated in a straight line.',
-  'hollow body hold': 'Press your lower back firmly into the floor and reach your arms and legs away in a shallow banana shape.',
-  'dragon flag': 'Pivot from your upper back and lower your entire body as one rigid line without breaking at the hips.',
-  'front lever': 'Pull your shoulder blades down and back while driving your hips upward into a flat horizontal hold.',
-  'back lever': 'Maintain locked elbows, rounded upper back, and breathe steadily into your diaphragm.',
-  'handstand': 'Push tall through your shoulders, squeeze your glutes, and focus your gaze between your fingertips.',
-  'handstand hold': 'Push tall through your shoulders, squeeze your glutes, and focus your gaze between your fingertips.',
-
-  // Legs / Lower Body
-  'bulgarian split squats': 'Keep the front knee tracking naturally and drive through the mid-foot.',
-  'bulgarian split squat': 'Keep the front knee tracking naturally and drive through the mid-foot.',
-  'walking lunges': 'Keep your torso controlled and take consistent stride lengths.',
-  'lunges': 'Keep your torso upright and step forward with controlled knee alignment.',
-  'glute bridges single leg': 'Drive through your heel and pause at the top with your hips level.',
-  'single-leg glute bridge hold': 'Drive through your heel and pause at the top with your hips level.',
-  'glute bridges': 'Drive through your heels, squeeze your glutes at lockout, and avoid hyperextending your lower back.',
-  'glute bridge': 'Drive through your heels, squeeze your glutes at lockout, and avoid hyperextending your lower back.',
-  'calf raises': 'Rise onto your big toes, pause at the apex, and lower down with a controlled stretch.',
-  'pistol squat progression': 'Keep your weight centered over the working mid-foot and reach your arms forward for counterbalance.',
-  'pistol squats': 'Keep your weight centered over the working mid-foot and reach your arms forward for counterbalance.',
-  'pistol squat': 'Keep your weight centered over the working mid-foot and reach your arms forward for counterbalance.',
-  'jump squats': 'Land softly on the mid-foot to absorb impact and immediately transition into the next repetition.',
-  'wall sit': 'Keep your knees at 90 degrees, press your back flat against the wall, and breathe rhythmically.',
-  'air squats': 'Keep your chest proud, push your knees outward in line with your toes, and hit full depth.',
-  'squats': 'Keep your chest proud, push your knees outward in line with your toes, and hit full depth.'
-};
 
 function getExerciseContextualTip(ex) {
   if (!ex) return 'Focus on steady breathing and controlled movement through full range of motion.';

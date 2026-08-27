@@ -46,11 +46,6 @@ function stopTimer() {
   if (btn) { btn.textContent = 'Start'; btn.classList.remove('timer-btn-running'); }
 }
 
-function fmtSecs(s) {
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-}
 
 function toggleTimer() {
   if (state.logTimer) {

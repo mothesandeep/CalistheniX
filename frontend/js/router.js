@@ -119,18 +119,6 @@ async function goBack() {
   render();
 }
 
-const RPE_DESCRIPTIONS = {
-  1: 'Very light recovery (5+ reps in reserve)',
-  2: 'Light warmup (5+ reps in reserve)',
-  3: 'Light warmup (4+ reps in reserve)',
-  4: 'Moderate warmup (4 reps in reserve)',
-  5: 'Moderate warmup (3-4 reps in reserve)',
-  6: 'Comfortable effort (~4 reps in reserve)',
-  7: 'Moderate effort (~3 reps in reserve)',
-  8: 'Target Overload zone (~2 reps in reserve)',
-  9: 'Heavy effort / Near failure (1 rep in reserve)',
-  10: 'Max effort / Absolute technical failure (0 in reserve)'
-};
 
 // Build the RPE 1-10 tap buttons after the log form is in the DOM.
 

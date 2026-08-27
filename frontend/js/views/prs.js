@@ -71,7 +71,6 @@ function renderPersonalRecordsCard(records = []) {
     </div>`;
 }
 
-async 
 // ─── Dedicated PRs (Personal Records) View ──────────────────────────────────
 function setPrsFilter(filter) {
   state.prsFilter = filter;

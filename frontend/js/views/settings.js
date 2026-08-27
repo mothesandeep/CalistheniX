@@ -59,10 +59,6 @@ function closeSettingsModal() {
 }
 
 // ─── Muscle Focus Engine & Body Visualization (Phase.md Section 20) ───────────
-let _activeMuscleView = 'front';
-let _currentWorkoutMuscles = { label: 'Legs, Glutes, Core', frontMuscles: ['quads', 'abs'], backMuscles: ['glutes', 'calves'] };
-
-
 function openNotifModal() {
   const root = document.getElementById('settings-modal-root');
   if (!root) return;
@@ -394,7 +390,6 @@ function renderCalendarView() {
 
 
 // ─── Biomechanics & Technique Form Guide Modal ──────────────────────────────
-let _biomechanicsTab = 'anatomy'; // 'anatomy' | 'stages' | 'tempo' | 'grip'
 
 function setBiomechanicsTab(tab) {
   _biomechanicsTab = tab;
