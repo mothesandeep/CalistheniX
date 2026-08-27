@@ -17,7 +17,7 @@ const STATIC_ASSETS = [
   './js/views/split.js',
   './js/views/settings.js',
   './js/router.js',
-  './app.js',
+  './js/app.js',
   './manifest.json',
   './icon.svg',
   './assets/avatar.jpg',
