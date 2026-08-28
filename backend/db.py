@@ -11,9 +11,9 @@ DB_PATH = Config.DB_PATH
 
 
 def get_db_connection(db_path=None):
-    """Create and return a raw SQLite database connection with row factory and FK enabled."""
+    """Create and return a raw SQLite database connection with row factory, FK enabled, and 20s busy timeout."""
     target_path = db_path or Config.DB_PATH
-    conn = sqlite3.connect(target_path)
+    conn = sqlite3.connect(target_path, timeout=20.0)
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA foreign_keys = ON')
     return conn

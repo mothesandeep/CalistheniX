@@ -118,15 +118,20 @@ def calculate_week_stats(logged_dates, logs_list, sessions_list, today, today_lo
     cutoff_7 = (today - timedelta(days=6)).isoformat()
     week_sessions = len([d for d in logged_dates if cutoff_7 <= d <= max_today_str])
 
-    week_sets_logs = sum(1 for l in logs_list if cutoff_7 <= str(l.get('timestamp') or '')[:10] <= max_today_str)
+    week_sets_logs = sum(
+        1 for l in logs_list
+        if cutoff_7 <= str(l.get('timestamp') or '')[:10] <= max_today_str
+        and l.get('phase') in (None, '', 'main')
+    )
     week_sets_sessions = sum(
-        int(s.get('completed_sets') or s.get('total_sets') or 0)
+        int(s.get('completed_sets') or s.get('main_sets') or s.get('total_sets') or 0)
         for s in sessions_list
         if cutoff_7 <= str(s.get('completed_at') or s.get('started_at') or '')[:10] <= max_today_str
     )
-    week_sets = max(week_sets_logs, week_sets_sessions, week_sets_logs + week_sets_sessions)
+    week_sets = max(week_sets_logs, week_sets_sessions)
 
     return week_sessions, week_sets
+
 
 
 def calculate_top_movers(logs_list, ex_map, today, limit=3):

@@ -88,6 +88,8 @@ def init_db():
             duration_sec  INTEGER,
             rpe           INTEGER,
             client_uuid   TEXT UNIQUE NOT NULL,
+            session_uuid  TEXT,
+            phase         TEXT NOT NULL DEFAULT 'main',
             FOREIGN KEY(exercise_id) REFERENCES exercises(id)
         )
         ''')
@@ -124,25 +126,31 @@ def init_db():
             rest_sec          INTEGER NOT NULL,
             superset_group    INTEGER,
             notes             TEXT,
+            phase             TEXT NOT NULL DEFAULT 'main',
             FOREIGN KEY(routine_level_id) REFERENCES routine_levels(id),
             FOREIGN KEY(exercise_id)      REFERENCES exercises(id)
         )
         ''')
 
-        # ── Workout Sessions table (Phase 1 Foundation) ───────────────────────────
+        # ── Workout Sessions table (Phase 1 Foundation & Tri-Phase Lifecycle) ─────
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS workout_sessions (
-            id             INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_uuid   TEXT UNIQUE NOT NULL,
-            routine_name   TEXT NOT NULL,
-            level          INTEGER NOT NULL DEFAULT 1,
-            started_at     DATETIME NOT NULL,
-            completed_at   DATETIME,
-            duration_sec   INTEGER DEFAULT 0,
-            total_sets     INTEGER DEFAULT 0,
-            completed_sets INTEGER DEFAULT 0,
-            status         TEXT NOT NULL DEFAULT 'completed',
-            raw_json       TEXT
+            id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_uuid          TEXT UNIQUE NOT NULL,
+            routine_name          TEXT NOT NULL,
+            level                 INTEGER NOT NULL DEFAULT 1,
+            started_at            DATETIME NOT NULL,
+            completed_at          DATETIME,
+            duration_sec          INTEGER DEFAULT 0,
+            warmup_duration_sec   INTEGER DEFAULT 0,
+            main_duration_sec     INTEGER DEFAULT 0,
+            cooldown_duration_sec INTEGER DEFAULT 0,
+            warmup_status         TEXT DEFAULT 'none',
+            cooldown_status       TEXT DEFAULT 'none',
+            total_sets            INTEGER DEFAULT 0,
+            completed_sets        INTEGER DEFAULT 0,
+            status                TEXT NOT NULL DEFAULT 'completed',
+            raw_json              TEXT
         )
         ''')
 
@@ -194,6 +202,7 @@ def init_db():
             tempo          TEXT,
             superset_group INTEGER,
             notes          TEXT,
+            phase          TEXT NOT NULL DEFAULT 'main',
             FOREIGN KEY(workout_id) REFERENCES workouts(id) ON DELETE CASCADE,
             FOREIGN KEY(exercise_id) REFERENCES exercises(id)
         )
@@ -218,6 +227,41 @@ def init_db():
     _migrate_session_uuid_column()
     # Add movement_pattern column to exercises if missing and backfill (safe on re-run).
     _migrate_movement_pattern_column()
+    # Add phase column to workout_exercises, level_exercises, and logs if missing (safe on re-run).
+    _migrate_phase_columns()
+    # Add phase duration and status columns to workout_sessions if missing (safe on re-run).
+    _migrate_session_phase_duration_columns()
+    # Ensure warmup & cool-down mobility/stretch exercises are present in catalog.
+    _ensure_warmup_cooldown_exercises()
+
+
+def _migrate_session_phase_duration_columns():
+    """Add phase duration and status columns to workout_sessions table if missing."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cols = [row[1] for row in cursor.execute('PRAGMA table_info(workout_sessions)').fetchall()]
+        migrations = [
+            ('warmup_duration_sec',   'ALTER TABLE workout_sessions ADD COLUMN warmup_duration_sec   INTEGER DEFAULT 0'),
+            ('main_duration_sec',     'ALTER TABLE workout_sessions ADD COLUMN main_duration_sec     INTEGER DEFAULT 0'),
+            ('cooldown_duration_sec', 'ALTER TABLE workout_sessions ADD COLUMN cooldown_duration_sec INTEGER DEFAULT 0'),
+            ('warmup_status',         "ALTER TABLE workout_sessions ADD COLUMN warmup_status         TEXT DEFAULT 'none'"),
+            ('cooldown_status',       "ALTER TABLE workout_sessions ADD COLUMN cooldown_status       TEXT DEFAULT 'none'"),
+        ]
+        for col_name, sql in migrations:
+            if col_name not in cols:
+                cursor.execute(sql)
+        conn.commit()
+
+
+def _migrate_phase_columns():
+    """Add `phase` TEXT NOT NULL DEFAULT 'main' column to workout_exercises, level_exercises, and logs tables if missing."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        for table in ['workout_exercises', 'level_exercises', 'logs']:
+            cols = [row[1] for row in cursor.execute(f'PRAGMA table_info({table})').fetchall()]
+            if 'phase' not in cols:
+                cursor.execute(f"ALTER TABLE {table} ADD COLUMN phase TEXT NOT NULL DEFAULT 'main'")
+        conn.commit()
 
 
 def _migrate_session_uuid_column():
@@ -263,15 +307,11 @@ def _migrate_movement_pattern_column():
         cols = [row[1] for row in cursor.execute('PRAGMA table_info(exercises)').fetchall()]
         if 'movement_pattern' not in cols:
             cursor.execute("ALTER TABLE exercises ADD COLUMN movement_pattern TEXT NOT NULL DEFAULT 'push_horizontal'")
+            # Update all known canonical exercises to their correct movement pattern
+            for name, pattern in EXERCISE_MOVEMENT_PATTERNS.items():
+                cursor.execute('UPDATE exercises SET movement_pattern = ? WHERE name = ?', (pattern, name))
+            cursor.execute("UPDATE exercises SET movement_pattern = 'push_horizontal' WHERE movement_pattern IS NULL OR movement_pattern = ''")
             conn.commit()
-
-        # Update all known canonical exercises to their correct movement pattern
-        for name, pattern in EXERCISE_MOVEMENT_PATTERNS.items():
-            cursor.execute('UPDATE exercises SET movement_pattern = ? WHERE name = ?', (pattern, name))
-
-        # Fallback for custom or unmapped exercises
-        cursor.execute("UPDATE exercises SET movement_pattern = 'push_horizontal' WHERE movement_pattern IS NULL OR movement_pattern = ''")
-        conn.commit()
 
 
 # ── Canonical Movement Pattern Mapping ───────────────────────────────────────
@@ -315,16 +355,143 @@ EXERCISE_MOVEMENT_PATTERNS = {
     'Wall Sit':                     'hold_isometric',
     'Hanging Leg Raises':           'core',
     'Russian Twists':               'core',
+
+    # Warm-up Dynamic Movements & Mobility
+    'Wrist Circles':                'mobility_wrist',
+    'Wrist Preparation':            'mobility_wrist',
+    'Wrist Rocks':                  'mobility_wrist',
+    'Arm Circles':                  'mobility_shoulder',
+    'Arm Swings':                   'mobility_shoulder',
+    'Shoulder CARs':                'mobility_shoulder',
+    'Shoulder Activation':          'mobility_shoulder',
+    'Shoulder Mobility':            'mobility_shoulder',
+    'Scapular Elevation':           'push_vertical',
+    'Scapular Push-ups':            'push_horizontal',
+    'Scapular Protraction':         'push_horizontal',
+    'Scapular Pulls':               'pull_vertical',
+    'Incline Push-up Prep':         'push_horizontal',
+    'Incline Row Prep':             'pull_horizontal',
+    'Planche Lean Prep':            'planche',
+    'Wall-Facing Handstand Prep':   'handstand',
+    'Hollow Body Activation':       'core',
+    'Leg Swings':                   'mobility_hip',
+    'Ankle Circles':                'mobility_ankle',
+    'Deep Squat Hold':              'mobility_hip',
+    'Bodyweight Squats':            'squat',
+    'Hip 90/90 Transitions':        'mobility_hip',
+    'Cat-Cow Stretch':              'mobility_spine',
+    'World\'s Greatest Stretch':    'mobility_full',
+
+    # Cool-down & Static Stretching
+    'Chest Stretch':                'stretch_chest',
+    'Lat Stretch':                  'stretch_lat',
+    'Shoulder Stretch':             'stretch_shoulder',
+    'Overhead Triceps Stretch':     'stretch_triceps',
+    'Biceps & Forearm Stretch':     'stretch_biceps',
+    'Reverse Wrist Stretch':        'stretch_wrist',
+    'Eagle Arms Stretch':           'stretch_upper_back',
+    'Hip Flexor Stretch':           'stretch_hip',
+    'Hamstring Stretch':            'stretch_hamstring',
+    'Pigeon Pose':                  'stretch_glute',
+    'Standing Calf Stretch':        'stretch_calf',
+    'Butterfly Stretch':            'stretch_hip',
+    'Child\'s Pose':                'stretch_spine',
+    'Puppy Pose':                   'stretch_spine',
+    'Seated Forward Fold':          'stretch_hamstring',
+    'Supine Spinal Twist':          'stretch_spine',
+    'Cobra Pose':                   'stretch_core',
+    'Dead Hang':                    'hold_isometric',
+    'Passive Dead Hang':            'stretch_spine',
+    'Scapular Activation':          'pull_vertical',
+    'Light General Activation':      'mobility_full',
+    'Cross-Body Shoulder Stretch':  'stretch_shoulder',
+    'Wrist/Forearm Stretch':        'stretch_wrist',
 }
 
+WARMUP_COOLDOWN_EXERCISES = [
+    # Warm-up Dynamic Movements & Mobility
+    ('Wrist Circles',                'duration', 30, 'mobility_wrist',      'Warm-up: Circular wrist rotations clockwise & counter-clockwise'),
+    ('Wrist Preparation',            'duration', 30, 'mobility_wrist',      'Warm-up: Palm, finger, and wrist joint loading preparation'),
+    ('Wrist Rocks',                  'duration', 30, 'mobility_wrist',      'Warm-up: Forward and lateral wrist rocking on hands & knees'),
+    ('Arm Circles',                  'duration', 30, 'mobility_shoulder',   'Warm-up: Controlled arm swings for shoulder joint lubrication'),
+    ('Arm Swings',                   'duration', 30, 'mobility_shoulder',   'Warm-up: Dynamic horizontal and overhead arm swings'),
+    ('Shoulder CARs',                'duration', 30, 'mobility_shoulder',   'Warm-up: Controlled Articular Rotations for shoulder capsule mobility'),
+    ('Shoulder Activation',          'duration', 30, 'mobility_shoulder',   'Warm-up: Banded or active isometric shoulder prep'),
+    ('Shoulder Mobility',            'duration', 30, 'mobility_shoulder',   'Warm-up: Dynamic overhead reaching and thoracic extension'),
+    ('Scapular Activation',          'reps',     10, 'pull_vertical',       'Warm-up: Hanging scapular depressions and activations'),
+    ('Light General Activation',     'duration', 60, 'mobility_full',       'Warm-up: Dynamic heart rate and CNS activation'),
+    ('Dead Hang',                    'duration', 30, 'hold_isometric',      'Warm-up: Grip and shoulder joint decompression hold'),
+    ('Scapular Elevation',           'reps',     10, 'push_vertical',       'Warm-up: Overhead active scapular shrugging & elevation'),
+    ('Scapular Push-ups',            'reps',     10, 'push_horizontal',     'Warm-up: Scapular protraction & retraction on floor'),
+    ('Scapular Protraction',         'duration', 20, 'push_horizontal',     'Warm-up: Locked-arm planche protraction push hold'),
+    ('Scapular Pulls',               'reps',      8, 'pull_vertical',       'Warm-up: Hanging scapular depressions and activations'),
+    ('Incline Push-up Prep',         'reps',      8, 'push_horizontal',     'Warm-up: Light elevated pushing movement prep'),
+    ('Incline Row Prep',             'reps',      8, 'pull_horizontal',     'Warm-up: Light bodyweight rowing movement prep'),
+    ('Planche Lean Prep',            'duration', 20, 'planche',             'Warm-up: Forward shoulder lean with full protraction'),
+    ('Wall-Facing Handstand Prep',   'duration', 20, 'handstand',           'Warm-up: Chest-to-wall active alignment hold'),
+    ('Hollow Body Activation',       'duration', 20, 'core',                'Warm-up: Posterior pelvic tilt core engagement'),
+    ('Leg Swings',                   'duration', 30, 'mobility_hip',        'Warm-up: Dynamic forward/backward & lateral hip swings'),
+    ('Ankle Circles',                'duration', 30, 'mobility_ankle',      'Warm-up: Controlled circular ankle rotations'),
+    ('Deep Squat Hold',              'duration', 30, 'mobility_hip',        'Warm-up: Deep bodyweight squat hold with upright chest'),
+    ('Bodyweight Squats',            'reps',     10, 'squat',               'Warm-up: Smooth bodyweight squats to prime hip & knee extensor mechanics'),
+    ('Hip 90/90 Transitions',        'duration', 30, 'mobility_hip',        'Warm-up: Dynamic internal/external hip rotation switches'),
+    ('Cat-Cow Stretch',              'duration', 30, 'mobility_spine',      'Warm-up: Thoracic and lumbar segmental articulation'),
+    ('World\'s Greatest Stretch',    'duration', 30, 'mobility_full',       'Warm-up: Lunge + thoracic rotation + hamstring opener'),
 
-# ── PPL A/B seed data ─────────────────────────────────────────────────────────
-# Structured as a list of (routine_name, exercises_list) where each exercise is:
-#   (name, ex_type, sets, reps_or_none, duration_sec_or_none, rest_sec, notes_or_none)
-# 6 days training, 1 rest — Push A → Pull A → Legs A → Push B → Pull B → Legs B → Rest
-# Daily core frequency (1 dedicated core slot per training day)
+    # Cool-down & Static Stretching
+    ('Chest Stretch',                'duration', 30, 'stretch_chest',       'Cool-down: Wall/doorway pectoral static decompression'),
+    ('Lat Stretch',                  'duration', 30, 'stretch_lat',         'Cool-down: Hanging or bar-assisted latissimus dorsi stretch'),
+    ('Cross-Body Shoulder Stretch',  'duration', 30, 'stretch_shoulder',    'Cool-down: Cross-body posterior capsule and deltoid stretch'),
+    ('Shoulder Stretch',             'duration', 30, 'stretch_shoulder',    'Cool-down: Overhead and posterior shoulder stretch'),
+    ('Wrist/Forearm Stretch',        'duration', 30, 'stretch_wrist',       'Cool-down: Wall-supported wrist and forearm elongation'),
+    ('Overhead Triceps Stretch',     'duration', 30, 'stretch_triceps',     'Cool-down: Overhead triceps and lat static stretch'),
+    ('Biceps & Forearm Stretch',     'duration', 30, 'stretch_biceps',      'Cool-down: Wall-supported wrist and biceps elongation'),
+    ('Reverse Wrist Stretch',        'duration', 30, 'stretch_wrist',       'Cool-down: Kneeling palms-up gentle wrist extensor release'),
+    ('Eagle Arms Stretch',           'duration', 30, 'stretch_upper_back',  'Cool-down: Intertwined forearm stretch for upper back & rhomboids'),
+    ('Passive Dead Hang',            'duration', 30, 'stretch_spine',       'Cool-down: Passive relaxing decompression of spine'),
+    ('Hip Flexor Stretch',           'duration', 30, 'stretch_hip',         'Cool-down: Kneeling lunge for psoas and rectus femoris elongation'),
+    ('Hamstring Stretch',            'duration', 30, 'stretch_hamstring',   'Cool-down: Seated or standing single-leg hamstring stretch'),
+    ('Pigeon Pose',                  'duration', 30, 'stretch_glute',       'Cool-down: Deep gluteus medius/piriformis opening'),
+    ('Standing Calf Stretch',        'duration', 30, 'stretch_calf',        'Cool-down: Wall-assisted gastrocnemius & soleus stretch'),
+    ('Butterfly Stretch',            'duration', 30, 'stretch_hip',         'Cool-down: Seated groin and adductor static stretch'),
+    ('Child\'s Pose',                'duration', 30, 'stretch_spine',       'Cool-down: Kneeling spinal decompression and breathing'),
+    ('Puppy Pose',                   'duration', 30, 'stretch_spine',       'Cool-down: Thoracic extension and anterior shoulder stretch'),
+    ('Seated Forward Fold',          'duration', 30, 'stretch_hamstring',   'Cool-down: Posterior chain and lower back decompression'),
+    ('Supine Spinal Twist',          'duration', 30, 'stretch_spine',       'Cool-down: Lying rotational lumbar and thoracic release'),
+    ('Cobra Pose',                   'duration', 30, 'stretch_core',        'Cool-down: Gentle prone abdominal and hip flexor stretch'),
+]
 
-_SEED_VERSION = 'custom-split-v5'  # bump to re-seed without deleting the DB
+def _ensure_warmup_cooldown_exercises(conn=None):
+    """Ensure canonical warm-up mobility and cool-down stretch exercises exist in the database."""
+    if conn is not None:
+        _insert_warmup_cooldown_exercises(conn)
+    else:
+        with get_db() as local_conn:
+            _insert_warmup_cooldown_exercises(local_conn)
+            local_conn.commit()
+
+
+def _insert_warmup_cooldown_exercises(conn):
+    cursor = conn.cursor()
+    for item in WARMUP_COOLDOWN_EXERCISES:
+        name = item[0]
+        ex_type = item[1]
+        default_val = item[2]
+        pattern = item[3]
+
+        existing = cursor.execute('SELECT id FROM exercises WHERE name = ?', (name,)).fetchone()
+        if not existing:
+            dur = default_val if ex_type == 'duration' else None
+            reps = default_val if ex_type == 'reps' else None
+            cursor.execute(
+                '''INSERT INTO exercises
+                       (name, day, type, movement_pattern, progression_target_reps, progression_target_duration)
+                   VALUES (?, 'Mobility & Stretching', ?, ?, ?, ?)''',
+                (name, ex_type, pattern, reps, dur)
+            )
+
+
+_SEED_VERSION = 'custom-split-v11'  # bump to re-seed with clean PULL warmup and cooldown exercises
 
 _SEED = [
     ('Push A', [
@@ -344,11 +511,11 @@ _SEED = [
         ('Hollow Body Hold',               'duration', 3, None, 30, 90, 'Daily core slot (20-30 sec)'),
     ]),
     ('Pull A', [
-        ('Dead Hang',            'duration', 2, None, 45, 90, 'Warm-up, grip + shoulder health (30-45 sec)'),
         ('Pull-ups Wide Grip',   'reps',     4,    6, None, 90, 'Primary width builder (max 5-6 currently)'),
         ('Chin-ups',             'reps',     3,    6, None, 90, 'Underhand — bicep + lat (max reps)'),
+        ('Inverted Rows',        'reps',     3,   10, None, 90, 'Horizontal pulling & rhomboid engagement'),
         ('Negative Pull-ups',    'reps',     3,    5, None, 90, 'Slow 5-sec descent — builds beyond current max'),
-        ('Scapular Pulls',       'reps',     3,   10, None, 90, 'Pull-up strength foundation (hang & pull blades)'),
+        ('Face Pulls',           'reps',     3,   15, None, 90, 'Band/towel-resisted — rear delt + posture'),
         ('Hanging Knee Raises',  'reps',     3,   15, None, 90, 'Daily core slot — uses the hang you\'re already in (12-15 reps)'),
     ]),
     ('Pull B', [
@@ -375,6 +542,105 @@ _SEED = [
         ('Russian Twists',               'reps',     3, 20, None, 90, 'Daily core slot — rotational/oblique work (10/side)'),
     ]),
 ]
+
+DEFAULT_WORKOUT_PHASES = {
+    'Push A': {
+        'warmup': [
+            ('Wrist Circles', 'duration', 30, 'Warm-up: Joint lubrication for pressing'),
+            ('Arm Circles', 'duration', 30, 'Warm-up: Controlled shoulder circumduction'),
+            ('Shoulder CARs', 'duration', 30, 'Warm-up: Rotational mobility for shoulder capsules'),
+            ('Scapular Push-ups', 'reps', 10, 'Warm-up: Protraction and retraction mechanics'),
+            ('Arm Swings', 'duration', 30, 'Warm-up: Dynamic pectoral and anterior delt opener'),
+        ],
+        'cooldown': [
+            ('Chest Stretch', 'duration', 30, 'Cool-down: Wall/doorway pectoral static decompression'),
+            ('Shoulder Stretch', 'duration', 30, 'Cool-down: Cross-body posterior capsule and deltoid stretch'),
+            ('Overhead Triceps Stretch', 'duration', 30, 'Cool-down: Overhead triceps and lat static stretch'),
+            ('Cobra Pose', 'duration', 30, 'Cool-down: Gentle prone extension for anterior chain'),
+            ('Child\'s Pose', 'duration', 30, 'Cool-down: Kneeling spinal decompression and breathing'),
+        ]
+    },
+    'Push B': {
+        'warmup': [
+            ('Wrist Circles', 'duration', 30, 'Warm-up: Joint lubrication for pressing'),
+            ('Arm Circles', 'duration', 30, 'Warm-up: Controlled shoulder circumduction'),
+            ('Shoulder CARs', 'duration', 30, 'Warm-up: Rotational mobility for shoulder capsules'),
+            ('Scapular Push-ups', 'reps', 10, 'Warm-up: Protraction and retraction mechanics'),
+            ('Arm Swings', 'duration', 30, 'Warm-up: Dynamic pectoral and anterior delt opener'),
+        ],
+        'cooldown': [
+            ('Chest Stretch', 'duration', 30, 'Cool-down: Wall/doorway pectoral static decompression'),
+            ('Shoulder Stretch', 'duration', 30, 'Cool-down: Cross-body posterior capsule and deltoid stretch'),
+            ('Overhead Triceps Stretch', 'duration', 30, 'Cool-down: Overhead triceps and lat static stretch'),
+            ('Cobra Pose', 'duration', 30, 'Cool-down: Gentle prone extension for anterior chain'),
+            ('Child\'s Pose', 'duration', 30, 'Cool-down: Kneeling spinal decompression and breathing'),
+        ]
+    },
+    'Pull A': {
+        'warmup': [
+            ('Wrist Preparation', 'duration', 30, 'Warm-up: Grip and forearm dynamic prep'),
+            ('Arm Circles', 'duration', 30, 'Warm-up: Controlled shoulder circumduction'),
+            ('Shoulder Mobility', 'duration', 30, 'Warm-up: Dynamic overhead reaching and thoracic extension'),
+            ('Scapular Activation', 'reps', 10, 'Warm-up: Hanging scapular depressions and activations'),
+            ('Light General Activation', 'duration', 60, 'Warm-up: Dynamic heart rate and CNS activation'),
+        ],
+        'cooldown': [
+            ('Lat Stretch', 'duration', 30, 'Cool-down: Hanging or bar-assisted latissimus dorsi stretch'),
+            ('Cross-Body Shoulder Stretch', 'duration', 30, 'Cool-down: Cross-body posterior capsule and deltoid stretch'),
+            ('Child\'s Pose', 'duration', 30, 'Cool-down: Kneeling spinal decompression and breathing'),
+            ('Shoulder Stretch', 'duration', 30, 'Cool-down: Overhead and posterior shoulder stretch'),
+            ('Wrist/Forearm Stretch', 'duration', 30, 'Cool-down: Wall-supported wrist and forearm elongation'),
+        ]
+    },
+    'Pull B': {
+        'warmup': [
+            ('Wrist Preparation', 'duration', 30, 'Warm-up: Grip and forearm dynamic prep'),
+            ('Arm Circles', 'duration', 30, 'Warm-up: Controlled shoulder circumduction'),
+            ('Shoulder Mobility', 'duration', 30, 'Warm-up: Dynamic overhead reaching and thoracic extension'),
+            ('Scapular Activation', 'reps', 10, 'Warm-up: Hanging scapular depressions and activations'),
+            ('Light General Activation', 'duration', 60, 'Warm-up: Dynamic heart rate and CNS activation'),
+        ],
+        'cooldown': [
+            ('Lat Stretch', 'duration', 30, 'Cool-down: Hanging or bar-assisted latissimus dorsi stretch'),
+            ('Cross-Body Shoulder Stretch', 'duration', 30, 'Cool-down: Cross-body posterior capsule and deltoid stretch'),
+            ('Child\'s Pose', 'duration', 30, 'Cool-down: Kneeling spinal decompression and breathing'),
+            ('Shoulder Stretch', 'duration', 30, 'Cool-down: Overhead and posterior shoulder stretch'),
+            ('Wrist/Forearm Stretch', 'duration', 30, 'Cool-down: Wall-supported wrist and forearm elongation'),
+        ]
+    },
+    'Legs A': {
+        'warmup': [
+            ('Ankle Circles', 'duration', 30, 'Warm-up: Controlled circular ankle rotations'),
+            ('Leg Swings', 'duration', 30, 'Warm-up: Dynamic forward/backward & lateral hip swings'),
+            ('Deep Squat Hold', 'duration', 30, 'Warm-up: Deep bodyweight squat hold with upright chest'),
+            ('Bodyweight Squats', 'reps', 10, 'Warm-up: Smooth bodyweight squats to prime hip & knee mechanics'),
+            ('Hip 90/90 Transitions', 'duration', 30, 'Warm-up: Dynamic internal/external hip rotation switches'),
+        ],
+        'cooldown': [
+            ('Hip Flexor Stretch', 'duration', 30, 'Cool-down: Kneeling lunge for psoas and rectus femoris elongation'),
+            ('Hamstring Stretch', 'duration', 30, 'Cool-down: Seated or standing single-leg hamstring stretch'),
+            ('Pigeon Pose', 'duration', 30, 'Cool-down: Deep gluteus medius/piriformis opening'),
+            ('Standing Calf Stretch', 'duration', 30, 'Cool-down: Wall-assisted gastrocnemius & soleus stretch'),
+            ('Child\'s Pose', 'duration', 30, 'Cool-down: Kneeling spinal decompression and breathing'),
+        ]
+    },
+    'Legs B': {
+        'warmup': [
+            ('Ankle Circles', 'duration', 30, 'Warm-up: Controlled circular ankle rotations'),
+            ('Leg Swings', 'duration', 30, 'Warm-up: Dynamic forward/backward & lateral hip swings'),
+            ('Deep Squat Hold', 'duration', 30, 'Warm-up: Deep bodyweight squat hold with upright chest'),
+            ('Bodyweight Squats', 'reps', 10, 'Warm-up: Smooth bodyweight squats to prime hip & knee mechanics'),
+            ('Hip 90/90 Transitions', 'duration', 30, 'Warm-up: Dynamic internal/external hip rotation switches'),
+        ],
+        'cooldown': [
+            ('Hip Flexor Stretch', 'duration', 30, 'Cool-down: Kneeling lunge for psoas and rectus femoris elongation'),
+            ('Hamstring Stretch', 'duration', 30, 'Cool-down: Seated or standing single-leg hamstring stretch'),
+            ('Pigeon Pose', 'duration', 30, 'Cool-down: Deep gluteus medius/piriformis opening'),
+            ('Standing Calf Stretch', 'duration', 30, 'Cool-down: Wall-assisted gastrocnemius & soleus stretch'),
+            ('Child\'s Pose', 'duration', 30, 'Cool-down: Kneeling spinal decompression and breathing'),
+        ]
+    }
+}
 
 DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
@@ -423,9 +689,14 @@ def reseed_data(force=False):
                         (name, routine_name, ex_type, pattern)
                     )
                     ex_id_by_name[name] = cursor.lastrowid
-                else:
-                    # Exercise already inserted (shared across days).
-                    pass
+
+        # ── Ensure mobility and stretching exercises exist in catalog ─────────────
+        _ensure_warmup_cooldown_exercises(conn)
+
+        # Build full catalog map
+        all_ex_rows = cursor.execute('SELECT id, name FROM exercises').fetchall()
+        for r in all_ex_rows:
+            ex_id_by_name[r['name']] = r['id']
 
         # ── Insert routine_levels and level_exercises (legacy compatibility) ───────
         for routine_name, exercises in _SEED:
@@ -444,24 +715,53 @@ def reseed_data(force=False):
                     (rl_id, ex_id, idx, sets, reps, dur, rest, notes)
                 )
 
-        # ── Insert Reusable Workouts & Workout Exercises (Custom Split Model) ───────
+        # ── Insert Reusable Workouts & Workout Exercises (Custom Split Model with Warm-up + Cool-down) ───
         workout_ids = {}
-        for workout_name, exercises in _SEED:
+        for workout_name, main_exercises in _SEED:
             cursor.execute(
                 'INSERT INTO workouts (name, description) VALUES (?, ?)',
                 (workout_name, f'Standard {workout_name} workout routine')
             )
             w_id = cursor.lastrowid
             workout_ids[workout_name] = w_id
-            for idx, (name, ex_type, sets, reps, dur, rest, notes) in enumerate(exercises, start=1):
+
+            order_idx = 1
+            # 1. Warm-up Phase
+            phases = DEFAULT_WORKOUT_PHASES.get(workout_name, {})
+            for (w_name, w_type, w_val, w_notes) in phases.get('warmup', []):
+                ex_id = ex_id_by_name.get(w_name)
+                if ex_id:
+                    is_dur = w_type == 'duration'
+                    cursor.execute('''
+                        INSERT INTO workout_exercises
+                            (workout_id, exercise_id, order_index, sets, reps, duration_sec, tempo, rest_sec, superset_group, notes, phase)
+                        VALUES (?, ?, ?, 1, ?, ?, NULL, 10, NULL, ?, 'warmup')
+                    ''', (w_id, ex_id, order_idx, None if is_dur else w_val, w_val if is_dur else None, w_notes))
+                    order_idx += 1
+
+            # 2. Main Training Phase
+            for (name, ex_type, sets, reps, dur, rest, notes) in main_exercises:
                 ex_id = ex_id_by_name[name]
                 cursor.execute(
                     '''INSERT INTO workout_exercises
                            (workout_id, exercise_id, order_index, sets,
-                            reps, duration_sec, tempo, rest_sec, superset_group, notes)
-                       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, NULL, ?)''',
-                    (w_id, ex_id, idx, sets, reps, dur, rest, notes)
+                            reps, duration_sec, tempo, rest_sec, superset_group, notes, phase)
+                       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, NULL, ?, 'main')''',
+                    (w_id, ex_id, order_idx, sets, reps, dur, rest, notes)
                 )
+                order_idx += 1
+
+            # 3. Cool-down Phase
+            for (c_name, c_type, c_val, c_notes) in phases.get('cooldown', []):
+                ex_id = ex_id_by_name.get(c_name)
+                if ex_id:
+                    is_dur = c_type == 'duration'
+                    cursor.execute('''
+                        INSERT INTO workout_exercises
+                            (workout_id, exercise_id, order_index, sets, reps, duration_sec, tempo, rest_sec, superset_group, notes, phase)
+                        VALUES (?, ?, ?, 1, ?, ?, NULL, 10, NULL, ?, 'cooldown')
+                    ''', (w_id, ex_id, order_idx, None if is_dur else c_val, c_val if is_dur else None, c_notes))
+                    order_idx += 1
 
         # ── Insert Default Training Split: Pure PPL A/B + Daily Core ───────────────
         cursor.execute(
@@ -486,6 +786,9 @@ def reseed_data(force=False):
                    VALUES (?, ?, ?, ?)''',
                 (split_id, day_idx, day_type, w_id)
             )
+
+        # ── Ensure mobility and stretching exercises exist in catalog ─────────────
+        _ensure_warmup_cooldown_exercises(conn)
 
         # ── Stamp seed version ────────────────────────────────────────────────────
         cursor.execute(

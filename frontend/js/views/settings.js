@@ -6,38 +6,82 @@ function openSettingsModal() {
   const root = document.getElementById('settings-modal-root');
   if (!root) return;
   const muted = isMuted();
+  const audioCuesEnabled = isAudioCuesEnabled();
+  const autoAdvanceEnabled = isAutoAdvanceEnabled();
 
   root.innerHTML = `
     <div class="settings-modal-backdrop" onclick="if(event.target === this) closeSettingsModal()">
-      <div class="settings-modal">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h2 style="font-size:18px; font-weight:700; color:var(--text);">Settings & Data</h2>
+      <div class="settings-modal" style="max-width:540px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+          <h2 style="font-size:18px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px;">
+            ${renderIcon('settings', 'cx-icon cx-icon-inline')} Settings & Preferences
+          </h2>
           <button class="nav-btn-icon" onclick="closeSettingsModal()">${renderIcon('x', 'cx-icon')}</button>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:12px 16px; border-radius:var(--radius);">
-            <div>
-              <strong style="color:var(--text); font-size:14px;">Audio & Haptic Cues</strong>
-              <div style="font-size:12px; color:var(--text-muted);">Ticks during rest countdown and PR fanfare</div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <!-- 1. Audio Cues Toggle -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:14px 16px; border-radius:var(--radius); border:1px solid var(--border);">
+            <div style="max-width:320px;">
+              <strong style="color:var(--text); font-size:14px; display:flex; align-items:center; gap:6px;">
+                ${renderIcon('volume', 'cx-icon cx-icon-xs cx-icon-inline')} Audio Cues & Beeps
+              </strong>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">
+                Beeps at 3, 2, 1s remaining and distinct completion chime on timer completion.
+              </div>
             </div>
-            <button class="btn btn-sm ${muted ? 'btn-secondary' : 'btn-primary'}" onclick="toggleMute(); openSettingsModal();">
-              ${muted ? `${renderIcon('volumeMute', 'cx-icon cx-icon-inline')} Muted` : `${renderIcon('volume', 'cx-icon cx-icon-inline')} Enabled`}
+            <div style="display:flex; gap:6px; align-items:center;">
+              <button class="btn btn-sm btn-secondary" onclick="cueTimerComplete()" title="Test completion chime" style="padding:4px 8px; font-size:11px;">
+                ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} Test
+              </button>
+              <button class="btn btn-sm ${audioCuesEnabled ? 'btn-primary' : 'btn-secondary'}" onclick="toggleAudioCues(); openSettingsModal();">
+                ${audioCuesEnabled ? 'Enabled' : 'Disabled'}
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Auto-Advance for Timed Movements Toggle -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:14px 16px; border-radius:var(--radius); border:1px solid var(--border);">
+            <div style="max-width:330px;">
+              <strong style="color:var(--text); font-size:14px; display:flex; align-items:center; gap:6px;">
+                ${renderIcon('zap', 'cx-icon cx-icon-xs cx-icon-inline')} Auto-Advance Timed Holds
+              </strong>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">
+                Auto-advances to next movement when timer hits 0 after a 3s grace period (with Undo).
+              </div>
+            </div>
+            <button class="btn btn-sm ${autoAdvanceEnabled ? 'btn-primary' : 'btn-secondary'}" onclick="toggleAutoAdvance(); openSettingsModal();">
+              ${autoAdvanceEnabled ? 'Enabled' : 'Disabled'}
             </button>
           </div>
 
-          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:12px 16px; border-radius:var(--radius);">
+          <!-- 3. Master Mute Toggle -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:14px 16px; border-radius:var(--radius); border:1px solid var(--border);">
+            <div>
+              <strong style="color:var(--text); font-size:14px; display:flex; align-items:center; gap:6px;">
+                ${renderIcon('volumeMute', 'cx-icon cx-icon-xs cx-icon-inline')} Master Sound & Vibration
+              </strong>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">Global sound and haptic vibration mute switch.</div>
+            </div>
+            <button class="btn btn-sm ${muted ? 'btn-secondary' : 'btn-primary'}" onclick="toggleMute(); openSettingsModal();">
+              ${muted ? `${renderIcon('volumeMute', 'cx-icon cx-icon-inline')} Muted` : `${renderIcon('volume', 'cx-icon cx-icon-inline')} Unmuted`}
+            </button>
+          </div>
+
+          <!-- 4. Backup Export -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:14px 16px; border-radius:var(--radius); border:1px solid var(--border);">
             <div>
               <strong style="color:var(--text); font-size:14px;">Backup Export</strong>
-              <div style="font-size:12px; color:var(--text-muted);">Save complete JSON bundle (v2.1) of splits, workouts & logs</div>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">Save complete JSON bundle (v2.1) of splits, workouts & logs</div>
             </div>
             <button class="btn btn-sm btn-secondary" onclick="exportData()">${renderIcon('download', 'cx-icon cx-icon-inline')} Export JSON</button>
           </div>
 
-          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:12px 16px; border-radius:var(--radius);">
+          <!-- 5. Restore Backup -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:14px 16px; border-radius:var(--radius); border:1px solid var(--border);">
             <div>
               <strong style="color:var(--text); font-size:14px;">Restore Backup</strong>
-              <div style="font-size:12px; color:var(--text-muted);">Merge or restore from an existing JSON backup</div>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">Merge or restore from an existing JSON backup</div>
             </div>
             <label class="btn btn-sm btn-secondary" style="cursor:pointer; margin:0;">
               ${renderIcon('upload', 'cx-icon cx-icon-inline')} Import
@@ -46,7 +90,7 @@ function openSettingsModal() {
           </div>
         </div>
 
-        <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+        <div style="display:flex; justify-content:flex-end; margin-top:16px;">
           <button class="btn btn-primary" onclick="closeSettingsModal()">Done</button>
         </div>
       </div>
@@ -693,13 +737,33 @@ function bindGuideSvgInteractions() {
   parts.forEach(p => {
     p.addEventListener('click', (e) => {
       e.stopPropagation();
-      const m = p.dataset.muscle || p.id || '';
-      const norm = m.replace(/_left|_right|_lateral|_medial|_upper|_mid|_lower|_front|_back/g, '');
+      const raw = p.dataset.muscle || p.id || '';
+      if (MUSCLE_ANATOMY_GUIDE[raw]) {
+        selectGuideMuscle(raw);
+        return;
+      }
+      const norm = raw.replace(/_left|_right|_lateral|_medial|_upper|_mid|_lower|_front|_back/g, '');
       if (MUSCLE_ANATOMY_GUIDE[norm]) {
         selectGuideMuscle(norm);
-      } else if (MUSCLE_ANATOMY_GUIDE[m]) {
-        selectGuideMuscle(m);
+        return;
       }
+      if (raw.includes('front_delt')) selectGuideMuscle('front_delts');
+      else if (raw.includes('side_delt')) selectGuideMuscle('side_delts');
+      else if (raw.includes('rear_delt')) selectGuideMuscle('rear_delts');
+      else if (raw.includes('delt')) selectGuideMuscle('front_delts');
+      else if (raw.includes('trap')) selectGuideMuscle('traps');
+      else if (raw.includes('chest') || raw.includes('pec')) selectGuideMuscle('chest');
+      else if (raw.includes('bicep')) selectGuideMuscle('biceps');
+      else if (raw.includes('tricep')) selectGuideMuscle('triceps');
+      else if (raw.includes('forearm')) selectGuideMuscle('forearms');
+      else if (raw.includes('lat')) selectGuideMuscle('lats');
+      else if (raw.includes('lower_back') || raw.includes('erector')) selectGuideMuscle('lower_back');
+      else if (raw.includes('glute')) selectGuideMuscle('glutes');
+      else if (raw.includes('quad')) selectGuideMuscle('quads');
+      else if (raw.includes('hamstring')) selectGuideMuscle('hamstrings');
+      else if (raw.includes('calf') || raw.includes('calves') || raw.includes('tibialis')) selectGuideMuscle('calves');
+      else if (raw.includes('ab') || raw.includes('core')) selectGuideMuscle('abs');
+      else if (raw.includes('oblique')) selectGuideMuscle('obliques');
     });
   });
 }

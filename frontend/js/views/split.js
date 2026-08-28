@@ -5,9 +5,9 @@
 async function loadSplits() {
   try {
     const data = await API.getSplits();
-    state.splits = data || [];
+    state.splits = Array.isArray(data) ? data : (data?.splits || []);
     const active = state.splits.find(s => s.is_active === 1) || state.splits[0];
-    state.activeSplit = active;
+    state.activeSplit = active || null;
     if (!state.selectedSplitId && active) {
       state.selectedSplitId = active.id;
     }
@@ -17,6 +17,7 @@ async function loadSplits() {
     return data;
   } catch (e) {
     console.error('Failed to load splits:', e);
+    state.splits = [];
   }
 }
 
@@ -395,6 +396,472 @@ function setSplitSubTab(tab) {
   render();
 }
 
+const BUILDER_STARTER_TEMPLATES = {
+  warmup: [
+    {
+      id: 'warmup_full_body',
+      category: 'full_body',
+      name: 'Full Body',
+      tag: 'Kinetic Chain',
+      description: 'Kinetic chain activation: joint mobility, hip openers, and dynamic full-body integration (3.5 min)',
+      exercises: [
+        { name: 'Arm Swings', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Dynamic horizontal and overhead arm swings' },
+        { name: 'Wrist Circles', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Controlled clockwise and counter-clockwise rotations' },
+        { name: 'Cat-Cow Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Segmental thoracic and lumbar articulation' },
+        { name: 'Leg Swings', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Forward/backward and lateral dynamic hip swings' },
+        { name: "World's Greatest Stretch", type: 'duration', target: 30, sets: 1, rest: 15, notes: 'Lunge + thoracic reach toward ceiling' }
+      ]
+    },
+    {
+      id: 'warmup_push',
+      category: 'push',
+      name: 'Push',
+      tag: 'Pressing Prep',
+      description: 'Targeted wrist loading, shoulder capsule mobility, and scapular protraction for pressing patterns (3.5 min)',
+      exercises: [
+        { name: 'Wrist Circles', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Thorough wrist joint preparation' },
+        { name: 'Shoulder CARs', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Controlled Articular Rotations through full range' },
+        { name: 'Scapular Push-ups', type: 'reps', target: 10, sets: 1, rest: 10, notes: 'Straight arms; isolate protraction and retraction' },
+        { name: 'Arm Swings', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Open chest and activate anterior delts dynamically' },
+        { name: 'Incline Push-up Prep', type: 'reps', target: 8, sets: 1, rest: 15, notes: 'Light pushing progression to prime pressing mechanics' }
+      ]
+    },
+    {
+      id: 'warmup_pull',
+      category: 'pull',
+      name: 'Pull',
+      tag: 'Pulling Prep',
+      description: 'Scapular depression, shoulder circles, grip prep, and light pulling activation (3.5 min)',
+      exercises: [
+        { name: 'Wrist Preparation', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Grip and forearm dynamic prep' },
+        { name: 'Arm Circles', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Controlled shoulder circumduction' },
+        { name: 'Scapular Pulls', type: 'reps', target: 8, sets: 1, rest: 10, notes: 'Depress scapulae without bending elbows' },
+        { name: 'Dead Hang', type: 'duration', target: 20, sets: 1, rest: 10, notes: 'Passive to active grip and shoulder decompression' },
+        { name: 'Incline Row Prep', type: 'reps', target: 8, sets: 1, rest: 15, notes: 'Light horizontal pulling to prime lat activation' }
+      ]
+    },
+    {
+      id: 'warmup_legs',
+      category: 'legs',
+      name: 'Legs',
+      tag: 'Lower Body',
+      description: 'Ankle mobility, hip openers, dynamic lunges, and bodyweight squat activation (4 min)',
+      exercises: [
+        { name: 'Ankle Circles', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Smooth ankle circumduction both directions' },
+        { name: 'Leg Swings', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Dynamic forward and lateral swings' },
+        { name: 'Deep Squat Hold', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Heels down, tall spine, open adductors' },
+        { name: 'Bodyweight Squats', type: 'reps', target: 10, sets: 1, rest: 10, notes: 'Smooth controlled tempo through full range' },
+        { name: 'Walking Lunges', type: 'reps', target: 10, sets: 1, rest: 15, notes: 'Dynamic step lunges to warm glutes and quads' }
+      ]
+    },
+    {
+      id: 'warmup_handstand',
+      category: 'handstand',
+      name: 'Handstand',
+      tag: 'Inversion',
+      description: 'Progressive wrist loading, shoulder flexion mobility, scapular elevation, and chest-to-wall alignment (4 min)',
+      exercises: [
+        { name: 'Wrist Preparation', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Warm up palm base, fingers, and wrist extensors' },
+        { name: 'Wrist Rocks', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Forward and sideways gentle loading on palms' },
+        { name: 'Shoulder Mobility', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Full overhead flexion without lumbar arching' },
+        { name: 'Scapular Elevation', type: 'reps', target: 10, sets: 1, rest: 10, notes: 'Shrug shoulders to ears overhead with locked elbows' },
+        { name: 'Wall-Facing Handstand Prep', type: 'duration', target: 20, sets: 1, rest: 15, notes: 'Chest to wall; push through floor and hollow body' }
+      ]
+    },
+    {
+      id: 'warmup_planche',
+      category: 'planche',
+      name: 'Planche',
+      tag: 'Straight-Arm Press',
+      description: 'High-torque wrist prep, anterior shoulder activation, locked-arm scapular protraction, and planche leans (3.5 min)',
+      exercises: [
+        { name: 'Wrist Preparation', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Thorough wrist extension conditioning' },
+        { name: 'Shoulder Activation', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Straight-arm anterior deltoid engagement' },
+        { name: 'Scapular Protraction', type: 'duration', target: 20, sets: 1, rest: 10, notes: 'Round upper back with straight arms; create dome shape' },
+        { name: 'Planche Lean Prep', type: 'duration', target: 20, sets: 1, rest: 15, notes: 'Lean shoulders forward past wrists with full protraction' }
+      ]
+    },
+    {
+      id: 'warmup_front_lever',
+      category: 'front_lever',
+      name: 'Front Lever',
+      tag: 'Straight-Arm Pull',
+      description: 'Straight-arm lat activation, scapular depression/retraction, active dead hang, and hollow body core engagement (3.5 min)',
+      exercises: [
+        { name: 'Shoulder Activation', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Prime rotator cuff and posterior capsule' },
+        { name: 'Scapular Pulls', type: 'reps', target: 8, sets: 1, rest: 10, notes: 'Straight-arm hanging scapular depressions' },
+        { name: 'Dead Hang', type: 'duration', target: 20, sets: 1, rest: 10, notes: 'Active hang with retracted scapulae and neutral ribcage' },
+        { name: 'Hollow Body Activation', type: 'duration', target: 20, sets: 1, rest: 15, notes: 'Posterior pelvic tilt with lower back pressed flat to floor' }
+      ]
+    },
+    {
+      id: 'warmup_mobility',
+      category: 'mobility',
+      name: 'Mobility / Recovery',
+      tag: 'Flow & Joints',
+      description: 'Thoracic spine waves, shoulder CARs, 90/90 hip transitions, and deep squat decompression (4 min)',
+      exercises: [
+        { name: 'Cat-Cow Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Segmental spinal movement from tailbone to neck' },
+        { name: 'Shoulder CARs', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Slow controlled circular shoulder rotations' },
+        { name: 'Hip 90/90 Transitions', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Internal and external rotational hip mobility' },
+        { name: 'Deep Squat Hold', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Sit deep with elbows pushing knees gently outward' },
+        { name: "World's Greatest Stretch", type: 'duration', target: 30, sets: 1, rest: 15, notes: 'Lunge + thoracic twist + hamstring opener' }
+      ]
+    }
+  ],
+  cooldown: [
+    {
+      id: 'cooldown_full_body',
+      category: 'full_body',
+      name: 'Full Body Recovery',
+      tag: 'Full Body Static',
+      description: 'Calming static stretches for chest, lats, hips, hamstrings, and spinal relaxation (3.5 min)',
+      exercises: [
+        { name: 'Chest Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Wall-supported gentle pectoral release' },
+        { name: 'Lat Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Breathe deeply into ribcage and latissimus dorsi' },
+        { name: 'Hip Flexor Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Kneeling lunge with posterior pelvic tuck' },
+        { name: 'Hamstring Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Hinge gently at the hips without rounding lower back' },
+        { name: "Child's Pose", type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Sink hips to heels; slow deep parasympathetic breaths' }
+      ]
+    },
+    {
+      id: 'cooldown_push',
+      category: 'push',
+      name: 'Push Recovery',
+      tag: 'Chest & Arms',
+      description: 'Targeted static stretching for pectorals, anterior deltoids, triceps, and abdominal wall (3 min)',
+      exercises: [
+        { name: 'Chest Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Open anterior chest fibers with gentle wall pressure' },
+        { name: 'Shoulder Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Cross-body posterior deltoid release' },
+        { name: 'Overhead Triceps Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Elbow bent behind head, gently drawing inward' },
+        { name: 'Cobra Pose', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Gentle prone extension for anterior chain' }
+      ]
+    },
+    {
+      id: 'cooldown_pull',
+      category: 'pull',
+      name: 'Pull Recovery',
+      tag: 'Lats & Forearms',
+      description: 'Static stretching for lats, biceps, forearms, and rhomboids following pulling sessions (3 min)',
+      exercises: [
+        { name: 'Lat Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Bar or pole supported lat elongation' },
+        { name: 'Biceps & Forearm Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Palm against wall, fingers pointing back' },
+        { name: 'Eagle Arms Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Intertwine forearms to open upper back and rhomboids' },
+        { name: 'Dead Hang', type: 'duration', target: 20, sets: 1, rest: 10, notes: 'Passive relaxing decompression of spine and shoulders' }
+      ]
+    },
+    {
+      id: 'cooldown_legs',
+      category: 'legs',
+      name: 'Legs Recovery',
+      tag: 'Hips & Legs',
+      description: 'Deep static stretches for hip flexors, hamstrings, glutes, adductors, and calves (3.5 min)',
+      exercises: [
+        { name: 'Hip Flexor Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Tuck pelvis under to isolate psoas' },
+        { name: 'Hamstring Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Seated or standing hinge with relaxed neck' },
+        { name: 'Pigeon Pose', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Deep piriformis and gluteus medius opening' },
+        { name: 'Standing Calf Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Wall-assisted heel-down gastrocnemius stretch' },
+        { name: 'Butterfly Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Soles together, gentle adductor release' }
+      ]
+    },
+    {
+      id: 'cooldown_handstand',
+      category: 'handstand',
+      name: 'Handstand Decompression',
+      tag: 'Wrists & Shoulders',
+      description: 'Wrist relief, posterior capsule stretch, lat elongation, and child\'s pose spinal release (3 min)',
+      exercises: [
+        { name: 'Reverse Wrist Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Gentle palms-up wrist extensor release' },
+        { name: 'Shoulder Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Cross-body deltoid stretch' },
+        { name: 'Lat Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Side body and overhead shoulder opener' },
+        { name: "Child's Pose", type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Calm breathing and spinal decompression' }
+      ]
+    },
+    {
+      id: 'cooldown_planche',
+      category: 'planche',
+      name: 'Planche Recovery',
+      tag: 'Wrists & Biceps',
+      description: 'Wrist flexor/extensor release, distal biceps wall stretch, and anterior deltoid relief (3 min)',
+      exercises: [
+        { name: 'Reverse Wrist Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Kneeling palms-up gentle extensor stretch' },
+        { name: 'Biceps & Forearm Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Distal biceps and anterior capsule wall stretch' },
+        { name: 'Chest Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Pectoral and shoulder opener' },
+        { name: "Child's Pose", type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Restorative diaphragmatic breathing' }
+      ]
+    },
+    {
+      id: 'cooldown_front_lever',
+      category: 'front_lever',
+      name: 'Front Lever Recovery',
+      tag: 'Lats & Spine',
+      description: 'Lat decompression, prone abdominal stretch, thoracic extension, and seated forward fold (3 min)',
+      exercises: [
+        { name: 'Lat Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Bar-assisted lat and teres major stretch' },
+        { name: 'Cobra Pose', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Abdominal wall and anterior hip stretch' },
+        { name: 'Puppy Pose', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Thoracic extension with chest melting toward floor' },
+        { name: 'Seated Forward Fold', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Relaxed posterior chain and lower back release' }
+      ]
+    },
+    {
+      id: 'cooldown_mobility',
+      category: 'mobility',
+      name: 'Mobility Decompression',
+      tag: 'Spine & Hips',
+      description: 'Restorative hip and spine circuit: Child\'s pose, Pigeon pose, spinal twist, and butterfly stretch (3.5 min)',
+      exercises: [
+        { name: "Child's Pose", type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Deep restorative spinal resting pose' },
+        { name: 'Pigeon Pose', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Deep glute and outer hip relaxation' },
+        { name: 'Supine Spinal Twist', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Gentle rotational release for lower back and hips' },
+        { name: 'Butterfly Stretch', type: 'duration', target: 30, sets: 1, rest: 10, notes: 'Adductor and pelvic floor relaxation' }
+      ]
+    }
+  ]
+};
+
+function detectSmartIntent(workoutName = '', exercises = []) {
+  const text = (workoutName || '').toLowerCase();
+  if (text.includes('handstand') || text.includes('inversion') || text.includes('hspu')) return 'handstand';
+  if (text.includes('planche')) return 'planche';
+  if (text.includes('front lever') || text.includes('lever') || text.includes('flag')) return 'front_lever';
+  if (text.includes('push') || text.includes('chest') || text.includes('dip') || text.includes('press')) return 'push';
+  if (text.includes('pull') || text.includes('back') || text.includes('row') || text.includes('chin')) return 'pull';
+  if (text.includes('leg') || text.includes('squat') || text.includes('lunge') || text.includes('lower')) return 'legs';
+  if (text.includes('mobility') || text.includes('recovery') || text.includes('stretch') || text.includes('flow') || text.includes('warmup')) return 'mobility';
+
+  // Check exercise patterns in the workout if name is generic
+  if (exercises && exercises.length > 0) {
+    let pushCount = 0, pullCount = 0, legCount = 0, handstandCount = 0, plancheCount = 0, leverCount = 0;
+    exercises.forEach(e => {
+      const p = (e.movement_pattern || '').toLowerCase();
+      const n = (e.exercise_name || e.name || '').toLowerCase();
+      if (p.includes('push') || n.includes('push') || n.includes('dip')) pushCount++;
+      if (p.includes('pull') || n.includes('pull') || n.includes('row')) pullCount++;
+      if (p.includes('squat') || p.includes('lunge') || p.includes('hinge') || p.includes('calf') || n.includes('squat')) legCount++;
+      if (p.includes('handstand') || n.includes('handstand')) handstandCount++;
+      if (p.includes('planche') || n.includes('planche')) plancheCount++;
+      if (n.includes('lever')) leverCount++;
+    });
+
+    if (handstandCount >= 2) return 'handstand';
+    if (plancheCount >= 2) return 'planche';
+    if (leverCount >= 2) return 'front_lever';
+    if (pushCount > pullCount && pushCount > legCount) return 'push';
+    if (pullCount > pushCount && pullCount > legCount) return 'pull';
+    if (legCount > pushCount && legCount > pullCount) return 'legs';
+  }
+
+  return 'full_body';
+}
+
+function renderPhaseSlotCard(phase, ex, idx, totalInPhase) {
+  const isHold = ex.exercise_type === 'duration';
+  const targetVal = isHold ? (ex.duration_sec || 30) : (ex.reps || 10);
+  const defaultSets = phase === 'main' ? 3 : 1;
+  const setsVal = ex.sets || defaultSets;
+  const defaultRest = phase === 'main' ? 90 : 15;
+  const restVal = (ex.rest_sec !== undefined && ex.rest_sec !== null) ? ex.rest_sec : defaultRest;
+
+  const isFirst = idx === 0;
+  const isLast = idx === totalInPhase - 1;
+
+  const controlsHtml = `
+    <div class="builder-slot-controls">
+      <button type="button" class="builder-icon-btn" title="Move Up" ${isFirst ? 'disabled' : ''} onclick="moveWorkoutExerciseSlot('${phase}', ${idx}, -1)">
+        ${renderIcon('arrowUp', 'cx-icon cx-icon-xs')}
+      </button>
+      <button type="button" class="builder-icon-btn" title="Move Down" ${isLast ? 'disabled' : ''} onclick="moveWorkoutExerciseSlot('${phase}', ${idx}, 1)">
+        ${renderIcon('arrowDown', 'cx-icon cx-icon-xs')}
+      </button>
+      <button type="button" class="builder-icon-btn danger" title="Remove" onclick="removeWorkoutExerciseSlot('${phase}', ${idx})">
+        ${renderIcon('x', 'cx-icon cx-icon-xs')}
+      </button>
+    </div>
+  `;
+
+  let extraFieldsHtml = '';
+  if (phase === 'main') {
+    extraFieldsHtml = `
+      <details style="margin-top:4px;">
+        <summary style="font-size:11px; color:var(--accent); cursor:pointer; font-weight:600;">Advanced Settings (Tempo, Superset, Notes) ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}</summary>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-top:8px;">
+          <div class="form-group">
+            <label class="form-label">Tempo <span class="opt">opt</span></label>
+            <input class="form-input mono" type="text" id="slot-${phase}-tempo-${idx}" value="${ex.tempo || ''}" placeholder="3010" style="padding:5px 8px; font-size:13px;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Superset # <span class="opt">opt</span></label>
+            <input class="form-input mono" type="number" id="slot-${phase}-ss-${idx}" value="${ex.superset_group || ''}" placeholder="1, 2" min="1" style="padding:5px 8px; font-size:13px;">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:8px;">
+          <label class="form-label">Coaching Notes <span class="opt">opt</span></label>
+          <input class="form-input" type="text" id="slot-${phase}-notes-${idx}" value="${ex.notes || ''}" placeholder="e.g. Full protraction at top, core braced" style="font-size:12px; padding:6px 10px;">
+        </div>
+      </details>
+    `;
+  } else {
+    extraFieldsHtml = `
+      <div class="form-group" style="margin-top:2px;">
+        <input class="form-input" type="text" id="slot-${phase}-notes-${idx}" value="${ex.notes || ''}" placeholder="Coaching cue (e.g. Focus on joint lubrication / deep breath)" style="font-size:11.5px; padding:4px 8px;">
+      </div>
+    `;
+  }
+
+  return `
+    <div class="builder-slot-card" id="builder-slot-${phase}-${idx}">
+      <div class="builder-slot-header">
+        <div class="builder-slot-title-wrap">
+          <span class="builder-slot-idx">#${String(idx + 1).padStart(2, '0')}</span>
+          <span class="builder-slot-name">${ex.exercise_name}</span>
+          <span class="builder-slot-type-badge">${isHold ? 'Duration' : 'Reps'}</span>
+        </div>
+        ${controlsHtml}
+      </div>
+
+      <div class="builder-slot-grid">
+        <div class="form-group">
+          <label class="form-label">Sets</label>
+          <div class="stepper-group">
+            <button type="button" class="stepper-btn" onclick="adjustPhaseSlotSets('${phase}', ${idx}, -1)">-</button>
+            <span class="stepper-val mono" id="slot-${phase}-sets-${idx}">${setsVal}</span>
+            <button type="button" class="stepper-btn" onclick="adjustPhaseSlotSets('${phase}', ${idx}, 1)">+</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">${isHold ? 'Hold (sec)' : 'Target Reps'}</label>
+          <input class="form-input mono" type="number" id="slot-${phase}-target-${idx}" value="${targetVal}" min="1" style="padding:5px 8px; font-size:13px;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Rest (sec)</label>
+          <input class="form-input mono" type="number" id="slot-${phase}-rest-${idx}" value="${restVal}" min="0" step="5" style="padding:5px 8px; font-size:13px;">
+        </div>
+      </div>
+
+      ${extraFieldsHtml}
+    </div>
+  `;
+}
+
+function renderPhaseBuilderSection(phase, exercises) {
+  const isPrep = phase === 'warmup';
+  const isTrain = phase === 'main';
+  const isRecover = phase === 'cooldown';
+
+  const badgeClass = isPrep ? 'badge-prep' : (isTrain ? 'badge-train' : 'badge-recover');
+  const badgeLabel = isPrep ? 'PREP' : (isTrain ? 'TRAIN' : 'RECOVER');
+  const title = isPrep ? 'Warm-up' : (isTrain ? 'Main Workout' : 'Cool-down & Stretching');
+  const sub = isPrep
+    ? 'Dynamic mobility & joint activation · Happens BEFORE training (Optional)'
+    : (isTrain
+        ? 'Primary working sets & strength progressions · Core Training'
+        : 'Static stretching & tissue recovery · Happens AFTER training (Optional)');
+
+  const phaseExs = exercises.filter(e => (e.phase || 'main') === phase);
+  const countLabel = `${phaseExs.length} ${isTrain ? 'exercises' : (isPrep ? 'movements' : 'stretches')}`;
+
+  let templatesHtml = '';
+  if (!isTrain) {
+    const tpls = BUILDER_STARTER_TEMPLATES[phase] || [];
+    const detectedIntent = detectSmartIntent(
+      state.selectedWorkoutDetail?.name,
+      state.selectedWorkoutDetail?.exercises
+    );
+
+    const chips = tpls.map(t => {
+      const isRec = t.category === detectedIntent;
+      return `
+        <button type="button" class="builder-template-chip ${isRec ? 'is-recommended' : ''}" onclick="applyBuilderStarterTemplate('${phase}', '${t.id}')" title="${t.description}">
+          ${isRec ? renderIcon('sparkles', 'cx-icon cx-icon-xs cx-icon-inline') : ''}
+          ${t.name}
+          ${isRec ? '<span class="builder-rec-badge">Intent Match</span>' : ''}
+        </button>
+      `;
+    }).join('');
+
+    templatesHtml = `
+      <div style="margin-top:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:6px;">
+          <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
+            Intent-Based Starter Templates:
+          </span>
+          <span style="font-size:11px; color:var(--accent-light);">
+            Detected: <strong>${detectedIntent.replace('_', ' ').toUpperCase()}</strong>
+          </span>
+        </div>
+        <div class="builder-template-chip-group">
+          ${chips}
+        </div>
+      </div>
+    `;
+  }
+
+  let actionsHtml = '';
+  if (phaseExs.length > 0 && !isTrain) {
+    actionsHtml = `
+      <button type="button" class="btn btn-secondary btn-sm" style="padding:3px 8px; font-size:11px;" onclick="clearBuilderPhase('${phase}')">
+        ${renderIcon('trash', 'cx-icon cx-icon-xs cx-icon-inline')} Clear Section
+      </button>
+    `;
+  }
+
+  let slotsHtml = '';
+  if (phaseExs.length > 0) {
+    slotsHtml = phaseExs.map((ex, idx) => renderPhaseSlotCard(phase, ex, idx, phaseExs.length)).join('');
+  } else {
+    slotsHtml = `
+      <div class="builder-empty-phase">
+        <div>No ${isPrep ? 'warm-up movements' : (isRecover ? 'cool-down stretches' : 'exercises')} configured.</div>
+        ${!isTrain ? '<div style="margin-top:4px; font-size:11.5px; color:var(--text-dim);">Pick a starter template above or add custom movements below.</div>' : ''}
+      </div>
+    `;
+  }
+
+  let phaseCatalog = state.exercises || [];
+  if (isPrep || isRecover) {
+    const mobility = phaseCatalog.filter(e => (e.movement_pattern || '').startsWith('mobility_') || (e.movement_pattern || '').startsWith('stretch_') || e.day === 'Mobility & Stretching');
+    const others = phaseCatalog.filter(e => !mobility.includes(e));
+    phaseCatalog = [...mobility, ...others];
+  }
+
+  const selectOpts = phaseCatalog.map(e => `<option value="${e.id}">${e.name} (${e.type})</option>`).join('');
+
+  return `
+    <div class="builder-phase-section phase-${isPrep ? 'prep' : (isTrain ? 'train' : 'recover')}">
+      <div class="builder-phase-header">
+        <div>
+          <div class="builder-phase-title-wrap">
+            <span class="builder-phase-badge ${badgeClass}">${badgeLabel}</span>
+            <h4 class="builder-phase-title">${title}</h4>
+            <span class="badge badge-reps" style="font-size:10.5px;">${countLabel}</span>
+          </div>
+          <p class="builder-phase-sub">${sub}</p>
+        </div>
+        <div class="builder-phase-actions">
+          ${actionsHtml}
+        </div>
+      </div>
+
+      ${templatesHtml}
+
+      <div style="margin-top:12px;">
+        ${slotsHtml}
+      </div>
+
+      <div class="builder-add-row">
+        <select class="form-input form-select" id="add-${phase}-exercise-id" style="flex:1; min-width:180px; font-size:12.5px; padding:6px 10px;">
+          ${selectOpts}
+        </select>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="addExerciseSlotToWorkout('${phase}')">
+          ${renderIcon('plus', 'cx-icon cx-icon-xs cx-icon-inline')} + Add to ${isPrep ? 'Warm-up' : (isRecover ? 'Cool-down' : 'Main Workout')}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
 function renderEditViewInner() {
   const selectedWorkout = state.selectedWorkoutDetail || state.workouts.find(w => w.id === state.selectedWorkoutId) || state.workouts[0];
 
@@ -406,8 +873,11 @@ function renderEditViewInner() {
           <span class="badge badge-reps">${w.exercise_count || 0} exercises</span>
         </div>
         <p style="color:var(--text-muted); font-size:12px; margin:0;">${w.description || 'Reusable workout template'}</p>
-        <div style="font-size:12px; color:var(--text-muted); margin-top:8px;" class="mono">
-          Total Sets: <strong>${w.total_sets || 0}</strong>
+        <div style="font-size:12px; color:var(--text-muted); margin-top:8px; display:flex; gap:10px; flex-wrap:wrap;" class="mono">
+          <span>Total Sets: <strong>${w.total_sets || 0}</strong></span>
+          ${w.warmup_sets ? `<span style="color:#f5a623;">Prep: <strong>${w.warmup_sets}</strong></span>` : ''}
+          <span style="color:var(--accent);">Train: <strong>${w.main_sets || w.total_sets || 0}</strong></span>
+          ${w.cooldown_sets ? `<span style="color:#2ed573;">Recover: <strong>${w.cooldown_sets}</strong></span>` : ''}
         </div>
       </div>
 
@@ -435,66 +905,6 @@ function renderEditViewInner() {
     workoutMuscles.primary = Array.from(new Set(workoutMuscles.primary));
     workoutMuscles.secondary = Array.from(new Set(workoutMuscles.secondary.filter(s => !workoutMuscles.primary.includes(s))));
 
-    const exerciseRowsHtml = exercises.map((ex, idx) => {
-      const isHold = ex.exercise_type === 'duration';
-      const targetVal = isHold ? (ex.duration_sec || 30) : (ex.reps || 10);
-
-      return `
-        <div class="workout-item-card" id="workout-slot-${idx}">
-          <div class="workout-item-top">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="mono" style="color:var(--text-muted); font-size:12px;">#${String(idx + 1).padStart(2, '0')}</span>
-              <strong style="color:var(--text); font-size:14px;">${ex.exercise_name}</strong>
-            </div>
-            <button type="button" class="btn btn-danger btn-sm" style="padding:2px 8px; font-size:11px;" onclick="removeWorkoutExerciseSlot(${idx})">${renderIcon('x', 'cx-icon cx-icon-xs cx-icon-inline')} Remove</button>
-          </div>
-
-          <!-- Basic Fields Visible by Default -->
-          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-top:6px;">
-            <div class="form-group">
-              <label class="form-label">Sets</label>
-              <div class="stepper-group">
-                <button type="button" class="stepper-btn" onclick="adjustSlotSets(${idx}, -1)">-</button>
-                <span class="stepper-val mono" id="slot-sets-${idx}">${ex.sets || 3}</span>
-                <button type="button" class="stepper-btn" onclick="adjustSlotSets(${idx}, 1)">+</button>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">${isHold ? 'Hold (sec)' : 'Target Reps'}</label>
-              <input class="form-input mono" type="number" id="slot-target-${idx}" value="${targetVal}" min="1" style="padding:5px 8px; font-size:13px;">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">Rest (sec)</label>
-              <input class="form-input mono" type="number" id="slot-rest-${idx}" value="${ex.rest_sec || 90}" min="0" step="15" style="padding:5px 8px; font-size:13px;">
-            </div>
-          </div>
-
-          <!-- Expandable Advanced Settings (Progressive Disclosure) -->
-          <details style="margin-top:6px;">
-            <summary style="font-size:11px; color:var(--accent); cursor:pointer; font-weight:600;">Advanced Settings (Tempo, Superset, Notes) ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}</summary>
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-top:8px;">
-              <div class="form-group">
-                <label class="form-label">Tempo <span class="opt">opt</span></label>
-                <input class="form-input mono" type="text" id="slot-tempo-${idx}" value="${ex.tempo || ''}" placeholder="3010" style="padding:5px 8px; font-size:13px;">
-              </div>
-
-              <div class="form-group">
-                <label class="form-label">Superset # <span class="opt">opt</span></label>
-                <input class="form-input mono" type="number" id="slot-ss-${idx}" value="${ex.superset_group || ''}" placeholder="1, 2" min="1" style="padding:5px 8px; font-size:13px;">
-              </div>
-            </div>
-            <div class="form-group" style="margin-top:8px;">
-              <label class="form-label">Coaching Notes <span class="opt">opt</span></label>
-              <input class="form-input" type="text" id="slot-notes-${idx}" value="${ex.notes || ''}" placeholder="e.g. Chest up, full protraction at top" style="font-size:12px; padding:6px 10px;">
-            </div>
-          </details>
-        </div>`;
-    }).join('');
-
-    const catalogOpts = state.exercises.map(e => `<option value="${e.id}">${e.name} (${e.type})</option>`).join('');
-
     workoutEditorHtml = `
       <div class="card" style="margin-top:24px;">
         <div class="card-header" style="justify-content:space-between; align-items:center;">
@@ -518,20 +928,14 @@ function renderEditViewInner() {
               </div>
             </div>
 
-            <div style="margin-bottom:12px;">
-              <h4 style="font-size:14px; font-weight:600; color:var(--text); margin-bottom:8px;">Exercises in this Workout</h4>
-              ${exerciseRowsHtml.length > 0 ? exerciseRowsHtml : '<div class="empty-state">No exercises in this workout yet. Add one below.</div>'}
-            </div>
+            <!-- PREP: Warm-up Section -->
+            ${renderPhaseBuilderSection('warmup', exercises)}
 
-            <div class="card" style="background:var(--surface-2); padding:14px; margin-bottom:20px;">
-              <span style="font-size:13px; font-weight:600; color:var(--text); display:block; margin-bottom:8px;">+ Add Movement from Library</span>
-              <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <select class="form-input form-select" id="add-slot-exercise-id" style="flex:1; min-width:200px;">
-                  ${catalogOpts}
-                </select>
-                <button type="button" class="btn btn-secondary" onclick="addExerciseSlotToWorkout()">+ Add Exercise</button>
-              </div>
-            </div>
+            <!-- TRAIN: Main Workout Section -->
+            ${renderPhaseBuilderSection('main', exercises)}
+
+            <!-- RECOVER: Cool-down Section -->
+            ${renderPhaseBuilderSection('cooldown', exercises)}
 
             <!-- Workout Target Muscle Activation Map -->
             <div class="card" style="background:var(--surface-2); padding:16px; margin-bottom:20px; border:1px solid rgba(124,92,252,0.18);">
@@ -569,12 +973,44 @@ function renderEditViewInner() {
           <form onsubmit="handleCreateWorkout(event)">
             <div class="form-group" style="margin-bottom:14px;">
               <label class="form-label">Workout Name</label>
-              <input class="form-input" type="text" name="name" placeholder="e.g. Upper Power A" required>
+              <input class="form-input" type="text" name="name" id="create-workout-name-input" placeholder="e.g. Push Power, Handstand Skill, Leg Day..." oninput="autoSelectModalTemplates(this.value)" required autofocus>
             </div>
 
             <div class="form-group" style="margin-bottom:14px;">
               <label class="form-label">Description <span class="opt">opt</span></label>
-              <input class="form-input" type="text" name="description" placeholder="e.g. Heavy pull-ups and dips focus">
+              <input class="form-input" type="text" name="description" placeholder="e.g. Heavy dips and push-up variations focus">
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px;">
+              <div class="form-group">
+                <label class="form-label">Warm-up Preset <span class="opt">opt</span></label>
+                <select class="form-input form-select" name="warmup_template" id="create-modal-warmup-select" style="font-size:12px;" onchange="this.dataset.userTouched='true'">
+                  <option value="">None (Configure in builder)</option>
+                  <option value="warmup_full_body">Full Body (Kinetic Chain)</option>
+                  <option value="warmup_push">Push (Pressing Prep)</option>
+                  <option value="warmup_pull">Pull (Pulling Prep)</option>
+                  <option value="warmup_legs">Legs (Lower Body)</option>
+                  <option value="warmup_handstand">Handstand (Inversion Prep)</option>
+                  <option value="warmup_planche">Planche (Straight-Arm Press)</option>
+                  <option value="warmup_front_lever">Front Lever (Straight-Arm Pull)</option>
+                  <option value="warmup_mobility">Mobility / Recovery (Joint Flow)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Cool-down Preset <span class="opt">opt</span></label>
+                <select class="form-input form-select" name="cooldown_template" id="create-modal-cooldown-select" style="font-size:12px;" onchange="this.dataset.userTouched='true'">
+                  <option value="">None (Configure in builder)</option>
+                  <option value="cooldown_full_body">Full Body Recovery (Static Stretch)</option>
+                  <option value="cooldown_push">Push Recovery (Chest & Arms)</option>
+                  <option value="cooldown_pull">Pull Recovery (Lats & Forearms)</option>
+                  <option value="cooldown_legs">Legs Recovery (Hips & Legs)</option>
+                  <option value="cooldown_handstand">Handstand Decompression (Wrists & Shoulders)</option>
+                  <option value="cooldown_planche">Planche Recovery (Wrists & Biceps)</option>
+                  <option value="cooldown_front_lever">Front Lever Recovery (Lats & Spine)</option>
+                  <option value="cooldown_mobility">Mobility Decompression (Spine & Hips)</option>
+                </select>
+              </div>
             </div>
 
             <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
@@ -727,17 +1163,175 @@ function closeCreateWorkoutModal() {
   render();
 }
 
+function syncWorkoutEditorFormToState() {
+  if (!state.selectedWorkoutDetail || !state.selectedWorkoutDetail.exercises) return;
+  const nameInput = document.getElementById('edit-workout-name');
+  const descInput = document.getElementById('edit-workout-desc');
+  if (nameInput) state.selectedWorkoutDetail.name = nameInput.value;
+  if (descInput) state.selectedWorkoutDetail.description = descInput.value;
+
+  const phases = ['warmup', 'main', 'cooldown'];
+  phases.forEach(phase => {
+    const phaseExs = (state.selectedWorkoutDetail.exercises || []).filter(e => (e.phase || 'main') === phase);
+    phaseExs.forEach((ex, idx) => {
+      const targetEl = document.getElementById(`slot-${phase}-target-${idx}`);
+      const setsEl = document.getElementById(`slot-${phase}-sets-${idx}`);
+      const restEl = document.getElementById(`slot-${phase}-rest-${idx}`);
+      const tempoEl = document.getElementById(`slot-${phase}-tempo-${idx}`);
+      const ssEl = document.getElementById(`slot-${phase}-ss-${idx}`);
+      const notesEl = document.getElementById(`slot-${phase}-notes-${idx}`);
+
+      const isHold = ex.exercise_type === 'duration';
+      if (targetEl && targetEl.value) {
+        const val = parseInt(targetEl.value, 10);
+        if (!isNaN(val)) {
+          if (isHold) ex.duration_sec = val;
+          else ex.reps = val;
+        }
+      }
+      if (setsEl && setsEl.textContent) {
+        const sVal = parseInt(setsEl.textContent, 10);
+        if (!isNaN(sVal)) ex.sets = sVal;
+      }
+      if (restEl && restEl.value) {
+        const rVal = parseInt(restEl.value, 10);
+        if (!isNaN(rVal)) ex.rest_sec = rVal;
+      }
+      if (tempoEl) ex.tempo = tempoEl.value.trim() || null;
+      if (ssEl) ex.superset_group = ssEl.value ? parseInt(ssEl.value, 10) : null;
+      if (notesEl) ex.notes = notesEl.value.trim() || null;
+    });
+  });
+}
+
+function applyBuilderStarterTemplate(phase, templateId) {
+  syncWorkoutEditorFormToState();
+  if (!state.selectedWorkoutDetail) return;
+  if (!state.selectedWorkoutDetail.exercises) state.selectedWorkoutDetail.exercises = [];
+
+  const templates = BUILDER_STARTER_TEMPLATES[phase] || [];
+  const tpl = templates.find(t => t.id === templateId);
+  if (!tpl) return;
+
+  const otherExercises = state.selectedWorkoutDetail.exercises.filter(e => (e.phase || 'main') !== phase);
+
+  const newPhaseExercises = [];
+  for (const tplEx of tpl.exercises) {
+    const catalogEx = (state.exercises || []).find(e => e.name.toLowerCase() === tplEx.name.toLowerCase())
+      || (state.exercises || []).find(e => e.name.toLowerCase().includes(tplEx.name.toLowerCase()))
+      || (state.exercises && state.exercises[0]);
+
+    const isHold = (catalogEx?.type || tplEx.type) === 'duration';
+    newPhaseExercises.push({
+      exercise_id: catalogEx ? catalogEx.id : 1,
+      exercise_name: catalogEx ? catalogEx.name : tplEx.name,
+      exercise_type: isHold ? 'duration' : 'reps',
+      phase: phase,
+      sets: tplEx.sets || 1,
+      reps: isHold ? null : (tplEx.target || 10),
+      duration_sec: isHold ? (tplEx.target || 30) : null,
+      rest_sec: tplEx.rest || (phase === 'main' ? 90 : 10),
+      tempo: '',
+      superset_group: null,
+      notes: tplEx.notes || ''
+    });
+  }
+
+  let assembled = [];
+  if (phase === 'warmup') {
+    const mainExs = otherExercises.filter(e => (e.phase || 'main') === 'main');
+    const coolExs = otherExercises.filter(e => e.phase === 'cooldown');
+    assembled = [...newPhaseExercises, ...mainExs, ...coolExs];
+  } else if (phase === 'cooldown') {
+    const warmExs = otherExercises.filter(e => e.phase === 'warmup');
+    const mainExs = otherExercises.filter(e => (e.phase || 'main') === 'main');
+    assembled = [...warmExs, ...mainExs, ...newPhaseExercises];
+  } else {
+    const warmExs = otherExercises.filter(e => e.phase === 'warmup');
+    const coolExs = otherExercises.filter(e => e.phase === 'cooldown');
+    assembled = [...warmExs, ...newPhaseExercises, ...coolExs];
+  }
+
+  state.selectedWorkoutDetail.exercises = assembled;
+  showToast(`Applied "${tpl.name}" starter template`);
+  render();
+}
+
+function clearBuilderPhase(phase) {
+  syncWorkoutEditorFormToState();
+  if (!state.selectedWorkoutDetail || !state.selectedWorkoutDetail.exercises) return;
+  state.selectedWorkoutDetail.exercises = state.selectedWorkoutDetail.exercises.filter(e => (e.phase || 'main') !== phase);
+  showToast(`Cleared ${phase === 'warmup' ? 'Warm-up' : (phase === 'cooldown' ? 'Cool-down' : 'Main')} section`);
+  render();
+}
+
 async function handleCreateWorkout(event) {
   event.preventDefault();
   const form = event.target;
   const data = new FormData(form);
-  const payload = {
-    name: (data.get('name') || '').trim(),
-    description: data.get('description') || '',
-    exercises: []
-  };
+  const name = (data.get('name') || '').trim();
+  const desc = data.get('description') || '';
+  const warmupTpl = data.get('warmup_template');
+  const cooldownTpl = data.get('cooldown_template');
+
+  if (!name) {
+    showToast('Workout name is required', true);
+    return;
+  }
+
+  const exercises = [];
+  let currentOrder = 1;
+
+  if (warmupTpl && BUILDER_STARTER_TEMPLATES.warmup) {
+    const tpl = BUILDER_STARTER_TEMPLATES.warmup.find(t => t.id === warmupTpl);
+    if (tpl) {
+      for (const tplEx of tpl.exercises) {
+        const catEx = (state.exercises || []).find(e => e.name.toLowerCase() === tplEx.name.toLowerCase())
+          || (state.exercises || []).find(e => e.name.toLowerCase().includes(tplEx.name.toLowerCase()))
+          || (state.exercises && state.exercises[0]);
+        const isHold = (catEx?.type || tplEx.type) === 'duration';
+        exercises.push({
+          exercise_id: catEx ? catEx.id : 1,
+          order_index: currentOrder++,
+          phase: 'warmup',
+          sets: tplEx.sets || 1,
+          reps: isHold ? null : (tplEx.target || 10),
+          duration_sec: isHold ? (tplEx.target || 30) : null,
+          rest_sec: tplEx.rest || 10,
+          notes: tplEx.notes || ''
+        });
+      }
+    }
+  }
+
+  if (cooldownTpl && BUILDER_STARTER_TEMPLATES.cooldown) {
+    const tpl = BUILDER_STARTER_TEMPLATES.cooldown.find(t => t.id === cooldownTpl);
+    if (tpl) {
+      for (const tplEx of tpl.exercises) {
+        const catEx = (state.exercises || []).find(e => e.name.toLowerCase() === tplEx.name.toLowerCase())
+          || (state.exercises || []).find(e => e.name.toLowerCase().includes(tplEx.name.toLowerCase()))
+          || (state.exercises && state.exercises[0]);
+        const isHold = (catEx?.type || tplEx.type) === 'duration';
+        exercises.push({
+          exercise_id: catEx ? catEx.id : 1,
+          order_index: currentOrder++,
+          phase: 'cooldown',
+          sets: tplEx.sets || 1,
+          reps: isHold ? null : (tplEx.target || 10),
+          duration_sec: isHold ? (tplEx.target || 30) : null,
+          rest_sec: tplEx.rest || 10,
+          notes: tplEx.notes || ''
+        });
+      }
+    }
+  }
+
   try {
-    const created = await API.createWorkout(payload);
+    const created = await API.createWorkout({
+      name,
+      description: desc,
+      exercises
+    });
     state.showCreateWorkoutModal = false;
     showToast(`Created Workout "${created.name}"`);
     await loadWorkouts();
@@ -751,11 +1345,28 @@ async function handleCreateWorkout(event) {
 
 async function handleDuplicateWorkout(workoutId) {
   try {
-    const dup = await API.duplicateWorkout(workoutId);
-    showToast(`Duplicated into "${dup.name}"`);
+    const detail = await API.getWorkoutDetail(workoutId);
+    if (!detail) return;
+    const duplicatedName = `${detail.name} (Copy)`;
+    const created = await API.createWorkout({
+      name: duplicatedName,
+      description: detail.description || '',
+      warmup_template: detail.warmup_template || 'none',
+      cooldown_template: detail.cooldown_template || 'none',
+      exercises: (detail.exercises || []).map(e => ({
+        exercise_id: e.exercise_id,
+        sets: e.sets,
+        reps: e.reps,
+        duration_sec: e.duration_sec,
+        rest_sec: e.rest_sec,
+        tempo: e.tempo,
+        phase: e.phase || 'main'
+      }))
+    });
+    showToast(`Duplicated workout: ${duplicatedName}`);
     await loadWorkouts();
-    state.selectedWorkoutId = dup.id;
-    await loadWorkoutDetail(dup.id);
+    state.selectedWorkoutId = created.id;
+    await loadWorkoutDetail(created.id);
     render();
   } catch (e) {
     showToast(`Error duplicating workout: ${e.message}`, true);
@@ -763,33 +1374,54 @@ async function handleDuplicateWorkout(workoutId) {
 }
 
 async function handleDeleteWorkout(workoutId, workoutName) {
-  if (!confirm(`Are you sure you want to delete "${workoutName}"?\nAny schedule days assigned to this workout will be converted to Rest days.\nHistorical completed workout logs will NOT be affected.`)) return;
+  if (!confirm(`Are you sure you want to delete "${workoutName || 'this workout'}"?`)) return;
   try {
     await API.deleteWorkout(workoutId);
-    showToast(`Deleted workout "${workoutName}"`);
-    state.selectedWorkoutId = null;
+    showToast(`Deleted workout: ${workoutName || ''}`);
     await loadWorkouts();
-    await loadSplits();
-    await loadTodayResolved();
+    if (state.selectedWorkoutId === workoutId) {
+      state.selectedWorkoutId = state.workouts[0]?.id || null;
+      if (state.selectedWorkoutId) {
+        await loadWorkoutDetail(state.selectedWorkoutId);
+      } else {
+        state.selectedWorkoutDetail = null;
+      }
+    }
     render();
   } catch (e) {
     showToast(`Error deleting workout: ${e.message}`, true);
   }
 }
 
-function adjustSlotSets(idx, delta) {
-  const el = document.getElementById(`slot-sets-${idx}`);
+function adjustPhaseSlotSets(phase, idx, delta) {
+  const el = document.getElementById(`slot-${phase}-sets-${idx}`);
   if (!el) return;
-  let val = parseInt(el.textContent, 10) || 3;
+  const defaultSets = phase === 'main' ? 3 : 1;
+  let val = parseInt(el.textContent, 10) || defaultSets;
   val = Math.max(1, Math.min(10, val + delta));
   el.textContent = val;
-  if (state.selectedWorkoutDetail && state.selectedWorkoutDetail.exercises && state.selectedWorkoutDetail.exercises[idx]) {
-    state.selectedWorkoutDetail.exercises[idx].sets = val;
+
+  const warmExs = (state.selectedWorkoutDetail?.exercises || []).filter(e => e.phase === 'warmup');
+  const mainExs = (state.selectedWorkoutDetail?.exercises || []).filter(e => (e.phase || 'main') === 'main');
+  const coolExs = (state.selectedWorkoutDetail?.exercises || []).filter(e => e.phase === 'cooldown');
+
+  const targetArray = phase === 'warmup' ? warmExs : (phase === 'cooldown' ? coolExs : mainExs);
+  if (targetArray[idx]) {
+    targetArray[idx].sets = val;
   }
 }
 
-function addExerciseSlotToWorkout() {
-  const sel = document.getElementById('add-slot-exercise-id');
+function adjustSlotSets(idxOrPhase, deltaOrIdx, delta) {
+  if (typeof idxOrPhase === 'string') {
+    adjustPhaseSlotSets(idxOrPhase, deltaOrIdx, delta);
+  } else {
+    adjustPhaseSlotSets('main', idxOrPhase, deltaOrIdx);
+  }
+}
+
+function addExerciseSlotToWorkout(phase = 'main') {
+  syncWorkoutEditorFormToState();
+  const sel = document.getElementById(`add-${phase}-exercise-id`) || document.getElementById('add-slot-exercise-id');
   if (!sel || !sel.value) return;
   const exId = parseInt(sel.value, 10);
   const ex = getExercise(exId);
@@ -799,75 +1431,132 @@ function addExerciseSlotToWorkout() {
   if (!state.selectedWorkoutDetail.exercises) state.selectedWorkoutDetail.exercises = [];
 
   const isHold = ex.type === 'duration';
-  state.selectedWorkoutDetail.exercises.push({
+  const defaultSets = phase === 'main' ? 3 : 1;
+  const defaultRest = phase === 'main' ? 90 : 15;
+
+  const newEx = {
     exercise_id: ex.id,
     exercise_name: ex.name,
     exercise_type: ex.type,
-    sets: 3,
+    phase: phase,
+    sets: defaultSets,
     reps: isHold ? null : 10,
     duration_sec: isHold ? 30 : null,
-    rest_sec: 90,
+    rest_sec: defaultRest,
     tempo: '',
     superset_group: null,
     notes: ''
-  });
+  };
+
+  const warmExs = state.selectedWorkoutDetail.exercises.filter(e => e.phase === 'warmup');
+  const mainExs = state.selectedWorkoutDetail.exercises.filter(e => (e.phase || 'main') === 'main');
+  const coolExs = state.selectedWorkoutDetail.exercises.filter(e => e.phase === 'cooldown');
+
+  if (phase === 'warmup') warmExs.push(newEx);
+  else if (phase === 'cooldown') coolExs.push(newEx);
+  else mainExs.push(newEx);
+
+  state.selectedWorkoutDetail.exercises = [...warmExs, ...mainExs, ...coolExs];
   render();
 }
 
-function removeWorkoutExerciseSlot(idx) {
+function removeWorkoutExerciseSlot(phaseOrIdx, idx) {
+  syncWorkoutEditorFormToState();
   if (!state.selectedWorkoutDetail || !state.selectedWorkoutDetail.exercises) return;
-  state.selectedWorkoutDetail.exercises.splice(idx, 1);
+
+  if (typeof phaseOrIdx === 'number' && idx === undefined) {
+    state.selectedWorkoutDetail.exercises.splice(phaseOrIdx, 1);
+    render();
+    return;
+  }
+
+  const phase = phaseOrIdx;
+  const warmExs = state.selectedWorkoutDetail.exercises.filter(e => e.phase === 'warmup');
+  const mainExs = state.selectedWorkoutDetail.exercises.filter(e => (e.phase || 'main') === 'main');
+  const coolExs = state.selectedWorkoutDetail.exercises.filter(e => e.phase === 'cooldown');
+
+  if (phase === 'warmup' && warmExs[idx]) warmExs.splice(idx, 1);
+  else if (phase === 'cooldown' && coolExs[idx]) coolExs.splice(idx, 1);
+  else if (phase === 'main' && mainExs[idx]) mainExs.splice(idx, 1);
+
+  state.selectedWorkoutDetail.exercises = [...warmExs, ...mainExs, ...coolExs];
+  render();
+}
+
+function moveWorkoutExerciseSlot(phase, idx, direction) {
+  syncWorkoutEditorFormToState();
+  if (!state.selectedWorkoutDetail || !state.selectedWorkoutDetail.exercises) return;
+
+  const warmExs = state.selectedWorkoutDetail.exercises.filter(e => e.phase === 'warmup');
+  const mainExs = state.selectedWorkoutDetail.exercises.filter(e => (e.phase || 'main') === 'main');
+  const coolExs = state.selectedWorkoutDetail.exercises.filter(e => e.phase === 'cooldown');
+
+  const targetArray = phase === 'warmup' ? warmExs : (phase === 'cooldown' ? coolExs : mainExs);
+  const targetIdx = idx + direction;
+
+  if (targetIdx >= 0 && targetIdx < targetArray.length) {
+    const temp = targetArray[idx];
+    targetArray[idx] = targetArray[targetIdx];
+    targetArray[targetIdx] = temp;
+  }
+
+  state.selectedWorkoutDetail.exercises = [...warmExs, ...mainExs, ...coolExs];
   render();
 }
 
 async function handleSaveWorkout(event, workoutId) {
   event.preventDefault();
-  const name = document.getElementById('edit-workout-name').value.trim();
-  const desc = document.getElementById('edit-workout-desc').value.trim();
+  const name = (document.getElementById('edit-workout-name')?.value || '').trim();
+  const desc = (document.getElementById('edit-workout-desc')?.value || '').trim();
 
   if (!name) {
     showToast('Workout name is required', true);
     return;
   }
 
-  const exercises = [];
-  const currentExercises = state.selectedWorkoutDetail?.exercises || [];
+  const allExercises = [];
+  const phases = ['warmup', 'main', 'cooldown'];
+  let currentOrder = 1;
 
-  for (let idx = 0; idx < currentExercises.length; idx++) {
-    const orig = currentExercises[idx];
-    const setsEl = document.getElementById(`slot-sets-${idx}`);
-    const targetEl = document.getElementById(`slot-target-${idx}`);
-    const restEl = document.getElementById(`slot-rest-${idx}`);
-    const tempoEl = document.getElementById(`slot-tempo-${idx}`);
-    const ssEl = document.getElementById(`slot-ss-${idx}`);
-    const notesEl = document.getElementById(`slot-notes-${idx}`);
+  for (const phase of phases) {
+    const phaseExs = (state.selectedWorkoutDetail?.exercises || []).filter(e => (e.phase || 'main') === phase);
+    for (let idx = 0; idx < phaseExs.length; idx++) {
+      const orig = phaseExs[idx];
+      const setsEl = document.getElementById(`slot-${phase}-sets-${idx}`);
+      const targetEl = document.getElementById(`slot-${phase}-target-${idx}`);
+      const restEl = document.getElementById(`slot-${phase}-rest-${idx}`);
+      const tempoEl = document.getElementById(`slot-${phase}-tempo-${idx}`);
+      const ssEl = document.getElementById(`slot-${phase}-ss-${idx}`);
+      const notesEl = document.getElementById(`slot-${phase}-notes-${idx}`);
 
-    const isHold = orig.exercise_type === 'duration';
-    const targetVal = targetEl ? parseInt(targetEl.value, 10) : (isHold ? 30 : 10);
-    const setsVal = setsEl ? parseInt(setsEl.textContent, 10) : (orig.sets || 3);
-    const restVal = restEl ? parseInt(restEl.value, 10) : 90;
-    const tempoVal = tempoEl ? tempoEl.value.trim() : null;
-    const ssVal = ssEl && ssEl.value ? parseInt(ssEl.value, 10) : null;
-    const notesVal = notesEl ? notesEl.value.trim() : null;
+      const isHold = orig.exercise_type === 'duration';
+      const targetVal = targetEl ? parseInt(targetEl.value, 10) : (isHold ? 30 : 10);
+      const setsVal = setsEl ? parseInt(setsEl.textContent, 10) : (orig.sets || (phase === 'main' ? 3 : 1));
+      const restVal = restEl ? parseInt(restEl.value, 10) : (phase === 'main' ? 90 : 15);
+      const tempoVal = tempoEl ? tempoEl.value.trim() : null;
+      const ssVal = ssEl && ssEl.value ? parseInt(ssEl.value, 10) : null;
+      const notesVal = notesEl ? notesEl.value.trim() : null;
 
-    exercises.push({
-      exercise_id: orig.exercise_id,
-      order_index: idx + 1,
-      sets: setsVal,
-      reps: isHold ? null : targetVal,
-      duration_sec: isHold ? targetVal : null,
-      rest_sec: restVal,
-      tempo: tempoVal || null,
-      superset_group: ssVal,
-      notes: notesVal || null
-    });
+      allExercises.push({
+        exercise_id: orig.exercise_id,
+        order_index: currentOrder++,
+        phase: phase,
+        sets: setsVal,
+        reps: isHold ? null : targetVal,
+        duration_sec: isHold ? targetVal : null,
+        rest_sec: restVal,
+        tempo: tempoVal || null,
+        superset_group: ssVal,
+        notes: notesVal || null
+      });
+    }
   }
 
   try {
     await API.updateWorkout(workoutId, {
       name,
       description: desc,
-      exercises
+      exercises: allExercises
     });
     showToast('Workout saved successfully');
     await loadWorkouts();
@@ -957,6 +1646,43 @@ async function handleDelete(leId) {
   } catch (e) {
     showToast(`Error: ${e.message}`, true);
   }
+}
+
+function autoSelectModalTemplates(nameVal) {
+  const intent = detectSmartIntent(nameVal, []);
+  const warmSel = document.getElementById('create-modal-warmup-select');
+  const coolSel = document.getElementById('create-modal-cooldown-select');
+  if (warmSel && (!warmSel.dataset.userTouched || warmSel.dataset.userTouched === 'false')) {
+    const warmId = `warmup_${intent}`;
+    if (warmSel.querySelector(`option[value="${warmId}"]`)) {
+      warmSel.value = warmId;
+    }
+  }
+  if (coolSel && (!coolSel.dataset.userTouched || coolSel.dataset.userTouched === 'false')) {
+    const coolId = `cooldown_${intent}`;
+    if (coolSel.querySelector(`option[value="${coolId}"]`)) {
+      coolSel.value = coolId;
+    }
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.applyBuilderStarterTemplate = applyBuilderStarterTemplate;
+  window.clearBuilderPhase = clearBuilderPhase;
+  window.adjustPhaseSlotSets = adjustPhaseSlotSets;
+  window.adjustSlotSets = adjustSlotSets;
+  window.addExerciseSlotToWorkout = addExerciseSlotToWorkout;
+  window.removeWorkoutExerciseSlot = removeWorkoutExerciseSlot;
+  window.moveWorkoutExerciseSlot = moveWorkoutExerciseSlot;
+  window.handleSaveWorkout = handleSaveWorkout;
+  window.handleCreateWorkout = handleCreateWorkout;
+  window.handleDuplicateWorkout = handleDuplicateWorkout;
+  window.handleDeleteWorkout = handleDeleteWorkout;
+  window.selectWorkoutForEditing = selectWorkoutForEditing;
+  window.openCreateWorkoutModal = openCreateWorkoutModal;
+  window.closeCreateWorkoutModal = closeCreateWorkoutModal;
+  window.autoSelectModalTemplates = autoSelectModalTemplates;
+  window.detectSmartIntent = detectSmartIntent;
 }
 
 

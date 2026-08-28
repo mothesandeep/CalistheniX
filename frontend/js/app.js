@@ -70,32 +70,39 @@ async function init() {
     muteBtn.title = muted ? 'Unmute sounds' : 'Mute sounds';
   }
 
-  // Load core catalog
+  window.addEventListener('hashchange', applyHash);
+  applyHash();
+  render();
+
+  // Load core catalog asynchronously
   try {
     await loadExercises();
     await loadTodayResolved();
     await loadSplits();
     await loadWorkouts();
+    render();
   } catch (e) {
     console.warn('Initial data load error:', e);
   }
 
-  window.addEventListener('hashchange', applyHash);
-  applyHash();
-
   startSyncLoop();
-  loadTodayLogs().then(render);
   loadDashboardSummary().then(render);
+  loadTodayLogs().then(render);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
   init();
+}
 
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('CalistheniX SW Registered:', reg.scope))
-        .catch(err => console.warn('CalistheniX SW registration failed:', err));
-    });
-  }
-});
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => {
+        reg.update();
+        console.log('CalistheniX SW Registered:', reg.scope);
+      })
+      .catch(err => console.warn('CalistheniX SW registration failed:', err));
+  });
+}

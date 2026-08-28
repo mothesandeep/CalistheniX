@@ -91,7 +91,7 @@ def get_progression_status(ex_id):
 
         ex = dict(ex)
         logs = conn.execute(
-            'SELECT * FROM logs WHERE exercise_id = ? ORDER BY timestamp DESC',
+            "SELECT * FROM logs WHERE exercise_id = ? AND (phase = 'main' OR phase IS NULL) ORDER BY timestamp DESC",
             (ex_id,)
         ).fetchall()
         logs = [dict(r) for r in logs]

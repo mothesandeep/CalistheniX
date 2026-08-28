@@ -55,6 +55,7 @@ const API_BASE = 'http://127.0.0.1:5001';
     updateWorkout: async (workoutId, payload) => await api('PUT', `/workouts/${workoutId}`, payload),
     duplicateWorkout: async (workoutId) => await api('POST', `/workouts/${workoutId}/duplicate`),
     deleteWorkout: async (workoutId) => await api('DELETE', `/workouts/${workoutId}`),
+    getRoutineTemplates: async () => await api('GET', '/api/routine-templates'),
 
     // ─── Exercises & Routines Endpoints ────────────────────────────────────────
     getExercises: async () => await api('GET', '/exercises'),

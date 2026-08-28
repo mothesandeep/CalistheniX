@@ -60,12 +60,20 @@ def create_log():
         if ex_type == 'reps' and body.get('reps') is None:
             return jsonify({'error': 'reps is required for reps-type exercises'}), 400
 
+        phase_raw = (body.get('phase') or 'main').strip().lower().replace('-', '_')
+        if phase_raw in ('warmup', 'warm_up'):
+            phase = 'warmup'
+        elif phase_raw in ('cooldown', 'cool_down'):
+            phase = 'cooldown'
+        else:
+            phase = 'main'
+
         try:
             cursor = conn.cursor()
             cursor.execute(
                 '''INSERT INTO logs
-                       (exercise_id, timestamp, reps, weight_kg, duration_sec, rpe, client_uuid, session_uuid)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                       (exercise_id, timestamp, reps, weight_kg, duration_sec, rpe, client_uuid, session_uuid, phase)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                 (
                     body['exercise_id'],
                     body['timestamp'],
@@ -74,7 +82,8 @@ def create_log():
                     body.get('duration_sec'),
                     body.get('rpe'),
                     body['client_uuid'],
-                    body.get('session_uuid')
+                    body.get('session_uuid'),
+                    phase
                 )
             )
             conn.commit()
@@ -91,22 +100,50 @@ def create_log():
 
 @sessions_bp.route('/workout_sessions', methods=['GET'])
 def get_workout_sessions():
-    """Return all completed workout sessions, ordered newest first."""
+    """Return all completed workout sessions with tri-phase duration and status metadata."""
     with get_db() as conn:
         rows = conn.execute(
             '''
             SELECT id, session_uuid, routine_name, level, started_at, completed_at,
-                   duration_sec, total_sets, completed_sets, status
+                   duration_sec, warmup_duration_sec, main_duration_sec, cooldown_duration_sec,
+                   warmup_status, cooldown_status, total_sets, completed_sets, status, raw_json
             FROM workout_sessions
             ORDER BY completed_at DESC, started_at DESC
             '''
         ).fetchall()
-        return jsonify([dict(r) for r in rows]), 200
+        results = []
+        for r in rows:
+            d = dict(r)
+            raw = None
+            if d.get('raw_json'):
+                try:
+                    raw = json.loads(d['raw_json'])
+                except Exception:
+                    raw = None
+
+            # Fallbacks for backwards compatibility with legacy rows
+            warmup_dur = d.get('warmup_duration_sec') or (raw.get('warmup_duration_sec') if raw else 0) or 0
+            cooldown_dur = d.get('cooldown_duration_sec') or (raw.get('cooldown_duration_sec') if raw else 0) or 0
+            main_dur = d.get('main_duration_sec') or (raw.get('main_duration_sec') if raw else None)
+            if main_dur is None or (main_dur == 0 and (d.get('duration_sec') or 0) > 0 and warmup_dur == 0 and cooldown_dur == 0):
+                main_dur = d.get('duration_sec') or 0
+
+            warmup_st = d.get('warmup_status') or (raw.get('warmup_status') if raw else 'none') or 'none'
+            cooldown_st = d.get('cooldown_status') or (raw.get('cooldown_status') if raw else 'none') or 'none'
+
+            d['warmup_duration_sec'] = warmup_dur
+            d['main_duration_sec'] = main_dur
+            d['cooldown_duration_sec'] = cooldown_dur
+            d['warmup_status'] = warmup_st
+            d['cooldown_status'] = cooldown_st
+            results.append(d)
+
+        return jsonify(results), 200
 
 
 @sessions_bp.route('/workout_sessions/<string:session_uuid>', methods=['GET'])
 def get_workout_session_detail(session_uuid):
-    """Return detailed session information including raw JSON snapshot and associated logs."""
+    """Return detailed session information including tri-phase durations, statuses, snapshot, and logs."""
     with get_db() as conn:
         row = conn.execute(
             'SELECT * FROM workout_sessions WHERE session_uuid = ?', (session_uuid,)
@@ -115,9 +152,11 @@ def get_workout_session_detail(session_uuid):
             return jsonify({'error': 'workout session not found'}), 404
 
         session_dict = dict(row)
+        snapshot = None
         if session_dict.get('raw_json'):
             try:
-                session_dict['snapshot'] = json.loads(session_dict['raw_json'])
+                snapshot = json.loads(session_dict['raw_json'])
+                session_dict['snapshot'] = snapshot
             except Exception:
                 session_dict['snapshot'] = None
 
@@ -133,12 +172,28 @@ def get_workout_session_detail(session_uuid):
         ).fetchall()
         session_dict['logs'] = [dict(l) for l in logs]
 
+        # Backward compatibility fallbacks
+        warmup_dur = session_dict.get('warmup_duration_sec') or (snapshot.get('warmup_duration_sec') if snapshot else 0) or 0
+        cooldown_dur = session_dict.get('cooldown_duration_sec') or (snapshot.get('cooldown_duration_sec') if snapshot else 0) or 0
+        main_dur = session_dict.get('main_duration_sec') or (snapshot.get('main_duration_sec') if snapshot else None)
+        if main_dur is None or (main_dur == 0 and (session_dict.get('duration_sec') or 0) > 0 and warmup_dur == 0 and cooldown_dur == 0):
+            main_dur = session_dict.get('duration_sec') or 0
+
+        warmup_st = session_dict.get('warmup_status') or (snapshot.get('warmup_status') if snapshot else 'none') or 'none'
+        cooldown_st = session_dict.get('cooldown_status') or (snapshot.get('cooldown_status') if snapshot else 'none') or 'none'
+
+        session_dict['warmup_duration_sec'] = warmup_dur
+        session_dict['main_duration_sec'] = main_dur
+        session_dict['cooldown_duration_sec'] = cooldown_dur
+        session_dict['warmup_status'] = warmup_st
+        session_dict['cooldown_status'] = cooldown_st
+
         return jsonify(session_dict), 200
 
 
 @sessions_bp.route('/workout_sessions', methods=['POST'])
 def create_or_sync_workout_session():
-    """Create or idempotently sync a workout session and its completed sets."""
+    """Create or idempotently sync a workout session and its completed sets across phases."""
     body = request.get_json(silent=True)
     if not body:
         return jsonify({'error': 'JSON body required'}), 400
@@ -151,6 +206,15 @@ def create_or_sync_workout_session():
     duration_sec = body.get('duration_sec') or body.get('duration', 0)
     status = body.get('status', 'completed')
 
+    warmup_duration_sec = body.get('warmup_duration_sec', 0) or 0
+    main_duration_sec = body.get('main_duration_sec', 0) or 0
+    cooldown_duration_sec = body.get('cooldown_duration_sec', 0) or 0
+    warmup_status = body.get('warmup_status', 'none') or 'none'
+    cooldown_status = body.get('cooldown_status', 'none') or 'none'
+
+    if main_duration_sec == 0 and duration_sec > 0 and warmup_duration_sec == 0 and cooldown_duration_sec == 0:
+        main_duration_sec = duration_sec
+
     if not session_uuid or not routine_name or not started_at:
         return jsonify({'error': 'session_uuid, routine_name, and started_at are required'}), 400
 
@@ -162,6 +226,10 @@ def create_or_sync_workout_session():
     for ex in exercises:
         ex_id = ex.get('exercise_id') or ex.get('id')
         ex_type = ex.get('exercise_type') or ex.get('type', 'reps')
+        phase = ex.get('phase', 'main')
+        if phase not in ('warmup', 'main', 'cooldown'):
+            phase = 'main'
+
         for s in ex.get('sets', []):
             total_sets += 1
             if s.get('completed'):
@@ -173,6 +241,7 @@ def create_or_sync_workout_session():
                     'duration_sec': s.get('actual_val') if ex_type == 'duration' else None,
                     'weight_kg': s.get('weight_kg'),
                     'rpe': s.get('rpe'),
+                    'phase': phase,
                     'client_uuid': s.get('client_uuid') or f"{session_uuid}_{ex_id}_{s.get('set_num', total_sets)}"
                 })
 
@@ -184,8 +253,10 @@ def create_or_sync_workout_session():
             cursor.execute(
                 '''
                 INSERT INTO workout_sessions
-                    (session_uuid, routine_name, level, started_at, completed_at, duration_sec, total_sets, completed_sets, status, raw_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (session_uuid, routine_name, level, started_at, completed_at, duration_sec,
+                     warmup_duration_sec, main_duration_sec, cooldown_duration_sec,
+                     warmup_status, cooldown_status, total_sets, completed_sets, status, raw_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''',
                 (
                     session_uuid,
@@ -194,6 +265,11 @@ def create_or_sync_workout_session():
                     str(started_at),
                     str(completed_at),
                     duration_sec,
+                    warmup_duration_sec,
+                    main_duration_sec,
+                    cooldown_duration_sec,
+                    warmup_status,
+                    cooldown_status,
                     total_sets,
                     completed_sets,
                     status,
@@ -206,10 +282,26 @@ def create_or_sync_workout_session():
             cursor.execute(
                 '''
                 UPDATE workout_sessions
-                SET completed_at = ?, duration_sec = ?, total_sets = ?, completed_sets = ?, status = ?, raw_json = ?
+                SET completed_at = ?, duration_sec = ?, warmup_duration_sec = ?,
+                    main_duration_sec = ?, cooldown_duration_sec = ?,
+                    warmup_status = ?, cooldown_status = ?,
+                    total_sets = ?, completed_sets = ?, status = ?, raw_json = ?
                 WHERE session_uuid = ?
                 ''',
-                (str(completed_at), duration_sec, total_sets, completed_sets, status, raw_json_str, session_uuid)
+                (
+                    str(completed_at),
+                    duration_sec,
+                    warmup_duration_sec,
+                    main_duration_sec,
+                    cooldown_duration_sec,
+                    warmup_status,
+                    cooldown_status,
+                    total_sets,
+                    completed_sets,
+                    status,
+                    raw_json_str,
+                    session_uuid
+                )
             )
             conn.commit()
             created = False
@@ -218,8 +310,8 @@ def create_or_sync_workout_session():
             try:
                 cursor.execute(
                     '''
-                    INSERT INTO logs (exercise_id, timestamp, reps, weight_kg, duration_sec, rpe, client_uuid, session_uuid)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO logs (exercise_id, timestamp, reps, weight_kg, duration_sec, rpe, client_uuid, session_uuid, phase)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''',
                     (
                         log_data['exercise_id'],
@@ -229,7 +321,8 @@ def create_or_sync_workout_session():
                         log_data.get('duration_sec'),
                         log_data.get('rpe'),
                         log_data['client_uuid'],
-                        session_uuid
+                        session_uuid,
+                        log_data.get('phase', 'main')
                     )
                 )
                 conn.commit()

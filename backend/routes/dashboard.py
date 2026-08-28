@@ -118,6 +118,7 @@ def get_today_resolved():
                 LIMIT 1
             ''', (r['exercise_id'],)).fetchone()
 
+            phase_val = r['phase'] if ('phase' in r.keys() and r['phase']) else 'main'
             exercises.append({
                 'id': r['id'],
                 'workout_id': r['workout_id'],
@@ -132,10 +133,18 @@ def get_today_resolved():
                 'tempo': r['tempo'],
                 'superset_group': r['superset_group'],
                 'notes': r['notes'],
+                'phase': phase_val,
                 'last_log': dict(last_log) if last_log else None
             })
 
+        warmup_list = [e for e in exercises if e['phase'] == 'warmup']
+        main_list = [e for e in exercises if e['phase'] == 'main']
+        cooldown_list = [e for e in exercises if e['phase'] == 'cooldown']
+
         total_sets = sum(e['sets'] for e in exercises)
+        warmup_sets = sum(e['sets'] for e in warmup_list)
+        main_sets = sum(e['sets'] for e in main_list)
+        cooldown_sets = sum(e['sets'] for e in cooldown_list)
 
         return jsonify({
             'status': 'workout',
@@ -148,7 +157,15 @@ def get_today_resolved():
                 'name': workout['name'],
                 'description': workout['description'],
                 'total_sets': total_sets,
-                'exercises': exercises
+                'warmup_sets': warmup_sets,
+                'main_sets': main_sets,
+                'cooldown_sets': cooldown_sets,
+                'exercises': exercises,
+                'warm_up': warmup_list,
+                'warmup': warmup_list,
+                'main': main_list,
+                'cool_down': cooldown_list,
+                'cooldown': cooldown_list
             }
         }), 200
 
@@ -160,7 +177,7 @@ def get_today_resolved():
 def get_dashboard_summary():
     """Return summary statistics for the dashboard view."""
     with get_db() as conn:
-        logs = conn.execute('SELECT * FROM logs ORDER BY timestamp ASC').fetchall()
+        logs = conn.execute("SELECT * FROM logs WHERE (phase IS NULL OR phase = '' OR phase = 'main') ORDER BY timestamp ASC").fetchall()
         exercises = conn.execute('SELECT * FROM exercises').fetchall()
         sessions = conn.execute("SELECT * FROM workout_sessions WHERE status = 'completed' ORDER BY completed_at ASC").fetchall()
 
@@ -331,6 +348,7 @@ def get_personal_records():
                 COUNT(l.id)         AS total_logs
             FROM exercises e
             JOIN logs l ON l.exercise_id = e.id
+            WHERE (l.phase IS NULL OR l.phase = '' OR l.phase = 'main')
             GROUP BY e.id, e.name, e.type
             ORDER BY last_achieved_at DESC, total_logs DESC
             '''
@@ -356,8 +374,10 @@ def get_activity_heatmap():
                 SUM(COALESCE(duration_sec, 0)) AS total_duration_sec
             FROM logs
             WHERE timestamp >= date('now', '-30 days')
+              AND (phase IS NULL OR phase = '' OR phase = 'main')
             GROUP BY SUBSTR(timestamp, 1, 10)
             ORDER BY date ASC
             '''
         ).fetchall()
         return jsonify([dict(r) for r in rows])
+

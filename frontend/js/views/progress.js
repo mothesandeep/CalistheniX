@@ -123,7 +123,7 @@ function renderProgressView() {
     </div>`;
 
   const chartHtml = points.length > 0
-    ? `<div class="chart-wrap" style="height:240px;"><canvas id="history-canvas"></canvas></div>`
+    ? `<div class="chart-wrap" style="height:240px; position:relative;"><canvas id="history-canvas"></canvas></div>`
     : `<div class="empty-state">No workout logs recorded yet for ${ex?.name || 'this exercise'}. Complete a session to see performance trends.</div>`;
 
   return `
@@ -160,8 +160,112 @@ function renderProgressView() {
         </div>
       </div>
 
-      ${renderPersonalRecordsCard(state.dashboardRecords)}
+      ${typeof renderPersonalRecordsCard === 'function' ? renderPersonalRecordsCard(state.dashboardRecords) : ''}
     </div>`;
+}
+
+async function openHistoryView(exerciseId) {
+  state.historyExerciseId = exerciseId;
+  state.view = 'progress';
+  window.location.hash = `history-${exerciseId}`;
+  try {
+    state.historyLogs = await API.getExerciseLogs(exerciseId);
+  } catch (e) {
+    state.historyLogs = [];
+  }
+  render();
+}
+
+function setHistoryMetricMode(mode) {
+  state.historyMetricMode = mode;
+  render();
+}
+
+function buildHistoryChart() {
+  const canvas = document.getElementById('history-canvas');
+  if (!canvas || !window.Chart) return;
+
+  if (_chartInstance) {
+    _chartInstance.destroy();
+    _chartInstance = null;
+  }
+
+  const selectedExId = state.historyExerciseId || (state.exercises[0]?.id ?? null);
+  const ex = getExercise(selectedExId);
+  if (!ex) return;
+
+  const mode = state.historyMetricMode || 'best';
+  const points = computeProgress(ex, state.historyLogs || [], mode);
+  if (!points.length) return;
+
+  const isHold = ex.type === 'duration';
+  const labels = points.map(p => {
+    const d = new Date(p.date);
+    return isNaN(d.getTime()) ? p.date : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  });
+  const dataValues = points.map(p => p.metric);
+
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+  gradient.addColorStop(0, 'rgba(124, 106, 247, 0.45)');
+  gradient.addColorStop(1, 'rgba(124, 106, 247, 0.0)');
+
+  _chartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: mode === 'best' ? (isHold ? 'Best Hold (sec)' : 'Best Reps') : (isHold ? 'Total Hold (sec)' : 'Volume'),
+        data: dataValues,
+        borderColor: '#7c6af7',
+        borderWidth: 3,
+        backgroundColor: gradient,
+        fill: true,
+        tension: 0.35,
+        pointBackgroundColor: '#ef4444',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#181e2e',
+          borderColor: '#2e3852',
+          borderWidth: 1,
+          titleColor: '#e8edf8',
+          bodyColor: '#a1adc7',
+          padding: 10,
+          displayColors: false,
+          callbacks: {
+            label: (ctx) => `${ctx.dataset.label}: ${ctx.raw}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(46, 56, 82, 0.4)' },
+          ticks: { color: '#6e7d9c', font: { size: 11, family: 'Inter' } }
+        },
+        y: {
+          grid: { color: 'rgba(46, 56, 82, 0.4)' },
+          ticks: { color: '#6e7d9c', font: { size: 11, family: 'Inter' }, precision: 0 },
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+if (typeof window !== 'undefined') {
+  window.openHistoryView = openHistoryView;
+  window.setHistoryMetricMode = setHistoryMetricMode;
+  window.buildHistoryChart = buildHistoryChart;
 }
 
 

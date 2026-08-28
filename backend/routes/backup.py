@@ -27,6 +27,7 @@ def export_all_logs():
                 l.weight_kg,
                 l.duration_sec,
                 l.rpe,
+                l.phase,
                 e.id          AS exercise_id,
                 e.name        AS exercise_name,
                 e.type        AS exercise_type,
@@ -104,11 +105,20 @@ def import_logs():
             if not sess_uuid or not routine_name or not started_at:
                 continue
             try:
+                tot_dur = s.get('duration_sec', 0)
+                main_dur = s.get('main_duration_sec', tot_dur)
+                warm_dur = s.get('warmup_duration_sec', 0)
+                cool_dur = s.get('cooldown_duration_sec', 0)
+                warm_stat = s.get('warmup_status', 'none')
+                cool_stat = s.get('cooldown_status', 'none')
+
                 cursor.execute(
                     '''
                     INSERT INTO workout_sessions
-                        (session_uuid, routine_name, level, started_at, completed_at, duration_sec, total_sets, completed_sets, status, raw_json)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        (session_uuid, routine_name, level, started_at, completed_at, duration_sec,
+                         warmup_duration_sec, main_duration_sec, cooldown_duration_sec,
+                         warmup_status, cooldown_status, total_sets, completed_sets, status, raw_json)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''',
                     (
                         sess_uuid,
@@ -116,7 +126,12 @@ def import_logs():
                         s.get('level', 1),
                         str(started_at),
                         str(s.get('completed_at') or started_at),
-                        s.get('duration_sec', 0),
+                        tot_dur,
+                        warm_dur,
+                        main_dur,
+                        cool_dur,
+                        warm_stat,
+                        cool_stat,
                         s.get('total_sets', 0),
                         s.get('completed_sets', 0),
                         s.get('status', 'completed'),
@@ -141,8 +156,8 @@ def import_logs():
 
             try:
                 cursor.execute(
-                    '''INSERT INTO logs (exercise_id, timestamp, reps, weight_kg, duration_sec, rpe, client_uuid, session_uuid)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                    '''INSERT INTO logs (exercise_id, timestamp, reps, weight_kg, duration_sec, rpe, client_uuid, session_uuid, phase)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                     (
                         ex_id,
                         ts,
@@ -151,7 +166,8 @@ def import_logs():
                         item.get('duration_sec'),
                         item.get('rpe'),
                         uuid_str,
-                        session_uuid
+                        session_uuid,
+                        item.get('phase', 'main')
                     )
                 )
                 imported_logs += 1
@@ -188,10 +204,11 @@ def import_logs():
                 existing = conn.execute('SELECT id FROM workout_exercises WHERE id = ?', (we_id,)).fetchone()
             if not existing:
                 try:
+                    phase = we.get('phase', 'main')
                     cursor.execute('''
                         INSERT INTO workout_exercises
-                            (id, workout_id, exercise_id, order_index, sets, reps, duration_sec, rest_sec, tempo, superset_group, notes)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            (id, workout_id, exercise_id, order_index, sets, reps, duration_sec, rest_sec, tempo, superset_group, notes, phase)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (
                         we_id,
                         we['workout_id'],
@@ -203,7 +220,8 @@ def import_logs():
                         we.get('rest_sec', 90),
                         we.get('tempo'),
                         we.get('superset_group'),
-                        we.get('notes')
+                        we.get('notes'),
+                        phase
                     ))
                 except sqlite3.IntegrityError:
                     pass

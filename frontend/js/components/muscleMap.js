@@ -1,26 +1,17 @@
 /* ============================================================
-   muscleMap.js — Interactive Anatomical Muscle Heatmap (Front & Back)
-   Original Minimal Line-Art Vector Anatomy Engine.
-   Provides discrete per-muscle highlighting, movement-pattern mapping,
-   and dynamic DOM highlight control for CalistheniX.
+   muscleMap.js — Interactive High-Precision Anatomical Muscle Engine
+   Medical-grade vector anatomy representation (Anterior & Posterior)
+   Engineered for CalistheniX bodyweight & gymnastic progression tracking.
    ============================================================ */
 
 (function () {
   'use strict';
 
   // ─── Canonical Muscle Groups Catalog ───────────────────────────────────────
-  // Supported muscle identifiers:
-  // 'chest', 'upper_chest', 'lower_chest',
-  // 'front_delts', 'side_delts', 'rear_delts', 'shoulders',
-  // 'biceps', 'triceps', 'forearms',
-  // 'lats', 'upper_traps', 'mid_traps', 'traps', 'upper_back', 'lower_back',
-  // 'abs', 'obliques', 'core',
-  // 'glutes', 'quads', 'hamstrings', 'calves', 'tibialis'
-
   const EXERCISE_MUSCLE_MAP = {
     // ── PUSH EXERCISES ──
     'Diamond Push-ups': {
-      primary: ['triceps', 'chest'],
+      primary: ['triceps', 'chest', 'lower_chest'],
       secondary: ['front_delts', 'abs', 'core']
     },
     'Decline Push-ups': {
@@ -33,35 +24,35 @@
     },
     'Pike Push-ups': {
       primary: ['front_delts', 'side_delts', 'triceps'],
-      secondary: ['upper_chest', 'upper_traps', 'core']
+      secondary: ['upper_chest', 'traps', 'upper_traps', 'core']
     },
     'Pike Push-ups Elevated': {
       primary: ['front_delts', 'side_delts', 'triceps'],
-      secondary: ['upper_chest', 'upper_traps', 'core']
+      secondary: ['upper_chest', 'traps', 'upper_traps', 'core']
     },
     'Handstand Push-up Progression': {
       primary: ['front_delts', 'side_delts', 'triceps'],
-      secondary: ['upper_traps', 'upper_chest', 'core']
+      secondary: ['traps', 'upper_traps', 'upper_chest', 'core']
     },
     'Triceps Dips': {
-      primary: ['triceps', 'lower_chest'],
+      primary: ['triceps', 'lower_chest', 'chest'],
       secondary: ['front_delts', 'core']
     },
     'Dips': {
-      primary: ['triceps', 'chest'],
+      primary: ['triceps', 'chest', 'lower_chest'],
       secondary: ['front_delts', 'core']
     },
     'Standard Push-ups': {
       primary: ['chest', 'triceps'],
-      secondary: ['front_delts', 'core']
+      secondary: ['front_delts', 'abs', 'core']
     },
     'Wide Push-ups': {
-      primary: ['chest'],
+      primary: ['chest', 'upper_chest'],
       secondary: ['front_delts', 'triceps', 'core']
     },
     'Lateral Raise': {
       primary: ['side_delts'],
-      secondary: ['upper_traps', 'forearms']
+      secondary: ['upper_traps', 'traps', 'forearms']
     },
 
     // ── PULL EXERCISES ──
@@ -90,11 +81,11 @@
       secondary: ['lats', 'biceps', 'core']
     },
     'Scapular Pulls': {
-      primary: ['mid_traps', 'upper_traps', 'lats'],
+      primary: ['mid_traps', 'upper_traps', 'traps', 'lats'],
       secondary: ['forearms']
     },
     'Face Pulls': {
-      primary: ['rear_delts', 'mid_traps'],
+      primary: ['rear_delts', 'mid_traps', 'traps'],
       secondary: ['side_delts', 'upper_traps']
     },
     'Prone Y-raises': {
@@ -103,7 +94,7 @@
     },
     'Wall Angels': {
       primary: ['upper_back', 'mid_traps', 'rear_delts'],
-      secondary: ['upper_traps']
+      secondary: ['upper_traps', 'traps']
     },
     'Biceps Curls': {
       primary: ['biceps'],
@@ -111,7 +102,7 @@
     },
     'Dead Hang': {
       primary: ['forearms', 'lats'],
-      secondary: ['upper_traps', 'shoulders']
+      secondary: ['upper_traps', 'traps', 'shoulders']
     },
 
     // ── LEGS EXERCISES ──
@@ -154,31 +145,31 @@
 
     // ── CORE EXERCISES ──
     'Plank': {
-      primary: ['abs', 'obliques'],
+      primary: ['abs', 'obliques', 'core'],
       secondary: ['front_delts', 'quads', 'glutes']
     },
     'Side Plank': {
-      primary: ['obliques'],
+      primary: ['obliques', 'core'],
       secondary: ['abs', 'glutes', 'side_delts']
     },
     'Hanging Knee Raises': {
-      primary: ['abs', 'obliques'],
+      primary: ['abs', 'obliques', 'core'],
       secondary: ['forearms', 'lats']
     },
     'Hanging Leg Raises': {
-      primary: ['abs', 'obliques'],
+      primary: ['abs', 'obliques', 'core'],
       secondary: ['forearms', 'lats', 'quads']
     },
     'L-sit Hang': {
-      primary: ['abs', 'obliques'],
+      primary: ['abs', 'obliques', 'core'],
       secondary: ['forearms', 'lats', 'quads']
     },
     'Hollow Body Hold': {
-      primary: ['abs', 'obliques'],
+      primary: ['abs', 'obliques', 'core'],
       secondary: ['quads', 'lower_back']
     },
     'Russian Twists': {
-      primary: ['obliques', 'abs'],
+      primary: ['obliques', 'abs', 'core'],
       secondary: ['lower_back']
     }
   };
@@ -188,7 +179,7 @@
     push_archer: { primary: ['chest', 'triceps'], secondary: ['front_delts', 'forearms', 'obliques'] },
     push_incline: { primary: ['front_delts', 'side_delts', 'triceps'], secondary: ['upper_chest', 'upper_traps', 'abs'] },
     push_vertical: { primary: ['front_delts', 'side_delts', 'triceps'], secondary: ['upper_traps', 'upper_chest', 'abs'] },
-    push_dip: { primary: ['triceps', 'chest'], secondary: ['front_delts', 'abs'] },
+    push_dip: { primary: ['triceps', 'chest', 'lower_chest'], secondary: ['front_delts', 'abs'] },
     pull_vertical: { primary: ['lats', 'biceps'], secondary: ['upper_back', 'rear_delts', 'forearms'] },
     pull_horizontal: { primary: ['upper_back', 'mid_traps', 'rear_delts'], secondary: ['lats', 'biceps'] },
     squat: { primary: ['quads', 'glutes'], secondary: ['hamstrings', 'calves', 'abs'] },
@@ -208,23 +199,17 @@
     return String(key).toLowerCase().trim().replace(/[- ]/g, '_');
   }
 
-  /**
-   * Resolve target muscles from movement_pattern, target_muscles list, exercise name, or workout object.
-   * Returns: { primary: string[], secondary: string[], label: string }
-   */
   function resolveMuscles(input) {
     if (!input) {
       return { primary: ['chest', 'triceps'], secondary: ['front_delts', 'abs'], label: 'Full Body' };
     }
 
-    // 1. Direct object format { primary: [...], secondary: [...] }
     if (typeof input === 'object' && (Array.isArray(input.primary) || Array.isArray(input.secondary))) {
       const p = (input.primary || []).map(normalizeMuscleKey);
       const s = (input.secondary || []).map(normalizeMuscleKey);
       return { primary: Array.from(new Set(p)), secondary: Array.from(new Set(s)), label: input.label || formatMuscleNames(p) };
     }
 
-    // 2. Workout Object containing exercises
     if (typeof input === 'object' && (input.exercises || input.name)) {
       const pSet = new Set();
       const sSet = new Set();
@@ -239,7 +224,6 @@
           (m.secondary || []).forEach(k => sSet.add(normalizeMuscleKey(k)));
         });
       } else {
-        // Fallback to text matching on workout name / description
         const text = `${input.name || ''} ${input.description || ''}`.toLowerCase();
         if (text.includes('push') || text.includes('dip') || text.includes('press') || text.includes('chest')) {
           ['chest', 'front_delts', 'triceps'].forEach(k => pSet.add(k));
@@ -261,7 +245,6 @@
         }
       }
 
-      // Remove items from secondary that are already in primary
       pSet.forEach(k => sSet.delete(k));
       const pList = Array.from(pSet);
       const sList = Array.from(sSet);
@@ -272,41 +255,30 @@
       };
     }
 
-    // 3. Array of muscles passed as target_muscles
     if (Array.isArray(input)) {
       const p = input.map(normalizeMuscleKey);
       return { primary: p, secondary: [], label: formatMuscleNames(p) };
     }
 
-    // 4. String input: movement_pattern OR comma-separated muscle string OR exercise name
     if (typeof input === 'string') {
       const str = input.trim();
-
-      // Check pattern map
       if (PATTERN_DEFAULT_MUSCLES[str]) {
         const m = PATTERN_DEFAULT_MUSCLES[str];
         return { primary: m.primary, secondary: m.secondary, label: formatMuscleNames(m.primary) };
       }
-
-      // Check exercise catalog
       if (EXERCISE_MUSCLE_MAP[str]) {
         const m = EXERCISE_MUSCLE_MAP[str];
         return { primary: m.primary, secondary: m.secondary, label: formatMuscleNames(m.primary) };
       }
-
-      // Check comma-separated string
       if (str.includes(',')) {
         const list = str.split(',').map(normalizeMuscleKey).filter(Boolean);
         return { primary: list, secondary: [], label: formatMuscleNames(list) };
       }
-
-      // Single muscle or fuzzy pattern
       const norm = normalizeMuscleKey(str);
       if (PATTERN_DEFAULT_MUSCLES[norm]) {
         const m = PATTERN_DEFAULT_MUSCLES[norm];
         return { primary: m.primary, secondary: m.secondary, label: formatMuscleNames(m.primary) };
       }
-
       return { primary: [norm], secondary: [], label: formatMuscleNames([norm]) };
     }
 
@@ -325,7 +297,6 @@
     if (movementPattern && PATTERN_DEFAULT_MUSCLES[movementPattern]) {
       return PATTERN_DEFAULT_MUSCLES[movementPattern];
     }
-    // Fuzzy matching by name keywords
     if (exerciseName) {
       const n = exerciseName.toLowerCase();
       if (n.includes('push') || n.includes('press')) return PATTERN_DEFAULT_MUSCLES.push_horizontal;
@@ -350,13 +321,17 @@
       return list.some(item => {
         if (item === target) return true;
         if (target.includes('chest') && item === 'chest') return true;
+        if (target === 'chest' && (item.includes('chest') || item === 'upper_chest' || item === 'lower_chest')) return true;
         if (target.includes('delt') && (item === 'shoulders' || item.includes('delt'))) return true;
+        if (target === 'shoulders' && target.includes('delt')) return true;
         if (target.includes('trap') && (item === 'traps' || item.includes('trap'))) return true;
+        if (target === 'traps' && item.includes('trap')) return true;
         if ((target === 'abs' || target === 'obliques') && item === 'core') return true;
         if (target === 'core' && (item === 'abs' || item === 'obliques')) return true;
         if (target === 'calves' && item === 'tibialis') return true;
         if (target === 'tibialis' && item === 'calves') return true;
-        if (target === 'upper_back' && (item === 'lats' || item === 'traps')) return true;
+        if (target === 'upper_back' && (item === 'lats' || item === 'traps' || item === 'upper_back')) return true;
+        if (target === 'lats' && item === 'upper_back') return true;
         return false;
       });
     };
@@ -366,16 +341,6 @@
     return 'inactive';
   }
 
-  /**
-   * ─── Core Function: highlightMuscles ─────────────────────────────────────────
-   * Takes movement_pattern OR target_muscles OR workout object, and gives
-   * corresponding SVG <path> elements 'active' and 'is-primary'/'is-secondary' classes,
-   * keeping all other muscles muted/gray (is-inactive).
-   *
-   * @param {string|string[]|object} input - movement_pattern, target_muscles, or workout
-   * @param {HTMLElement|Document} container - Root element to search for SVGs (default: document)
-   * @returns {object} { primary: string[], secondary: string[], label: string, updatedCount: number }
-   */
   function highlightMuscles(input, container = null) {
     const root = container || (typeof document !== 'undefined' ? document : null);
     if (!root) return { primary: [], secondary: [], label: '', updatedCount: 0 };
@@ -384,7 +349,6 @@
     const p = resolved.primary || [];
     const s = resolved.secondary || [];
 
-    // Find all muscle elements in container
     const elements = root.querySelectorAll('.muscle, .cx-muscle-part, [data-muscle]');
     let count = 0;
 
@@ -392,7 +356,6 @@
       const muscleKey = el.dataset.muscle || el.id || '';
       const status = getMuscleStatus(muscleKey, p, s);
 
-      // Reset previous classes
       el.classList.remove('active', 'is-primary', 'is-secondary', 'is-inactive');
 
       if (status === 'primary') {
@@ -417,7 +380,7 @@
     };
   }
 
-  // ─── SVG Geometry Renderers (Minimal Line-Art Silhouette) ───────────────────
+  // ─── High-Definition Vector Geometry Renderers ─────────────────────────────
 
   function renderFrontSVG(primary = [], secondary = [], options = {}) {
     const getClass = (m) => {
@@ -426,95 +389,170 @@
     };
 
     return `
-      <svg class="cx-muscle-svg cx-anatomical-svg front-view" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Anterior Front Muscle Map">
+      <svg class="cx-muscle-svg cx-anatomical-svg front-view" viewBox="0 0 200 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Anterior Front Muscle Map">
         <defs>
-          <filter id="cx-front-glow-primary" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#8b5cf6" flood-opacity="0.85" />
+          <filter id="cx-front-coral-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="#ef4444" flood-opacity="0.8" />
           </filter>
-          <filter id="cx-front-glow-secondary" x="-20%" y="-20%" width="140%" height="140%">
+          <filter id="cx-front-amber-glow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#f59e0b" flood-opacity="0.75" />
           </filter>
         </defs>
 
-        <!-- Neutral Head & Neck -->
-        <ellipse cx="100" cy="30" rx="13" ry="16" class="neutral-joint" data-name="Head" />
-        <path d="M 93 45 L 107 45 L 109 54 L 91 54 Z" class="neutral-joint" data-name="Neck" />
+        <!-- Underlay Full Body Silhouette -->
+        <g class="cx-body-underlay" opacity="0.15">
+          <ellipse cx="100" cy="30" rx="14" ry="17" fill="#60a5fa" />
+        </g>
 
-        <!-- Upper Traps (Clavicular Front) -->
-        <path id="traps" class="${getClass('upper_traps')}" data-muscle="traps" data-name="Trapezius (Upper)"
-              d="M 91 50 L 100 53 L 109 50 L 118 59 L 109 62 L 100 63 L 91 62 L 82 59 Z" />
+        <!-- 1. HEAD & NECK -->
+        <g id="head_neck_group" class="neutral-group">
+          <!-- Cranium & Face -->
+          <path d="M 100 14 C 91 14 86 21 86 31 C 86 40 92 48 100 48 C 108 48 114 40 114 31 C 114 21 109 14 100 14 Z" class="neutral-joint" data-name="Head" />
+          <!-- Neck & SCM (Sternocleidomastoid) -->
+          <path d="M 94 47 L 91 59 L 98 62 L 98 48 Z" class="neutral-joint" data-name="Neck Left" />
+          <path d="M 106 47 L 109 59 L 102 62 L 102 48 Z" class="neutral-joint" data-name="Neck Right" />
+        </g>
 
-        <!-- Shoulders / Deltoids -->
-        <path id="front_delts_left" class="${getClass('front_delts')}" data-muscle="front_delts" data-name="Front Deltoids (Left)"
-              d="M 80 60 C 72 61 64 67 60 77 C 57 84 59 91 65 94 C 68 90 73 81 77 74 C 80 68 81 63 80 60 Z" />
-        <path id="front_delts_right" class="${getClass('front_delts')}" data-muscle="front_delts" data-name="Front Deltoids (Right)"
-              d="M 120 60 C 128 61 136 67 140 77 C 143 84 141 91 135 94 C 132 90 127 81 123 74 C 120 68 119 63 120 60 Z" />
-        <path id="side_delts_left" class="${getClass('side_delts')}" data-muscle="side_delts" data-name="Side Deltoids (Left)"
-              d="M 60 77 C 52 83 48 93 50 102 C 53 105 57 105 61 101 C 58 95 56 86 60 77 Z" />
-        <path id="side_delts_right" class="${getClass('side_delts')}" data-muscle="side_delts" data-name="Side Deltoids (Right)"
-              d="M 140 77 C 148 83 152 93 150 102 C 147 105 143 105 139 101 C 142 95 144 86 140 77 Z" />
+        <!-- 2. TRAPEZIUS (Anterior Clavicular Upper Traps) -->
+        <g id="traps_front_group">
+          <!-- Left Upper Trap -->
+          <path id="traps_front_left" class="${getClass('upper_traps')}" data-muscle="traps" data-name="Upper Trapezius (Left)"
+                d="M 91 50 C 85 53 79 58 74 64 C 77 66 84 66 91 63 C 92 58 92 53 91 50 Z" />
+          <!-- Right Upper Trap -->
+          <path id="traps_front_right" class="${getClass('upper_traps')}" data-muscle="traps" data-name="Upper Trapezius (Right)"
+                d="M 109 50 C 115 53 121 58 126 64 C 123 66 116 66 109 63 C 108 58 108 53 109 50 Z" />
+        </g>
 
-        <!-- Chest / Pectorals -->
-        <path id="chest_left" class="${getClass('chest')}" data-muscle="chest" data-name="Pectorals (Left)"
-              d="M 98 64 C 90 63 81 66 78 74 C 76 81 80 91 88 94 C 94 95 98 93 98 88 Z" />
-        <path id="chest_right" class="${getClass('chest')}" data-muscle="chest" data-name="Pectorals (Right)"
-              d="M 102 64 C 110 63 119 66 122 74 C 124 81 120 91 112 94 C 106 95 102 93 102 88 Z" />
+        <!-- 3. SHOULDERS (Deltoids - Anterior & Lateral) -->
+        <g id="shoulders_front_group">
+          <!-- Left Front Deltoid -->
+          <path id="front_delts_left" class="${getClass('front_delts')}" data-muscle="front_delts" data-name="Anterior Deltoid (Left)"
+                d="M 74 65 C 67 67 61 73 59 81 C 60 88 66 93 72 95 C 75 88 77 78 77 70 C 76 67 75 66 74 65 Z" />
+          <!-- Right Front Deltoid -->
+          <path id="front_delts_right" class="${getClass('front_delts')}" data-muscle="front_delts" data-name="Anterior Deltoid (Right)"
+                d="M 126 65 C 133 67 139 73 141 81 C 140 88 134 93 128 95 C 125 88 123 78 123 70 C 124 67 125 66 126 65 Z" />
+          <!-- Left Lateral (Side) Deltoid -->
+          <path id="side_delts_left" class="${getClass('side_delts')}" data-muscle="side_delts" data-name="Lateral Deltoid (Left)"
+                d="M 58 80 C 50 86 46 95 48 104 C 52 106 56 105 60 100 C 59 93 57 86 58 80 Z" />
+          <!-- Right Lateral (Side) Deltoid -->
+          <path id="side_delts_right" class="${getClass('side_delts')}" data-muscle="side_delts" data-name="Lateral Deltoid (Right)"
+                d="M 142 80 C 150 86 154 95 152 104 C 148 106 144 105 140 100 C 141 93 143 86 142 80 Z" />
+        </g>
 
-        <!-- Biceps -->
-        <path id="biceps_left" class="${getClass('biceps')}" data-muscle="biceps" data-name="Biceps (Left)"
-              d="M 65 95 C 59 98 57 109 59 118 C 62 121 67 122 71 116 C 73 110 72 101 65 95 Z" />
-        <path id="biceps_right" class="${getClass('biceps')}" data-muscle="biceps" data-name="Biceps (Right)"
-              d="M 135 95 C 141 98 143 109 141 118 C 138 121 133 122 129 116 C 127 110 128 101 135 95 Z" />
+        <!-- 4. CHEST (Pectoralis Major: Clavicular Upper & Sternal Lower) -->
+        <g id="chest_front_group">
+          <!-- Left Upper Chest (Clavicular) -->
+          <path id="upper_chest_left" class="${getClass('upper_chest')}" data-muscle="upper_chest" data-name="Upper Pectoralis (Left)"
+                d="M 98 64 C 90 64 80 68 76 75 C 80 81 88 83 98 83 C 98 76 98 70 98 64 Z" />
+          <!-- Right Upper Chest (Clavicular) -->
+          <path id="upper_chest_right" class="${getClass('upper_chest')}" data-muscle="upper_chest" data-name="Upper Pectoralis (Right)"
+                d="M 102 64 C 110 64 120 68 124 75 C 120 81 112 83 102 83 C 102 76 102 70 102 64 Z" />
+          <!-- Left Lower/Main Chest (Sternal & Abdominal) -->
+          <path id="chest_left" class="${getClass('chest')}" data-muscle="chest" data-name="Pectoralis Major (Left)"
+                d="M 98 85 C 88 85 78 83 74 77 C 72 85 76 95 84 98 C 91 99 97 97 98 92 Z" />
+          <!-- Right Lower/Main Chest (Sternal & Abdominal) -->
+          <path id="chest_right" class="${getClass('chest')}" data-muscle="chest" data-name="Pectoralis Major (Right)"
+                d="M 102 85 C 112 85 122 83 126 77 C 128 85 124 95 116 98 C 109 99 103 97 102 92 Z" />
+        </g>
 
-        <!-- Forearms (Flexors) -->
-        <path id="forearms_left" class="${getClass('forearms')}" data-muscle="forearms" data-name="Forearms (Left)"
-              d="M 58 122 C 52 126 47 138 44 151 C 43 158 47 162 52 160 C 56 154 62 141 64 130 C 64 124 61 121 58 122 Z" />
-        <path id="forearms_right" class="${getClass('forearms')}" data-muscle="forearms" data-name="Forearms (Right)"
-              d="M 142 122 C 148 126 153 138 156 151 C 157 158 153 162 148 160 C 144 154 138 141 136 130 C 136 124 139 121 142 122 Z" />
+        <!-- 5. ARMS: BICEPS & BRACHIALIS -->
+        <g id="biceps_front_group">
+          <!-- Left Biceps -->
+          <path id="biceps_left" class="${getClass('biceps')}" data-muscle="biceps" data-name="Biceps Brachii (Left)"
+                d="M 64 97 C 58 100 56 111 58 121 C 61 125 66 126 70 119 C 72 113 71 103 64 97 Z" />
+          <!-- Right Biceps -->
+          <path id="biceps_right" class="${getClass('biceps')}" data-muscle="biceps" data-name="Biceps Brachii (Right)"
+                d="M 136 97 C 142 100 144 111 142 121 C 139 125 134 126 130 119 C 128 113 129 103 136 97 Z" />
+          <!-- Left Brachialis / Inner Arm Notch -->
+          <path d="M 57 114 C 54 118 54 125 56 130 C 58 128 59 123 58 118 Z" class="neutral-joint" data-name="Brachialis Left" />
+          <path d="M 143 114 C 146 118 146 125 144 130 C 142 128 141 123 142 118 Z" class="neutral-joint" data-name="Brachialis Right" />
+        </g>
 
-        <!-- Hands (Neutral) -->
-        <path d="M 43 161 C 38 166 33 174 30 182 C 29 186 33 188 36 184 C 40 178 45 172 47 166 Z" class="neutral-joint" data-name="Hand (Left)" />
-        <path d="M 157 161 C 162 166 167 174 170 182 C 171 186 167 188 164 184 C 160 178 155 172 153 166 Z" class="neutral-joint" data-name="Hand (Right)" />
+        <!-- 6. FOREARMS (Brachioradialis & Flexors) -->
+        <g id="forearms_front_group">
+          <!-- Left Forearm -->
+          <path id="forearms_left" class="${getClass('forearms')}" data-muscle="forearms" data-name="Forearms & Flexors (Left)"
+                d="M 57 127 C 51 131 45 144 42 159 C 41 166 45 170 50 168 C 55 161 61 147 63 135 C 63 129 60 126 57 127 Z" />
+          <!-- Right Forearm -->
+          <path id="forearms_right" class="${getClass('forearms')}" data-muscle="forearms" data-name="Forearms & Flexors (Right)"
+                d="M 143 127 C 149 131 155 144 158 159 C 159 166 155 170 150 168 C 145 161 139 147 137 135 C 137 129 140 126 143 127 Z" />
+        </g>
 
-        <!-- Abs (6-Pack Rectus Abdominis) -->
-        <path id="abs_upper_left" class="${getClass('abs')}" data-muscle="abs" data-name="Upper Abs (Left)" d="M 91 96 L 98 95 L 98 106 L 91 106 Z" />
-        <path id="abs_upper_right" class="${getClass('abs')}" data-muscle="abs" data-name="Upper Abs (Right)" d="M 102 95 L 109 96 L 109 106 L 102 106 Z" />
-        <path id="abs_mid_left" class="${getClass('abs')}" data-muscle="abs" data-name="Mid Abs (Left)" d="M 91 108 L 98 108 L 98 120 L 91 119 Z" />
-        <path id="abs_mid_right" class="${getClass('abs')}" data-muscle="abs" data-name="Mid Abs (Right)" d="M 102 108 L 109 108 L 109 119 L 102 120 Z" />
-        <path id="abs_lower_left" class="${getClass('abs')}" data-muscle="abs" data-name="Lower Abs (Left)" d="M 92 122 L 98 122 L 98 135 L 93 132 Z" />
-        <path id="abs_lower_right" class="${getClass('abs')}" data-muscle="abs" data-name="Lower Abs (Right)" d="M 102 122 L 108 122 L 107 132 L 102 135 Z" />
+        <!-- HANDS & WRISTS (Neutral) -->
+        <g id="hands_front_group" class="neutral-group">
+          <path d="M 41 169 C 36 174 31 183 28 192 C 27 197 31 199 34 195 C 38 188 43 181 46 174 Z" class="neutral-joint" data-name="Hand (Left)" />
+          <path d="M 159 169 C 164 174 169 183 172 192 C 173 197 169 199 166 195 C 162 188 157 181 154 174 Z" class="neutral-joint" data-name="Hand (Right)" />
+        </g>
 
-        <!-- Obliques & Deep Pelvic Core -->
-        <path id="obliques_left" class="${getClass('obliques')}" data-muscle="obliques" data-name="Obliques (Left)"
-              d="M 88 96 C 82 99 78 110 77 121 C 77 129 81 140 90 144 C 89 137 88 127 88 119 C 88 110 89 102 88 96 Z" />
-        <path id="obliques_right" class="${getClass('obliques')}" data-muscle="obliques" data-name="Obliques (Right)"
-              d="M 112 96 C 118 99 122 110 123 121 C 123 129 119 140 110 144 C 111 137 112 127 112 119 C 112 110 111 102 112 96 Z" />
-        <path id="core_pelvic" class="${getClass('core')}" data-muscle="core" data-name="Pelvic Core"
-              d="M 92 137 L 100 151 L 108 137 C 102 140 98 140 92 137 Z" />
+        <!-- 7. ABDOMINALS (6-Pack Rectus Abdominis with Linea Alba) -->
+        <g id="abs_front_group">
+          <!-- Upper Pair -->
+          <path id="abs_upper_left" class="${getClass('abs')}" data-muscle="abs" data-name="Upper Abdominals (Left)"
+                d="M 90 100 L 98 99 L 98 111 L 90 111 Z" />
+          <path id="abs_upper_right" class="${getClass('abs')}" data-muscle="abs" data-name="Upper Abdominals (Right)"
+                d="M 102 99 L 110 100 L 110 111 L 102 111 Z" />
+          <!-- Mid Pair -->
+          <path id="abs_mid_left" class="${getClass('abs')}" data-muscle="abs" data-name="Mid Abdominals (Left)"
+                d="M 90 113 L 98 113 L 98 126 L 90 125 Z" />
+          <path id="abs_mid_right" class="${getClass('abs')}" data-muscle="abs" data-name="Mid Abdominals (Right)"
+                d="M 102 113 L 110 113 L 110 125 L 102 126 Z" />
+          <!-- Lower Pair -->
+          <path id="abs_lower_left" class="${getClass('abs')}" data-muscle="abs" data-name="Lower Abdominals (Left)"
+                d="M 91 128 L 98 128 L 98 143 L 92 139 Z" />
+          <path id="abs_lower_right" class="${getClass('abs')}" data-muscle="abs" data-name="Lower Abdominals (Right)"
+                d="M 102 128 L 109 128 L 108 139 L 102 143 Z" />
+        </g>
 
-        <!-- Quadriceps (Front Thighs) -->
-        <path id="quads_left_lateral" class="${getClass('quads')}" data-muscle="quads" data-name="Quads Lateral (Left)"
-              d="M 89 147 C 80 155 73 169 70 187 C 67 202 70 217 77 224 C 82 223 87 209 89 195 C 91 181 92 162 89 147 Z" />
-        <path id="quads_left_medial" class="${getClass('quads')}" data-muscle="quads" data-name="Quads Teardrop (Left)"
-              d="M 90 152 C 92 167 92 185 90 203 C 89 215 92 223 95 221 C 97 212 98 192 97 172 C 96 157 93 151 90 152 Z" />
-        <path id="quads_right_lateral" class="${getClass('quads')}" data-muscle="quads" data-name="Quads Lateral (Right)"
-              d="M 111 147 C 120 155 127 169 130 187 C 133 202 130 217 123 224 C 118 223 113 209 111 195 C 109 181 108 162 111 147 Z" />
-        <path id="quads_right_medial" class="${getClass('quads')}" data-muscle="quads" data-name="Quads Teardrop (Right)"
-              d="M 110 152 C 108 167 108 185 110 203 C 111 215 108 223 105 221 C 103 212 102 192 103 172 C 104 157 107 151 110 152 Z" />
+        <!-- 8. OBLIQUES & SERRATUS ANTERIOR -->
+        <g id="obliques_front_group">
+          <!-- Left Serratus & External Obliques -->
+          <path id="obliques_left" class="${getClass('obliques')}" data-muscle="obliques" data-name="External Obliques (Left)"
+                d="M 87 101 C 80 104 76 115 75 128 C 75 137 79 149 89 154 C 88 146 87 135 87 126 C 87 116 88 107 87 101 Z" />
+          <!-- Right Serratus & External Obliques -->
+          <path id="obliques_right" class="${getClass('obliques')}" data-muscle="obliques" data-name="External Obliques (Right)"
+                d="M 113 101 C 120 104 124 115 125 128 C 125 137 121 149 111 154 C 112 146 113 135 113 126 C 113 116 112 107 113 101 Z" />
+          <!-- Deep Pelvic Core / Inguinal V -->
+          <path id="core_pelvic" class="${getClass('core')}" data-muscle="core" data-name="Pelvic Core"
+                d="M 91 145 L 100 160 L 109 145 C 103 148 97 148 91 145 Z" />
+        </g>
 
-        <!-- Knees (Neutral) -->
-        <circle cx="82" cy="229" r="4.5" class="neutral-joint" data-name="Knee (Left)" />
-        <circle cx="118" cy="229" r="4.5" class="neutral-joint" data-name="Knee (Right)" />
+        <!-- 9. QUADRICEPS (Rectus Femoris, Vastus Lateralis, Vastus Medialis) -->
+        <g id="quads_front_group">
+          <!-- Left Quad Outer (Vastus Lateralis) -->
+          <path id="quads_left_lateral" class="${getClass('quads')}" data-muscle="quads" data-name="Vastus Lateralis (Left)"
+                d="M 88 157 C 78 165 71 180 68 200 C 65 217 68 233 76 242 C 81 241 86 226 88 211 C 90 195 91 174 88 157 Z" />
+          <!-- Left Quad Center & Teardrop (Rectus Femoris & Vastus Medialis) -->
+          <path id="quads_left_medial" class="${getClass('quads')}" data-muscle="quads" data-name="Rectus Femoris & Medialis (Left)"
+                d="M 89 162 C 92 178 92 198 90 218 C 88 231 92 241 96 238 C 98 228 99 206 98 184 C 97 168 93 161 89 162 Z" />
+          <!-- Right Quad Outer (Vastus Lateralis) -->
+          <path id="quads_right_lateral" class="${getClass('quads')}" data-muscle="quads" data-name="Vastus Lateralis (Right)"
+                d="M 112 157 C 122 165 129 180 132 200 C 135 217 132 233 124 242 C 119 241 114 226 112 211 C 110 195 109 174 112 157 Z" />
+          <!-- Right Quad Center & Teardrop (Rectus Femoris & Vastus Medialis) -->
+          <path id="quads_right_medial" class="${getClass('quads')}" data-muscle="quads" data-name="Rectus Femoris & Medialis (Right)"
+                d="M 111 162 C 108 178 108 198 110 218 C 112 231 108 241 104 238 C 102 228 101 206 102 184 C 103 168 107 161 111 162 Z" />
+        </g>
 
-        <!-- Shins & Front Calves / Tibialis -->
-        <path id="calves_front_left" class="${getClass('calves')}" data-muscle="calves" data-name="Calves / Tibialis (Left)"
-              d="M 78 235 C 73 245 72 262 74 277 C 76 287 80 295 82 300 C 84 292 86 277 86 261 C 85 249 83 239 78 235 Z" />
-        <path id="calves_front_right" class="${getClass('calves')}" data-muscle="calves" data-name="Calves / Tibialis (Right)"
-              d="M 122 235 C 127 245 128 262 126 277 C 124 287 120 295 118 300 C 116 292 114 277 114 261 C 115 249 117 239 122 235 Z" />
+        <!-- KNEES / PATELLA (Neutral) -->
+        <g id="knees_front_group" class="neutral-group">
+          <circle cx="81" cy="248" r="5" class="neutral-joint" data-name="Knee Patella (Left)" />
+          <circle cx="119" cy="248" r="5" class="neutral-joint" data-name="Knee Patella (Right)" />
+        </g>
 
-        <!-- Feet (Neutral) -->
-        <path d="M 80 302 C 77 309 74 317 72 323 C 76 324 84 324 87 321 C 88 315 86 305 84 302 Z" class="neutral-joint" data-name="Foot (Left)" />
-        <path d="M 120 302 C 123 309 126 317 128 323 C 124 324 116 324 113 321 C 112 315 114 305 116 302 Z" class="neutral-joint" data-name="Foot (Right)" />
+        <!-- 10. LOWER LEGS (Tibialis Anterior & Anterior Calves) -->
+        <g id="calves_front_group">
+          <!-- Left Shin & Tibialis -->
+          <path id="calves_front_left" class="${getClass('calves')}" data-muscle="calves" data-name="Tibialis & Calves (Left)"
+                d="M 77 256 C 71 267 70 286 72 303 C 74 315 79 324 81 330 C 84 321 86 303 86 285 C 85 272 83 260 77 256 Z" />
+          <!-- Right Shin & Tibialis -->
+          <path id="calves_front_right" class="${getClass('calves')}" data-muscle="calves" data-name="Tibialis & Calves (Right)"
+                d="M 123 256 C 129 267 130 286 128 303 C 126 315 121 324 119 330 C 116 321 114 303 114 285 C 115 272 117 260 123 256 Z" />
+        </g>
+
+        <!-- FEET & ANKLES (Neutral) -->
+        <g id="feet_front_group" class="neutral-group">
+          <path d="M 79 333 C 76 341 73 350 71 357 C 75 358 84 358 87 355 C 88 348 86 337 84 333 Z" class="neutral-joint" data-name="Foot (Left)" />
+          <path d="M 121 333 C 124 341 127 350 129 357 C 125 358 116 358 113 355 C 112 348 114 337 116 333 Z" class="neutral-joint" data-name="Foot (Right)" />
+        </g>
       </svg>
     `;
   }
@@ -526,87 +564,144 @@
     };
 
     return `
-      <svg class="cx-muscle-svg cx-anatomical-svg back-view" viewBox="0 0 200 400" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Posterior Back Muscle Map">
+      <svg class="cx-muscle-svg cx-anatomical-svg back-view" viewBox="0 0 200 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Posterior Back Muscle Map">
         <defs>
-          <filter id="cx-back-glow-primary" x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#8b5cf6" flood-opacity="0.85" />
+          <filter id="cx-back-coral-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="#ef4444" flood-opacity="0.8" />
           </filter>
-          <filter id="cx-back-glow-secondary" x="-20%" y="-20%" width="140%" height="140%">
+          <filter id="cx-back-amber-glow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#f59e0b" flood-opacity="0.75" />
           </filter>
         </defs>
 
-        <!-- Neutral Head & Occipital -->
-        <ellipse cx="100" cy="30" rx="13" ry="16" class="neutral-joint" data-name="Head (Posterior)" />
-        <path d="M 93 45 L 107 45 L 109 52 L 91 52 Z" class="neutral-joint" data-name="Neck" />
+        <!-- Underlay Full Body Silhouette -->
+        <g class="cx-body-underlay" opacity="0.15">
+          <ellipse cx="100" cy="30" rx="14" ry="17" fill="#60a5fa" />
+        </g>
 
-        <!-- Trapezius (Diamond Back) -->
-        <path id="traps_back" class="${getClass('traps')}" data-muscle="traps" data-name="Trapezius (Diamond Back)"
-              d="M 94 50 L 100 49 L 106 50 L 118 60 L 106 84 L 100 94 L 94 84 L 82 60 Z" />
+        <!-- 1. HEAD & OCCIPUT -->
+        <g id="head_neck_back_group" class="neutral-group">
+          <!-- Occipital Cranium -->
+          <path d="M 100 14 C 91 14 86 21 86 31 C 86 40 92 48 100 48 C 108 48 114 40 114 31 C 114 21 109 14 100 14 Z" class="neutral-joint" data-name="Head (Posterior)" />
+          <!-- Cervical Spine Area -->
+          <path d="M 95 47 L 105 47 L 107 55 L 93 55 Z" class="neutral-joint" data-name="Cervical Spine" />
+        </g>
 
-        <!-- Rear Deltoids -->
-        <path id="rear_delts_left" class="${getClass('rear_delts')}" data-muscle="rear_delts" data-name="Rear Deltoids (Left)"
-              d="M 80 60 C 72 62 64 69 61 78 C 59 85 62 92 68 94 C 72 88 76 80 80 73 C 82 68 81 62 80 60 Z" />
-        <path id="rear_delts_right" class="${getClass('rear_delts')}" data-muscle="rear_delts" data-name="Rear Deltoids (Right)"
-              d="M 120 60 C 128 62 136 69 139 78 C 141 85 138 92 132 94 C 128 88 124 80 120 73 C 118 68 119 62 120 60 Z" />
+        <!-- 2. TRAPEZIUS (Diamond-Shaped Full Trapezius) -->
+        <g id="traps_back_group">
+          <!-- Diamond Trapezius (Upper, Mid & Lower Thoracic) -->
+          <path id="traps_back" class="${getClass('traps')}" data-muscle="traps" data-name="Trapezius (Diamond Back)"
+                d="M 94 50 L 100 49 L 106 50 L 120 62 L 107 88 L 100 102 L 93 88 L 80 62 Z" />
+        </g>
 
-        <!-- Triceps (Lateral & Long Heads) -->
-        <path id="triceps_left" class="${getClass('triceps')}" data-muscle="triceps" data-name="Triceps (Left)"
-              d="M 64 92 C 58 96 56 108 58 120 C 62 122 67 122 70 116 C 72 108 70 98 64 92 Z" />
-        <path id="triceps_right" class="${getClass('triceps')}" data-muscle="triceps" data-name="Triceps (Right)"
-              d="M 136 92 C 142 96 144 108 142 120 C 138 122 133 122 130 116 C 128 108 130 98 136 92 Z" />
+        <!-- 3. REAR DELTOIDS (Posterior Shoulders) -->
+        <g id="rear_delts_group">
+          <!-- Left Rear Deltoid -->
+          <path id="rear_delts_left" class="${getClass('rear_delts')}" data-muscle="rear_delts" data-name="Posterior Deltoid (Left)"
+                d="M 78 62 C 69 64 61 72 59 82 C 58 90 61 97 68 99 C 72 92 76 83 80 75 C 81 70 80 64 78 62 Z" />
+          <!-- Right Rear Deltoid -->
+          <path id="rear_delts_right" class="${getClass('rear_delts')}" data-muscle="rear_delts" data-name="Posterior Deltoid (Right)"
+                d="M 122 62 C 131 64 139 72 141 82 C 142 90 139 97 132 99 C 128 92 124 83 120 75 C 119 70 120 64 122 62 Z" />
+          <!-- Infraspinatus & Teres Minor (Scapular Complex) -->
+          <path id="upper_back_left" class="${getClass('upper_back')}" data-muscle="upper_back" data-name="Infraspinatus & Teres (Left)"
+                d="M 79 76 C 72 82 70 92 72 100 C 76 102 82 101 88 95 C 86 88 83 81 79 76 Z" />
+          <path id="upper_back_right" class="${getClass('upper_back')}" data-muscle="upper_back" data-name="Infraspinatus & Teres (Right)"
+                d="M 121 76 C 128 82 130 92 128 100 C 124 102 118 101 112 95 C 114 88 117 81 121 76 Z" />
+        </g>
 
-        <!-- Forearms (Extensors / Posterior) -->
-        <path id="forearms_back_left" class="${getClass('forearms')}" data-muscle="forearms" data-name="Forearm Extensors (Left)"
-              d="M 57 123 C 51 128 46 140 43 152 C 42 159 46 162 51 160 C 55 154 61 141 63 130 C 63 124 60 122 57 123 Z" />
-        <path id="forearms_back_right" class="${getClass('forearms')}" data-muscle="forearms" data-name="Forearm Extensors (Right)"
-              d="M 143 123 C 149 128 154 140 157 152 C 158 159 154 162 149 160 C 145 154 139 141 137 130 C 137 124 140 122 143 123 Z" />
+        <!-- 4. TRICEPS BRACHII (Long & Lateral Heads with Horseshoe Tendon) -->
+        <g id="triceps_group">
+          <!-- Left Triceps -->
+          <path id="triceps_left" class="${getClass('triceps')}" data-muscle="triceps" data-name="Triceps Brachii (Left)"
+                d="M 63 95 C 56 100 54 112 56 126 C 61 128 66 128 70 121 C 72 112 70 102 63 95 Z" />
+          <!-- Right Triceps -->
+          <path id="triceps_right" class="${getClass('triceps')}" data-muscle="triceps" data-name="Triceps Brachii (Right)"
+                d="M 137 95 C 144 100 146 112 144 126 C 139 128 134 128 130 121 C 128 112 130 102 137 95 Z" />
+        </g>
 
-        <!-- Hands (Neutral Posterior) -->
-        <path d="M 42 161 C 37 166 32 174 29 182 C 28 186 32 188 35 184 C 39 178 44 172 46 166 Z" class="neutral-joint" data-name="Hand (Left)" />
-        <path d="M 158 161 C 163 166 168 174 171 182 C 172 186 168 188 165 184 C 161 178 156 172 154 166 Z" class="neutral-joint" data-name="Hand (Right)" />
+        <!-- 5. FOREARMS (Extensors & Anconeus - Posterior) -->
+        <g id="forearms_back_group">
+          <!-- Left Forearm Extensors -->
+          <path id="forearms_back_left" class="${getClass('forearms')}" data-muscle="forearms" data-name="Forearm Extensors (Left)"
+                d="M 56 129 C 49 135 44 148 41 161 C 40 168 44 171 49 169 C 54 162 60 148 62 136 C 62 130 59 128 56 129 Z" />
+          <!-- Right Forearm Extensors -->
+          <path id="forearms_back_right" class="${getClass('forearms')}" data-muscle="forearms" data-name="Forearm Extensors (Right)"
+                d="M 144 129 C 151 135 156 148 159 161 C 160 168 156 171 151 169 C 146 162 140 148 138 136 C 138 130 141 128 144 129 Z" />
+        </g>
 
-        <!-- Latissimus Dorsi (Lats / V-Taper) -->
-        <path id="lats_left" class="${getClass('lats')}" data-muscle="lats" data-name="Latissimus Dorsi (Left)"
-              d="M 81 80 C 74 88 70 102 72 116 C 73 128 82 138 92 141 C 92 130 92 114 96 100 C 91 92 86 85 81 80 Z" />
-        <path id="lats_right" class="${getClass('lats')}" data-muscle="lats" data-name="Latissimus Dorsi (Right)"
-              d="M 119 80 C 126 88 130 102 128 116 C 127 128 118 138 108 141 C 108 130 108 114 104 100 C 109 92 114 85 119 80 Z" />
+        <!-- HANDS (Posterior Neutral) -->
+        <g id="hands_back_group" class="neutral-group">
+          <path d="M 40 170 C 35 175 30 184 27 193 C 26 198 30 200 33 196 C 37 189 42 182 45 175 Z" class="neutral-joint" data-name="Hand (Left)" />
+          <path d="M 160 170 C 165 175 170 184 173 193 C 174 198 170 200 167 196 C 163 189 158 182 155 175 Z" class="neutral-joint" data-name="Hand (Right)" />
+        </g>
 
-        <!-- Lower Back (Erector Spinae) -->
-        <path id="lower_back_left" class="${getClass('lower_back')}" data-muscle="lower_back" data-name="Lower Back (Left)"
-              d="M 94 102 L 99 102 L 98 142 L 93 142 Z" />
-        <path id="lower_back_right" class="${getClass('lower_back')}" data-muscle="lower_back" data-name="Lower Back (Right)"
-              d="M 101 102 L 106 102 L 107 142 L 102 142 Z" />
+        <!-- 6. LATISSIMUS DORSI (Lats / V-Taper Wings) -->
+        <g id="lats_group">
+          <!-- Left Lat -->
+          <path id="lats_left" class="${getClass('lats')}" data-muscle="lats" data-name="Latissimus Dorsi (Left)"
+                d="M 80 84 C 72 93 68 108 70 123 C 71 136 81 147 91 150 C 91 138 91 121 95 106 C 90 97 85 90 80 84 Z" />
+          <!-- Right Lat -->
+          <path id="lats_right" class="${getClass('lats')}" data-muscle="lats" data-name="Latissimus Dorsi (Right)"
+                d="M 120 84 C 128 93 132 108 130 123 C 129 136 119 147 109 150 C 109 138 109 121 105 106 C 110 97 115 90 120 84 Z" />
+        </g>
 
-        <!-- Gluteus Maximus (Glutes) -->
-        <path id="glutes_left" class="${getClass('glutes')}" data-muscle="glutes" data-name="Glutes (Left)"
-              d="M 91 144 C 81 148 74 160 73 174 C 72 186 80 196 93 196 C 98 190 99 176 99 152 C 96 148 94 145 91 144 Z" />
-        <path id="glutes_right" class="${getClass('glutes')}" data-muscle="glutes" data-name="Glutes (Right)"
-              d="M 109 144 C 119 148 126 160 127 174 C 128 186 120 196 107 196 C 102 190 101 176 101 152 C 104 148 106 145 109 144 Z" />
+        <!-- 7. LOWER BACK (Erector Spinae & Thoracolumbar Fascia) -->
+        <g id="lower_back_group">
+          <!-- Left Erector Spinae Column -->
+          <path id="lower_back_left" class="${getClass('lower_back')}" data-muscle="lower_back" data-name="Lower Back / Erector Spinae (Left)"
+                d="M 93 108 L 99 108 L 98 152 L 92 152 Z" />
+          <!-- Right Erector Spinae Column -->
+          <path id="lower_back_right" class="${getClass('lower_back')}" data-muscle="lower_back" data-name="Lower Back / Erector Spinae (Right)"
+                d="M 101 108 L 107 108 L 108 152 L 102 152 Z" />
+        </g>
 
-        <!-- Hamstrings (Posterior Thighs) -->
-        <path id="hamstrings_left_outer" class="${getClass('hamstrings')}" data-muscle="hamstrings" data-name="Hamstrings Outer (Left)"
-              d="M 75 198 C 71 208 71 222 73 232 C 76 236 83 236 86 232 C 86 221 85 208 83 198 Z" />
-        <path id="hamstrings_left_inner" class="${getClass('hamstrings')}" data-muscle="hamstrings" data-name="Hamstrings Inner (Left)"
-              d="M 86 198 C 87 208 88 221 89 232 C 92 235 97 234 98 229 C 97 218 96 206 94 198 Z" />
-        <path id="hamstrings_right_outer" class="${getClass('hamstrings')}" data-muscle="hamstrings" data-name="Hamstrings Outer (Right)"
-              d="M 125 198 C 129 208 129 222 127 232 C 124 236 117 236 114 232 C 114 221 115 208 117 198 Z" />
-        <path id="hamstrings_right_inner" class="${getClass('hamstrings')}" data-muscle="hamstrings" data-name="Hamstrings Inner (Right)"
-              d="M 114 198 C 113 208 112 221 111 232 C 108 235 103 234 102 229 C 103 218 104 206 106 198 Z" />
+        <!-- 8. GLUTEAL COMPLEX (Gluteus Medius & Maximus) -->
+        <g id="glutes_group">
+          <!-- Left Gluteus Maximus -->
+          <path id="glutes_left" class="${getClass('glutes')}" data-muscle="glutes" data-name="Gluteus Maximus (Left)"
+                d="M 91 154 C 80 158 72 171 71 187 C 70 200 79 211 93 211 C 98 204 99 189 99 163 C 96 158 94 155 91 154 Z" />
+          <!-- Right Gluteus Maximus -->
+          <path id="glutes_right" class="${getClass('glutes')}" data-muscle="glutes" data-name="Gluteus Maximus (Right)"
+                d="M 109 154 C 120 158 128 171 129 187 C 130 200 121 211 107 211 C 102 204 101 189 101 163 C 104 158 106 155 109 154 Z" />
+        </g>
 
-        <!-- Knee Joint Posterior (Neutral) -->
-        <circle cx="83" cy="238" r="3.5" class="neutral-joint" data-name="Knee Joint (Left)" />
-        <circle cx="117" cy="238" r="3.5" class="neutral-joint" data-name="Knee Joint (Right)" />
+        <!-- 9. HAMSTRINGS (Biceps Femoris & Semitendinosus) -->
+        <g id="hamstrings_group">
+          <!-- Left Hamstring Lateral (Biceps Femoris) -->
+          <path id="hamstrings_left_outer" class="${getClass('hamstrings')}" data-muscle="hamstrings" data-name="Biceps Femoris (Left)"
+                d="M 73 213 C 69 224 69 239 71 250 C 74 254 81 254 84 250 C 84 238 83 224 81 213 Z" />
+          <!-- Left Hamstring Medial (Semitendinosus) -->
+          <path id="hamstrings_left_inner" class="${getClass('hamstrings')}" data-muscle="hamstrings" data-name="Semitendinosus (Left)"
+                d="M 85 213 C 86 224 87 238 88 250 C 91 253 96 252 97 247 C 96 235 95 222 93 213 Z" />
+          <!-- Right Hamstring Lateral (Biceps Femoris) -->
+          <path id="hamstrings_right_outer" class="${getClass('hamstrings')}" data-muscle="hamstrings" data-name="Biceps Femoris (Right)"
+                d="M 127 213 C 131 224 131 239 129 250 C 126 254 119 254 116 250 C 116 238 117 224 119 213 Z" />
+          <!-- Right Hamstring Medial (Semitendinosus) -->
+          <path id="hamstrings_right_inner" class="${getClass('hamstrings')}" data-muscle="hamstrings" data-name="Semitendinosus (Right)"
+                d="M 115 213 C 114 224 113 238 112 250 C 109 253 104 252 103 247 C 104 235 105 222 107 213 Z" />
+        </g>
 
-        <!-- Calves (Posterior) -->
-        <path id="calves_back_left" class="${getClass('calves')}" data-muscle="calves" data-name="Calves (Left)"
-              d="M 75 242 C 69 252 68 266 72 278 C 75 288 80 294 82 300 C 84 291 86 278 86 262 C 85 251 81 244 75 242 Z" />
-        <path id="calves_back_right" class="${getClass('calves')}" data-muscle="calves" data-name="Calves (Right)"
-              d="M 125 242 C 131 252 132 266 128 278 C 125 288 120 294 118 300 C 116 291 114 278 114 262 C 115 251 119 244 125 242 Z" />
+        <!-- KNEES / POPLITEAL FOSSA (Posterior Neutral) -->
+        <g id="knees_back_group" class="neutral-group">
+          <circle cx="82" cy="257" r="4" class="neutral-joint" data-name="Popliteal Fossa (Left)" />
+          <circle cx="118" cy="257" r="4" class="neutral-joint" data-name="Popliteal Fossa (Right)" />
+        </g>
 
-        <!-- Heels / Feet (Neutral) -->
-        <path d="M 79 301 C 77 308 74 316 73 322 C 77 323 84 323 86 320 C 87 314 85 304 83 301 Z" class="neutral-joint" data-name="Heel (Left)" />
-        <path d="M 121 301 C 123 308 126 316 127 322 C 123 323 116 323 114 320 C 113 314 115 304 117 301 Z" class="neutral-joint" data-name="Heel (Right)" />
+        <!-- 10. CALVES: GASTROCNEMIUS & SOLEUS (Posterior) -->
+        <g id="calves_back_group">
+          <!-- Left Calf (Gastrocnemius & Soleus) -->
+          <path id="calves_back_left" class="${getClass('calves')}" data-muscle="calves" data-name="Gastrocnemius & Soleus (Left)"
+                d="M 74 262 C 67 273 66 289 70 302 C 73 313 79 320 81 327 C 83 317 85 302 85 284 C 84 272 80 264 74 262 Z" />
+          <!-- Right Calf (Gastrocnemius & Soleus) -->
+          <path id="calves_back_right" class="${getClass('calves')}" data-muscle="calves" data-name="Gastrocnemius & Soleus (Right)"
+                d="M 126 262 C 133 273 134 289 130 302 C 127 313 121 320 119 327 C 117 317 115 302 115 284 C 116 272 120 264 126 262 Z" />
+        </g>
+
+        <!-- ACHILLES & HEELS (Neutral Posterior) -->
+        <g id="feet_back_group" class="neutral-group">
+          <path d="M 78 328 C 76 336 73 345 72 352 C 76 353 83 353 85 350 C 86 343 84 332 82 328 Z" class="neutral-joint" data-name="Heel & Achilles (Left)" />
+          <path d="M 122 328 C 124 336 127 345 128 352 C 124 353 117 353 115 350 C 114 343 116 332 118 328 Z" class="neutral-joint" data-name="Heel & Achilles (Right)" />
+        </g>
       </svg>
     `;
   }
@@ -671,13 +766,13 @@
     const backSvg = renderBackSVG(resolved.primary, resolved.secondary);
 
     return `
-      <div style="display:flex; justify-content:center; align-items:center; gap:16px; width:100%; padding:4px 0;">
-        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; width:48%; max-width:130px; height:160px;">
-          <span style="font-size:9.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em;">Anterior (Front)</span>
+      <div style="display:flex; justify-content:center; align-items:center; gap:14px; width:100%; padding:4px 0;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; width:48%; max-width:130px; height:165px;">
+          <span style="font-size:9.5px; font-weight:700; color:var(--text-dim, #94a3b8); text-transform:uppercase; letter-spacing:0.08em;">Anterior (Front)</span>
           ${frontSvg}
         </div>
-        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; width:48%; max-width:130px; height:160px;">
-          <span style="font-size:9.5px; font-weight:700; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em;">Posterior (Back)</span>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px; width:48%; max-width:130px; height:165px;">
+          <span style="font-size:9.5px; font-weight:700; color:var(--text-dim, #94a3b8); text-transform:uppercase; letter-spacing:0.08em;">Posterior (Back)</span>
           ${backSvg}
         </div>
       </div>
@@ -711,3 +806,4 @@
     global.highlightMuscles = highlightMuscles;
   }
 })();
+

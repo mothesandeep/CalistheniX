@@ -311,7 +311,10 @@ function renderHomeView() {
         </div>`;
     }
 
-    const heroExercises = (workout.exercises || []).slice(0, 6);
+    const mainWorkoutExercises = (workout.main && workout.main.length > 0)
+      ? workout.main
+      : (workout.exercises || []).filter(e => !e.phase || e.phase === 'main' || e.phase === 'main_workout');
+    const heroExercises = mainWorkoutExercises.slice(0, 6);
     const heroExListHtml = heroExercises.map((ex, idx) => {
       const isHold = ex.exercise_type === 'duration';
       const targetStr = isHold ? `${ex.duration_sec || 30}s hold` : `${ex.reps || 8} reps`;
@@ -330,8 +333,8 @@ function renderHomeView() {
         </div>`;
     }).join('');
 
-    const moreExCount = (workout.exercises?.length || 0) - heroExercises.length;
-    const moreExNote = moreExCount > 0 ? `<div style="font-size:11px; color:var(--text-dim); text-align:center; padding-top:2px;">+${moreExCount} more movements in session</div>` : '';
+    const moreExCount = mainWorkoutExercises.length - heroExercises.length;
+    const moreExNote = moreExCount > 0 ? `<div style="font-size:11px; color:var(--text-dim); text-align:center; padding-top:2px;">+${moreExCount} more exercises in main session</div>` : '';
 
     todayHeroHtml = `
       <div class="home-hero-card fade-in-up stagger-1">

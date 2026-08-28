@@ -4105,48 +4105,6 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
   filter: drop-shadow(0 4px 16px rgba(124, 92, 252, 0.55));
 }
 
-/* ── 2-Column Responsive Layout for Workout Runner ────────────────────────── */
-.runner-screen-widescreen {
-  max-width: 1120px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 340px minmax(0, 1fr);
-  gap: 26px;
-  align-items: start;
-  padding: 4px 0 32px;
-}
-
-/* ── Mobile Breakpoint (< 768px): Hide Sticky Side Panel for focused zero-clutter mobile experience ── */
-@media (max-width: 767px) {
-  .runner-screen-widescreen {
-    display: flex;
-    flex-direction: column;
-    max-width: 100%;
-    gap: 14px;
-    padding: 0 0 24px;
-  }
-  .runner-sticky-visual-panel {
-    display: none !important;
-  }
-  .runner-main-controls-col {
-    width: 100%;
-  }
-}
-
-/* ── Tablet Breakpoint (768px - 1023px): Fluid single-column stacked card ── */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .runner-screen-widescreen {
-    display: flex;
-    flex-direction: column;
-    max-width: 680px;
-    gap: 18px;
-  }
-  .runner-sticky-visual-panel {
-    position: static !important;
-    width: 100%;
-  }
-}
-
 /* ── Paused Workout State Synchronisation ─────────────────────────────────── */
 .cx-anim-paused,
 .cx-anim-paused * {
@@ -5168,5 +5126,997 @@ h1, h2, h3, h4, .view-title, .home-greeting-title, .home-hero-title, .home-card-
   }
 }
 
+/* ==========================================================================
+   CALISTHENIX WORKOUT SCREEN REDESIGN (WARM-UP → MAIN WORKOUT → COOL-DOWN)
+   ========================================================================== */
 
+.runner-screen-widescreen {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 0 0 48px;
+  width: 100%;
+  box-sizing: border-box;
+}
 
+/* ── Top Header Bar ──────────────────────────────────────────────────────── */
+.runner-top-bar-redesign {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 0 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.runner-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.runner-back-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.runner-header-title-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+}
+
+.runner-header-main-title {
+  font-family: var(--font-heading, 'Plus Jakarta Sans', sans-serif);
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.runner-header-main-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: #94a3b8;
+  line-height: 1.2;
+}
+
+.runner-header-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.runner-session-timer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.runner-session-timer-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.runner-session-timer-pill.is-paused {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.35);
+  color: #fb923c;
+}
+
+.runner-settings-icon-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.runner-settings-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.runner-finish-workout-btn {
+  background: #6c5ce7;
+  background: linear-gradient(135deg, #7c5cfc 0%, #6c5ce7 100%);
+  border: none;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px rgba(108, 92, 231, 0.35);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.runner-finish-workout-btn:hover {
+  background: linear-gradient(135deg, #8b6fff 0%, #7b6be8 100%);
+  box-shadow: 0 6px 20px rgba(108, 92, 231, 0.5);
+  transform: translateY(-1px);
+}
+
+.runner-finish-workout-btn:active {
+  transform: translateY(0);
+}
+
+/* ── 2-Column Responsive Layout ─────────────────────────────────────────── */
+.runner-layout-grid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+  width: 100%;
+}
+
+@media (max-width: 1023px) {
+  .runner-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+/* ── Left Column: Workout Structure Stepper ─────────────────────────────── */
+.runner-structure-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 310px;
+}
+
+.runner-structure-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.runner-structure-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  color: #8a8d9f;
+  text-transform: uppercase;
+}
+
+.runner-structure-sets-counter {
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  color: #8a8d9f;
+}
+
+.runner-timeline-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-left: 20px;
+}
+
+.runner-timeline-container::before {
+  content: '';
+  position: absolute;
+  left: 17px;
+  top: 24px;
+  bottom: 24px;
+  width: 2px;
+  background: rgba(124, 92, 252, 0.2);
+  border-radius: 1px;
+  z-index: 1;
+}
+
+.runner-timeline-step-wrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  z-index: 2;
+}
+
+.runner-timeline-step-badge {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(124, 92, 252, 0.4);
+  background: #0f101a;
+  color: #a29bfe;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+  align-self: flex-start;
+  margin-top: 14px;
+  user-select: none;
+}
+
+.runner-timeline-step-wrapper.is-active .runner-timeline-step-badge {
+  border-color: #7c5cfc;
+  background: #18152e;
+  color: #ffffff;
+  box-shadow: 0 0 14px rgba(124, 92, 252, 0.55);
+}
+
+.runner-timeline-step-wrapper.is-completed .runner-timeline-step-badge {
+  border-color: #10b981;
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+.runner-timeline-card {
+  flex: 1;
+  background: rgba(22, 23, 36, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+}
+
+.runner-timeline-card:hover {
+  background: rgba(26, 28, 44, 0.75);
+  border-color: rgba(124, 92, 252, 0.35);
+  transform: translateY(-1px);
+}
+
+.runner-timeline-step-wrapper.is-active .runner-timeline-card {
+  background: rgba(124, 92, 252, 0.08);
+  border-color: rgba(124, 92, 252, 0.55);
+  box-shadow: 0 0 20px rgba(124, 92, 252, 0.12), inset 0 0 12px rgba(124, 92, 252, 0.04);
+}
+
+.runner-timeline-step-wrapper.is-completed .runner-timeline-card {
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.runner-timeline-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+
+.runner-timeline-card-title {
+  font-family: var(--font-heading, 'Plus Jakarta Sans', sans-serif);
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.runner-timeline-step-wrapper.is-active .runner-timeline-card-title {
+  color: #c4b5fd;
+}
+
+.runner-timeline-card-art {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  color: #a29bfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-timeline-card-time {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #8a8d9f;
+  margin-bottom: 6px;
+}
+
+.runner-timeline-card-desc {
+  font-size: 12px;
+  color: #8a8d9f;
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+
+.runner-timeline-card-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.runner-timeline-card-progress-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8a8d9f;
+  font-family: var(--font-mono, monospace);
+}
+
+.runner-timeline-card-bar-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+  position: relative;
+}
+
+.runner-timeline-card-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #7c5cfc, #a29bfe);
+  transition: width 0.3s ease;
+}
+
+.runner-timeline-step-wrapper.is-completed .runner-timeline-card-bar-fill {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+/* ── Motivation / Consistency Card ───────────────────────────────────────── */
+.runner-motivation-card {
+  margin-top: 8px;
+  background: rgba(22, 23, 36, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.runner-motivation-icon-badge {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 10px;
+  background: rgba(124, 92, 252, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  color: #a29bfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-motivation-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.runner-motivation-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.runner-motivation-text {
+  font-size: 11.5px;
+  color: #8a8d9f;
+  line-height: 1.35;
+}
+
+/* ── Right Column: Phase Workspace ───────────────────────────────────────── */
+.runner-phase-workspace {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* ── Segmented Phase Switcher Tabs ───────────────────────────────────────── */
+.runner-segmented-tabs-bar {
+  display: inline-flex;
+  background: rgba(18, 19, 30, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 20px;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.runner-segmented-tab-btn {
+  position: relative;
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #7e8499;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.runner-segmented-tab-btn:hover:not(.is-active) {
+  color: #d1d5db;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.runner-segmented-tab-btn.is-active {
+  background: rgba(124, 92, 252, 0.18);
+  border-color: rgba(124, 92, 252, 0.45);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 0 16px rgba(124, 92, 252, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.runner-segmented-tab-btn.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: 0px;
+  left: 22%;
+  right: 22%;
+  height: 2.5px;
+  background: #a29bfe;
+  border-radius: 2px;
+  box-shadow: 0 0 8px #a29bfe;
+}
+
+/* ── Phase Hero Banner ───────────────────────────────────────────────────── */
+.runner-phase-hero-banner {
+  background: rgba(22, 23, 36, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 16px;
+  backdrop-filter: blur(12px);
+}
+
+.runner-phase-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.runner-phase-hero-icon-avatar {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124, 92, 252, 0.25) 0%, rgba(124, 92, 252, 0.05) 70%);
+  border: 1px solid rgba(124, 92, 252, 0.35);
+  color: #a29bfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px rgba(124, 92, 252, 0.2);
+}
+
+.runner-phase-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.runner-phase-hero-title {
+  font-family: var(--font-heading, 'Plus Jakarta Sans', sans-serif);
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.runner-phase-hero-sub {
+  font-size: 13px;
+  color: #8a8d9f;
+}
+
+.runner-phase-hero-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.runner-phase-hero-action-btn:hover {
+  background: rgba(124, 92, 252, 0.22);
+  border-color: rgba(124, 92, 252, 0.5);
+  transform: translateY(-1px);
+}
+
+/* ── Exercise Stack List ─────────────────────────────────────────────────── */
+.runner-exercise-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.runner-exercise-item-card {
+  background: rgba(22, 23, 36, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  gap: 14px;
+  position: relative;
+  backdrop-filter: blur(8px);
+}
+
+.runner-exercise-item-card:hover {
+  background: rgba(26, 28, 44, 0.75);
+  border-color: rgba(124, 92, 252, 0.28);
+  transform: translateY(-1px);
+}
+
+.runner-exercise-item-card.is-selected {
+  border-color: rgba(124, 92, 252, 0.6);
+  background: rgba(26, 28, 46, 0.95);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 16px rgba(124, 92, 252, 0.15);
+}
+
+.runner-exercise-item-card.is-completed {
+  border-color: rgba(16, 185, 129, 0.25);
+  background: rgba(18, 22, 30, 0.55);
+}
+
+.runner-runner-ex-card-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.runner-ex-thumb-box {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #a29bfe;
+  flex-shrink: 0;
+}
+
+.runner-ex-thumb-box svg {
+  max-width: 36px;
+  max-height: 36px;
+}
+
+.runner-ex-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.runner-ex-name-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-ex-sub-label {
+  font-size: 12px;
+  color: #8a8d9f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-ex-card-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.runner-ex-duration-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #8a8d9f;
+  font-size: 12px;
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.runner-ex-action-btn {
+  padding: 6px 16px;
+  border-radius: 8px;
+  background: rgba(124, 92, 252, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.35);
+  color: #c4b5fd;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.runner-ex-action-btn:hover {
+  background: #6c5ce7;
+  border-color: #6c5ce7;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(108, 92, 231, 0.4);
+}
+
+.runner-ex-action-btn.is-active-btn {
+  background: #7c5cfc;
+  border-color: #7c5cfc;
+  color: #ffffff;
+}
+
+.runner-ex-action-btn.is-done-btn {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #34d399;
+}
+
+.runner-ex-action-btn.is-done-btn:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+}
+
+@keyframes cx-check-pop {
+  0% { transform: scale(0.85); }
+  50% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.runner-ex-checkbox-btn {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: transparent;
+  padding: 0;
+}
+
+.runner-ex-checkbox-btn:hover {
+  border-color: #a29bfe;
+  transform: scale(1.05);
+}
+
+.runner-ex-checkbox-btn.is-checked {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  animation: cx-check-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Interactive Active Drawer/Modal for Sets & Timers ───────────────────── */
+.runner-active-interactive-box {
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  width: 100%;
+}
+
+.runner-interactive-sets-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+}
+
+.runner-interactive-sets-table th {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8a8d9f;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.runner-interactive-sets-table td {
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+/* ── Bottom Educational / Benefits Card ─────────────────────────────────── */
+.runner-phase-benefits-card {
+  background: rgba(22, 23, 36, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  gap: 24px;
+  flex-wrap: wrap;
+  backdrop-filter: blur(12px);
+}
+
+.runner-benefits-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 380px;
+  min-width: 240px;
+}
+
+.runner-benefits-avatar {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  border-radius: 50%;
+  background: rgba(124, 92, 252, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.28);
+  color: #a29bfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.runner-benefits-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.runner-benefits-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.runner-benefits-desc {
+  font-size: 12px;
+  color: #8a8d9f;
+  line-height: 1.4;
+}
+
+.runner-benefits-columns {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.runner-benefit-pill-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.runner-benefit-pill-icon {
+  color: #a29bfe;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-benefit-pill-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #cbd5e1;
+  white-space: nowrap;
+}
+
+/* ── Responsive Design Breakpoints ───────────────────────────────────────── */
+
+@media (min-width: 769px) and (max-width: 1023px) {
+  .runner-layout-grid {
+    grid-template-columns: 260px 1fr;
+    gap: 18px;
+  }
+  .runner-timeline-card {
+    padding: 12px 14px;
+  }
+  .runner-timeline-card-desc {
+    font-size: 11.5px;
+  }
+  .runner-phase-hero-banner {
+    padding: 16px 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .runner-screen-widescreen {
+    padding: 6px 12px 40px;
+  }
+  .runner-top-bar-redesign {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 0 16px;
+    margin-bottom: 16px;
+  }
+  .runner-header-title-group {
+    order: -1;
+    width: 100%;
+    align-items: flex-start;
+    text-align: left;
+  }
+  .runner-header-main-title {
+    font-size: 17px;
+  }
+  .runner-back-link {
+    padding: 4px 6px;
+    font-size: 12px;
+  }
+  .runner-session-timer-pill {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+  .runner-finish-workout-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+  }
+  .runner-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Compact Horizontal Phase Selector on Mobile */
+  .runner-structure-sidebar {
+    gap: 10px;
+  }
+  .runner-structure-header {
+    padding: 0 2px;
+  }
+  .runner-timeline-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding-left: 0;
+  }
+  .runner-timeline-container::before {
+    display: none;
+  }
+  .runner-timeline-step-wrapper {
+    flex-direction: column;
+    gap: 0;
+  }
+  .runner-timeline-step-badge {
+    display: none;
+  }
+  .runner-timeline-card {
+    padding: 10px 10px;
+    border-radius: 10px;
+    min-height: 72px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .runner-timeline-card-desc,
+  .runner-timeline-card-art {
+    display: none;
+  }
+  .runner-timeline-card-title {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+  .runner-timeline-card-time {
+    font-size: 10.5px;
+    margin-bottom: 4px;
+  }
+  .runner-timeline-card-progress-label {
+    font-size: 9.5px;
+  }
+  .runner-motivation-card {
+    display: none;
+  }
+
+  /* Workspace Adjustments on Mobile */
+  .runner-segmented-tabs-bar {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding: 3px;
+    margin-bottom: 14px;
+  }
+  .runner-segmented-tab-btn {
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+  .runner-phase-hero-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px;
+    gap: 14px;
+  }
+  .runner-phase-hero-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .runner-exercise-item-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 12px 14px;
+  }
+  .runner-ex-card-right {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .runner-phase-benefits-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px;
+    gap: 16px;
+  }
+  .runner-benefits-columns {
+    width: 100%;
+    justify-content: space-around;
+  }
+}

@@ -29,9 +29,14 @@ const ICONS = {
   arrowRight: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
   arrowLeft: '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
   moreVertical: '<circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/>',
+  chevronUp: '<polyline points="18 15 12 9 6 15"/>',
   chevronRight: '<polyline points="9 18 15 12 9 6"/>',
   chevronLeft: '<polyline points="15 18 9 12 15 6"/>',
   chevronDown: '<polyline points="6 9 12 15 18 9"/>',
+  arrowUp: '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
+  arrowDown: '<line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  refresh: '<path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>',
   play: '<polygon points="6 3 20 12 6 21 6 3" fill="currentColor" stroke="none"/>',
   pause: '<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/>',
   stop: '<rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor" stroke="none"/>',
@@ -314,6 +319,9 @@ function startSyncLoop() {
 // All sound generated via Web Audio API OscillatorNode — no external files.
 // Mute toggle disables both sound and vibration. Default: unmuted.
 
+const LS_AUDIO_CUES_KEY = 'calisthenix_audio_cues';
+const LS_AUTO_ADVANCE_KEY = 'calisthenix_auto_advance';
+
 function isMuted() { return localStorage.getItem(LS_MUTE_KEY) === '1'; }
 
 function toggleMute() {
@@ -325,6 +333,35 @@ function toggleMute() {
     btn.innerHTML = next ? renderIcon('volumeMute', 'cx-icon') : renderIcon('volume', 'cx-icon');
     btn.title       = next ? 'Unmute' : 'Mute';
   });
+}
+
+function isAudioCuesEnabled() {
+  if (isMuted()) return false;
+  return localStorage.getItem(LS_AUDIO_CUES_KEY) !== '0';
+}
+
+function toggleAudioCues() {
+  const current = isAudioCuesEnabled();
+  localStorage.setItem(LS_AUDIO_CUES_KEY, current ? '0' : '1');
+  return !current;
+}
+
+function setAudioCuesEnabled(enabled) {
+  localStorage.setItem(LS_AUDIO_CUES_KEY, enabled ? '1' : '0');
+}
+
+function isAutoAdvanceEnabled() {
+  return localStorage.getItem(LS_AUTO_ADVANCE_KEY) !== '0';
+}
+
+function toggleAutoAdvance() {
+  const current = isAutoAdvanceEnabled();
+  localStorage.setItem(LS_AUTO_ADVANCE_KEY, current ? '0' : '1');
+  return !current;
+}
+
+function setAutoAdvanceEnabled(enabled) {
+  localStorage.setItem(LS_AUTO_ADVANCE_KEY, enabled ? '1' : '0');
 }
 
 // Lazy AudioContext with iOS WebKit gesture unlocker
@@ -363,11 +400,11 @@ function setupAudioUnlock() {
 }
 
 // ─── Screen Wake Lock API System ──────────────────────────────────────────
-// Prevents mobile/tablet screen from locking or sleeping during active workouts.
+// Prevents mobile/tablet screen from sleeping or locking during active workouts.
 let _screenWakeLock = null;
 
 async function acquireScreenWakeLock() {
-  if (typeof navigator !== 'undefined' && navigator.wakeLock && typeof navigator.wakeLock.request === 'function') {
+  if (typeof navigator !== 'undefined' && 'wakeLock' in navigator && typeof navigator.wakeLock.request === 'function') {
     try {
       if (!_screenWakeLock || _screenWakeLock.released) {
         _screenWakeLock = await navigator.wakeLock.request('screen');
@@ -376,7 +413,8 @@ async function acquireScreenWakeLock() {
         });
       }
     } catch {
-      // Graceful silent fallback on low battery or system restrictions
+      // Graceful silent fallback on unsupported platforms, battery saver, or policy restrictions
+      _screenWakeLock = null;
     }
   }
 }
@@ -384,28 +422,44 @@ async function acquireScreenWakeLock() {
 async function releaseScreenWakeLock() {
   if (_screenWakeLock) {
     try {
-      await _screenWakeLock.release();
-    } catch {}
+      if (!_screenWakeLock.released && typeof _screenWakeLock.release === 'function') {
+        await _screenWakeLock.release();
+      }
+    } catch {
+      // Graceful silent fallback on release error
+    }
     _screenWakeLock = null;
   }
 }
 
+function isScreenWakeLockActive() {
+  return !!(_screenWakeLock && !_screenWakeLock.released);
+}
+
 // Auto-reacquire wake lock when tab returns to foreground if workout is in progress
 if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => {
+  document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'visible') {
       const session = typeof getActiveSession === 'function' ? getActiveSession() : null;
       if (session && (session.status === 'in_progress' || session.status === 'active')) {
-        acquireScreenWakeLock();
+        if (typeof state !== 'undefined' && state.view === 'workout') {
+          await acquireScreenWakeLock();
+        }
       }
     }
   });
 }
 
+if (typeof window !== 'undefined') {
+  window.acquireScreenWakeLock = acquireScreenWakeLock;
+  window.releaseScreenWakeLock = releaseScreenWakeLock;
+  window.isScreenWakeLockActive = isScreenWakeLockActive;
+}
+
 // Play a synthesised beep with full feature-detection and silent degradation.
 // freq: Hz | durationMs: ms | volume: 0–1 | type: OscillatorType
 function beep(freq = 880, durationMs = 80, volume = 0.4, type = 'sine') {
-  if (isMuted()) return;
+  if (isMuted() || !isAudioCuesEnabled()) return;
   try {
     const ctx = getAudioCtx();
     if (!ctx) return;
@@ -438,6 +492,25 @@ function vibrate(pattern = 200) {
 }
 
 // ── Named cues ───────────────────────────────────────────────────────────────
+
+// Short beep at 3, 2, 1 seconds remaining during timed holds / countdowns
+function cueCountdownTick(secondsRemaining = 3) {
+  if (!isAudioCuesEnabled()) return;
+  // High-frequency crisp countdown tick (740 Hz, ~75ms)
+  beep(740, 75, 0.42, 'sine');
+  vibrate(35);
+}
+
+// Distinct "completion chime" when timed movement timer hits 0 (ascending harmonic chime)
+function cueTimerComplete() {
+  if (!isAudioCuesEnabled()) return;
+  // Ascending 4-tone melodic arpeggio C5 (523.25Hz) -> E5 (659.25Hz) -> G5 (783.99Hz) -> C6 (1046.50Hz)
+  beep(523.25, 80, 0.45, 'sine');
+  setTimeout(() => beep(659.25, 90, 0.5, 'sine'), 85);
+  setTimeout(() => beep(783.99, 100, 0.55, 'sine'), 180);
+  setTimeout(() => beep(1046.50, 260, 0.65, 'sine'), 285);
+  vibrate([60, 40, 100, 40, 160]);
+}
 
 // Rest countdown hit zero → start next set. Main alert.
 function cueRestEnd() {
@@ -524,6 +597,11 @@ let _chartInstance = null;
 let _activeMuscleView = 'front';
 let _currentWorkoutMuscles = { label: 'Legs, Glutes, Core', frontMuscles: ['quads', 'abs'], backMuscles: ['glutes', 'calves'] };
 let _biomechanicsTab = 'anatomy';
+
+function getExercise(id) {
+  if (!id) return null;
+  return (state && state.exercises) ? (state.exercises.find(e => e.id === Number(id)) || null) : null;
+}
 
 function getActiveSession() {
   try {
@@ -658,3 +736,18 @@ const RPE_DESCRIPTIONS = {
   9.5: 'Extremely hard (maybe 1 grindy rep left)',
   10: 'Maximal effort / Absolute failure (0 reps in reserve)'
 };
+
+if (typeof window !== 'undefined') {
+  window.state = state;
+  window.renderIcon = renderIcon;
+  window.getActiveSession = getActiveSession;
+  window.saveActiveSession = saveActiveSession;
+  window.getExercise = getExercise;
+  window.fmtSecs = fmtSecs;
+  window.todayISO = todayISO;
+  window.newUUID = newUUID;
+  window.getGreeting = getGreeting;
+  window.showToast = showToast;
+  window.DAY_NAMES = DAY_NAMES;
+  window.MONTH_NAMES = MONTH_NAMES;
+}
