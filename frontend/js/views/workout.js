@@ -2440,6 +2440,7 @@ function getWorkoutPhaseModel(session) {
     completedCount: warmupCompletedCount,
     totalSets: warmupTotalCount,
     completedSets: warmupCompletedCount,
+    progressLabel: `${warmupCompletedCount} / ${warmupTotalCount} completed${isWarmupDone ? ' ✓' : ''}`,
     isCompleted: isWarmupDone,
     isSkipped: isWarmupSkipped,
     isInProgress: isWarmupInProgress,
@@ -2487,6 +2488,7 @@ function getWorkoutPhaseModel(session) {
     completedCount: mainCompletedCount,
     totalSets: mainTotalSets,
     completedSets: mainCompletedSets,
+    progressLabel: `${mainCompletedSets} / ${mainTotalSets} sets${isMainDone ? ' ✓' : ''}`,
     isCompleted: isMainDone,
     isInProgress: isMainInProgress,
     isPending: !isMainDone && !isMainInProgress,
@@ -2524,6 +2526,7 @@ function getWorkoutPhaseModel(session) {
     completedCount: cooldownCompletedCount,
     totalSets: cooldownTotalCount,
     completedSets: cooldownCompletedCount,
+    progressLabel: `${cooldownCompletedCount} / ${cooldownTotalCount} completed${isCooldownDone ? ' ✓' : ''}`,
     isCompleted: isCooldownDone,
     isSkipped: isCooldownSkipped,
     isInProgress: isCooldownInProgress,
@@ -2592,7 +2595,7 @@ function renderWorkoutStructureSidebar(session, activePhase) {
                 <div class="runner-timeline-card-time">${phase.estimatedDuration}</div>
                 <p class="runner-timeline-card-desc">${phase.description}</p>
                 <div class="runner-timeline-card-progress-wrap">
-                  <span class="runner-timeline-card-progress-label">${phase.completedSets} / ${phase.totalSets} completed ${isDone ? '✓' : ''}</span>
+                  <span class="runner-timeline-card-progress-label">${phase.progressLabel}</span>
                   <div class="runner-timeline-card-bar-track">
                     <div class="runner-timeline-card-bar-fill" style="width: ${phase.progress}%;"></div>
                   </div>
@@ -3178,6 +3181,8 @@ if (typeof window !== 'undefined') {
   window.selectWorkoutQueueExercise = selectWorkoutQueueExercise;
   window.getWorkoutPhaseModel = getWorkoutPhaseModel;
   window.requestFinishWorkout = requestFinishWorkout;
+  window.getWorkoutRestState = () => _workoutRestState;
+  window.getWorkoutHoldState = () => _workoutHoldState;
   window.openConfirmFinishWorkoutModal = openConfirmFinishWorkoutModal;
   window.closeConfirmFinishWorkoutModal = closeConfirmFinishWorkoutModal;
   window.confirmFinishAnyway = confirmFinishAnyway;
