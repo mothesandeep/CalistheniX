@@ -189,75 +189,128 @@ function getCooldownExercises(session) {
 
 // ─── Routine-Specific Warm-up & Cool-down Generators ────────────────────────
 
+// ─── Routine-Specific Warm-up & Cool-down Generators ────────────────────────
+
 function getDefaultWarmupForRoutine(workoutName) {
   const name = (workoutName || '').toLowerCase();
-  if (name.includes('pull')) {
+  if (name.includes('push a')) {
     return [
-      { exercise_name: 'Wrist Preparation', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Warm-up: Grip and forearm dynamic prep', target_val: 30, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Arm Circles', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: 30 sec forward + 30 sec backward', target_val: 60, duration_text: '30 sec forward + 30 sec backward', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Shoulder Mobility', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Warm-up: Dynamic overhead reaching and thoracic extension', target_val: 30, duration_text: '30 sec', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Scapular Activation', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: Hanging scapular depressions and activations', target_val: 10, duration_text: '2 sets × 10 reps', est_duration: '~ 1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Light General Activation', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: Dynamic heart rate and CNS activation', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP }
+      { exercise_name: 'Arm Circles', duration_sec: 40, reps: null, exercise_type: 'duration', notes: 'Warm-up: 20 sec forward + 20 sec backward', target_val: 40, duration_text: '20s each direction', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Shoulder Rolls', duration_sec: null, reps: 15, exercise_type: 'reps', notes: 'Warm-up: 15 reps controlled shoulder rolls', target_val: 15, duration_text: '15 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Jumping Jacks', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: 1 min (raise heart rate)', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Scapular Push-ups', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: Scapular protraction & retraction on floor', target_val: 10, duration_text: '10 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Shoulder Dislocates', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: 10 reps with towel/band or slow arm circles', target_val: 10, duration_text: '10 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Slow Push-up', duration_sec: null, reps: 8, exercise_type: 'reps', notes: 'Warm-up: 8 reps bodyweight, controlled activation', target_val: 8, duration_text: '8 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP }
     ];
-  } else if (name.includes('push')) {
+  } else if (name.includes('push b')) {
     return [
-      { exercise_name: 'Wrist Mobilization', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: Joint lubrication for pressing', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Arm Circles', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: 30 sec forward + 30 sec backward', target_val: 60, duration_text: '30 sec forward + 30 sec backward', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Shoulder Pass Through', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: Rotational mobility for shoulder capsules', target_val: 10, duration_text: '2 sets × 10 reps', est_duration: '~ 1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Scapular Push-ups', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: Protraction and retraction mechanics', target_val: 10, duration_text: '2 sets × 10 reps', est_duration: '~ 1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Light Jump / High Knees', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: Dynamic heart rate and CNS activation', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP }
+      { exercise_name: 'Arm Circles', duration_sec: 40, reps: null, exercise_type: 'duration', notes: 'Warm-up: 20 sec forward + 20 sec backward', target_val: 40, duration_text: '20s each direction', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Shoulder Rolls', duration_sec: null, reps: 15, exercise_type: 'reps', notes: 'Warm-up: 15 reps controlled shoulder rolls', target_val: 15, duration_text: '15 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Wall Slides', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: 10 reps overhead slides against wall', target_val: 10, duration_text: '10 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Scapular Push-ups', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: 10 reps protraction & retraction', target_val: 10, duration_text: '10 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Slow Pike Push-up', duration_sec: null, reps: 8, exercise_type: 'reps', notes: 'Warm-up: 8 reps controlled shoulder activation', target_val: 8, duration_text: '8 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP }
     ];
-  } else if (name.includes('leg')) {
+  } else if (name.includes('pull a')) {
     return [
-      { exercise_name: 'Ankle Circles & Calf Prep', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: Controlled circular ankle rotations', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Dynamic Leg Swings', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: Dynamic forward/backward & lateral hip swings', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Deep Squat Pry & Hold', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: Deep bodyweight squat hold with upright chest', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Bodyweight Squats', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: Smooth bodyweight squats to prime hip & knee mechanics', target_val: 10, duration_text: '2 sets × 10 reps', est_duration: '~ 1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Light Jump / High Knees', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: Dynamic heart rate and CNS activation', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP }
+      { exercise_name: 'Arm Circles', duration_sec: 40, reps: null, exercise_type: 'duration', notes: 'Warm-up: 20 sec forward + 20 sec backward', target_val: 40, duration_text: '20s each direction', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Cat-Cow Stretch', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: 10 reps thoracic and lumbar articulation', target_val: 10, duration_text: '10 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Band/Towel Pull-Aparts', duration_sec: null, reps: 15, exercise_type: 'reps', notes: 'Warm-up: 15 reps rear delt & rhomboid prep', target_val: 15, duration_text: '15 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Scapular Pulls', duration_sec: null, reps: 8, exercise_type: 'reps', notes: 'Warm-up: 8 reps light hang scapular activations', target_val: 8, duration_text: '8 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Dead Hang (Activation)', duration_sec: 20, reps: null, exercise_type: 'duration', notes: 'Warm-up: 15-20 sec light activation hang', target_val: 20, duration_text: '20 sec', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP }
+    ];
+  } else if (name.includes('pull b') || name.includes('pull')) {
+    return [
+      { exercise_name: 'Arm Circles', duration_sec: 40, reps: null, exercise_type: 'duration', notes: 'Warm-up: 20 sec forward + 20 sec backward', target_val: 40, duration_text: '20s each direction', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Cat-Cow Stretch', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: 10 reps thoracic and lumbar articulation', target_val: 10, duration_text: '10 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Band/Towel Pull-Aparts', duration_sec: null, reps: 15, exercise_type: 'reps', notes: 'Warm-up: 15 reps rear delt & rhomboid prep', target_val: 15, duration_text: '15 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Wall Angels (Activation)', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: 10 reps light posture activation', target_val: 10, duration_text: '10 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Dead Hang (Activation)', duration_sec: 20, reps: null, exercise_type: 'duration', notes: 'Warm-up: 15-20 sec light activation hang', target_val: 20, duration_text: '20 sec', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP }
+    ];
+  } else if (name.includes('legs a')) {
+    return [
+      { exercise_name: 'Leg Swings', duration_sec: 40, reps: null, exercise_type: 'duration', notes: 'Warm-up: 10 each direction/leg swings', target_val: 40, duration_text: '10 each side', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Hip Circles', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Warm-up: 10 each direction hip circles', target_val: 30, duration_text: '10 each side', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Bodyweight Squats', duration_sec: null, reps: 15, exercise_type: 'reps', notes: 'Warm-up: 15 reps slow, controlled no load', target_val: 15, duration_text: '15 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Ankle Circles', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Warm-up: 10 each direction/ankle', target_val: 30, duration_text: '10 each side', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Walking High Knees', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Warm-up: 30 sec dynamic knee raises', target_val: 30, duration_text: '30 sec', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Glute Bridges (Activation)', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: 10 reps glute activation', target_val: 10, duration_text: '10 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP }
+    ];
+  } else if (name.includes('legs b') || name.includes('leg')) {
+    return [
+      { exercise_name: 'Leg Swings', duration_sec: 40, reps: null, exercise_type: 'duration', notes: 'Warm-up: 10 each direction/leg swings', target_val: 40, duration_text: '10 each side', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Hip Circles', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Warm-up: 10 each direction hip circles', target_val: 30, duration_text: '10 each side', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Bodyweight Squats', duration_sec: null, reps: 15, exercise_type: 'reps', notes: 'Warm-up: 15 reps slow, controlled no load', target_val: 15, duration_text: '15 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Ankle Circles', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Warm-up: 10 each direction/ankle', target_val: 30, duration_text: '10 each side', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Walking High Knees', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Warm-up: 30 sec dynamic knee raises', target_val: 30, duration_text: '30 sec', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Light Jump Squats', duration_sec: null, reps: 5, exercise_type: 'reps', notes: 'Warm-up: 5 reps explosive activation, not fatigue', target_val: 5, duration_text: '5 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP }
     ];
   } else {
     return [
-      { exercise_name: 'Arm Circles', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: 30 sec forward + 30 sec backward', target_val: 60, duration_text: '30 sec forward + 30 sec backward', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Shoulder Pass Through', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: Rotational mobility for shoulder capsules', target_val: 10, duration_text: '2 sets × 10 reps', est_duration: '~ 1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Scapular Push-ups', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: Protraction and retraction mechanics', target_val: 10, duration_text: '2 sets × 10 reps', est_duration: '~ 1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Wrist Mobilization', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: Joint lubrication for pressing', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
-      { exercise_name: 'Light Jump / High Knees', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Warm-up: Dynamic heart rate and CNS activation', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP }
+      { exercise_name: 'Arm Circles', duration_sec: 40, reps: null, exercise_type: 'duration', notes: 'Warm-up: 20 sec forward + 20 sec backward', target_val: 40, duration_text: '20s each direction', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Cat-Cow Stretch', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: 10 reps thoracic and lumbar articulation', target_val: 10, duration_text: '10 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Scapular Push-ups', duration_sec: null, reps: 10, exercise_type: 'reps', notes: 'Warm-up: Protraction and retraction mechanics', target_val: 10, duration_text: '10 reps', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
+      { exercise_name: 'Walking High Knees', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Warm-up: Dynamic heart rate and CNS activation', target_val: 30, duration_text: '30 sec', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP }
     ];
   }
 }
 
 function getDefaultCooldownForRoutine(workoutName) {
   const name = (workoutName || '').toLowerCase();
-  if (name.includes('pull')) {
+  if (name.includes('push a')) {
     return [
-      { exercise_name: 'Lat Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Hanging or bar-assisted lat stretch', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Cross-Body Shoulder Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Cross-body posterior capsule and deltoid stretch', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Child\'s Pose', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Kneeling spinal decompression and breathing', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Shoulder Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Overhead and posterior shoulder stretch', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Wrist/Forearm Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Wall-supported wrist and forearm elongation', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN }
+      { exercise_name: 'Doorway Chest Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side wall/doorway stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Overhead Triceps Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side overhead stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Cross-Body Shoulder Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side posterior deltoid stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Child\'s Pose', duration_sec: 45, reps: null, exercise_type: 'duration', notes: 'Cool-down: 45 sec spinal decompression and breathing', target_val: 45, duration_text: '45 sec', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Deep Breathing', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 1 min slow nasal diaphragmatic breaths', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN }
     ];
-  } else if (name.includes('push')) {
+  } else if (name.includes('push b') || name.includes('push')) {
     return [
-      { exercise_name: 'Chest Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Wall/doorway pectoral static decompression', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Cross-Body Shoulder Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Cross-body posterior capsule and deltoid stretch', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Overhead Triceps Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Overhead triceps and lat static stretch', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Cobra Pose', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Cool-down: Gentle prone extension for anterior chain', target_val: 30, duration_text: '30 sec', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Deep Breathing / Child\'s Pose', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Diaphragmatic down-regulation', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN }
+      { exercise_name: 'Doorway Chest Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side wall stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Cross-Body Shoulder Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side deltoid stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Overhead Triceps Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side triceps stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Reverse Wrist Stretch', duration_sec: 40, reps: null, exercise_type: 'duration', notes: 'Cool-down: 20 sec each direction wrist relief', target_val: 40, duration_text: '20s each direction', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Child\'s Pose', duration_sec: 45, reps: null, exercise_type: 'duration', notes: 'Cool-down: 45 sec spinal decompression', target_val: 45, duration_text: '45 sec', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN }
     ];
-  } else if (name.includes('leg')) {
+  } else if (name.includes('pull a')) {
     return [
-      { exercise_name: 'Kneeling Hip Flexor Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Kneeling lunge for psoas elongation', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Hamstring Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Seated or standing single-leg hamstring stretch', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Pigeon Pose', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Deep gluteus medius/piriformis opening', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Standing Calf Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Wall-assisted gastrocnemius & soleus stretch', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Deep Breathing / Child\'s Pose', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Diaphragmatic down-regulation', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN }
+      { exercise_name: 'Passive Dead Hang', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Cool-down: 20-30 sec light spine decompression', target_val: 30, duration_text: '30 sec', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Lat Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side latissimus stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Biceps & Forearm Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side palm up against wall', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Upper Back Stretch', duration_sec: 45, reps: null, exercise_type: 'duration', notes: 'Cool-down: 45 sec reach forward, round back', target_val: 45, duration_text: '45 sec', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Deep Breathing', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 1 min diaphragmatic recovery', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN }
+    ];
+  } else if (name.includes('pull b') || name.includes('pull')) {
+    return [
+      { exercise_name: 'Passive Dead Hang', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Cool-down: 20-30 sec passive relaxing decompression', target_val: 30, duration_text: '30 sec', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Lat Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side side-reach stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Cross-Body Shoulder Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side rear delt stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Upper Back Stretch', duration_sec: 45, reps: null, exercise_type: 'duration', notes: 'Cool-down: 45 sec reach forward, round back', target_val: 45, duration_text: '45 sec', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Neck Stretch', duration_sec: 40, reps: null, exercise_type: 'duration', notes: 'Cool-down: 20 sec each side gentle neck tilt', target_val: 40, duration_text: '20s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN }
+    ];
+  } else if (name.includes('legs a')) {
+    return [
+      { exercise_name: 'Quad Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side standing heel to glute', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Hamstring Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side forward fold', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Standing Calf Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side against wall', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Hip Flexor Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side lunge position', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Pigeon Pose', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side glute stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN }
+    ];
+  } else if (name.includes('legs b') || name.includes('leg')) {
+    return [
+      { exercise_name: 'Quad Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side standing heel to glute', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Hamstring Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side forward fold', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Standing Calf Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side against wall', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Hip Flexor Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side lunge position', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Pigeon Pose', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side glute stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Child\'s Pose', duration_sec: 30, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec lower back knees-to-chest/child\'s pose', target_val: 30, duration_text: '30 sec', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN }
     ];
   } else {
     return [
-      { exercise_name: 'Chest & Lat Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Overhead and pectoral elongation', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Hamstring Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Seated or standing single-leg stretch', target_val: 60, duration_text: '30 sec each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Cobra Pose to Child\'s Pose', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Spinal decompression and posterior elongation', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
-      { exercise_name: 'Deep Diaphragmatic Breathing', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: Parasympathetic nervous recovery', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN }
+      { exercise_name: 'Doorway Chest Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side wall/doorway stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Hamstring Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side forward fold', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Child\'s Pose', duration_sec: 45, reps: null, exercise_type: 'duration', notes: 'Cool-down: 45 sec kneeling spinal decompression', target_val: 45, duration_text: '45 sec', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
+      { exercise_name: 'Deep Breathing', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 1 min diaphragmatic recovery', target_val: 60, duration_text: '1 min', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN }
     ];
   }
 }

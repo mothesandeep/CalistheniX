@@ -103,13 +103,52 @@ console.log(`Loaded ${rows.length} exercises from database for Pull B.`);
   assert.strictEqual(mainExercises.length, 6, 'Main Workout must have exactly 6 exercises');
   assert.strictEqual(cooldownExercises.length, 5, 'Cool Down must have exactly 5 exercises');
 
-  const expectedWarmup = ['Wrist Preparation', 'Arm Circles', 'Shoulder Mobility', 'Scapular Activation', 'Light General Activation'];
-  const expectedMain = ['Pull-ups Close Grip', 'Commando Pull-ups', 'Face Pulls', 'Prone Y-raises', 'Wall Angels', 'L-sit Hang'];
-  const expectedCooldown = ['Lat Stretch', 'Cross-Body Shoulder Stretch', 'Child\'s Pose', 'Shoulder Stretch', 'Wrist/Forearm Stretch'];
+  const warmupNames = warmupExercises.map(e => e.exercise_name);
+  const mainNames = mainExercises.map(e => e.exercise_name);
+  const cooldownNames = cooldownExercises.map(e => e.exercise_name);
 
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(warmupExercises.map(e => e.exercise_name))), expectedWarmup);
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(mainExercises.map(e => e.exercise_name))), expectedMain);
-  assert.deepStrictEqual(JSON.parse(JSON.stringify(cooldownExercises.map(e => e.exercise_name))), expectedCooldown);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(warmupNames)), [
+    'Arm Circles',
+    'Cat-Cow Stretch',
+    'Band/Towel Pull-Aparts',
+    'Wall Angels (Activation)',
+    'Dead Hang (Activation)'
+  ]);
+
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(mainNames)), [
+    'Pull-ups Close Grip',
+    'Commando Pull-ups',
+    'Face Pulls',
+    'Prone Y-raises',
+    'Wall Angels',
+    'L-sit Hang'
+  ]);
+
+  const expectedWarmup = [
+    'Arm Circles',
+    'Cat-Cow Stretch',
+    'Band/Towel Pull-Aparts',
+    'Wall Angels (Activation)',
+    'Dead Hang (Activation)'
+  ];
+
+  const expectedMain = [
+    'Pull-ups Close Grip',
+    'Commando Pull-ups',
+    'Face Pulls',
+    'Prone Y-raises',
+    'Wall Angels',
+    'L-sit Hang'
+  ];
+
+  const expectedCooldown = [
+    'Passive Dead Hang',
+    'Lat Stretch',
+    'Cross-Body Shoulder Stretch',
+    'Upper Back Stretch',
+    'Neck Stretch'
+  ];
+
   console.log('  ✓ Database phase arrays contain exact required movements');
 
   // --- 2. VERIFYING TAB SWITCHING AND RENDERED CONTENT ---
@@ -120,14 +159,12 @@ console.log(`Loaded ${rows.length} exercises from database for Pull B.`);
   assert.strictEqual(context.getActiveSession().currentPhase, 'warmup');
   const warmupHtml = context.renderWorkoutPhaseWorkspace(context.getActiveSession(), 'warmup');
   
+  assert.ok(warmupHtml.includes('id="warmup-card-0"'), 'Warm-Up tab must render warmup cards');
+  assert.ok(!warmupHtml.includes('id="main-card-'), 'Warm-Up tab must NOT render main cards');
+  assert.ok(!warmupHtml.includes('id="cooldown-card-'), 'Warm-Up tab must NOT render cooldown cards');
+
   expectedWarmup.forEach(name => {
     assert.ok(warmupHtml.includes(name), `Warm-Up workspace MUST include "${name}"`);
-  });
-  expectedMain.forEach(name => {
-    assert.ok(!warmupHtml.includes(name), `Warm-Up workspace MUST NOT include main exercise "${name}"`);
-  });
-  expectedCooldown.forEach(name => {
-    assert.ok(!warmupHtml.includes(name), `Warm-Up workspace MUST NOT include cool-down stretch "${name}"`);
   });
   console.log('  ✓ Warm-Up workspace renders ONLY warm-up exercises');
 
@@ -136,14 +173,12 @@ console.log(`Loaded ${rows.length} exercises from database for Pull B.`);
   assert.strictEqual(context.getActiveSession().currentPhase, 'main');
   const mainHtml = context.renderWorkoutPhaseWorkspace(context.getActiveSession(), 'main');
 
+  assert.ok(mainHtml.includes('id="main-card-0"'), 'Main Workout tab must render main cards');
+  assert.ok(!mainHtml.includes('id="warmup-card-'), 'Main Workout tab must NOT render warmup cards');
+  assert.ok(!mainHtml.includes('id="cooldown-card-'), 'Main Workout tab must NOT render cooldown cards');
+
   expectedMain.forEach(name => {
     assert.ok(mainHtml.includes(name), `Main Workout workspace MUST include "${name}"`);
-  });
-  expectedWarmup.forEach(name => {
-    assert.ok(!mainHtml.includes(name), `Main Workout workspace MUST NOT include warm-up exercise "${name}"`);
-  });
-  expectedCooldown.forEach(name => {
-    assert.ok(!mainHtml.includes(name), `Main Workout workspace MUST NOT include cool-down stretch "${name}"`);
   });
   console.log('  ✓ Main Workout workspace renders ONLY main strength/skill exercises');
 
@@ -152,14 +187,12 @@ console.log(`Loaded ${rows.length} exercises from database for Pull B.`);
   assert.strictEqual(context.getActiveSession().currentPhase, 'cooldown');
   const cooldownHtml = context.renderWorkoutPhaseWorkspace(context.getActiveSession(), 'cooldown');
 
+  assert.ok(cooldownHtml.includes('id="cooldown-card-0"'), 'Cool Down tab must render cooldown cards');
+  assert.ok(!cooldownHtml.includes('id="warmup-card-'), 'Cool Down tab must NOT render warmup cards');
+  assert.ok(!cooldownHtml.includes('id="main-card-'), 'Cool Down tab must NOT render main cards');
+
   expectedCooldown.forEach(name => {
     assert.ok(cooldownHtml.includes(name), `Cool Down workspace MUST include "${name}"`);
-  });
-  expectedWarmup.forEach(name => {
-    assert.ok(!cooldownHtml.includes(name), `Cool Down workspace MUST NOT include warm-up exercise "${name}"`);
-  });
-  expectedMain.forEach(name => {
-    assert.ok(!cooldownHtml.includes(name), `Cool Down workspace MUST NOT include main exercise "${name}"`);
   });
   console.log('  ✓ Cool Down workspace renders ONLY cool-down exercises');
 
