@@ -1080,45 +1080,20 @@ function resumeWorkoutSession() {
   }
 
   // Resume Rest Timer
-  if (session.restTimer && session.restTimer.pausedAt) {
-    const rtPausedDelta = now - session.restTimer.pausedAt;
+  if (session.restTimer && (session.restTimer.pausedAt || session.restTimer.state === 'PAUSED')) {
+    const rtPausedDelta = session.restTimer.pausedAt ? (now - session.restTimer.pausedAt) : 0;
     session.restTimer.startedAt = (session.restTimer.startedAt || now) + rtPausedDelta;
     session.restTimer.pausedAt = null;
+    session.restTimer.state = 'RUNNING';
     session.restTimer.isRunning = true;
+    session.restTimer.isPaused = false;
+    _workoutRestState.state = 'RUNNING';
     _workoutRestState.active = true;
+    _workoutRestState.paused = false;
+    _workoutRestState.pausedAt = null;
+    _workoutRestState.startedAt = session.restTimer.startedAt;
 
-    _workoutRestInterval = setInterval(() => {
-      if (!_workoutRestState.active) return;
-      _workoutRestState.remaining--;
-      if (session.restTimer) session.restTimer.remainingSec = _workoutRestState.remaining;
-
-      const isLast3s = _workoutRestState.remaining > 0 && _workoutRestState.remaining <= 3;
-      if (isLast3s) cueTick();
-
-      if (typeof document !== 'undefined') {
-        const cardEl = document.getElementById('workout-rest-card-container');
-        const timerEl = document.getElementById('workout-rest-timer-val');
-        const barEl = document.getElementById('workout-rest-timer-bar');
-        if (cardEl) {
-          if (isLast3s) cardEl.classList.add('is-pulse-alert');
-          else cardEl.classList.remove('is-pulse-alert');
-        }
-        if (timerEl) {
-          timerEl.textContent = fmtSecs(Math.max(0, _workoutRestState.remaining));
-          if (isLast3s) timerEl.classList.add('pulse-digits');
-          else timerEl.classList.remove('pulse-digits');
-        }
-        if (barEl && _workoutRestState.total > 0) {
-          const pct = Math.max(0, Math.min(100, (_workoutRestState.remaining / _workoutRestState.total) * 100));
-          barEl.style.width = `${pct}%`;
-        }
-      }
-
-      if (_workoutRestState.remaining <= 0) {
-        cueRestEnd();
-        stopWorkoutRest();
-      }
-    }, 1000);
+    _startRestCountdownInterval();
   }
 
   saveActiveSession(session);
@@ -1725,6 +1700,31 @@ function startMainWorkoutSet() {
   cancelAutoAdvance(false);
   ensureSessionStarted(session);
   session = getActiveSession();
+
+  if (_workoutRestInterval) {
+    clearInterval(_workoutRestInterval);
+    _workoutRestInterval = null;
+  }
+  _workoutRestState = {
+    state: 'IDLE',
+    active: false,
+    paused: false,
+    completed: false,
+    remaining: 0,
+    total: 0,
+    startedAt: null,
+    pausedAt: null,
+    nextInfo: '',
+    feedback: ''
+  };
+
+  if (session.restTimer) {
+    session.restTimer.state = 'IDLE';
+    session.restTimer.isRunning = false;
+    session.restTimer.isPaused = false;
+    session.restTimer.isFinished = false;
+    session.restTimer.remainingSec = 0;
+  }
 
   const exIdx = session.activeExerciseIndex != null ? session.activeExerciseIndex : (_selectedWorkoutExIdx || 0);
   const curEx = session.exercises[exIdx];
@@ -3187,72 +3187,76 @@ function generateSetCompletionFeedback(session, exIdx, setIdx, actualVal) {
   }
 }
 
-function startWorkoutRest(sec, nextInfo = '', feedback = '') {
-  // 1. Clean up any existing intervals and hold state before starting a new rest timer
-  stopWorkoutHold(false);
+// ─── Rest State Model & Engine ────────────────────────────────────────────────
+
+const REST_TIMER_STATES = {
+  IDLE: 'IDLE',
+  RUNNING: 'RUNNING',
+  PAUSED: 'PAUSED',
+  FINISHED: 'FINISHED'
+};
+
+function _startRestCountdownInterval() {
   if (_workoutRestInterval) {
     clearInterval(_workoutRestInterval);
     _workoutRestInterval = null;
   }
 
-  if (!sec || sec <= 0) return;
-
-  let session = getActiveSession();
-  if (session) {
-    ensureSessionStarted(session);
-    session = getActiveSession();
-    session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.RESTING : 'RESTING');
-    session.restTimer = {
-      isRunning: true,
-      durationSec: sec,
-      remainingSec: sec,
-      startedAt: Date.now(),
-      pausedAt: null,
-      nextInfo,
-      feedback
-    };
-    saveActiveSession(session);
-  }
-
-  _workoutRestState = {
-    active: true,
-    completed: false,
-    remaining: sec,
-    total: sec,
-    nextInfo: nextInfo,
-    feedback: feedback,
-  };
-
   _workoutRestInterval = setInterval(() => {
     const curSess = getActiveSession();
     if (curSess && (curSess.phaseState === 'PAUSED' || curSess.status === 'paused')) {
-      return; // Freeze rest countdown while globally paused
+      return; // Freeze countdown when session is paused
     }
 
-    if (!_workoutRestState.active) return;
-    _workoutRestState.remaining--;
-
-    if (curSess && curSess.restTimer) {
-      curSess.restTimer.remainingSec = Math.max(0, _workoutRestState.remaining);
+    if (_workoutRestState.state === 'PAUSED' || _workoutRestState.paused) {
+      return;
     }
 
-    const isLast3s = _workoutRestState.remaining > 0 && _workoutRestState.remaining <= 3;
-    if (isLast3s) {
-      cueTick();
-    }
-
-    if (_workoutRestState.remaining <= 0) {
-      _workoutRestState.remaining = 0;
-      _workoutRestState.completed = true;
+    if (_workoutRestState.state !== 'RUNNING' && !_workoutRestState.active) {
       if (_workoutRestInterval) {
         clearInterval(_workoutRestInterval);
         _workoutRestInterval = null;
       }
+      return;
+    }
+
+    // Accurate wall-clock countdown computation
+    const now = Date.now();
+    const elapsed = Math.floor((now - (_workoutRestState.startedAt || now)) / 1000);
+    const remaining = Math.max(0, _workoutRestState.total - elapsed);
+    _workoutRestState.remaining = remaining;
+
+    if (curSess && curSess.restTimer) {
+      curSess.restTimer.remainingSec = remaining;
+      saveActiveSession(curSess);
+    }
+
+    const isLast3s = remaining > 0 && remaining <= 3;
+    if (isLast3s) {
+      cueTick();
+    }
+
+    if (remaining <= 0) {
+      _workoutRestState.remaining = 0;
+      _workoutRestState.state = 'FINISHED';
+      _workoutRestState.completed = true;
+      _workoutRestState.active = false;
+      _workoutRestState.paused = false;
+
+      if (_workoutRestInterval) {
+        clearInterval(_workoutRestInterval);
+        _workoutRestInterval = null;
+      }
+
       if (curSess && curSess.restTimer) {
+        curSess.restTimer.state = 'FINISHED';
         curSess.restTimer.isRunning = false;
+        curSess.restTimer.isPaused = false;
+        curSess.restTimer.isFinished = true;
         curSess.restTimer.remainingSec = 0;
         saveActiveSession(curSess);
       }
+
       cueRestEnd();
       render();
       return;
@@ -3261,18 +3265,184 @@ function startWorkoutRest(sec, nextInfo = '', feedback = '') {
     if (typeof document !== 'undefined') {
       const timerEl = document.getElementById('workout-rest-timer-val');
       if (timerEl) {
-        timerEl.textContent = fmtSecs(Math.max(0, _workoutRestState.remaining));
+        timerEl.textContent = _workoutRestState.state === 'FINISHED' ? '0' : String(remaining);
         if (isLast3s) timerEl.classList.add('pulse-digits');
         else timerEl.classList.remove('pulse-digits');
       }
       const dialCircleEl = document.getElementById('workout-rest-dial-circle');
       if (dialCircleEl && _workoutRestState.total > 0) {
-        const fraction = Math.max(0, Math.min(1, _workoutRestState.remaining / _workoutRestState.total));
+        const fraction = Math.max(0, Math.min(1, remaining / _workoutRestState.total));
         const dashOffset = (351.8 * (1 - fraction)).toFixed(1);
         dialCircleEl.style.strokeDashoffset = `${dashOffset}`;
       }
+      const barEl = document.getElementById('workout-rest-timer-bar');
+      if (barEl && _workoutRestState.total > 0) {
+        const pct = Math.max(0, Math.min(100, (remaining / _workoutRestState.total) * 100));
+        barEl.style.width = `${pct}%`;
+      }
     }
   }, 1000);
+}
+
+function startWorkoutRest(sec, nextInfo = '', feedback = '') {
+  stopWorkoutHold(false);
+  if (_workoutRestInterval) {
+    clearInterval(_workoutRestInterval);
+    _workoutRestInterval = null;
+  }
+
+  if (!sec || sec <= 0) return;
+
+  const now = Date.now();
+  let session = getActiveSession();
+  if (session) {
+    ensureSessionStarted(session);
+    session = getActiveSession();
+    session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.RESTING : 'RESTING');
+    session.restTimer = {
+      state: 'RUNNING',
+      isRunning: true,
+      isPaused: false,
+      isFinished: false,
+      durationSec: sec,
+      remainingSec: sec,
+      startedAt: now,
+      pausedAt: null,
+      nextInfo,
+      feedback
+    };
+    saveActiveSession(session);
+  }
+
+  _workoutRestState = {
+    state: 'RUNNING',
+    active: true,
+    paused: false,
+    completed: false,
+    remaining: sec,
+    total: sec,
+    startedAt: now,
+    pausedAt: null,
+    nextInfo: nextInfo,
+    feedback: feedback
+  };
+
+  _startRestCountdownInterval();
+  render();
+}
+
+function togglePauseWorkoutRest() {
+  let session = getActiveSession();
+  if (!session) return;
+
+  const isRunning = _workoutRestState.state === 'RUNNING' || (_workoutRestState.active && !_workoutRestState.paused);
+
+  if (isRunning) {
+    // PAUSE
+    const now = Date.now();
+    _workoutRestState.state = 'PAUSED';
+    _workoutRestState.paused = true;
+    _workoutRestState.pausedAt = now;
+    if (_workoutRestInterval) {
+      clearInterval(_workoutRestInterval);
+      _workoutRestInterval = null;
+    }
+
+    if (session.restTimer) {
+      session.restTimer.state = 'PAUSED';
+      session.restTimer.isRunning = false;
+      session.restTimer.isPaused = true;
+      session.restTimer.pausedAt = now;
+      session.restTimer.remainingSec = _workoutRestState.remaining;
+      saveActiveSession(session);
+    }
+  } else if (_workoutRestState.state === 'PAUSED' || _workoutRestState.paused) {
+    // RESUME
+    const now = Date.now();
+    const pausedDelta = _workoutRestState.pausedAt ? (now - _workoutRestState.pausedAt) : 0;
+    _workoutRestState.startedAt = (_workoutRestState.startedAt || now) + pausedDelta;
+    _workoutRestState.pausedAt = null;
+    _workoutRestState.state = 'RUNNING';
+    _workoutRestState.paused = false;
+    _workoutRestState.active = true;
+
+    if (session.restTimer) {
+      session.restTimer.state = 'RUNNING';
+      session.restTimer.isRunning = true;
+      session.restTimer.isPaused = false;
+      session.restTimer.startedAt = _workoutRestState.startedAt;
+      session.restTimer.pausedAt = null;
+      saveActiveSession(session);
+    }
+
+    _startRestCountdownInterval();
+  }
+
+  render();
+}
+
+function adjustWorkoutRest(deltaSec) {
+  const isRestingOrFinished = _workoutRestState.active || _workoutRestState.completed || _workoutRestState.state === 'PAUSED' || _workoutRestState.state === 'FINISHED';
+  if (!isRestingOrFinished) return;
+
+  const currentRemaining = _workoutRestState.remaining || 0;
+  const newRemaining = currentRemaining + deltaSec;
+
+  if (newRemaining <= 0) {
+    _workoutRestState.remaining = 0;
+    _workoutRestState.state = 'FINISHED';
+    _workoutRestState.completed = true;
+    _workoutRestState.active = false;
+    _workoutRestState.paused = false;
+
+    if (_workoutRestInterval) {
+      clearInterval(_workoutRestInterval);
+      _workoutRestInterval = null;
+    }
+
+    const session = getActiveSession();
+    if (session && session.restTimer) {
+      session.restTimer.state = 'FINISHED';
+      session.restTimer.isRunning = false;
+      session.restTimer.isPaused = false;
+      session.restTimer.isFinished = true;
+      session.restTimer.remainingSec = 0;
+      saveActiveSession(session);
+    }
+
+    cueRestEnd();
+    render();
+    return;
+  }
+
+  const wasFinished = _workoutRestState.state === 'FINISHED' || _workoutRestState.completed;
+  _workoutRestState.remaining = newRemaining;
+  _workoutRestState.total = Math.max(_workoutRestState.total || 0, newRemaining);
+  _workoutRestState.completed = false;
+  _workoutRestState.active = true;
+  _workoutRestState.startedAt = Date.now() - (_workoutRestState.total - newRemaining) * 1000;
+
+  if (wasFinished || _workoutRestState.state !== 'PAUSED') {
+    _workoutRestState.state = 'RUNNING';
+    _workoutRestState.paused = false;
+  }
+
+  const session = getActiveSession();
+  if (session && session.restTimer) {
+    session.restTimer.remainingSec = newRemaining;
+    session.restTimer.durationSec = _workoutRestState.total;
+    session.restTimer.state = _workoutRestState.state;
+    session.restTimer.isRunning = (_workoutRestState.state === 'RUNNING');
+    session.restTimer.isPaused = (_workoutRestState.state === 'PAUSED');
+    session.restTimer.isFinished = false;
+    session.restTimer.startedAt = _workoutRestState.startedAt;
+    saveActiveSession(session);
+  }
+
+  const isGloballyPaused = session && (session.phaseState === 'PAUSED' || session.status === 'paused');
+  if (_workoutRestState.state === 'RUNNING' && !isGloballyPaused) {
+    _startRestCountdownInterval();
+  }
 
   render();
 }
@@ -3282,13 +3452,26 @@ function stopWorkoutRest() {
     clearInterval(_workoutRestInterval);
     _workoutRestInterval = null;
   }
-  _workoutRestState.active = false;
-  _workoutRestState.completed = false;
+  _workoutRestState = {
+    state: 'IDLE',
+    active: false,
+    paused: false,
+    completed: false,
+    remaining: 0,
+    total: 0,
+    startedAt: null,
+    pausedAt: null,
+    nextInfo: '',
+    feedback: ''
+  };
 
   const session = getActiveSession();
   if (session) {
     if (session.restTimer) {
+      session.restTimer.state = 'IDLE';
       session.restTimer.isRunning = false;
+      session.restTimer.isPaused = false;
+      session.restTimer.isFinished = false;
       session.restTimer.remainingSec = 0;
     }
     if (session.phase === (typeof WORKOUT_PHASES !== 'undefined' ? WORKOUT_PHASES.MAIN_WORKOUT : 'MAIN_WORKOUT') || session.currentPhase === 'main') {
@@ -3315,90 +3498,8 @@ function stopWorkoutRest() {
   render();
 }
 
-function adjustWorkoutRest(deltaSec) {
-  if (!_workoutRestState.active && !_workoutRestState.completed) return;
-  const currentRemaining = _workoutRestState.remaining || 0;
-  const newRemaining = currentRemaining + deltaSec;
-
-  if (newRemaining <= 0) {
-    _workoutRestState.remaining = 0;
-    _workoutRestState.completed = true;
-    if (_workoutRestInterval) {
-      clearInterval(_workoutRestInterval);
-      _workoutRestInterval = null;
-    }
-    const session = getActiveSession();
-    if (session && session.restTimer) {
-      session.restTimer.isRunning = false;
-      session.restTimer.remainingSec = 0;
-      saveActiveSession(session);
-    }
-    cueRestEnd();
-    render();
-    return;
-  }
-
-  _workoutRestState.remaining = newRemaining;
-  _workoutRestState.total = Math.max(_workoutRestState.total, newRemaining);
-  _workoutRestState.completed = false;
-  _workoutRestState.active = true;
-
-  const session = getActiveSession();
-  if (session && session.restTimer) {
-    session.restTimer.remainingSec = newRemaining;
-    session.restTimer.durationSec = _workoutRestState.total;
-    session.restTimer.isRunning = true;
-    saveActiveSession(session);
-  }
-
-  // Ensure interval is running if not paused
-  const isPaused = session && (session.phaseState === 'PAUSED' || session.status === 'paused');
-  if (!_workoutRestInterval && !isPaused) {
-    _workoutRestInterval = setInterval(() => {
-      const curSess = getActiveSession();
-      if (curSess && (curSess.phaseState === 'PAUSED' || curSess.status === 'paused')) return;
-      if (!_workoutRestState.active) return;
-      _workoutRestState.remaining--;
-      if (curSess && curSess.restTimer) curSess.restTimer.remainingSec = Math.max(0, _workoutRestState.remaining);
-
-      const isLast3s = _workoutRestState.remaining > 0 && _workoutRestState.remaining <= 3;
-      if (isLast3s) cueTick();
-
-      if (_workoutRestState.remaining <= 0) {
-        _workoutRestState.remaining = 0;
-        _workoutRestState.completed = true;
-        if (_workoutRestInterval) {
-          clearInterval(_workoutRestInterval);
-          _workoutRestInterval = null;
-        }
-        if (curSess && curSess.restTimer) {
-          curSess.restTimer.isRunning = false;
-          curSess.restTimer.remainingSec = 0;
-          saveActiveSession(curSess);
-        }
-        cueRestEnd();
-        render();
-        return;
-      }
-
-      if (typeof document !== 'undefined') {
-        const timerEl = document.getElementById('workout-rest-timer-val');
-        if (timerEl) {
-          timerEl.textContent = fmtSecs(Math.max(0, _workoutRestState.remaining));
-          if (isLast3s) timerEl.classList.add('pulse-digits');
-          else timerEl.classList.remove('pulse-digits');
-        }
-        const dialCircleEl = document.getElementById('workout-rest-dial-circle');
-        if (dialCircleEl && _workoutRestState.total > 0) {
-          const fraction = Math.max(0, Math.min(1, _workoutRestState.remaining / _workoutRestState.total));
-          const dashOffset = (351.8 * (1 - fraction)).toFixed(1);
-          dialCircleEl.style.strokeDashoffset = `${dashOffset}`;
-        }
-      }
-    }, 1000);
-  }
-
-  render();
+function getWorkoutRestState() {
+  return _workoutRestState;
 }
 
 function renderWorkoutRestView(session) {
@@ -3417,7 +3518,8 @@ function renderWorkoutRestView(session) {
 
   const remaining = _workoutRestState.remaining != null ? _workoutRestState.remaining : (session.restTimer ? session.restTimer.remainingSec : 0);
   const total = _workoutRestState.total > 0 ? _workoutRestState.total : (session.restTimer?.durationSec || 90);
-  const isRestComplete = _workoutRestState.completed || remaining <= 0;
+  const isRestComplete = _workoutRestState.state === 'FINISHED' || _workoutRestState.completed || remaining <= 0;
+  const isRestPaused = _workoutRestState.state === 'PAUSED' || _workoutRestState.paused || (session.restTimer && session.restTimer.isPaused);
   const isWarning = remaining <= 10 && remaining > 0;
 
   const isStarted = !!(session.startTime || session.startedAt) && session.status !== 'ready';
@@ -3454,7 +3556,13 @@ function renderWorkoutRestView(session) {
       <!-- Top Rest Header -->
       <div class="runner-card-top-header-row">
         <div class="runner-card-header-left">
-          <span class="runner-badge-phase-pill phase-rest">${isRestComplete ? 'Rest Complete' : 'REST'}</span>
+          ${isRestComplete ? `
+            <span class="runner-badge-phase-pill phase-rest" style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4);">✓ REST COMPLETE</span>
+          ` : (isRestPaused ? `
+            <span class="runner-badge-phase-pill phase-rest" style="background:rgba(234,179,8,0.2); color:#eab308; border:1px solid rgba(234,179,8,0.4);">REST PAUSED</span>
+          ` : `
+            <span class="runner-badge-phase-pill phase-rest">REST INTERVAL</span>
+          `)}
         </div>
         <button class="btn btn-ghost btn-sm" type="button" onclick="stopWorkoutRest()" title="Skip rest countdown">
           Skip Rest
@@ -3463,39 +3571,42 @@ function renderWorkoutRestView(session) {
 
       <!-- Depleting 4px Progress Bar -->
       <div class="runner-rest-depleting-track">
-        <div class="runner-rest-depleting-fill ${isWarning ? 'is-warning' : ''}" style="width: ${depletingPct}%;"></div>
+        <div class="runner-rest-depleting-fill ${isRestComplete ? 'is-complete' : (isWarning ? 'is-warning' : '')}" style="width: ${isRestComplete ? 100 : depletingPct}%;"></div>
       </div>
 
       <!-- Hero Monospace Countdown (56px) -->
       <div class="runner-rest-hero-countdown">
-        <span class="runner-rest-hero-digits mono-hero ${isWarning ? 'pulse-digits' : ''}" id="workout-rest-timer-val">
+        <span class="runner-rest-hero-digits mono-hero ${isRestComplete ? 'is-complete' : (isWarning ? 'pulse-digits' : '')}" id="workout-rest-timer-val" style="${isRestComplete ? 'color:#10b981;' : ''}">
           ${isRestComplete ? '0' : remaining}
         </span>
-        <span class="runner-rest-hero-unit">${isRestComplete ? 'READY FOR NEXT SET' : 'SECONDS REMAINING'}</span>
+        <span class="runner-rest-hero-unit" style="${isRestComplete ? 'color:#10b981; font-weight:700;' : ''}">${isRestComplete ? 'REST FINISHED · READY FOR NEXT SET' : (isRestPaused ? 'PAUSED · SECONDS REMAINING' : 'SECONDS REMAINING')}</span>
       </div>
 
       <!-- Next Set Context Preview Zone -->
       <div class="runner-rest-next-preview-card">
-        <span class="runner-rest-next-tag">NEXT SET</span>
+        <span class="runner-rest-next-tag">UPCOMING SET</span>
         <div class="runner-rest-next-name">Next: Set ${activeSetIdx + 1} · ${currentEx.exercise_name}</div>
         <div class="runner-rest-next-meta">Exercise ${exIdx + 1} of ${totalExCount} · ${completedMainSetsInEx} of ${totalSets} sets completed</div>
       </div>
 
-      <!-- Quick Rest Adjust Steppers (-15s / +15s) -->
+      <!-- Quick Rest Adjust Steppers (-15s / Pause / Resume / +15s) -->
       ${!isRestComplete ? `
         <div class="runner-rest-adjust-row">
           <button class="btn btn-secondary btn-sm" type="button" onclick="adjustWorkoutRest(-15)">-15 sec</button>
-          <button class="btn btn-secondary btn-sm" type="button" onclick="togglePauseWorkoutSession()">
-            ${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} Pause
+          <button class="btn btn-secondary btn-sm" type="button" onclick="togglePauseWorkoutRest()">
+            ${renderIcon(isRestPaused ? 'play' : 'pause', 'cx-icon cx-icon-xs cx-icon-inline')} ${isRestPaused ? 'Resume' : 'Pause'}
           </button>
           <button class="btn btn-secondary btn-sm" type="button" onclick="adjustWorkoutRest(15)">+15 sec</button>
         </div>
       ` : `
         <div class="runner-cta-zone" style="margin-top: 16px;">
           <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="startMainWorkoutSet()">
-            <span>Start Set</span>
+            <span>START NEXT SET</span>
             ${renderIcon('arrowRight', 'cx-icon cx-icon-sm cx-icon-inline')}
           </button>
+          <div class="runner-cta-sub-row" style="margin-top:8px;">
+            <button class="btn btn-ghost btn-sm" type="button" onclick="adjustWorkoutRest(15)">+15s More Rest</button>
+          </div>
         </div>
       `}
     </div>
@@ -7216,6 +7327,8 @@ if (typeof window !== 'undefined') {
   window.startWorkoutRest = startWorkoutRest;
   window.stopWorkoutRest = stopWorkoutRest;
   window.adjustWorkoutRest = adjustWorkoutRest;
+  window.togglePauseWorkoutRest = togglePauseWorkoutRest;
+  window.startMainWorkoutSet = startMainWorkoutSet;
   window.selectWorkoutQueueExercise = selectWorkoutQueueExercise;
   window.getWorkoutPhaseModel = getWorkoutPhaseModel;
   window.requestFinishWorkout = requestFinishWorkout;
