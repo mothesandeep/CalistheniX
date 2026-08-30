@@ -608,7 +608,7 @@ function renderHomeView() {
           <span class="home-pr-trophy-icon">${renderIcon('trophy', 'cx-icon cx-icon-muted')}</span>
           <div>
             <div class="home-pr-title">No Personal Records Yet</div>
-            <div class="home-pr-new-tag" style="color:var(--text-dim);">Hit target reps today to record your first PR</div>
+            <div class="home-pr-new-tag" style="color:var(--text-dim);">Complete workout sets to establish your personal records</div>
           </div>
         </div>
         <div class="home-pr-val-wrap">

@@ -26,6 +26,118 @@ async function startWorkoutFromId(workoutId) {
 
 let _runnerStageTab = 'motion'; // 'motion' | 'muscles'
 
+// ─── Exercise Performance & PR History Query Engine ─────────────────────────
+
+function getExerciseLastPerformance(exerciseId, exerciseName) {
+  // 1. Search in localStorage completed sessions (chronologically sorted newest first)
+  try {
+    const prefixes = ['cx_pending_session_', 'cx_session_', 'calisthenix_session_'];
+    if (typeof LS_SESSION_PREFIX !== 'undefined' && !prefixes.includes(LS_SESSION_PREFIX)) {
+      prefixes.push(LS_SESSION_PREFIX);
+    }
+    const pastSessions = [];
+    if (typeof localStorage !== 'undefined') {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && prefixes.some(p => k.startsWith(p))) {
+          try {
+            const item = JSON.parse(localStorage.getItem(k));
+            const isDone = item && (item.is_completed || item.status === 'completed' || item.status === 'completed_early');
+            if (isDone && item.exercises) {
+              pastSessions.push(item);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    if (pastSessions.length > 0) {
+      pastSessions.sort((a, b) => new Date(b.completed_at || b.endTime || b.started_at || 0) - new Date(a.completed_at || a.endTime || a.started_at || 0));
+      for (const sess of pastSessions) {
+        const matchEx = (sess.exercises || []).find(e =>
+          (exerciseId && (e.exercise_id === exerciseId || e.id === exerciseId)) ||
+          (exerciseName && e.exercise_name && e.exercise_name.toLowerCase() === exerciseName.toLowerCase())
+        );
+        if (matchEx && matchEx.sets) {
+          const completedSets = matchEx.sets.filter(s => s.completed && (s.actual_val != null || s.target_val != null));
+          if (completedSets.length > 0) {
+            const bestSet = completedSets.reduce((prev, cur) => {
+              const prevVal = Number(prev.actual_val != null ? prev.actual_val : prev.target_val || 0);
+              const curVal = Number(cur.actual_val != null ? cur.actual_val : cur.target_val || 0);
+              return curVal > prevVal ? cur : prev;
+            }, completedSets[0]);
+
+            const val = Number(bestSet.actual_val != null ? bestSet.actual_val : bestSet.target_val);
+            const weight = bestSet.weight_kg ? Number(bestSet.weight_kg) : 0;
+            const isHold = matchEx.exercise_type === 'duration';
+
+            const sessDate = new Date(sess.completed_at || sess.endTime || sess.started_at);
+            let timeAgo = '';
+            if (!isNaN(sessDate.getTime())) {
+              const diffDays = Math.round((Date.now() - sessDate.getTime()) / (1000 * 60 * 60 * 24));
+              if (diffDays === 0) timeAgo = 'today';
+              else if (diffDays === 1) timeAgo = 'yesterday';
+              else if (diffDays > 1) timeAgo = `${diffDays}d ago`;
+            }
+
+            return {
+              hasHistory: true,
+              val,
+              weight,
+              isHold,
+              timeAgo,
+              displayText: `${val} ${isHold ? 'sec' : 'reps'}${weight > 0 ? ` @ ${weight}kg` : ''}${timeAgo ? ` · ${timeAgo}` : ''}`
+            };
+          }
+        }
+      }
+    }
+  } catch (err) {}
+
+  // 2. Check state.historyLogs
+  if (typeof state !== 'undefined' && state.historyLogs && state.historyLogs.length > 0) {
+    const logs = state.historyLogs.filter(l =>
+      (exerciseId && l.exercise_id === exerciseId) ||
+      (exerciseName && l.exercise_name && l.exercise_name.toLowerCase() === exerciseName.toLowerCase())
+    );
+    if (logs.length > 0) {
+      const latestLog = logs[logs.length - 1];
+      const val = Number(latestLog.reps || latestLog.duration_sec || 0);
+      const weight = latestLog.weight_kg ? Number(latestLog.weight_kg) : 0;
+      const isHold = latestLog.exercise_type === 'duration';
+      return {
+        hasHistory: true,
+        val,
+        weight,
+        isHold,
+        timeAgo: '',
+        displayText: `${val} ${isHold ? 'sec' : 'reps'}${weight > 0 ? ` @ ${weight}kg` : ''}`
+      };
+    }
+  }
+
+  // 3. Fallback when no stored history exists
+  return {
+    hasHistory: false,
+    val: null,
+    weight: null,
+    isHold: false,
+    timeAgo: '',
+    displayText: '—'
+  };
+}
+
+function getExerciseHistoricalBest(exerciseId, exerciseName) {
+  let rec = null;
+  if (typeof state !== 'undefined' && state.dashboardRecords && state.dashboardRecords.length > 0) {
+    rec = state.dashboardRecords.find(r =>
+      (exerciseId && (r.exercise_id === exerciseId || r.id === exerciseId)) ||
+      (exerciseName && r.exercise_name && r.exercise_name.toLowerCase() === exerciseName.toLowerCase())
+    );
+  }
+  return rec || null;
+}
+
 // ─── Auto-Advance & Grace Period Management for Timed Movements ─────────────
 let _autoAdvanceTimer = null;
 let _autoAdvanceCountdown = 0;
@@ -3805,18 +3917,25 @@ function applySameAsLastPerformance(exIdx, setIdx) {
   let fillWeight = null;
   let fillRPE = null;
 
-  // 1. Check previous completed/logged set in current exercise
+  // 1. Check previous completed/logged set in CURRENT session
   if (sIdx > 0 && curEx.sets[sIdx - 1]) {
     const prevSet = curEx.sets[sIdx - 1];
     fillVal = prevSet.actual_val !== null && prevSet.actual_val !== undefined ? prevSet.actual_val : prevSet.target_val;
     fillWeight = prevSet.weight_kg !== null && prevSet.weight_kg !== undefined ? prevSet.weight_kg : null;
     fillRPE = prevSet.rpe !== null && prevSet.rpe !== undefined ? prevSet.rpe : null;
   } else {
-    // Recommendation based on target
-    const targetVal = Number(curSet.target_val || 10);
-    fillVal = targetVal > 5 ? targetVal + 2 : targetVal;
-    fillWeight = curSet.weight_kg !== null && curSet.weight_kg !== undefined ? curSet.weight_kg : null;
-    fillRPE = curSet.rpe !== null && curSet.rpe !== undefined ? curSet.rpe : null;
+    // 2. Check stored historical workout performance from history
+    const lastPerf = getExerciseLastPerformance(curEx.exercise_id || curEx.id, curEx.exercise_name);
+    if (lastPerf.hasHistory && lastPerf.val !== null) {
+      fillVal = lastPerf.val;
+      fillWeight = lastPerf.weight > 0 ? lastPerf.weight : (curSet.weight_kg || null);
+      fillRPE = curSet.rpe || null;
+    } else {
+      // 3. Fallback to Target value
+      fillVal = curSet.target_val || (curEx.exercise_type === 'duration' ? 30 : 10);
+      fillWeight = curSet.weight_kg || null;
+      fillRPE = curSet.rpe || null;
+    }
   }
 
   curSet.actual_val = Number(fillVal);
@@ -3827,7 +3946,7 @@ function applySameAsLastPerformance(exIdx, setIdx) {
   saveActiveSession(session);
   if (typeof beep === 'function') beep(600, 30, 0.2, 'sine');
   if (typeof vibrate === 'function') vibrate(30);
-  showToast(`Filled ${fillVal} ${curEx.exercise_type === 'duration' ? 'sec' : 'reps'}. Tap Complete Set when finished.`);
+  showToast(`Filled ${fillVal} ${curEx.exercise_type === 'duration' ? 'sec' : 'reps'}. Tap Complete Set to log.`);
   render();
 }
 
@@ -6797,7 +6916,29 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
 
       <!-- Focused Mobile-Card Live Runner Stage -->
       <div class="runner-focused-card-stage" style="margin-bottom: 20px;">
-        ${activeCardRunnerHtml}
+        ${(() => {
+          const activeSet = currentEx.sets ? currentEx.sets[activeSetIdx] : null;
+          const isHold = currentEx.exercise_type === 'duration';
+          const targetVal = activeSet ? Number(activeSet.target_val || (isHold ? 30 : 10)) : (isHold ? 30 : 10);
+          const lastPerf = getExerciseLastPerformance(currentEx.exercise_id || currentEx.id, currentEx.exercise_name);
+          const lastDisplayVal = lastPerf.hasHistory ? lastPerf.displayText : '—';
+
+          // Check previous set in current session
+          let prevSetInSession = null;
+          if (activeSetIdx > 0 && currentEx.sets && currentEx.sets[activeSetIdx - 1]) {
+            prevSetInSession = currentEx.sets[activeSetIdx - 1];
+          }
+          const prevSetVal = prevSetInSession
+            ? (prevSetInSession.actual_val !== null && prevSetInSession.actual_val !== undefined ? prevSetInSession.actual_val : prevSetInSession.target_val)
+            : null;
+
+          const currentActualVal = activeSet && activeSet.actual_val !== null && activeSet.actual_val !== undefined
+            ? Number(activeSet.actual_val)
+            : targetVal;
+
+          const displayVal = isHolding ? activeHoldSec : currentActualVal;
+          return activeCardRunnerHtml;
+        })()}
       </div>
 
       <!-- Exercise Cards Stack -->
@@ -7116,7 +7257,7 @@ function renderMainWorkoutCardView(session) {
         </div>
         <div class="runner-target-pill target-last">
           <span class="runner-pill-lbl">Last</span>
-          <span class="runner-pill-val mono">${lastReps} ${isHold ? 'sec' : 'reps'} · 2d ago</span>
+          <span class="runner-pill-val mono">${lastDisplayVal}</span>
         </div>
       </div>
 
@@ -7132,9 +7273,19 @@ function renderMainWorkoutCardView(session) {
 
       <!-- Shortcut Quick-Fill Pills -->
       <div class="runner-shortcut-pills-row">
-        <button class="runner-shortcut-pill history-pill" type="button" onclick="applySameAsLastPerformance(${exIdx}, ${activeSetIdx})">
-          <span>↩ Same as last · ${lastReps}</span>
-        </button>
+        ${prevSetVal !== null ? `
+          <button class="runner-shortcut-pill history-pill" type="button" onclick="applySameAsLastPerformance(${exIdx}, ${activeSetIdx})">
+            <span>↩ Set ${activeSetIdx} · ${prevSetVal}</span>
+          </button>
+        ` : (lastPerf.hasHistory ? `
+          <button class="runner-shortcut-pill history-pill" type="button" onclick="applySameAsLastPerformance(${exIdx}, ${activeSetIdx})">
+            <span>↩ Last · ${lastPerf.val}</span>
+          </button>
+        ` : `
+          <button class="runner-shortcut-pill history-pill" type="button" onclick="applySameAsLastPerformance(${exIdx}, ${activeSetIdx})">
+            <span>↩ Target · ${targetVal}</span>
+          </button>
+        `)}
         <button class="runner-shortcut-pill target-pill" type="button" onclick="setWorkoutSetActualDirect(${exIdx}, ${activeSetIdx}, ${targetVal})">
           <span>◎ Target · ${targetVal}</span>
         </button>
@@ -7415,6 +7566,8 @@ function renderActiveWorkoutView() {
 // ─── Global Window Exports ───────────────────────────────────────────────────
 
 if (typeof window !== 'undefined') {
+  window.getExerciseLastPerformance = getExerciseLastPerformance;
+  window.getExerciseHistoricalBest = getExerciseHistoricalBest;
   window.startWorkoutFromResolved = startWorkoutFromResolved;
   window.startWorkoutFromId = startWorkoutFromId;
   window.startWorkoutFromData = startWorkoutFromData;

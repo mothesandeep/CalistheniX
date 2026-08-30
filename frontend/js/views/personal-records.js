@@ -4,8 +4,9 @@
 
 function checkAndCelebratePR(exerciseId, val, weightKg = null) {
   if (!val || val <= 0) return;
-  const ex = getExercise(exerciseId);
-  const rec = (state.dashboardRecords || []).find(r => r.exercise_id === exerciseId);
+  const ex = typeof getExercise === 'function' ? getExercise(exerciseId) : null;
+  const records = (typeof state !== 'undefined' && state.dashboardRecords) ? state.dashboardRecords : [];
+  const rec = records.find(r => r.exercise_id === exerciseId || (r.exercise_name && ex && r.exercise_name.toLowerCase() === ex.name.toLowerCase()));
   if (!rec) return;
 
   const isHold = ex?.type === 'duration';
@@ -15,18 +16,19 @@ function checkAndCelebratePR(exerciseId, val, weightKg = null) {
   if (isHold) {
     if (rec.max_duration_sec && val > rec.max_duration_sec) {
       isNewPR = true;
-      prMsg = `NEW PR: ${ex?.name || 'Exercise'} · ${val}s hold (previous: ${rec.max_duration_sec}s)`;
+      prMsg = `NEW PR: ${ex?.name || 'Exercise'} · ${val}s hold (beat previous ${rec.max_duration_sec}s)`;
     }
   } else {
     if (rec.max_reps && val > rec.max_reps) {
       isNewPR = true;
-      prMsg = `NEW PR: ${ex?.name || 'Exercise'} · ${val} reps (previous: ${rec.max_reps})`;
+      prMsg = `NEW PR: ${ex?.name || 'Exercise'} · ${val} reps (beat previous ${rec.max_reps} reps)`;
     }
   }
 
-  if (weightKg && (!rec.max_weight_kg || weightKg > rec.max_weight_kg)) {
+  const numWeight = weightKg !== null && weightKg !== '' ? Number(weightKg) : 0;
+  if (numWeight > 0 && rec.max_weight_kg !== null && rec.max_weight_kg !== undefined && numWeight > rec.max_weight_kg) {
     isNewPR = true;
-    prMsg = `NEW WEIGHT PR: ${ex?.name || 'Exercise'} · +${weightKg}kg`;
+    prMsg = `NEW WEIGHT PR: ${ex?.name || 'Exercise'} · +${numWeight}kg (beat previous +${rec.max_weight_kg}kg)`;
   }
 
   if (isNewPR) {
