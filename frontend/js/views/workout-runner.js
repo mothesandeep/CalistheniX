@@ -1895,16 +1895,19 @@ function openSkipMainWorkoutSetModal() {
   }
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:340px; text-align:center; padding:24px 20px; background:#131422; border:1px solid rgba(139,92,246,0.25); border-radius:20px;" onclick="event.stopPropagation()">
-      <h2 class="modal-title" id="skip-set-title" style="font-size:19px; font-weight:800; color:#ffffff; margin-bottom:8px;">Skip this set?</h2>
-      <p class="discard-modal-desc" style="font-size:13px; color:#8a8d9f; margin-bottom:22px; line-height:1.4;">
-        This set will be marked as skipped and will not count toward completed sets.
+    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px; background:#131422; border:1px solid rgba(234,179,8,0.3); border-radius:20px;" onclick="event.stopPropagation()">
+      <div style="width:44px; height:44px; border-radius:50%; background:rgba(234,179,8,0.1); color:#eab308; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
+        ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
+      </div>
+      <h2 class="modal-title" id="skip-set-title" style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:8px;">Skip this set?</h2>
+      <p class="discard-modal-desc" style="font-size:13.5px; color:#cbd5e1; margin-bottom:22px; line-height:1.5;">
+        You are skipping this set. It will not count as completed.
       </p>
       <div style="display:flex; gap:10px; width:100%;">
-        <button class="btn btn-secondary" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1;" type="button" onclick="closeSkipMainWorkoutSetModal()">
+        <button class="btn btn-secondary" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; cursor:pointer;" type="button" onclick="closeSkipMainWorkoutSetModal()">
           Cancel
         </button>
-        <button class="btn btn-danger" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:#ef4444; color:#ffffff; border:none; box-shadow:0 4px 14px rgba(239,68,68,0.4);" type="button" onclick="confirmSkipMainWorkoutSet()">
+        <button class="btn btn-danger" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:#eab308; color:#0f172a; border:none; box-shadow:0 4px 14px rgba(234,179,8,0.3); cursor:pointer;" type="button" onclick="confirmSkipMainWorkoutSet()">
           Skip Set
         </button>
       </div>
@@ -2310,6 +2313,7 @@ function renderMainWorkoutCompleteView(session) {
   const mainList = getMainWorkoutExercises(session);
   const totalSets = mainList.reduce((acc, ex) => acc + (ex.sets ? ex.sets.length : 0), 0);
   const completedSets = mainList.reduce((acc, ex) => acc + (ex.sets ? ex.sets.filter(s => s.completed).length : 0), 0);
+  const skippedSets = mainList.reduce((acc, ex) => acc + (ex.sets ? ex.sets.filter(s => s.skipped).length : 0), 0);
   const isStarted = !!(session.startTime || session.startedAt);
   const elapsedSec = isStarted ? getSessionElapsedSec(session) : 0;
   const cooldownList = getCooldownExercises(session);
@@ -2323,13 +2327,19 @@ function renderMainWorkoutCompleteView(session) {
           <span class="runner-transition-fire-icon">⚡</span>
         </div>
         <h2 class="runner-transition-title">Main Workout Complete</h2>
-        <p class="runner-transition-sub">All strength and skill sets completed. Move into cool-down for recovery.</p>
+        <p class="runner-transition-sub">All strength and skill sets resolved. Move into cool-down for recovery.</p>
 
         <div class="runner-transition-chips-row">
           <div class="runner-transition-chip">
-            <span class="runner-chip-icon">✓</span>
-            <span>${completedSets} / ${totalSets} sets</span>
+            <span class="runner-chip-icon" style="color:#10b981;">✓</span>
+            <span style="color:#10b981;">${completedSets} / ${totalSets} sets done</span>
           </div>
+          ${skippedSets > 0 ? `
+            <div class="runner-transition-chip">
+              <span class="runner-chip-icon" style="color:#eab308;">⏭</span>
+              <span style="color:#eab308;">${skippedSets} skipped</span>
+            </div>
+          ` : ''}
           <div class="runner-transition-chip">
             <span class="runner-chip-icon">⏱</span>
             <span>${fmtSecs(elapsedSec)}</span>
