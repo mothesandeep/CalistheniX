@@ -984,6 +984,19 @@
   animation: cx-check-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+.runner-ex-checkbox-btn.is-skipped {
+  background: rgba(234, 179, 8, 0.15);
+  border-color: #eab308;
+  color: #eab308;
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.2);
+}
+
+.runner-ex-checkbox-btn.is-partial {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #10b981;
+}
+
 /* ── Interactive Active Drawer/Modal for Sets & Timers ───────────────────── */
 .runner-active-interactive-box {
   margin-top: 10px;

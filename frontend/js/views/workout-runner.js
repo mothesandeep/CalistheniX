@@ -197,6 +197,261 @@ function getCooldownExercises(session) {
   return (session.cooldown || []).filter(e => !e.phase || isCooldownPhase(e.phase));
 }
 
+// ─── Single Authoritative Source of Truth Session State Engine ──────────────
+
+function getAuthoritativeSessionState(session) {
+  if (!session) {
+    return {
+      isValid: false,
+      currentPhase: 'main',
+      phaseUpper: 'MAIN_WORKOUT',
+      warmup: { list: [], total: 0, completed: 0, skipped: 0, resolved: 0, isDone: true, isSkipped: false, isInProgress: false, activeIdx: 0, pct: 0 },
+      main: { list: [], totalExercises: 0, completedExercises: 0, skippedExercises: 0, resolvedExercises: 0, totalSets: 0, completedSets: 0, skippedSets: 0, resolvedSets: 0, isDone: true, isInProgress: false, activeExIdx: 0, activeSetIdx: 0, pct: 0 },
+      cooldown: { list: [], total: 0, completed: 0, skipped: 0, resolved: 0, isDone: true, isSkipped: false, isInProgress: false, activeIdx: 0, pct: 0 },
+      overall: { totalSets: 0, completedSets: 0, skippedSets: 0, resolvedSets: 0, totalExercises: 0, completedExercises: 0, resolvedExercises: 0, progressPct: 0, resolutionPct: 0, isAllFinished: false },
+      activeExercise: null,
+      activeSet: null
+    };
+  }
+
+  // 1. Lists
+  const warmupList = getWarmupExercises(session);
+  const mainList = getMainWorkoutExercises(session);
+  const cooldownList = getCooldownExercises(session);
+
+  // 2. Warm-up
+  const warmupTotal = warmupList.length;
+  const warmupCompleted = warmupList.filter(w => w.completed).length;
+  const warmupSkipped = warmupList.filter(w => w.skipped).length;
+  const warmupResolved = warmupCompleted + warmupSkipped;
+  const isWarmupSkipped = session.warmupStatus === 'SKIPPED' || session.warmup_status === 'skipped';
+  const isWarmupDone = (warmupTotal === 0 && session.warmupStatus !== 'ACTIVE' && session.currentPhase !== 'warmup') || isWarmupSkipped || session.warmupStatus === 'COMPLETED' || session.warmup_status === 'completed' || (warmupTotal > 0 && warmupResolved === warmupTotal);
+  const isWarmupInProgress = !isWarmupDone && !isWarmupSkipped && (session.warmupStatus === 'ACTIVE' || session.warmup_status === 'in_progress' || (warmupResolved > 0 && warmupResolved < warmupTotal) || session.currentPhase === 'warmup');
+  const warmupPct = warmupTotal > 0 ? Math.round((warmupCompleted / warmupTotal) * 100) : (isWarmupSkipped ? 0 : 100);
+
+  let rawWarmupIdx = session.warmupIndex != null ? session.warmupIndex : (session.warmup_idx != null ? session.warmup_idx : 0);
+  const warmupActiveIdx = warmupTotal > 0 ? Math.max(0, Math.min(warmupTotal - 1, rawWarmupIdx)) : 0;
+
+  // 3. Main Workout
+  let mainTotalSets = 0;
+  let mainCompletedSets = 0;
+  let mainSkippedSets = 0;
+  let mainCompletedExercises = 0;
+  let mainSkippedExercises = 0;
+  let mainResolvedExercises = 0;
+
+  mainList.forEach(ex => {
+    const sets = ex.sets || [];
+    const exTotal = sets.length;
+    let exCompleted = 0;
+    let exSkipped = 0;
+
+    sets.forEach(s => {
+      mainTotalSets++;
+      if (s.completed) {
+        mainCompletedSets++;
+        exCompleted++;
+      } else if (s.skipped) {
+        mainSkippedSets++;
+        exSkipped++;
+      }
+    });
+
+    if (exTotal > 0 && exCompleted === exTotal) {
+      mainCompletedExercises++;
+      mainResolvedExercises++;
+    } else if (exTotal > 0 && exSkipped === exTotal) {
+      mainSkippedExercises++;
+      mainResolvedExercises++;
+    } else if (exTotal > 0 && (exCompleted + exSkipped) === exTotal) {
+      if (exCompleted > 0) mainCompletedExercises++;
+      mainResolvedExercises++;
+    }
+  });
+
+  const mainResolvedSets = mainCompletedSets + mainSkippedSets;
+  const isMainDone = mainTotalSets === 0 ? false : (session.mainStatus === 'COMPLETED' || (mainTotalSets > 0 && mainResolvedSets === mainTotalSets));
+  const isMainInProgress = !isMainDone && (session.mainStatus === 'ACTIVE' || mainResolvedSets > 0 || session.currentPhase === 'main');
+  const mainPct = mainTotalSets > 0 ? Math.round((mainCompletedSets / mainTotalSets) * 100) : 100;
+
+  let rawMainExIdx = session.activeExerciseIndex != null ? session.activeExerciseIndex : (session.currentExerciseIndex != null ? session.currentExerciseIndex : (_selectedWorkoutExIdx != null ? _selectedWorkoutExIdx : 0));
+  const mainActiveExIdx = mainList.length > 0 ? Math.max(0, Math.min(mainList.length - 1, rawMainExIdx)) : 0;
+
+  const currentMainEx = mainList[mainActiveExIdx] || null;
+  const currentSets = currentMainEx?.sets || [];
+  let rawSetIdx = session.activeSetIndex != null ? session.activeSetIndex : 0;
+  if (currentSets.length > 0 && (rawSetIdx < 0 || rawSetIdx >= currentSets.length || currentSets[rawSetIdx]?.completed || currentSets[rawSetIdx]?.skipped)) {
+    const firstUnresolvedSetIdx = currentSets.findIndex(s => !s.completed && !s.skipped);
+    if (firstUnresolvedSetIdx !== -1) rawSetIdx = firstUnresolvedSetIdx;
+    else rawSetIdx = Math.max(0, currentSets.length - 1);
+  }
+  const mainActiveSetIdx = currentSets.length > 0 ? Math.max(0, Math.min(currentSets.length - 1, rawSetIdx)) : 0;
+  const currentMainSet = currentSets[mainActiveSetIdx] || null;
+
+  // 4. Cool-down
+  const cooldownTotal = cooldownList.length;
+  const cooldownCompleted = cooldownList.filter(c => c.completed).length;
+  const cooldownSkipped = cooldownList.filter(c => c.skipped).length;
+  const cooldownResolved = cooldownCompleted + cooldownSkipped;
+  const isCooldownSkipped = session.cooldownStatus === 'SKIPPED' || session.cooldown_status === 'skipped';
+  const isCooldownDone = (cooldownTotal === 0 && session.cooldownStatus !== 'ACTIVE' && session.currentPhase !== 'cooldown') || isCooldownSkipped || session.cooldownStatus === 'COMPLETED' || session.cooldown_status === 'completed' || (cooldownTotal > 0 && cooldownResolved === cooldownTotal);
+  const isCooldownInProgress = !isCooldownDone && !isCooldownSkipped && (session.cooldownStatus === 'ACTIVE' || session.cooldown_status === 'in_progress' || (cooldownResolved > 0 && cooldownResolved < cooldownTotal) || session.currentPhase === 'cooldown');
+  const cooldownPct = cooldownTotal > 0 ? Math.round((cooldownCompleted / cooldownTotal) * 100) : (isCooldownSkipped ? 0 : 100);
+
+  let rawCooldownIdx = session.cooldownIndex != null ? session.cooldownIndex : (session.cooldown_idx != null ? session.cooldown_idx : 0);
+  const cooldownActiveIdx = cooldownTotal > 0 ? Math.max(0, Math.min(cooldownTotal - 1, rawCooldownIdx)) : 0;
+
+  // 5. Overall
+  const totalSets = warmupTotal + mainTotalSets + cooldownTotal;
+  const completedSets = warmupCompleted + mainCompletedSets + cooldownCompleted;
+  const skippedSets = warmupSkipped + mainSkippedSets + cooldownSkipped;
+  const resolvedSets = completedSets + skippedSets;
+
+  const totalExercises = warmupTotal + mainList.length + cooldownTotal;
+  const completedExercises = warmupCompleted + mainCompletedExercises + cooldownCompleted;
+  const resolvedExercises = warmupResolved + mainResolvedExercises + cooldownResolved;
+
+  const progressPct = totalSets > 0 ? Math.round((completedSets / totalSets) * 100) : 100;
+  const resolutionPct = totalSets > 0 ? Math.round((resolvedSets / totalSets) * 100) : 100;
+  const isAllFinished = isWarmupDone && isMainDone && isCooldownDone;
+
+  const currentPhaseRaw = session.currentPhase || (isWarmupPhase(session.phase) ? 'warmup' : (isCooldownPhase(session.phase) ? 'cooldown' : (isCompletedPhase(session.phase) ? 'completed' : 'main')));
+  const currentPhase = (currentPhaseRaw === 'warmup' || currentPhaseRaw === 'cooldown' || currentPhaseRaw === 'completed') ? currentPhaseRaw : 'main';
+
+  const warmupRemaining = Math.max(0, warmupTotal - warmupCompleted - warmupSkipped);
+  const mainRemainingSets = Math.max(0, mainTotalSets - mainCompletedSets - mainSkippedSets);
+  const mainRemainingExercises = Math.max(0, mainList.length - mainCompletedExercises - mainSkippedExercises);
+  const cooldownRemaining = Math.max(0, cooldownTotal - cooldownCompleted - cooldownSkipped);
+  const overallRemainingSets = Math.max(0, totalSets - completedSets - skippedSets);
+  const overallRemainingExercises = Math.max(0, totalExercises - completedExercises - (warmupSkipped + mainSkippedExercises + cooldownSkipped));
+
+  return {
+    isValid: true,
+    currentPhase,
+    phaseUpper: currentPhase === 'warmup' ? 'WARMUP' : (currentPhase === 'cooldown' ? 'COOLDOWN' : (currentPhase === 'completed' ? 'COMPLETED' : 'MAIN_WORKOUT')),
+    warmup: {
+      list: warmupList,
+      total: warmupTotal,
+      completed: warmupCompleted,
+      skipped: warmupSkipped,
+      resolved: warmupResolved,
+      remaining: warmupRemaining,
+      isDone: isWarmupDone,
+      isSkipped: isWarmupSkipped,
+      isInProgress: isWarmupInProgress,
+      activeIdx: warmupActiveIdx,
+      pct: warmupPct
+    },
+    main: {
+      list: mainList,
+      totalExercises: mainList.length,
+      completedExercises: mainCompletedExercises,
+      skippedExercises: mainSkippedExercises,
+      resolvedExercises: mainResolvedExercises,
+      remainingExercises: mainRemainingExercises,
+      totalSets: mainTotalSets,
+      completedSets: mainCompletedSets,
+      skippedSets: mainSkippedSets,
+      resolvedSets: mainResolvedSets,
+      remainingSets: mainRemainingSets,
+      isDone: isMainDone,
+      isInProgress: isMainInProgress,
+      activeExIdx: mainActiveExIdx,
+      activeSetIdx: mainActiveSetIdx,
+      pct: mainPct
+    },
+    cooldown: {
+      list: cooldownList,
+      total: cooldownTotal,
+      completed: cooldownCompleted,
+      skipped: cooldownSkipped,
+      resolved: cooldownResolved,
+      remaining: cooldownRemaining,
+      isDone: isCooldownDone,
+      isSkipped: isCooldownSkipped,
+      isInProgress: isCooldownInProgress,
+      activeIdx: cooldownActiveIdx,
+      pct: cooldownPct
+    },
+    overall: {
+      totalSets,
+      completedSets,
+      skippedSets,
+      resolvedSets,
+      remainingSets: overallRemainingSets,
+      totalExercises,
+      completedExercises,
+      skippedExercises: (warmupSkipped > 0 && warmupTotal === warmupSkipped ? 1 : 0) + mainSkippedExercises + (cooldownSkipped > 0 && cooldownTotal === cooldownSkipped ? 1 : 0),
+      resolvedExercises,
+      remainingExercises: overallRemainingExercises,
+      progressPct,
+      resolutionPct,
+      isAllFinished
+    },
+    activeExercise: currentPhase === 'warmup' ? (warmupList[warmupActiveIdx] || null) : (currentPhase === 'cooldown' ? (cooldownList[cooldownActiveIdx] || null) : currentMainEx),
+    activeSet: currentMainSet
+  };
+}
+
+function syncAuthoritativeSessionState(session) {
+  if (!session) return;
+  const auth = getAuthoritativeSessionState(session);
+
+  // Sync index pointers
+  session.warmupIndex = auth.warmup.activeIdx;
+  session.warmup_idx = auth.warmup.activeIdx;
+  session.activeExerciseIndex = auth.main.activeExIdx;
+  session.currentExerciseIndex = auth.main.activeExIdx;
+  session.activeSetIndex = auth.main.activeSetIdx;
+  _selectedWorkoutExIdx = auth.main.activeExIdx;
+  session.cooldownIndex = auth.cooldown.activeIdx;
+  session.cooldown_idx = auth.cooldown.activeIdx;
+
+  // Sync status strings
+  session.currentPhase = auth.currentPhase;
+  session.phase = auth.phaseUpper;
+
+  if (auth.warmup.isDone) {
+    if (auth.warmup.isSkipped) {
+      session.warmupStatus = 'SKIPPED';
+      session.warmup_status = 'skipped';
+    } else {
+      session.warmupStatus = 'COMPLETED';
+      session.warmup_status = 'completed';
+    }
+  } else if (auth.currentPhase === 'warmup' && (session.phaseState === 'ACTIVE' || session.status === 'in_progress' || auth.warmup.isInProgress)) {
+    session.warmupStatus = 'ACTIVE';
+    session.warmup_status = 'in_progress';
+  } else {
+    session.warmupStatus = 'IDLE';
+    session.warmup_status = auth.warmup.total > 0 ? 'ready' : 'none';
+  }
+
+  if (auth.main.isDone) {
+    session.mainStatus = 'COMPLETED';
+  } else if (auth.currentPhase === 'main' || auth.main.isInProgress || session.mainStatus === 'ACTIVE') {
+    session.mainStatus = 'ACTIVE';
+  } else {
+    session.mainStatus = 'IDLE';
+  }
+
+  if (auth.cooldown.isDone) {
+    if (auth.cooldown.isSkipped) {
+      session.cooldownStatus = 'SKIPPED';
+      session.cooldown_status = 'skipped';
+    } else {
+      session.cooldownStatus = 'COMPLETED';
+      session.cooldown_status = 'completed';
+    }
+  } else if (auth.currentPhase === 'cooldown' || auth.cooldown.isInProgress || session.cooldownStatus === 'ACTIVE') {
+    session.cooldownStatus = 'ACTIVE';
+    session.cooldown_status = 'in_progress';
+  } else {
+    session.cooldownStatus = 'IDLE';
+    session.cooldown_status = auth.cooldown.total > 0 ? 'pending' : 'none';
+  }
+}
+
 // ─── Routine-Specific Warm-up & Cool-down Generators ────────────────────────
 
 // ─── Routine-Specific Warm-up & Cool-down Generators ────────────────────────
@@ -666,10 +921,19 @@ function ensureSessionStarted(session) {
 
 function openWorkoutView() {
   state.view = 'workout';
-  window.location.hash = 'workout';
+  if (typeof window !== 'undefined' && window.location) {
+    window.location.hash = 'workout';
+  }
   const session = getActiveSession();
   if (session && (session.status === 'in_progress' || session.status === 'active' || session.phaseState === 'ACTIVE') && (session.startTime || session.startedAt)) {
+    syncAuthoritativeSessionState(session);
+    saveActiveSession(session);
     startWorkoutDurationTimer();
+
+    // Rehydrate rest timer if active
+    if (session.restTimer && session.restTimer.isRunning && session.restTimer.remainingSec > 0 && !_workoutRestInterval && (session.status !== 'paused' && session.phaseState !== 'PAUSED')) {
+      startWorkoutRest(session.restTimer.remainingSec, session.restTimer.nextInfo || '', session.restTimer.feedback || '');
+    }
   }
   render();
 }
@@ -1233,10 +1497,10 @@ function advanceWarmupMovement() {
   cancelAutoAdvance(false);
   ensureSessionStarted(session);
   session = getActiveSession();
-  const isPaused = session.phaseState === (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.PAUSED : 'PAUSED') || session.status === 'paused';
+  const isPaused = session.phaseState === 'PAUSED' || session.status === 'paused';
   if (isPaused) {
     session.status = 'in_progress';
-    session.phaseState = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
+    session.phaseState = 'ACTIVE';
     session.pausedAt = null;
     startWorkoutDurationTimer();
   }
@@ -1246,6 +1510,8 @@ function advanceWarmupMovement() {
   if (curEx) {
     curEx.completed = true;
     curEx.completed_at = new Date().toISOString();
+    curEx.skipped = false;
+    curEx.skipped_at = null;
   }
   cueSetComplete();
 
@@ -1261,17 +1527,19 @@ function advanceWarmupMovement() {
 
     // Check if rest is configured between warm-up exercises
     if (curEx && curEx.rest_sec && curEx.rest_sec > 0) {
+      syncAuthoritativeSessionState(session);
       saveActiveSession(session);
       startWorkoutRest(curEx.rest_sec, `Next: ${nextEx.exercise_name}`, 'Warm-up movement completed.');
       return;
     }
 
+    syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     render();
   } else {
     // All warm-up movements completed -> Mark WARMUP completed and show Warm-Up Complete state
     const now = Date.now();
-    session.warmupStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.COMPLETED : 'COMPLETED');
+    session.warmupStatus = 'COMPLETED';
     session.warmup_status = 'completed';
     session.warmup_completed_at = new Date(now).toISOString();
     session.warmup_duration_sec = Math.max(0, Math.round((now - (session.startTime || now)) / 1000));
@@ -1281,6 +1549,7 @@ function advanceWarmupMovement() {
 
     cueExerciseComplete();
     showToast('Warm-Up Complete! You\'re ready for the main workout.');
+    syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     render();
   }
@@ -1298,6 +1567,7 @@ function skipWarmupExercise() {
   if (cur) {
     cur.skipped = true;
     cur.completed = false;
+    cur.completed_at = null;
     cur.skipped_at = new Date().toISOString();
   }
 
@@ -1309,17 +1579,19 @@ function skipWarmupExercise() {
     const isHold = next?.exercise_type === 'duration';
     session.movementTimer = { isRunning: isHold, durationSec: dur, remainingSec: dur, startedAt: isHold ? Date.now() : null, pausedAt: null };
     session.phaseTimer = { isRunning: isHold, duration: dur, remaining: dur, startedAt: isHold ? Date.now() : null, pausedMs: 0 };
+    syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     render();
   } else {
     // Final warm-up movement skipped -> complete warm-up
     const now = Date.now();
-    session.warmupStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.COMPLETED : 'COMPLETED');
+    session.warmupStatus = 'COMPLETED';
     session.warmup_status = 'completed';
     session.warmup_completed_at = new Date(now).toISOString();
     session.movementTimer = { isRunning: false, durationSec: 0, remainingSec: 0, startedAt: null, pausedAt: null };
     session.phaseTimer = { isRunning: false, duration: 0, remaining: 0, startedAt: null, pausedMs: 0 };
     cueExerciseComplete();
+    syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     render();
   }
@@ -1355,13 +1627,14 @@ function startMainWorkoutFromWarmup() {
 
   const now = Date.now();
   session.main_started_at = now;
-  session.phase = (typeof WORKOUT_PHASES !== 'undefined' ? WORKOUT_PHASES.MAIN_WORKOUT : 'MAIN_WORKOUT');
+  session.phase = 'MAIN_WORKOUT';
   session.currentPhase = 'main';
-  session.phaseState = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
-  session.mainStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
-  session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.SET_ACTIVE : 'SET_ACTIVE');
+  session.phaseState = 'ACTIVE';
+  session.mainStatus = 'ACTIVE';
+  session.mainWorkoutSubState = 'SET_ACTIVE';
 
   session.activeExerciseIndex = 0;
+  session.currentExerciseIndex = 0;
   session.activeSetIndex = 0;
   _selectedWorkoutExIdx = 0;
 
@@ -1372,6 +1645,7 @@ function startMainWorkoutFromWarmup() {
     setCurrentMovementPattern(nextPattern, nextEx.exercise_id, nextEx.exercise_name);
   }
 
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   render();
 }
@@ -1380,41 +1654,38 @@ function skipWarmupPhase() {
   const session = getActiveSession();
   if (!session) return;
   cancelAutoAdvance(false);
-  const isPaused = session.phaseState === (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.PAUSED : 'PAUSED') || session.status === 'paused';
+  const isPaused = session.phaseState === 'PAUSED' || session.status === 'paused';
   if (isPaused) {
     session.status = 'in_progress';
-    session.phaseState = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
+    session.phaseState = 'ACTIVE';
     session.pausedAt = null;
     startWorkoutDurationTimer();
   }
   const now = Date.now();
-  session.warmupStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.SKIPPED : 'SKIPPED');
+  session.warmupStatus = 'SKIPPED';
   session.warmup_status = 'skipped';
   session.warmup_completed_at = new Date(now).toISOString();
   session.warmup_duration_sec = Math.max(0, Math.round((now - (session.startTime || now)) / 1000));
   session.main_started_at = now;
 
-  session.phase = (typeof WORKOUT_PHASES !== 'undefined' ? WORKOUT_PHASES.MAIN_WORKOUT : 'MAIN_WORKOUT');
+  session.phase = 'MAIN_WORKOUT';
   session.currentPhase = 'main';
-  session.phaseState = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
-  session.mainStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
-  session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.SET_ACTIVE : 'SET_ACTIVE');
+  session.phaseState = 'ACTIVE';
+  session.mainStatus = 'ACTIVE';
+  session.mainWorkoutSubState = 'SET_ACTIVE';
 
   session.activeExerciseIndex = 0;
-  session.activeSetIndex = 0;
   session.currentExerciseIndex = 0;
+  session.activeSetIndex = 0;
   _selectedWorkoutExIdx = 0;
 
   session.movementTimer = { isRunning: false, durationSec: 0, remainingSec: 0, startedAt: null, pausedAt: null };
   session.phaseTimer = { isRunning: false, duration: 0, remaining: 0, startedAt: null, pausedMs: 0 };
 
   showToast('Skipped Warm-up — Entering Main Workout');
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   render();
-}
-
-function completeWarmupExercise() {
-  advanceWarmupMovement();
 }
 
 function startMainWorkoutSet() {
@@ -1428,12 +1699,13 @@ function startMainWorkoutSet() {
   const curEx = session.exercises[exIdx];
   if (!curEx || !curEx.sets) return;
 
-  const sIdx = curEx.sets.findIndex(s => !s.completed);
-  const activeSetIdx = session.activeSetIndex != null && curEx.sets[session.activeSetIndex] && !curEx.sets[session.activeSetIndex].completed
+  const sIdx = curEx.sets.findIndex(s => !s.completed && !s.skipped);
+  const activeSetIdx = session.activeSetIndex != null && curEx.sets[session.activeSetIndex] && !curEx.sets[session.activeSetIndex].completed && !curEx.sets[session.activeSetIndex].skipped
     ? session.activeSetIndex
     : (sIdx !== -1 ? sIdx : 0);
 
-  session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.SET_ACTIVE : 'SET_ACTIVE');
+  session.activeSetIndex = activeSetIdx;
+  session.mainWorkoutSubState = 'SET_ACTIVE';
 
   const isHold = curEx.exercise_type === 'duration';
   if (isHold) {
@@ -1456,8 +1728,8 @@ function adjustCurrentSetReps(delta) {
   const curEx = session.exercises[exIdx];
   if (!curEx || !curEx.sets) return;
 
-  const sIdx = curEx.sets.findIndex(s => !s.completed);
-  const activeSetIdx = session.activeSetIndex != null && curEx.sets[session.activeSetIndex] && !curEx.sets[session.activeSetIndex].completed
+  const sIdx = curEx.sets.findIndex(s => !s.completed && !s.skipped);
+  const activeSetIdx = session.activeSetIndex != null && curEx.sets[session.activeSetIndex] && !curEx.sets[session.activeSetIndex].completed && !curEx.sets[session.activeSetIndex].skipped
     ? session.activeSetIndex
     : (sIdx !== -1 ? sIdx : (curEx.sets.length - 1));
 
@@ -1482,8 +1754,8 @@ function completeMainWorkoutSet() {
   const curEx = session.exercises[exIdx];
   if (!curEx || !curEx.sets) return;
 
-  const sIdx = curEx.sets.findIndex(s => !s.completed);
-  const activeSetIdx = session.activeSetIndex != null && curEx.sets[session.activeSetIndex] && !curEx.sets[session.activeSetIndex].completed
+  const sIdx = curEx.sets.findIndex(s => !s.completed && !s.skipped);
+  const activeSetIdx = session.activeSetIndex != null && curEx.sets[session.activeSetIndex] && !curEx.sets[session.activeSetIndex].completed && !curEx.sets[session.activeSetIndex].skipped
     ? session.activeSetIndex
     : (sIdx !== -1 ? sIdx : (curEx.sets.length - 1));
 
@@ -1502,6 +1774,8 @@ function completeMainWorkoutSet() {
   curSet.actual_val = finalVal;
   curSet.completed = true;
   curSet.completed_at = new Date().toISOString();
+  curSet.skipped = false;
+  curSet.skipped_at = null;
 
   cueSetComplete();
   if (typeof checkAndCelebratePR === 'function') {
@@ -1510,34 +1784,41 @@ function completeMainWorkoutSet() {
 
   // 2. Check if current exercise and entire main workout are completed
   const isExDone = curEx.sets.every(s => s.completed || s.skipped);
+  const hasCompletedSets = curEx.sets.some(s => s.completed);
+  curEx.completed = isExDone && hasCompletedSets;
+  curEx.skipped = isExDone && !hasCompletedSets;
+  if (curEx.completed) {
+    curEx.completed_at = new Date().toISOString();
+    cueExerciseComplete();
+  }
+
   const isEntireMainWorkoutDone = session.exercises.every(ex => ex.sets && ex.sets.every(s => s.completed || s.skipped));
 
   if (isEntireMainWorkoutDone) {
     const now = Date.now();
-    session.mainStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.COMPLETED : 'COMPLETED');
-    session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.EXERCISE_COMPLETED : 'EXERCISE_COMPLETED');
+    session.mainStatus = 'COMPLETED';
+    session.mainWorkoutSubState = 'EXERCISE_COMPLETED';
     session.main_completed_at = new Date(now).toISOString();
     session.main_duration_sec = Math.max(0, Math.round((now - (session.main_started_at || session.startTime || now)) / 1000));
     cueExerciseComplete();
     showToast('Main Workout Complete! Ready for Cool Down');
+    syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     render();
     return;
   }
 
   if (isExDone) {
-    curEx.completed = true;
-    curEx.completed_at = new Date().toISOString();
-    cueExerciseComplete();
-
     // Advance to next uncompleted exercise
     const nextUncompletedIdx = session.exercises.findIndex((ex, idx) => idx > exIdx && ex.sets.some(s => !s.completed && !s.skipped));
     const nextIdx = nextUncompletedIdx !== -1 ? nextUncompletedIdx : session.exercises.findIndex(ex => ex.sets.some(s => !s.completed && !s.skipped));
     if (nextIdx !== -1) {
       session.activeExerciseIndex = nextIdx;
-      session.activeSetIndex = 0;
+      session.currentExerciseIndex = nextIdx;
       _selectedWorkoutExIdx = nextIdx;
       const nextEx = session.exercises[nextIdx];
+      const nextFirstUnresolved = nextEx.sets ? nextEx.sets.findIndex(s => !s.completed && !s.skipped) : 0;
+      session.activeSetIndex = nextFirstUnresolved !== -1 ? nextFirstUnresolved : 0;
       const nextCat = (typeof state !== 'undefined' && state.exercises) ? state.exercises.find(e => e.id === nextEx.exercise_id || e.name === nextEx.exercise_name) : null;
       const nextPattern = nextCat?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(nextEx.exercise_name) : 'push');
       setCurrentMovementPattern(nextPattern, nextEx.exercise_id, nextEx.exercise_name);
@@ -1553,13 +1834,15 @@ function completeMainWorkoutSet() {
   // 3. Trigger Rest Countdown if rest_sec is configured
   const restSec = curEx.rest_sec || 90;
   if (restSec > 0) {
-    session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.RESTING : 'RESTING');
+    session.mainWorkoutSubState = 'RESTING';
     const nextInfo = getNextSetDescription(session, exIdx, activeSetIdx);
     const feedback = generateSetCompletionFeedback(session, exIdx, activeSetIdx, finalVal);
+    syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     startWorkoutRest(restSec, nextInfo, feedback);
   } else {
-    session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.SET_ACTIVE : 'SET_ACTIVE');
+    session.mainWorkoutSubState = 'SET_ACTIVE';
+    syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     render();
   }
@@ -1630,6 +1913,7 @@ function skipMainWorkoutSet() {
   if (curSet) {
     curSet.skipped = true;
     curSet.completed = false;
+    curSet.completed_at = null;
     curSet.skipped_at = new Date().toISOString();
   }
 
@@ -1637,24 +1921,47 @@ function skipMainWorkoutSet() {
   const nextSetIdx = curEx.sets.findIndex((s, i) => i > activeSetIdx && !s.completed && !s.skipped);
   if (nextSetIdx !== -1) {
     session.activeSetIndex = nextSetIdx;
-    session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.SET_ACTIVE : 'SET_ACTIVE');
+    session.mainWorkoutSubState = 'SET_ACTIVE';
+    syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     render();
     return;
   }
 
-  // Current exercise completed -> mark exercise completed and advance to next uncompleted exercise
-  curEx.completed = curEx.sets.every(s => s.completed || s.skipped);
+  // Current exercise completed -> mark exercise completed or skipped and advance to next uncompleted exercise
+  const hasCompletedSets = curEx.sets.some(s => s.completed);
+  curEx.completed = curEx.sets.every(s => s.completed || s.skipped) && hasCompletedSets;
+  curEx.skipped = curEx.sets.every(s => s.completed || s.skipped) && !hasCompletedSets;
+  curEx.completed_at = curEx.completed ? new Date().toISOString() : null;
+  curEx.skipped_at = curEx.skipped ? new Date().toISOString() : null;
   const nextExIdx = session.exercises.findIndex((ex, idx) => idx > exIdx && ex.sets.some(s => !s.completed && !s.skipped));
   if (nextExIdx !== -1) {
     session.activeExerciseIndex = nextExIdx;
-    session.activeSetIndex = 0;
+    session.currentExerciseIndex = nextExIdx;
     _selectedWorkoutExIdx = nextExIdx;
-    session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.SET_ACTIVE : 'SET_ACTIVE');
+    session.mainWorkoutSubState = 'SET_ACTIVE';
     const nextEx = session.exercises[nextExIdx];
+    const nextFirstUnresolved = nextEx.sets ? nextEx.sets.findIndex(s => !s.completed && !s.skipped) : 0;
+    session.activeSetIndex = nextFirstUnresolved !== -1 ? nextFirstUnresolved : 0;
     const nextCat = (typeof state !== 'undefined' && state.exercises) ? state.exercises.find(e => e.id === nextEx.exercise_id || e.name === nextEx.exercise_name) : null;
     const nextPattern = nextCat?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(nextEx.exercise_name) : 'push');
     setCurrentMovementPattern(nextPattern, nextEx.exercise_id, nextEx.exercise_name);
+    syncAuthoritativeSessionState(session);
+    saveActiveSession(session);
+    render();
+    return;
+  }
+
+  const anyUnresolvedIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed && !s.skipped));
+  if (anyUnresolvedIdx !== -1) {
+    session.activeExerciseIndex = anyUnresolvedIdx;
+    session.currentExerciseIndex = anyUnresolvedIdx;
+    _selectedWorkoutExIdx = anyUnresolvedIdx;
+    const anyEx = session.exercises[anyUnresolvedIdx];
+    const anyFirstUnresolved = anyEx.sets ? anyEx.sets.findIndex(s => !s.completed && !s.skipped) : 0;
+    session.activeSetIndex = anyFirstUnresolved !== -1 ? anyFirstUnresolved : 0;
+    session.mainWorkoutSubState = 'SET_ACTIVE';
+    syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     render();
     return;
@@ -1662,11 +1969,12 @@ function skipMainWorkoutSet() {
 
   // All exercises in main workout done -> mark COMPLETED and show Main Workout Complete view
   const now = Date.now();
-  session.mainStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.COMPLETED : 'COMPLETED');
-  session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.EXERCISE_COMPLETED : 'EXERCISE_COMPLETED');
+  session.mainStatus = 'COMPLETED';
+  session.mainWorkoutSubState = 'EXERCISE_COMPLETED';
   session.main_completed_at = new Date(now).toISOString();
   session.main_duration_sec = Math.max(0, Math.round((now - (session.main_started_at || session.startTime || now)) / 1000));
   cueExerciseComplete();
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   render();
 }
@@ -1681,10 +1989,10 @@ function startCoolDownFromMain() {
 
   const now = Date.now();
   session.cooldown_started_at = now;
-  session.phase = (typeof WORKOUT_PHASES !== 'undefined' ? WORKOUT_PHASES.COOLDOWN : 'COOLDOWN');
+  session.phase = 'COOLDOWN';
   session.currentPhase = 'cooldown';
-  session.phaseState = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
-  session.cooldownStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
+  session.phaseState = 'ACTIVE';
+  session.cooldownStatus = 'ACTIVE';
   session.cooldown_status = 'in_progress';
   session.cooldownIndex = 0;
   session.cooldown_idx = 0;
@@ -1708,6 +2016,7 @@ function startCoolDownFromMain() {
     pausedMs: 0
   };
 
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   render();
 }
@@ -1718,10 +2027,10 @@ function advanceCooldownStretch() {
   cancelAutoAdvance(false);
   ensureSessionStarted(session);
   session = getActiveSession();
-  const isPaused = session.phaseState === (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.PAUSED : 'PAUSED') || session.status === 'paused';
+  const isPaused = session.phaseState === 'PAUSED' || session.status === 'paused';
   if (isPaused) {
     session.status = 'in_progress';
-    session.phaseState = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
+    session.phaseState = 'ACTIVE';
     session.pausedAt = null;
     startWorkoutDurationTimer();
   }
@@ -1731,6 +2040,8 @@ function advanceCooldownStretch() {
   if (curEx) {
     curEx.completed = true;
     curEx.completed_at = new Date().toISOString();
+    curEx.skipped = false;
+    curEx.skipped_at = null;
   }
   cueSetComplete();
 
@@ -1741,17 +2052,19 @@ function advanceCooldownStretch() {
     const dur = nextEx?.duration_sec || 30;
     session.movementTimer = { isRunning: false, durationSec: dur, remainingSec: dur, startedAt: null, pausedAt: null };
     session.phaseTimer = { isRunning: false, duration: dur, remaining: dur, startedAt: null, pausedMs: 0 };
+    syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     render();
   } else {
-    // Rule 8: Completing all cooldown exercises completes the workout
+    // All cooldown exercises completed -> finish workout
     const now = Date.now();
-    session.cooldownStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.COMPLETED : 'COMPLETED');
+    session.cooldownStatus = 'COMPLETED';
     session.cooldown_status = 'completed';
     session.cooldown_completed_at = new Date(now).toISOString();
     if (session.cooldown_started_at) {
       session.cooldown_duration_sec = Math.max(0, Math.round((now - session.cooldown_started_at) / 1000));
     }
+    syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     finishWorkoutSession();
   }
@@ -1761,20 +2074,21 @@ function skipCooldownPhase() {
   const session = getActiveSession();
   if (!session) return;
   cancelAutoAdvance(false);
-  const isPaused = session.phaseState === (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.PAUSED : 'PAUSED') || session.status === 'paused';
+  const isPaused = session.phaseState === 'PAUSED' || session.status === 'paused';
   if (isPaused) {
     session.status = 'in_progress';
-    session.phaseState = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
+    session.phaseState = 'ACTIVE';
     session.pausedAt = null;
     startWorkoutDurationTimer();
   }
   const now = Date.now();
-  session.cooldownStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.SKIPPED : 'SKIPPED');
+  session.cooldownStatus = 'SKIPPED';
   session.cooldown_status = 'skipped';
   session.cooldown_completed_at = new Date(now).toISOString();
   if (session.cooldown_started_at) {
     session.cooldown_duration_sec = Math.max(0, Math.round((now - session.cooldown_started_at) / 1000));
   }
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   finishWorkoutSession();
 }
@@ -1790,6 +2104,8 @@ function skipCooldownExercise() {
   const cur = session.cooldown[idx];
   if (cur) {
     cur.skipped = true;
+    cur.completed = false;
+    cur.completed_at = null;
     cur.skipped_at = new Date().toISOString();
   }
   if (idx + 1 < session.cooldown.length) {
@@ -1799,10 +2115,20 @@ function skipCooldownExercise() {
     const dur = next?.duration_sec || 30;
     session.movementTimer = { isRunning: false, durationSec: dur, remainingSec: dur, startedAt: null, pausedAt: null };
     session.phaseTimer = { isRunning: false, duration: dur, remaining: dur, startedAt: null, pausedMs: 0 };
+    syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     render();
   } else {
-    advanceCooldownStretch();
+    const now = Date.now();
+    session.cooldownStatus = 'COMPLETED';
+    session.cooldown_status = 'completed';
+    session.cooldown_completed_at = new Date(now).toISOString();
+    if (session.cooldown_started_at) {
+      session.cooldown_duration_sec = Math.max(0, Math.round((now - session.cooldown_started_at) / 1000));
+    }
+    syncAuthoritativeSessionState(session);
+    saveActiveSession(session);
+    finishWorkoutSession();
   }
 }
 
@@ -1916,8 +2242,8 @@ function renderWarmupCompleteView(session) {
         <div class="runner-transition-badge-wrap">
           <span class="runner-transition-fire-icon">🔥</span>
         </div>
-        <h2 class="runner-transition-title">Time to Train.</h2>
-        <p class="runner-transition-sub">Warm-Up complete. Your body is primed and muscles are activated.</p>
+        <h2 class="runner-transition-title">Warm-Up Complete</h2>
+        <p class="runner-transition-sub">Warm-Up complete. You're ready for the main workout. Your body is primed and muscles are activated.</p>
 
         <div class="runner-transition-chips-row">
           <div class="runner-transition-chip">
@@ -1931,7 +2257,7 @@ function renderWarmupCompleteView(session) {
         </div>
 
         <button class="btn btn-primary btn-hero runner-transition-cta-btn" type="button" onclick="startMainWorkoutFromWarmup()">
-          <span>Begin Main Workout</span>
+          <span>Start Main Workout</span>
           ${renderIcon('arrowRight', 'cx-icon cx-icon-sm cx-icon-inline')}
         </button>
       </div>
@@ -1965,7 +2291,7 @@ function renderMainWorkoutCompleteView(session) {
         <div class="runner-transition-badge-wrap">
           <span class="runner-transition-fire-icon">⚡</span>
         </div>
-        <h2 class="runner-transition-title">Main Training Finished.</h2>
+        <h2 class="runner-transition-title">Main Workout Complete</h2>
         <p class="runner-transition-sub">All strength and skill sets completed. Move into cool-down for recovery.</p>
 
         <div class="runner-transition-chips-row">
@@ -1980,7 +2306,7 @@ function renderMainWorkoutCompleteView(session) {
         </div>
 
         <button class="btn btn-primary btn-hero runner-transition-cta-btn" type="button" onclick="startCoolDownFromMain()">
-          <span>Begin Cool Down</span>
+          <span>Start Cool Down</span>
           ${renderIcon('arrowRight', 'cx-icon cx-icon-sm cx-icon-inline')}
         </button>
       </div>
@@ -2220,13 +2546,11 @@ function getWorkoutSessionSummaryMetrics(session) {
     };
   }
 
+  const auth = getAuthoritativeSessionState(session);
   const workoutName = session.routine || session.workout_name || 'Workout Session';
   const durationSec = session.duration_sec != null ? session.duration_sec : getSessionElapsedSec(session);
   const durationFormatted = fmtSecs(durationSec);
 
-  let setsCompleted = 0;
-  let setsSkipped = 0;
-  let totalSets = 0;
   let totalVolumeKg = 0;
   let totalReps = 0;
   let totalHoldSec = 0;
@@ -2237,36 +2561,21 @@ function getWorkoutSessionSummaryMetrics(session) {
   let maxHoldSec = 0;
   let maxHoldEx = '';
 
-  const uniqueExercises = new Set();
-  const completedExercises = new Set();
-
   // 1. Warm-up
-  (session.warmup || []).forEach(w => {
-    uniqueExercises.add(w.exercise_name || w.exercise_id);
-    totalSets += 1;
+  auth.warmup.list.forEach(w => {
     if (w.completed) {
-      setsCompleted += 1;
-      completedExercises.add(w.exercise_name || w.exercise_id);
       const isHold = w.exercise_type === 'duration';
       const actual = Number(w.actual_val !== null && w.actual_val !== undefined ? w.actual_val : (w.duration_sec || w.reps || (isHold ? 30 : 10)));
       if (isHold) totalHoldSec += actual;
       else totalReps += actual;
-    } else if (w.skipped) {
-      setsSkipped += 1;
     }
   });
 
   // 2. Main Workout
-  (session.exercises || []).forEach(ex => {
-    uniqueExercises.add(ex.exercise_name || ex.exercise_id);
+  auth.main.list.forEach(ex => {
     const isHold = ex.exercise_type === 'duration';
-    let exHasCompletedSet = false;
-
     (ex.sets || []).forEach(s => {
-      totalSets += 1;
       if (s.completed) {
-        setsCompleted += 1;
-        exHasCompletedSet = true;
         const actual = Number(s.actual_val !== null && s.actual_val !== undefined ? s.actual_val : (isHold ? 0 : s.target_val || 10));
         const weight = s.weight_kg != null && s.weight_kg !== '' ? Number(s.weight_kg) : 0;
 
@@ -2291,34 +2600,25 @@ function getWorkoutSessionSummaryMetrics(session) {
             maxWeightEx = `${ex.exercise_name} (${actual} reps @ ${weight}kg)`;
           }
         }
-      } else if (s.skipped) {
-        setsSkipped += 1;
       }
     });
-
-    if (exHasCompletedSet) {
-      completedExercises.add(ex.exercise_name || ex.exercise_id);
-    }
   });
 
   // 3. Cool Down
-  (session.cooldown || []).forEach(c => {
-    uniqueExercises.add(c.exercise_name || c.exercise_id);
-    totalSets += 1;
+  auth.cooldown.list.forEach(c => {
     if (c.completed) {
-      setsCompleted += 1;
-      completedExercises.add(c.exercise_name || c.exercise_id);
       const isHold = c.exercise_type === 'duration';
       const actual = Number(c.actual_val !== null && c.actual_val !== undefined ? c.actual_val : (c.duration_sec || c.reps || (isHold ? 30 : 10)));
       if (isHold) totalHoldSec += actual;
       else totalReps += actual;
-    } else if (c.skipped) {
-      setsSkipped += 1;
     }
   });
 
-  const exercisesCompleted = completedExercises.size;
-  const totalExercises = uniqueExercises.size;
+  const exercisesCompleted = auth.overall.completedExercises;
+  const totalExercises = auth.overall.totalExercises;
+  const setsCompleted = auth.overall.completedSets;
+  const setsSkipped = auth.overall.skippedSets;
+  const totalSets = auth.overall.totalSets;
   const completionPercentage = totalSets > 0 ? Math.round((setsCompleted / totalSets) * 100) : 100;
   const volumeText = totalVolumeKg > 0 ? `${totalVolumeKg.toLocaleString()} kg` : 'Bodyweight';
   const calories = Math.max(15, Math.round((durationSec / 60) * 6.5 + (totalReps * 0.18) + (totalVolumeKg > 0 ? totalVolumeKg * 0.012 : 0) + (totalHoldSec * 0.08)));
@@ -2739,6 +3039,8 @@ function stopWorkoutHold(saveAndComplete = true) {
     set.actual_val = finalVal;
     set.completed = true;
     set.completed_at = new Date().toISOString();
+    set.skipped = false;
+    set.skipped_at = null;
 
     cueHoldSave();
     if (typeof checkAndCelebratePR === 'function') {
@@ -2746,86 +3048,80 @@ function stopWorkoutHold(saveAndComplete = true) {
     }
 
     const currentEx = session.exercises[exIdx];
-    const isExDone = currentEx.sets.every(s => s.completed);
-    const isEntireMainWorkoutDone = session.exercises.every(ex => ex.sets.every(s => s.completed));
+    const isExDone = currentEx.sets.every(s => s.completed || s.skipped);
+    currentEx.completed = isExDone;
+    if (isExDone) {
+      currentEx.completed_at = new Date().toISOString();
+      cueExerciseComplete();
+    } else {
+      cueSetComplete();
+    }
+
+    const isEntireMainWorkoutDone = session.exercises.every(ex => ex.sets && ex.sets.every(s => s.completed || s.skipped));
 
     if (isEntireMainWorkoutDone) {
       const now = Date.now();
-      session.mainStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.COMPLETED : 'COMPLETED');
-      session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.EXERCISE_COMPLETED : 'EXERCISE_COMPLETED');
+      session.mainStatus = 'COMPLETED';
+      session.mainWorkoutSubState = 'EXERCISE_COMPLETED';
       session.main_completed_at = new Date(now).toISOString();
       session.main_duration_sec = Math.max(0, Math.round((now - (session.main_started_at || session.startTime || now)) / 1000));
 
-      if (session.cooldown && session.cooldown.length > 0 && session.cooldownStatus !== (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.SKIPPED : 'SKIPPED') && session.cooldown_status !== 'skipped' && session.cooldown_status !== 'completed') {
-        stopWorkoutRest();
-        session.cooldown_started_at = now;
-        session.phase = (typeof WORKOUT_PHASES !== 'undefined' ? WORKOUT_PHASES.COOLDOWN : 'COOLDOWN');
-        session.currentPhase = 'cooldown';
-        session.cooldownStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
-        session.cooldown_status = 'in_progress';
-        session.cooldownIndex = 0;
-        session.cooldown_idx = 0;
-        const curCd = session.cooldown[0];
-        const isHoldCd = curCd?.exercise_type === 'duration';
-        const dur = curCd?.duration_sec || 30;
-        session.movementTimer = {
-          isRunning: isHoldCd,
-          durationSec: dur,
-          remainingSec: dur,
-          startedAt: isHoldCd ? Date.now() : null,
-          pausedAt: null
-        };
-        session.phaseTimer = {
-          isRunning: isHoldCd,
-          duration: dur,
-          remaining: dur,
-          startedAt: isHoldCd ? Date.now() : null,
-          pausedMs: 0
-        };
-
-        cueExerciseComplete();
-        showToast('Main Workout Complete! Entering Cool-down');
-        saveActiveSession(session);
-        render();
-        return;
-      }
+      cueExerciseComplete();
+      showToast('Main Workout Complete! Ready for Cool Down');
+      syncAuthoritativeSessionState(session);
+      saveActiveSession(session);
+      render();
+      return;
     }
 
     if (isExDone) {
-      session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.EXERCISE_COMPLETED : 'EXERCISE_COMPLETED');
-      const nextUncompletedIdx = session.exercises.findIndex((ex, idx) => idx > exIdx && ex.sets.some(s => !s.completed));
+      session.mainWorkoutSubState = 'EXERCISE_COMPLETED';
+      const nextUncompletedIdx = session.exercises.findIndex((ex, idx) => idx > exIdx && ex.sets.some(s => !s.completed && !s.skipped));
       let nextIdx = -1;
       if (nextUncompletedIdx !== -1) {
         nextIdx = nextUncompletedIdx;
       } else {
-        const anyUncompletedIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed));
+        const anyUncompletedIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed && !s.skipped));
         if (anyUncompletedIdx !== -1) {
           nextIdx = anyUncompletedIdx;
         }
       }
       if (nextIdx !== -1) {
         session.activeExerciseIndex = nextIdx;
-        session.activeSetIndex = 0;
+        session.currentExerciseIndex = nextIdx;
         _selectedWorkoutExIdx = nextIdx;
         const nextEx = session.exercises[nextIdx];
+        const nextFirstUnresolved = nextEx.sets ? nextEx.sets.findIndex(s => !s.completed && !s.skipped) : 0;
+        session.activeSetIndex = nextFirstUnresolved !== -1 ? nextFirstUnresolved : 0;
         const nextCat = (typeof state !== 'undefined' && state.exercises) ? state.exercises.find(e => e.id === nextEx.exercise_id || e.name === nextEx.exercise_name) : null;
         const nextPattern = nextCat?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(nextEx.exercise_name) : 'push');
         setCurrentMovementPattern(nextPattern, nextEx.exercise_id, nextEx.exercise_name);
       }
     } else {
-      session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.SET_COMPLETED : 'SET_COMPLETED');
+      const nextSetIdx = currentEx.sets.findIndex((s, i) => i > setIdx && !s.completed && !s.skipped);
+      if (nextSetIdx !== -1) {
+        session.activeSetIndex = nextSetIdx;
+      }
+      session.mainWorkoutSubState = 'SET_COMPLETED';
     }
 
     // Trigger Rest Countdown
     const restSec = currentEx.rest_sec || 90;
-    const nextInfo = getNextSetDescription(session, exIdx, setIdx);
-    const feedback = generateSetCompletionFeedback(session, exIdx, setIdx, finalVal);
-    saveActiveSession(session);
-    startWorkoutRest(restSec, nextInfo, feedback);
-    return;
+    if (restSec > 0) {
+      session.mainWorkoutSubState = 'RESTING';
+      const nextInfo = getNextSetDescription(session, exIdx, setIdx);
+      const feedback = generateSetCompletionFeedback(session, exIdx, setIdx, finalVal);
+      syncAuthoritativeSessionState(session);
+      saveActiveSession(session);
+      startWorkoutRest(restSec, nextInfo, feedback);
+      return;
+    }
   }
 
-  if (session) saveActiveSession(session);
+  if (session) {
+    syncAuthoritativeSessionState(session);
+    saveActiveSession(session);
+  }
   render();
 }
 
@@ -3093,18 +3389,44 @@ function renderWorkoutRestView(session) {
   const isRestComplete = _workoutRestState.completed || remaining <= 0;
   const isWarning = remaining <= 10 && remaining > 0;
 
+  const isStarted = !!(session.startTime || session.startedAt) && session.status !== 'ready';
+  const isPaused = isStarted && session.status === 'paused';
+  const elapsedSec = isStarted ? getSessionElapsedSec(session) : 0;
+
   const depletingPct = total > 0 ? Math.max(0, Math.min(100, Math.round((remaining / total) * 100))) : 0;
   const nextInfo = _workoutRestState.nextInfo || getNextSetDescription(session, exIdx, activeSetIdx);
 
+  const completedMainSetsInEx = currentEx.sets ? currentEx.sets.filter(s => s.completed).length : 0;
+
   return `
-    <div class="runner-active-exercise-card runner-rest-morph-card animate-card-reveal">
+    <div class="runner-active-exercise-card runner-rest-morph-card runner-rest-dedicated-card animate-card-reveal">
+      <!-- Mobile Top Bar Controls -->
+      <div class="runner-card-top-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <button class="runner-card-back-btn" onclick="openExitWorkoutModal()" aria-label="Exit Workout" title="Exit Workout">
+          ${renderIcon('chevronLeft', 'cx-icon cx-icon-sm')}
+        </button>
+        <div class="runner-card-title-group" style="text-align:center;">
+          <span class="runner-card-phase-badge">REST INTERVAL</span>
+          <h2 class="runner-card-title" style="font-size:14px; font-weight:700;">EXERCISE ${exIdx + 1} OF ${totalExCount}</h2>
+        </div>
+        <div class="runner-card-top-right" style="display:flex; align-items:center; gap:8px;">
+          <span class="runner-card-timer mono" id="workout-elapsed-val">${fmtSecs(elapsedSec)}</span>
+          <button class="runner-card-pause-btn ${isPaused ? 'is-paused' : ''}" type="button" onclick="togglePauseWorkoutSession()" title="${isPaused ? 'Resume Workout' : 'Pause Workout'}" aria-label="${isPaused ? 'Resume Workout' : 'Pause Workout'}">
+            ${renderIcon(isPaused ? 'play' : 'pause', 'cx-icon cx-icon-xs')}
+          </button>
+          <button class="runner-card-finish-btn" type="button" onclick="requestFinishWorkout()" title="Finish Workout">
+            Finish
+          </button>
+        </div>
+      </div>
+
       <!-- Top Rest Header -->
       <div class="runner-card-top-header-row">
         <div class="runner-card-header-left">
-          <span class="runner-badge-phase-pill phase-rest">${isRestComplete ? 'REST COMPLETE' : 'REST INTERVAL'}</span>
+          <span class="runner-badge-phase-pill phase-rest">${isRestComplete ? 'Rest Complete' : 'REST'}</span>
         </div>
         <button class="btn btn-ghost btn-sm" type="button" onclick="stopWorkoutRest()" title="Skip rest countdown">
-          Skip Rest →
+          Skip Rest
         </button>
       </div>
 
@@ -3124,23 +3446,23 @@ function renderWorkoutRestView(session) {
       <!-- Next Set Context Preview Zone -->
       <div class="runner-rest-next-preview-card">
         <span class="runner-rest-next-tag">NEXT SET</span>
-        <div class="runner-rest-next-name">${currentEx.exercise_name} · Set ${activeSetIdx + 1} of ${totalSets}</div>
-        <div class="runner-rest-next-meta">Target: ${currentEx.target_val || 15} reps ${nextInfo ? `· ${nextInfo}` : ''}</div>
+        <div class="runner-rest-next-name">Next: Set ${activeSetIdx + 1} · ${currentEx.exercise_name}</div>
+        <div class="runner-rest-next-meta">Exercise ${exIdx + 1} of ${totalExCount} · ${completedMainSetsInEx} of ${totalSets} sets completed</div>
       </div>
 
       <!-- Quick Rest Adjust Steppers (-15s / +15s) -->
       ${!isRestComplete ? `
         <div class="runner-rest-adjust-row">
-          <button class="btn btn-secondary btn-sm" type="button" onclick="adjustWorkoutRest(-15)">-15s</button>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="adjustWorkoutRest(-15)">-15 sec</button>
           <button class="btn btn-secondary btn-sm" type="button" onclick="togglePauseWorkoutSession()">
             ${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} Pause
           </button>
-          <button class="btn btn-secondary btn-sm" type="button" onclick="adjustWorkoutRest(15)">+15s</button>
+          <button class="btn btn-secondary btn-sm" type="button" onclick="adjustWorkoutRest(15)">+15 sec</button>
         </div>
       ` : `
         <div class="runner-cta-zone" style="margin-top: 16px;">
           <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="startMainWorkoutSet()">
-            <span>START NEXT SET</span>
+            <span>Start Set</span>
             ${renderIcon('arrowRight', 'cx-icon cx-icon-sm cx-icon-inline')}
           </button>
         </div>
@@ -3210,108 +3532,150 @@ function toggleWorkoutSet(exIdx, setIdx) {
   cancelAutoAdvance(false);
   ensureSessionStarted(session);
   session = getActiveSession();
+
   const set = session.exercises[exIdx].sets[setIdx];
-  set.completed = !set.completed;
-  set.completed_at = set.completed ? new Date().toISOString() : null;
+  const willBeCompleted = !set.completed;
+  set.completed = willBeCompleted;
+  set.completed_at = willBeCompleted ? new Date().toISOString() : null;
+  if (willBeCompleted) {
+    set.skipped = false;
+    set.skipped_at = null;
+  } else {
+    set.skipped = false;
+    set.skipped_at = null;
+  }
 
   session.activeExerciseIndex = exIdx;
+  session.currentExerciseIndex = exIdx;
   session.activeSetIndex = setIdx;
   _selectedWorkoutExIdx = exIdx;
 
-  if (set.completed) {
-    const currentEx = session.exercises[exIdx];
-    const isExDone = currentEx.sets.every(s => s.completed);
-    if (isExDone) {
-      cueExerciseComplete();
-    } else {
-      cueSetComplete();
-    }
+  const currentEx = session.exercises[exIdx];
+  const isExDone = currentEx.sets.every(s => s.completed || s.skipped);
+  const hasCompletedSets = currentEx.sets.some(s => s.completed);
+  currentEx.completed = isExDone && hasCompletedSets;
+  currentEx.skipped = isExDone && !hasCompletedSets;
+  currentEx.completed_at = currentEx.completed ? new Date().toISOString() : null;
+  currentEx.skipped_at = currentEx.skipped ? new Date().toISOString() : null;
+
+  if (currentEx.completed) {
+    cueExerciseComplete();
+  } else if (willBeCompleted) {
+    cueSetComplete();
+  }
+
+  if (willBeCompleted) {
     const actualVal = Number(set.actual_val !== null && set.actual_val !== undefined && set.actual_val !== '' ? set.actual_val : set.target_val);
     if (typeof checkAndCelebratePR === 'function') {
       checkAndCelebratePR(session.exercises[exIdx].exercise_id, actualVal, set.weight_kg);
     }
 
-    // Rule 6 & 7: Check entire main workout completion
-    const isEntireMainWorkoutDone = session.exercises.every(ex => ex.sets.every(s => s.completed));
+    // Check entire main workout completion
+    const isEntireMainWorkoutDone = session.exercises.every(ex => ex.sets && ex.sets.every(s => s.completed || s.skipped));
     if (isEntireMainWorkoutDone) {
       const now = Date.now();
-      session.mainStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.COMPLETED : 'COMPLETED');
-      session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.EXERCISE_COMPLETED : 'EXERCISE_COMPLETED');
+      session.mainStatus = 'COMPLETED';
+      session.mainWorkoutSubState = 'EXERCISE_COMPLETED';
       session.main_completed_at = new Date(now).toISOString();
       session.main_duration_sec = Math.max(0, Math.round((now - (session.main_started_at || session.startTime || now)) / 1000));
 
-      if (session.cooldown && session.cooldown.length > 0 && session.cooldownStatus !== (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.SKIPPED : 'SKIPPED') && session.cooldown_status !== 'skipped' && session.cooldown_status !== 'completed') {
+      if (session.cooldown && session.cooldown.length > 0 && session.cooldownStatus !== 'SKIPPED' && session.cooldown_status !== 'skipped' && session.cooldown_status !== 'completed' && session.cooldownStatus !== 'COMPLETED') {
         stopWorkoutRest();
         session.cooldown_started_at = now;
-        session.phase = (typeof WORKOUT_PHASES !== 'undefined' ? WORKOUT_PHASES.COOLDOWN : 'COOLDOWN');
+        session.phase = 'COOLDOWN';
         session.currentPhase = 'cooldown';
-        session.cooldownStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
+        session.cooldownStatus = 'ACTIVE';
         session.cooldown_status = 'in_progress';
         session.cooldownIndex = 0;
         session.cooldown_idx = 0;
         const curCd = session.cooldown[0];
-        const isHold = curCd?.exercise_type === 'duration';
+        const isHoldCd = curCd?.exercise_type === 'duration';
         const dur = curCd?.duration_sec || 30;
         session.movementTimer = {
-          isRunning: isHold,
+          isRunning: isHoldCd,
           durationSec: dur,
           remainingSec: dur,
-          startedAt: isHold ? Date.now() : null,
+          startedAt: isHoldCd ? Date.now() : null,
           pausedAt: null
         };
         session.phaseTimer = {
-          isRunning: isHold,
+          isRunning: isHoldCd,
           duration: dur,
           remaining: dur,
-          startedAt: isHold ? Date.now() : null,
+          startedAt: isHoldCd ? Date.now() : null,
           pausedMs: 0
         };
-
         cueExerciseComplete();
         showToast('Main Workout Complete! Entering Cool-down');
+        syncAuthoritativeSessionState(session);
         saveActiveSession(session);
         render();
         return;
       }
+
+      cueExerciseComplete();
+      showToast('Main Workout Complete! Ready for Cool Down');
+      syncAuthoritativeSessionState(session);
+      saveActiveSession(session);
+      render();
+      return;
     }
 
     if (isExDone) {
-      session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.EXERCISE_COMPLETED : 'EXERCISE_COMPLETED');
-      const nextUncompletedIdx = session.exercises.findIndex((ex, idx) => idx > exIdx && ex.sets.some(s => !s.completed));
+      session.mainWorkoutSubState = 'EXERCISE_COMPLETED';
+      const nextUncompletedIdx = session.exercises.findIndex((ex, idx) => idx > exIdx && ex.sets.some(s => !s.completed && !s.skipped));
       let nextIdx = -1;
       if (nextUncompletedIdx !== -1) {
         nextIdx = nextUncompletedIdx;
       } else {
-        const anyUncompletedIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed));
+        const anyUncompletedIdx = session.exercises.findIndex(ex => ex.sets.some(s => !s.completed && !s.skipped));
         if (anyUncompletedIdx !== -1) {
           nextIdx = anyUncompletedIdx;
         }
       }
       if (nextIdx !== -1) {
         session.activeExerciseIndex = nextIdx;
-        session.activeSetIndex = 0;
+        session.currentExerciseIndex = nextIdx;
         _selectedWorkoutExIdx = nextIdx;
         const nextEx = session.exercises[nextIdx];
+        const nextFirstUnresolved = nextEx.sets ? nextEx.sets.findIndex(s => !s.completed && !s.skipped) : 0;
+        session.activeSetIndex = nextFirstUnresolved !== -1 ? nextFirstUnresolved : 0;
         const nextCat = (typeof state !== 'undefined' && state.exercises) ? state.exercises.find(e => e.id === nextEx.exercise_id || e.name === nextEx.exercise_name) : null;
         const nextPattern = nextCat?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(nextEx.exercise_name) : 'push');
         setCurrentMovementPattern(nextPattern, nextEx.exercise_id, nextEx.exercise_name);
       }
     } else {
-      session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.SET_COMPLETED : 'SET_COMPLETED');
+      const nextSetIdx = currentEx.sets.findIndex((s, i) => i > setIdx && !s.completed && !s.skipped);
+      if (nextSetIdx !== -1) {
+        session.activeSetIndex = nextSetIdx;
+      }
+      session.mainWorkoutSubState = 'SET_COMPLETED';
     }
 
     // Start Rest Timer for this exercise with contextual feedback
     const restSec = currentEx.rest_sec || 90;
-    const nextInfo = getNextSetDescription(session, exIdx, setIdx);
-    const feedback = generateSetCompletionFeedback(session, exIdx, setIdx, actualVal);
-    saveActiveSession(session);
-    startWorkoutRest(restSec, nextInfo, feedback);
-    return;
+    if (restSec > 0) {
+      session.mainWorkoutSubState = 'RESTING';
+      const nextInfo = getNextSetDescription(session, exIdx, setIdx);
+      const feedback = generateSetCompletionFeedback(session, exIdx, setIdx, actualVal);
+      syncAuthoritativeSessionState(session);
+      saveActiveSession(session);
+      startWorkoutRest(restSec, nextInfo, feedback);
+      return;
+    }
   } else {
+    // Unchecking set
+    const currentEx = session.exercises[exIdx];
+    currentEx.completed = false;
+    currentEx.completed_at = null;
+    session.mainStatus = 'ACTIVE';
+    session.main_completed_at = null;
     stopWorkoutRest();
-    session.mainWorkoutSubState = (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.SET_ACTIVE : 'SET_ACTIVE');
-    saveActiveSession(session);
+    session.mainWorkoutSubState = 'SET_ACTIVE';
   }
+
+  syncAuthoritativeSessionState(session);
+  saveActiveSession(session);
   render();
 }
 
@@ -3355,6 +3719,7 @@ async function finishWorkoutSession(isEarly = false) {
   session.is_early_finish = !!isEarly;
   session.phase = (typeof WORKOUT_PHASES !== 'undefined' ? WORKOUT_PHASES.COMPLETED : 'COMPLETED');
   session.phaseState = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.COMPLETED : 'COMPLETED');
+  session.currentPhase = 'completed';
 
   // 1. Log Warm-up items if completed
   if (session.warmup && session.warmup.length > 0) {
@@ -3527,6 +3892,7 @@ async function finishWorkoutSession(isEarly = false) {
   };
 
   session.exercisesSnapshot = assembledSnapshotExercises;
+  syncAuthoritativeSessionState(session);
   const summaryData = getWorkoutSessionSummaryMetrics(session);
   session.summaryData = summaryData;
 
@@ -4463,20 +4829,12 @@ function getPhaseLockStatus(session, targetPhase) {
     return { isLocked: false, status: 'available', lockReason: '' };
   }
 
-  const warmupList = getWarmupExercises(session);
-  const isWarmupDone = session.warmupStatus === 'COMPLETED' || session.warmup_status === 'completed' || (!warmupList || warmupList.length === 0) || (warmupList.length > 0 && warmupList.every(w => w.completed || w.skipped));
-  const isWarmupSkipped = session.warmupStatus === 'SKIPPED' || session.warmup_status === 'skipped';
-  const isWarmupResolved = isWarmupDone || isWarmupSkipped;
+  const auth = getAuthoritativeSessionState(session);
+  const isWarmupResolved = auth.warmup.isDone || auth.warmup.isSkipped || auth.warmup.total === 0;
+  const isMainDone = auth.main.isDone || auth.main.totalSets === 0;
+  const isCooldownResolved = auth.cooldown.isDone || auth.cooldown.isSkipped || auth.cooldown.total === 0;
 
-  const mainList = getMainWorkoutExercises(session);
-  const isMainDone = session.mainStatus === 'COMPLETED' || (!mainList || mainList.length === 0) || (mainList.length > 0 && mainList.every(ex => ex.sets && ex.sets.every(s => s.completed || s.skipped)));
-
-  const cooldownList = getCooldownExercises(session);
-  const isCooldownDone = session.cooldownStatus === 'COMPLETED' || session.cooldown_status === 'completed' || (!cooldownList || cooldownList.length === 0) || (cooldownList.length > 0 && cooldownList.every(c => c.completed || c.skipped));
-  const isCooldownSkipped = session.cooldownStatus === 'SKIPPED' || session.cooldown_status === 'skipped';
-  const isCooldownResolved = isCooldownDone || isCooldownSkipped;
-
-  const currentPhaseRaw = isWarmupPhase(session.phase) ? 'warmup' : (isCooldownPhase(session.phase) ? 'cooldown' : 'main');
+  const currentPhaseRaw = auth.currentPhase;
   const target = targetPhase === 'warmup' ? 'warmup' : (targetPhase === 'cooldown' ? 'cooldown' : 'main');
 
   if (target === 'warmup') {
@@ -4624,23 +4982,27 @@ function renderWorkoutSegmentedTabs(session, currentPhase) {
   const isMainDone = mainLock.status === 'completed';
   const isCooldownDone = cooldownLock.status === 'completed';
 
+  const warmupClasses = `runner-phase-pill-btn phase-warmup runner-segmented-tab-btn ${isWarmupActive ? 'is-active' : ''} ${isWarmupDone ? 'is-done' : ''}`.replace(/\s+/g, ' ').trim();
+  const mainClasses = `runner-phase-pill-btn phase-main runner-segmented-tab-btn ${isMainActive ? 'is-active' : ''} ${isMainDone ? 'is-done' : ''} ${mainLock.isLocked ? 'is-locked' : ''}`.replace(/\s+/g, ' ').trim();
+  const cooldownClasses = `runner-phase-pill-btn phase-cooldown runner-segmented-tab-btn ${isCooldownActive ? 'is-active' : ''} ${isCooldownDone ? 'is-done' : ''} ${cooldownLock.isLocked ? 'is-locked' : ''}`.replace(/\s+/g, ' ').trim();
+
   return `
-    <div class="runner-phase-pill-group" role="tablist" aria-label="Workout Phase Navigation">
-      <button class="runner-phase-pill-btn phase-warmup ${isWarmupActive ? 'is-active' : ''} ${isWarmupDone ? 'is-done' : ''}" type="button" role="tab" aria-selected="${isWarmupActive}" onclick="setWorkoutPhase('warmup')" title="${warmupLock.isLocked ? warmupLock.lockReason : 'Warm-Up Phase'}">
+    <div class="runner-phase-pill-group runner-segmented-tabs" role="tablist" aria-label="Workout Phase Navigation">
+      <button class="${warmupClasses}" type="button" role="tab" aria-selected="${isWarmupActive}" onclick="setWorkoutPhase('warmup')" title="${warmupLock.isLocked ? warmupLock.lockReason : 'Warm-Up Phase'}">
         <span class="runner-phase-dot">${isWarmupDone ? '✓' : '⚡'}</span>
         <span class="runner-phase-label">Warm-Up</span>
       </button>
 
       <span class="runner-phase-connector">→</span>
 
-      <button class="runner-phase-pill-btn phase-main ${isMainActive ? 'is-active' : ''} ${isMainDone ? 'is-done' : ''} ${mainLock.isLocked ? 'is-locked' : ''}" type="button" role="tab" aria-selected="${isMainActive}" onclick="setWorkoutPhase('main')" title="${mainLock.isLocked ? mainLock.lockReason : 'Main Workout Phase'}">
+      <button class="${mainClasses}" type="button" role="tab" aria-selected="${isMainActive}" onclick="setWorkoutPhase('main')" title="${mainLock.isLocked ? mainLock.lockReason : 'Main Workout Phase'}">
         <span class="runner-phase-dot">${isMainDone ? '✓' : (mainLock.isLocked ? '🔒' : '◎')}</span>
         <span class="runner-phase-label">Train</span>
       </button>
 
       <span class="runner-phase-connector">→</span>
 
-      <button class="runner-phase-pill-btn phase-cooldown ${isCooldownActive ? 'is-active' : ''} ${isCooldownDone ? 'is-done' : ''} ${cooldownLock.isLocked ? 'is-locked' : ''}" type="button" role="tab" aria-selected="${isCooldownActive}" onclick="setWorkoutPhase('cooldown')" title="${cooldownLock.isLocked ? cooldownLock.lockReason : 'Cool Down Phase'}">
+      <button class="${cooldownClasses}" type="button" role="tab" aria-selected="${isCooldownActive}" onclick="setWorkoutPhase('cooldown')" title="${cooldownLock.isLocked ? cooldownLock.lockReason : 'Cool Down Phase'}">
         <span class="runner-phase-dot">${isCooldownDone ? '✓' : (cooldownLock.isLocked ? '🔒' : '❄')}</span>
         <span class="runner-phase-label">Cool Down</span>
       </button>
@@ -4684,6 +5046,7 @@ function setWorkoutPhase(phase) {
 
   session.currentPhase = rawShort;
   session.phase = normalized;
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   render();
 }
@@ -4693,15 +5056,18 @@ function toggleWarmupItemComplete(idx) {
   if (!session || !session.warmup || !session.warmup[idx]) return;
   ensureSessionStarted(session);
   const item = session.warmup[idx];
-  item.completed = !item.completed;
-  item.completed_at = item.completed ? new Date().toISOString() : null;
-
-  const allDone = session.warmup.every(w => w.completed);
-  if (allDone) {
-    session.warmup_status = 'completed';
-  } else if (session.warmup.some(w => w.completed)) {
-    session.warmup_status = 'in_progress';
+  const willBeCompleted = !item.completed;
+  item.completed = willBeCompleted;
+  item.completed_at = willBeCompleted ? new Date().toISOString() : null;
+  if (willBeCompleted) {
+    item.skipped = false;
+    item.skipped_at = null;
   }
+
+  session.warmupIndex = idx;
+  session.warmup_idx = idx;
+
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   render();
 }
@@ -4711,15 +5077,18 @@ function toggleCooldownItemComplete(idx) {
   if (!session || !session.cooldown || !session.cooldown[idx]) return;
   ensureSessionStarted(session);
   const item = session.cooldown[idx];
-  item.completed = !item.completed;
-  item.completed_at = item.completed ? new Date().toISOString() : null;
-
-  const allDone = session.cooldown.every(c => c.completed);
-  if (allDone) {
-    session.cooldown_status = 'completed';
-  } else if (session.cooldown.some(c => c.completed)) {
-    session.cooldown_status = 'in_progress';
+  const willBeCompleted = !item.completed;
+  item.completed = willBeCompleted;
+  item.completed_at = willBeCompleted ? new Date().toISOString() : null;
+  if (willBeCompleted) {
+    item.skipped = false;
+    item.skipped_at = null;
   }
+
+  session.cooldownIndex = idx;
+  session.cooldown_idx = idx;
+
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   render();
 }
@@ -4730,10 +5099,22 @@ function toggleMainExerciseComplete(exIdx) {
   ensureSessionStarted(session);
   const ex = session.exercises[exIdx];
   const allCompleted = ex.sets.every(s => s.completed);
+  const willBeCompleted = !allCompleted;
   ex.sets.forEach(s => {
-    s.completed = !allCompleted;
-    s.completed_at = !allCompleted ? new Date().toISOString() : null;
+    s.completed = willBeCompleted;
+    s.completed_at = willBeCompleted ? new Date().toISOString() : null;
+    if (willBeCompleted) {
+      s.skipped = false;
+      s.skipped_at = null;
+    }
   });
+  ex.completed = willBeCompleted;
+  ex.completed_at = willBeCompleted ? new Date().toISOString() : null;
+  session.activeExerciseIndex = exIdx;
+  session.currentExerciseIndex = exIdx;
+  _selectedWorkoutExIdx = exIdx;
+
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   render();
 }
@@ -4752,14 +5133,14 @@ function startPhaseAutoRunner(phase) {
   }
 
   session.currentPhase = phase;
-  session.phase = (phase === 'warmup' && typeof WORKOUT_PHASES !== 'undefined') ? WORKOUT_PHASES.WARMUP : ((phase === 'main' && typeof WORKOUT_PHASES !== 'undefined') ? WORKOUT_PHASES.MAIN_WORKOUT : ((phase === 'cooldown' && typeof WORKOUT_PHASES !== 'undefined') ? WORKOUT_PHASES.COOLDOWN : phase));
-  session.phaseState = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
+  session.phase = (phase === 'warmup') ? 'WARMUP' : ((phase === 'main') ? 'MAIN_WORKOUT' : ((phase === 'cooldown') ? 'COOLDOWN' : phase));
+  session.phaseState = 'ACTIVE';
 
   if (phase === 'warmup') {
-    session.warmupStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
+    session.warmupStatus = 'ACTIVE';
     session.warmup_status = 'in_progress';
     const list = session.warmup || [];
-    const firstUncompleted = list.findIndex(w => !w.completed);
+    const firstUncompleted = list.findIndex(w => !w.completed && !w.skipped);
     const startIdx = firstUncompleted !== -1 ? firstUncompleted : 0;
     session.warmupIndex = startIdx;
     session.warmup_idx = startIdx;
@@ -4781,8 +5162,10 @@ function startPhaseAutoRunner(phase) {
       pausedMs: 0
     };
   } else if (phase === 'cooldown') {
+    session.cooldownStatus = 'ACTIVE';
+    session.cooldown_status = 'in_progress';
     const list = session.cooldown || [];
-    const firstUncompleted = list.findIndex(c => !c.completed);
+    const firstUncompleted = list.findIndex(c => !c.completed && !c.skipped);
     const startIdx = firstUncompleted !== -1 ? firstUncompleted : 0;
     session.cooldownIndex = startIdx;
     session.cooldown_idx = startIdx;
@@ -4804,12 +5187,16 @@ function startPhaseAutoRunner(phase) {
       pausedMs: 0
     };
   } else if (phase === 'main') {
+    session.mainStatus = 'ACTIVE';
     const list = session.exercises || [];
-    const firstUncompleted = list.findIndex(ex => ex.sets && ex.sets.some(s => !s.completed));
+    const firstUncompleted = list.findIndex(ex => ex.sets && ex.sets.some(s => !s.completed && !s.skipped));
     const activeIdx = firstUncompleted !== -1 ? firstUncompleted : 0;
     session.activeExerciseIndex = activeIdx;
-    session.activeSetIndex = 0;
+    session.currentExerciseIndex = activeIdx;
     _selectedWorkoutExIdx = activeIdx;
+    const curEx = list[activeIdx];
+    const firstUnresolvedSet = curEx && curEx.sets ? curEx.sets.findIndex(s => !s.completed && !s.skipped) : 0;
+    session.activeSetIndex = firstUnresolvedSet !== -1 ? firstUnresolvedSet : 0;
     if (session.exercises && session.exercises[activeIdx]) {
       const ex = session.exercises[activeIdx];
       const cat = (typeof state !== 'undefined' && state.exercises) ? state.exercises.find(e => e.id === ex.exercise_id || e.name === ex.exercise_name) : null;
@@ -4818,6 +5205,7 @@ function startPhaseAutoRunner(phase) {
     }
   }
 
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   render();
 }
@@ -4836,11 +5224,11 @@ function selectExerciseToExecute(phase, idx) {
   }
 
   session.currentPhase = phase;
-  session.phase = phase;
+  session.phase = phase === 'warmup' ? 'WARMUP' : (phase === 'cooldown' ? 'COOLDOWN' : 'MAIN_WORKOUT');
   if (phase === 'warmup') {
     session.warmupIndex = idx;
     session.warmup_idx = idx;
-    const cur = session.warmup[idx];
+    const cur = (session.warmup || [])[idx];
     const isHold = cur?.exercise_type === 'duration';
     session.movementTimer = {
       isRunning: isHold,
@@ -4859,7 +5247,7 @@ function selectExerciseToExecute(phase, idx) {
   } else if (phase === 'cooldown') {
     session.cooldownIndex = idx;
     session.cooldown_idx = idx;
-    const cur = session.cooldown[idx];
+    const cur = (session.cooldown || [])[idx];
     const isHold = cur?.exercise_type === 'duration';
     session.movementTimer = {
       isRunning: isHold,
@@ -4877,8 +5265,11 @@ function selectExerciseToExecute(phase, idx) {
     };
   } else if (phase === 'main') {
     session.activeExerciseIndex = idx;
-    session.activeSetIndex = 0;
+    session.currentExerciseIndex = idx;
     _selectedWorkoutExIdx = idx;
+    const curEx = (session.exercises || [])[idx];
+    const firstUnresolvedSet = curEx && curEx.sets ? curEx.sets.findIndex(s => !s.completed && !s.skipped) : 0;
+    session.activeSetIndex = firstUnresolvedSet !== -1 ? firstUnresolvedSet : 0;
     if (session.exercises && session.exercises[idx]) {
       const ex = session.exercises[idx];
       const cat = (typeof state !== 'undefined' && state.exercises) ? state.exercises.find(e => e.id === ex.exercise_id || e.name === ex.exercise_name) : null;
@@ -4886,6 +5277,7 @@ function selectExerciseToExecute(phase, idx) {
       setCurrentMovementPattern(pattern, ex.exercise_id, ex.exercise_name);
     }
   }
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   render();
 }
@@ -4947,22 +5339,14 @@ function renderWorkoutTopHeader(session) {
 
 function getWorkoutPhaseModel(session) {
   if (!session) return null;
-
-  // 1. Warm-Up Phase
-  const warmupList = getWarmupExercises(session);
-  const warmupCompletedCount = warmupList.filter(w => w.completed).length;
-  const warmupTotalCount = warmupList.length;
-  const isWarmupDone = warmupTotalCount > 0 && warmupCompletedCount === warmupTotalCount;
-  const isWarmupSkipped = session.warmup_status === 'skipped';
-  const isWarmupInProgress = session.warmup_status === 'in_progress' || (warmupCompletedCount > 0 && !isWarmupDone);
-  const warmupPct = warmupTotalCount > 0 ? Math.round((warmupCompletedCount / warmupTotalCount) * 100) : 0;
+  const auth = getAuthoritativeSessionState(session);
 
   let warmupEstSec = 0;
-  warmupList.forEach(w => {
+  auth.warmup.list.forEach(w => {
     warmupEstSec += (w.duration_sec || (w.reps ? w.reps * 3 : 30)) + (w.rest_sec || 10);
   });
   const warmupEstMin = Math.max(3, Math.round(warmupEstSec / 60));
-  const warmupDurationText = warmupTotalCount > 0 ? `${Math.max(3, warmupEstMin - 1)}–${warmupEstMin + 2} min` : '5–8 min';
+  const warmupDurationText = auth.warmup.total > 0 ? `${Math.max(3, warmupEstMin - 1)}–${warmupEstMin + 2} min` : '5–8 min';
 
   const warmUp = {
     id: 'warmup',
@@ -4972,45 +5356,33 @@ function getWorkoutPhaseModel(session) {
     description: 'Prepare your body and activate muscles.',
     estimatedDuration: warmupDurationText,
     estimatedDurationMin: warmupEstMin,
-    exercises: warmupList,
-    totalCount: warmupTotalCount,
-    completedCount: warmupCompletedCount,
-    totalSets: warmupTotalCount,
-    completedSets: warmupCompletedCount,
-    progressLabel: `${warmupCompletedCount} / ${warmupTotalCount} completed${isWarmupDone ? ' ✓' : ''}`,
-    isCompleted: isWarmupDone,
-    isSkipped: isWarmupSkipped,
-    isInProgress: isWarmupInProgress,
-    isPending: !isWarmupDone && !isWarmupInProgress && !isWarmupSkipped,
-    completionState: isWarmupDone ? 'completed' : (isWarmupSkipped ? 'skipped' : (isWarmupInProgress ? 'in_progress' : 'ready')),
-    progress: warmupPct,
+    exercises: auth.warmup.list,
+    totalCount: auth.warmup.total,
+    completedCount: auth.warmup.completed,
+    skippedCount: auth.warmup.skipped,
+    resolvedCount: auth.warmup.resolved,
+    totalSets: auth.warmup.total,
+    completedSets: auth.warmup.completed,
+    skippedSets: auth.warmup.skipped,
+    progressLabel: `${auth.warmup.completed} / ${auth.warmup.total} completed${auth.warmup.isDone ? (auth.warmup.isSkipped ? ' (Skipped)' : ' ✓') : ''}`,
+    isCompleted: auth.warmup.isDone,
+    isSkipped: auth.warmup.isSkipped,
+    isInProgress: auth.warmup.isInProgress,
+    isPending: !auth.warmup.isDone && !auth.warmup.isInProgress && !auth.warmup.isSkipped,
+    completionState: auth.warmup.isDone ? (auth.warmup.isSkipped ? 'skipped' : 'completed') : (auth.warmup.isInProgress ? 'in_progress' : 'ready'),
+    progress: auth.warmup.pct,
     wireframeKey: 'warmup'
   };
 
-  // 2. Main Workout Phase
-  const mainList = getMainWorkoutExercises(session);
-  let mainTotalSets = 0;
-  let mainCompletedSets = 0;
-  let mainCompletedCount = 0;
   let mainEstSec = 0;
-
-  mainList.forEach(ex => {
-    const isExDone = ex.sets && ex.sets.length > 0 && ex.sets.every(s => s.completed);
-    if (isExDone) mainCompletedCount++;
+  auth.main.list.forEach(ex => {
+    const isH = ex.exercise_type === 'duration';
     (ex.sets || []).forEach(s => {
-      mainTotalSets++;
-      if (s.completed) mainCompletedSets++;
-      const isH = ex.exercise_type === 'duration';
       mainEstSec += (isH ? (s.target_val || 30) : (s.target_val || 10) * 3) + (ex.rest_sec || 90);
     });
   });
-
-  const mainTotalCount = mainList.length;
-  const isMainDone = mainTotalSets > 0 && mainCompletedSets === mainTotalSets;
-  const isMainInProgress = mainCompletedSets > 0 && !isMainDone;
-  const mainPct = mainTotalSets > 0 ? Math.round((mainCompletedSets / mainTotalSets) * 100) : 0;
   const mainEstMin = Math.max(15, Math.round(mainEstSec / 60));
-  const mainDurationText = mainTotalSets > 0 ? `${Math.max(15, mainEstMin - 5)}–${mainEstMin + 5} min` : '20–30 min';
+  const mainDurationText = auth.main.totalSets > 0 ? `${Math.max(15, mainEstMin - 5)}–${mainEstMin + 5} min` : '20–30 min';
 
   const mainWorkout = {
     id: 'main',
@@ -5020,35 +5392,29 @@ function getWorkoutPhaseModel(session) {
     description: 'Build strength and skill with focused sets.',
     estimatedDuration: mainDurationText,
     estimatedDurationMin: mainEstMin,
-    exercises: mainList,
-    totalCount: mainTotalCount,
-    completedCount: mainCompletedCount,
-    totalSets: mainTotalSets,
-    completedSets: mainCompletedSets,
-    progressLabel: `${mainCompletedSets} / ${mainTotalSets} sets${isMainDone ? ' ✓' : ''}`,
-    isCompleted: isMainDone,
-    isInProgress: isMainInProgress,
-    isPending: !isMainDone && !isMainInProgress,
-    completionState: isMainDone ? 'completed' : (isMainInProgress ? 'in_progress' : 'ready'),
-    progress: mainPct,
+    exercises: auth.main.list,
+    totalCount: auth.main.totalExercises,
+    completedCount: auth.main.completedExercises,
+    skippedCount: auth.main.skippedExercises,
+    resolvedCount: auth.main.resolvedExercises,
+    totalSets: auth.main.totalSets,
+    completedSets: auth.main.completedSets,
+    skippedSets: auth.main.skippedSets,
+    progressLabel: `${auth.main.completedSets} / ${auth.main.totalSets} sets${auth.main.isDone ? ' ✓' : ''}`,
+    isCompleted: auth.main.isDone,
+    isInProgress: auth.main.isInProgress,
+    isPending: !auth.main.isDone && !auth.main.isInProgress,
+    completionState: auth.main.isDone ? 'completed' : (auth.main.isInProgress ? 'in_progress' : 'ready'),
+    progress: auth.main.pct,
     wireframeKey: 'main'
   };
 
-  // 3. Cool-Down Phase
-  const cooldownList = getCooldownExercises(session);
-  const cooldownCompletedCount = cooldownList.filter(c => c.completed).length;
-  const cooldownTotalCount = cooldownList.length;
-  const isCooldownDone = cooldownTotalCount > 0 && cooldownCompletedCount === cooldownTotalCount;
-  const isCooldownSkipped = session.cooldown_status === 'skipped';
-  const isCooldownInProgress = session.cooldown_status === 'in_progress' || (cooldownCompletedCount > 0 && !isCooldownDone);
-  const cooldownPct = cooldownTotalCount > 0 ? Math.round((cooldownCompletedCount / cooldownTotalCount) * 100) : 0;
-
   let cooldownEstSec = 0;
-  cooldownList.forEach(c => {
+  auth.cooldown.list.forEach(c => {
     cooldownEstSec += (c.duration_sec || (c.reps ? c.reps * 3 : 30)) + (c.rest_sec || 10);
   });
   const cooldownEstMin = Math.max(3, Math.round(cooldownEstSec / 60));
-  const cooldownDurationText = cooldownTotalCount > 0 ? `${Math.max(3, cooldownEstMin - 1)}–${cooldownEstMin + 2} min` : '5–8 min';
+  const cooldownDurationText = auth.cooldown.total > 0 ? `${Math.max(3, cooldownEstMin - 1)}–${cooldownEstMin + 2} min` : '5–8 min';
 
   const coolDown = {
     id: 'cooldown',
@@ -5058,29 +5424,23 @@ function getWorkoutPhaseModel(session) {
     description: 'Relax, recover and improve flexibility.',
     estimatedDuration: cooldownDurationText,
     estimatedDurationMin: cooldownEstMin,
-    exercises: cooldownList,
-    totalCount: cooldownTotalCount,
-    completedCount: cooldownCompletedCount,
-    totalSets: cooldownTotalCount,
-    completedSets: cooldownCompletedCount,
-    progressLabel: `${cooldownCompletedCount} / ${cooldownTotalCount} completed${isCooldownDone ? ' ✓' : ''}`,
-    isCompleted: isCooldownDone,
-    isSkipped: isCooldownSkipped,
-    isInProgress: isCooldownInProgress,
-    isPending: !isCooldownDone && !isCooldownInProgress && !isCooldownSkipped,
-    completionState: isCooldownDone ? 'completed' : (isCooldownSkipped ? 'skipped' : (isCooldownInProgress ? 'in_progress' : 'pending')),
-    progress: cooldownPct,
+    exercises: auth.cooldown.list,
+    totalCount: auth.cooldown.total,
+    completedCount: auth.cooldown.completed,
+    skippedCount: auth.cooldown.skipped,
+    resolvedCount: auth.cooldown.resolved,
+    totalSets: auth.cooldown.total,
+    completedSets: auth.cooldown.completed,
+    skippedSets: auth.cooldown.skipped,
+    progressLabel: `${auth.cooldown.completed} / ${auth.cooldown.total} completed${auth.cooldown.isDone ? (auth.cooldown.isSkipped ? ' (Skipped)' : ' ✓') : ''}`,
+    isCompleted: auth.cooldown.isDone,
+    isSkipped: auth.cooldown.isSkipped,
+    isInProgress: auth.cooldown.isInProgress,
+    isPending: !auth.cooldown.isDone && !auth.cooldown.isInProgress && !auth.cooldown.isSkipped,
+    completionState: auth.cooldown.isDone ? (auth.cooldown.isSkipped ? 'skipped' : 'completed') : (auth.cooldown.isInProgress ? 'in_progress' : 'pending'),
+    progress: auth.cooldown.pct,
     wireframeKey: 'cooldown'
   };
-
-  const overallTotalExercises = warmupTotalCount + mainTotalCount + cooldownTotalCount;
-  const overallCompletedExercises = warmupCompletedCount + mainCompletedCount + cooldownCompletedCount;
-  const overallTotalSets = warmupTotalCount + mainTotalSets + cooldownTotalCount;
-  const overallCompletedSets = warmupCompletedCount + mainCompletedSets + cooldownCompletedCount;
-  const overallProgressPct = overallTotalSets > 0 ? Math.round((overallCompletedSets / overallTotalSets) * 100) : 0;
-  const isWarmupResolved = isWarmupDone || isWarmupSkipped || warmupTotalCount === 0;
-  const isCooldownResolved = isCooldownDone || isCooldownSkipped || cooldownTotalCount === 0;
-  const isOverallCompleted = isWarmupResolved && isMainDone && isCooldownResolved;
 
   return {
     warmUp,
@@ -5088,12 +5448,16 @@ function getWorkoutPhaseModel(session) {
     coolDown,
     phases: [warmUp, mainWorkout, coolDown],
     overall: {
-      totalExercises: overallTotalExercises,
-      completedExercises: overallCompletedExercises,
-      totalSets: overallTotalSets,
-      completedSets: overallCompletedSets,
-      progressPct: overallProgressPct,
-      isCompleted: isOverallCompleted
+      totalExercises: auth.overall.totalExercises,
+      completedExercises: auth.overall.completedExercises,
+      resolvedExercises: auth.overall.resolvedExercises,
+      totalSets: auth.overall.totalSets,
+      completedSets: auth.overall.completedSets,
+      skippedSets: auth.overall.skippedSets,
+      resolvedSets: auth.overall.resolvedSets,
+      progressPct: auth.overall.progressPct,
+      resolutionPct: auth.overall.resolutionPct,
+      isCompleted: auth.overall.isAllFinished
     }
   };
 }
@@ -5105,12 +5469,19 @@ function renderWorkoutStructureSidebar(session, activePhase) {
   if (!model) return '';
 
   const { phases, overall } = model;
+  const remainingSets = overall.remainingSets != null ? overall.remainingSets : Math.max(0, overall.totalSets - overall.completedSets - overall.skippedSets);
 
   return `
     <aside class="runner-structure-sidebar">
       <div class="runner-structure-header">
         <span class="runner-structure-title">OVERALL PROGRESS</span>
         <span class="runner-structure-sets-counter mono">${overall.completedSets} / ${overall.totalSets} sets · ${overall.progressPct}%</span>
+      </div>
+
+      <div class="runner-progress-breakdown-row mono" style="display:flex; justify-content:space-between; font-size:11px; color:#8a8d9f; margin-bottom:12px; padding:0 2px;">
+        <span style="color:#10b981;">✓ ${overall.completedSets} Done</span>
+        ${overall.skippedSets > 0 ? `<span style="color:#eab308;">⏭ ${overall.skippedSets} Skipped</span>` : ''}
+        <span style="color:#cbd5e1;">⏳ ${remainingSets} Remaining</span>
       </div>
 
       <div class="runner-timeline-container">
@@ -5235,11 +5606,50 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
   // 2. Focused Mobile Card Runner View
   let activeCardRunnerHtml = '';
   if (activePhase === 'warmup') {
-    activeCardRunnerHtml = renderWarmupCardView(session);
+    const list = getWarmupExercises(session);
+    if (list.length === 0) {
+      activeCardRunnerHtml = `
+        <div class="card" style="padding: 28px 24px; text-align: center; background: rgba(22, 23, 36, 0.5); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 14px; margin-bottom: 20px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(124, 92, 252, 0.1); color: #a29bfe; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
+          </div>
+          <h3 style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Warm-up unavailable</h3>
+          <p style="font-size: 13px; color: #8a8d9f; max-width: 400px; margin: 0 auto 16px; line-height: 1.4;">No warm-up exercises are configured for this workout. The main workout can still continue.</p>
+          <button class="btn btn-secondary" type="button" onclick="setWorkoutPhase('main')" style="font-size: 13px; padding: 8px 18px;">
+            Proceed to Main Workout →
+          </button>
+        </div>
+      `;
+    } else if (session.warmupStatus === 'COMPLETED' || session.warmup_status === 'completed' || list.every(w => w.completed || w.skipped)) {
+      activeCardRunnerHtml = renderWarmupCompleteView(session);
+    } else {
+      activeCardRunnerHtml = renderWarmupCardView(session);
+    }
   } else if (activePhase === 'cooldown') {
-    activeCardRunnerHtml = renderCooldownCardView(session);
+    const list = getCooldownExercises(session);
+    if (list.length === 0) {
+      activeCardRunnerHtml = `
+        <div class="card" style="padding: 28px 24px; text-align: center; background: rgba(22, 23, 36, 0.5); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 14px; margin-bottom: 20px;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(124, 92, 252, 0.1); color: #a29bfe; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+            ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
+          </div>
+          <h3 style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Cool-down unavailable</h3>
+          <p style="font-size: 13px; color: #8a8d9f; max-width: 400px; margin: 0 auto 16px; line-height: 1.4;">No cool-down stretches are configured for this workout.</p>
+          <button class="btn btn-primary" type="button" onclick="requestFinishWorkout()" style="font-size: 13px; padding: 8px 18px;">
+            Finish Workout
+          </button>
+        </div>
+      `;
+    } else {
+      activeCardRunnerHtml = renderCooldownCardView(session);
+    }
   } else {
-    activeCardRunnerHtml = renderMainWorkoutCardView(session);
+    const list = getMainWorkoutExercises(session);
+    if (list.length > 0 && list.every(ex => ex.sets && ex.sets.every(s => s.completed || s.skipped))) {
+      activeCardRunnerHtml = renderMainWorkoutCompleteView(session);
+    } else {
+      activeCardRunnerHtml = renderMainWorkoutCardView(session);
+    }
   }
 
   // 3. Exercise items list rendering
@@ -5263,7 +5673,9 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
     } else {
       exercisesStackHtml = list.map((item, idx) => {
         const isCurrent = session.warmup_idx === idx;
-        const isDone = item.completed;
+        const isCompleted = !!item.completed;
+        const isSkipped = !!item.skipped;
+        const isDone = isCompleted || isSkipped;
         const isHold = item.exercise_type === 'duration';
         const pt = session.phaseTimer || {};
         const isRunning = isCurrent && pt.isRunning;
@@ -5271,7 +5683,7 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
         const displayVal = isRunning ? (pt.remaining != null ? pt.remaining : targetVal) : targetVal;
 
         return `
-          <div class="runner-exercise-item-card ${isCurrent ? 'is-selected' : ''} ${isDone ? 'is-completed' : ''}" id="warmup-card-${idx}">
+          <div class="runner-exercise-item-card ${isCurrent ? 'is-selected' : ''} ${isCompleted ? 'is-completed' : (isSkipped ? 'is-skipped' : '')}" id="warmup-card-${idx}">
             <div class="runner-runner-ex-card-left" onclick="selectExerciseToExecute('warmup', ${idx})" style="cursor:pointer;">
               <div class="runner-ex-thumb-box">
                 ${renderExerciseThumbnailSvg(item)}
@@ -5288,12 +5700,12 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
                 <span>${item.est_duration || '1 min'}</span>
               </span>
 
-              <button class="runner-ex-action-btn ${isRunning ? 'is-active-btn' : (isDone ? 'is-done-btn' : '')}" type="button" onclick="selectExerciseToExecute('warmup', ${idx})">
-                ${isRunning ? (pt.isRunning ? 'Pause' : 'Resume') : (isDone ? '✓ Completed' : 'Start')}
+              <button class="runner-ex-action-btn ${isRunning ? 'is-active-btn' : (isCompleted ? 'is-done-btn' : (isSkipped ? 'is-skipped-btn' : ''))}" type="button" onclick="selectExerciseToExecute('warmup', ${idx})">
+                ${isRunning ? (pt.isRunning ? 'Pause' : 'Resume') : (isCompleted ? '✓ Completed' : (isSkipped ? '⏭ Skipped' : 'Start'))}
               </button>
 
-              <button class="runner-ex-checkbox-btn ${isDone ? 'is-checked' : ''}" type="button" onclick="toggleWarmupItemComplete(${idx})" title="${isDone ? 'Mark uncompleted' : 'Mark completed'}">
-                ${isDone ? renderIcon('check', 'cx-icon cx-icon-xs') : ''}
+              <button class="runner-ex-checkbox-btn ${isCompleted ? 'is-checked' : (isSkipped ? 'is-skipped' : '')}" type="button" onclick="toggleWarmupItemComplete(${idx})" title="${isCompleted ? 'Mark uncompleted' : (isSkipped ? 'Skipped - click to complete' : 'Mark completed')}">
+                ${isCompleted ? renderIcon('check', 'cx-icon cx-icon-xs') : (isSkipped ? renderIcon('skipForward', 'cx-icon cx-icon-xs') : '')}
               </button>
             </div>
           </div>
@@ -5353,7 +5765,9 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
     } else {
       exercisesStackHtml = list.map((item, idx) => {
         const isCurrent = session.cooldown_idx === idx;
-        const isDone = item.completed;
+        const isCompleted = !!item.completed;
+        const isSkipped = !!item.skipped;
+        const isDone = isCompleted || isSkipped;
         const isHold = item.exercise_type === 'duration';
         const pt = session.phaseTimer || {};
         const isRunning = isCurrent && pt.isRunning;
@@ -5361,7 +5775,7 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
         const displayVal = isRunning ? (pt.remaining != null ? pt.remaining : targetVal) : targetVal;
 
         return `
-          <div class="runner-exercise-item-card ${isCurrent ? 'is-selected' : ''} ${isDone ? 'is-completed' : ''}" id="cooldown-card-${idx}">
+          <div class="runner-exercise-item-card ${isCurrent ? 'is-selected' : ''} ${isCompleted ? 'is-completed' : (isSkipped ? 'is-skipped' : '')}" id="cooldown-card-${idx}">
             <div class="runner-runner-ex-card-left" onclick="selectExerciseToExecute('cooldown', ${idx})" style="cursor:pointer;">
               <div class="runner-ex-thumb-box">
                 ${renderExerciseThumbnailSvg(item)}
@@ -5378,12 +5792,12 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
                 <span>${item.est_duration || '1 min'}</span>
               </span>
 
-              <button class="runner-ex-action-btn ${isRunning ? 'is-active-btn' : (isDone ? 'is-done-btn' : '')}" type="button" onclick="selectExerciseToExecute('cooldown', ${idx})">
-                ${isRunning ? (pt.isRunning ? 'Pause' : 'Resume') : (isDone ? '✓ Completed' : 'Start')}
+              <button class="runner-ex-action-btn ${isRunning ? 'is-active-btn' : (isCompleted ? 'is-done-btn' : (isSkipped ? 'is-skipped-btn' : ''))}" type="button" onclick="selectExerciseToExecute('cooldown', ${idx})">
+                ${isRunning ? (pt.isRunning ? 'Pause' : 'Resume') : (isCompleted ? '✓ Completed' : (isSkipped ? '⏭ Skipped' : 'Start'))}
               </button>
 
-              <button class="runner-ex-checkbox-btn ${isDone ? 'is-checked' : ''}" type="button" onclick="toggleCooldownItemComplete(${idx})" title="${isDone ? 'Mark uncompleted' : 'Mark completed'}">
-                ${isDone ? renderIcon('check', 'cx-icon cx-icon-xs') : ''}
+              <button class="runner-ex-checkbox-btn ${isCompleted ? 'is-checked' : (isSkipped ? 'is-skipped' : '')}" type="button" onclick="toggleCooldownItemComplete(${idx})" title="${isCompleted ? 'Mark uncompleted' : (isSkipped ? 'Skipped - click to complete' : 'Mark completed')}">
+                ${isCompleted ? renderIcon('check', 'cx-icon cx-icon-xs') : (isSkipped ? renderIcon('skipForward', 'cx-icon cx-icon-xs') : '')}
               </button>
             </div>
           </div>
@@ -5440,38 +5854,43 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
         </div>
       `;
     } else {
-      let activeExIdx = _selectedWorkoutExIdx != null ? _selectedWorkoutExIdx : 0;
+      let activeExIdx = session.activeExerciseIndex != null ? session.activeExerciseIndex : (_selectedWorkoutExIdx != null ? _selectedWorkoutExIdx : 0);
       if (activeExIdx < 0 || activeExIdx >= list.length) activeExIdx = 0;
 
       exercisesStackHtml = list.map((ex, exIdx) => {
         const isCurrent = exIdx === activeExIdx;
-        const isDone = ex.sets && ex.sets.every(s => s.completed);
+        const totalSets = ex.sets ? ex.sets.length : 0;
+        const doneCount = ex.sets ? ex.sets.filter(s => s.completed).length : 0;
+        const skippedCount = ex.sets ? ex.sets.filter(s => s.skipped).length : 0;
+        const isAllCompleted = totalSets > 0 && doneCount === totalSets;
+        const isAllSkipped = totalSets > 0 && skippedCount === totalSets;
+        const isFullyResolved = totalSets > 0 && (doneCount + skippedCount) === totalSets;
+        const isPartiallyCompleted = isFullyResolved && doneCount > 0 && !isAllCompleted;
         const isHold = ex.exercise_type === 'duration';
-        const doneCount = ex.sets.filter(s => s.completed).length;
 
         return `
-          <div class="runner-exercise-item-card ${isCurrent ? 'is-selected' : ''} ${isDone ? 'is-completed' : ''}" id="main-card-${exIdx}">
+          <div class="runner-exercise-item-card ${isCurrent ? 'is-selected' : ''} ${isAllCompleted ? 'is-completed' : (isAllSkipped ? 'is-skipped' : (isPartiallyCompleted ? 'is-resolved' : ''))}" id="main-card-${exIdx}">
             <div class="runner-runner-ex-card-left" onclick="selectExerciseToExecute('main', ${exIdx})" style="cursor:pointer;">
               <div class="runner-ex-thumb-box">
                 ${renderExerciseThumbnailSvg(ex)}
               </div>
               <div class="runner-ex-text-group">
                 <span class="runner-ex-name-label">${ex.exercise_name}</span>
-                <span class="runner-ex-sub-label">${ex.sets.length} sets × ${ex.sets[0]?.target_val || 10}${isHold ? 's hold' : ' reps'} · ${ex.rest_sec || 90}s rest</span>
+                <span class="runner-ex-sub-label">${totalSets} sets × ${ex.sets[0]?.target_val || 10}${isHold ? 's hold' : ' reps'} · ${ex.rest_sec || 90}s rest</span>
               </div>
             </div>
 
             <div class="runner-ex-card-right">
               <span class="runner-ex-duration-tag">
-                <span class="mono">${doneCount}/${ex.sets.length} sets</span>
+                <span class="mono">${doneCount}/${totalSets} sets${skippedCount > 0 ? ` (${skippedCount} skp)` : ''}</span>
               </span>
 
               <button class="runner-ex-action-btn ${isCurrent ? 'is-active-btn' : ''}" type="button" onclick="selectExerciseToExecute('main', ${exIdx})">
-                ${isCurrent ? 'Active' : (isDone ? 'Review' : 'Start')}
+                ${isCurrent ? 'Active' : (isFullyResolved ? 'Review' : 'Start')}
               </button>
 
-              <button class="runner-ex-checkbox-btn ${isDone ? 'is-checked' : ''}" type="button" onclick="toggleMainExerciseComplete(${exIdx})" title="${isDone ? 'Mark uncompleted' : 'Mark all sets completed'}">
-                ${isDone ? renderIcon('check', 'cx-icon cx-icon-xs') : ''}
+              <button class="runner-ex-checkbox-btn ${isAllCompleted ? 'is-checked' : (isAllSkipped ? 'is-skipped' : (isPartiallyCompleted ? 'is-partial' : ''))}" type="button" onclick="toggleMainExerciseComplete(${exIdx})" title="${isFullyResolved ? 'Mark uncompleted' : 'Mark all sets completed'}">
+                ${isAllCompleted ? renderIcon('check', 'cx-icon cx-icon-xs') : (isAllSkipped ? renderIcon('skipForward', 'cx-icon cx-icon-xs') : (isPartiallyCompleted ? renderIcon('check', 'cx-icon cx-icon-xs') : ''))}
               </button>
             </div>
           </div>
@@ -5489,14 +5908,15 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
               <div style="display:flex; flex-direction:column; gap:8px;">
                 ${ex.sets.map((s, sIdx) => {
                   const sCompleted = s.completed;
+                  const sSkipped = s.skipped;
                   const isThisHold = isHold && _workoutHoldState.exIdx === exIdx && _workoutHoldState.setIdx === sIdx;
                   const currentActual = s.actual_val !== null && s.actual_val !== undefined ? s.actual_val : s.target_val;
 
                   return `
-                    <div style="display:flex; flex-direction:column; gap:8px; background:rgba(255,255,255,0.03); border:1px solid ${sCompleted ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.06)'}; border-radius:10px; padding:10px 14px;">
+                    <div style="display:flex; flex-direction:column; gap:8px; background:rgba(255,255,255,0.03); border:1px solid ${sCompleted ? 'rgba(16,185,129,0.3)' : (sSkipped ? 'rgba(234,179,8,0.3)' : 'rgba(255,255,255,0.06)')}; border-radius:10px; padding:10px 14px;">
                       <div style="display:flex; align-items:center; justify-content:space-between;">
                         <div style="display:flex; align-items:center; gap:12px;">
-                          <span class="mono" style="font-weight:700; font-size:13px; color:${sCompleted ? '#10b981' : '#a29bfe'};">SET ${s.set_num}</span>
+                          <span class="mono" style="font-weight:700; font-size:13px; color:${sCompleted ? '#10b981' : (sSkipped ? '#eab308' : '#a29bfe')};">SET ${s.set_num}${sSkipped ? ' (SKIPPED)' : ''}</span>
                           <span style="font-size:12px; color:#8a8d9f;">Target: <strong>${s.target_val}${isHold ? 's' : ' reps'}</strong></span>
                           ${s.weight_kg ? `<span class="runner-weight-pill mono">+${s.weight_kg}kg</span>` : ''}
                           ${s.rpe ? `<span class="mono" style="font-size:11px; color:#a29bfe;">RPE ${s.rpe}</span>` : ''}
@@ -5515,8 +5935,8 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
                             </button>
                           `}
 
-                          <button class="runner-ex-checkbox-btn ${sCompleted ? 'is-checked' : ''}" style="width:26px; height:26px; min-width:26px;" onclick="toggleWorkoutSet(${exIdx}, ${sIdx})" title="Toggle set complete">
-                            ${sCompleted ? renderIcon('check', 'cx-icon cx-icon-xs') : ''}
+                          <button class="runner-ex-checkbox-btn ${sCompleted ? 'is-checked' : (sSkipped ? 'is-skipped' : '')}" style="width:26px; height:26px; min-width:26px;" onclick="toggleWorkoutSet(${exIdx}, ${sIdx})" title="${sCompleted ? 'Mark uncompleted' : (sSkipped ? 'Skipped - click to complete' : 'Toggle set complete')}">
+                            ${sCompleted ? renderIcon('check', 'cx-icon cx-icon-xs') : (sSkipped ? renderIcon('skipForward', 'cx-icon cx-icon-xs') : '')}
                           </button>
                         </div>
                       </div>
@@ -5596,7 +6016,7 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
     // This guards against stale sessions that were stored before the default
     // warm-up generators were introduced, and against any other edge case where
     // getWarmupExercises() returns an empty list despite the phase being warmup.
-    if (list.length === 0) {
+    if (!session.warmup) {
       const routineName = session.routine || session.workout_name || '';
       const defaultWarmup = getDefaultWarmupForRoutine(routineName);
       if (defaultWarmup.length > 0) {
@@ -5674,10 +6094,13 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
           <div class="runner-queue-selector-strip" style="display:flex; gap:8px; overflow-x:auto; padding:4px 2px 14px; scrollbar-width:none; -webkit-overflow-scrolling:touch; margin-bottom:12px;">
             ${list.map((item, i) => {
               const isCur = i === activeWmIdx;
-              const isDone = item.completed || item.skipped;
+              const isDone = !!item.completed;
+              const isSkipped = !!item.skipped;
+              const badgeIcon = isDone ? '✓' : (isSkipped ? '⏭' : `${i + 1}.`);
+              const pillColor = isCur ? '#ffffff' : (isDone ? '#10b981' : (isSkipped ? '#eab308' : '#8a8d9f'));
               return `
-                <button type="button" onclick="selectWarmupMovement(${i})" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; white-space:nowrap; border:1px solid ${isCur ? 'rgba(124,92,252,0.6)' : 'rgba(255,255,255,0.08)'}; background:${isCur ? 'rgba(124,92,252,0.2)' : 'rgba(255,255,255,0.03)'}; color:${isCur ? '#ffffff' : (isDone ? '#10b981' : '#8a8d9f')}; cursor:pointer;">
-                  <span>${isDone ? '✓' : `${i + 1}.`}</span>
+                <button type="button" id="warmup-card-${i}" onclick="selectWarmupMovement(${i})" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; white-space:nowrap; border:1px solid ${isCur ? 'rgba(124,92,252,0.6)' : 'rgba(255,255,255,0.08)'}; background:${isCur ? 'rgba(124,92,252,0.2)' : 'rgba(255,255,255,0.03)'}; color:${pillColor}; cursor:pointer;">
+                  <span>${badgeIcon}</span>
                   <span>${item.exercise_name}</span>
                 </button>
               `;
@@ -5799,14 +6222,19 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
         <div class="runner-queue-selector-strip" style="display:flex; gap:8px; overflow-x:auto; padding:4px 2px 14px; scrollbar-width:none; -webkit-overflow-scrolling:touch; margin-bottom:12px;">
           ${list.map((ex, i) => {
             const isCur = i === activeExIdx;
-            const isExDone = ex.sets && ex.sets.every(s => s.completed || s.skipped);
-            const setsDone = ex.sets ? ex.sets.filter(s => s.completed).length : 0;
             const totalSets = ex.sets ? ex.sets.length : 0;
+            const setsDone = ex.sets ? ex.sets.filter(s => s.completed).length : 0;
+            const setsSkipped = ex.sets ? ex.sets.filter(s => s.skipped).length : 0;
+            const isAllCompleted = totalSets > 0 && setsDone === totalSets;
+            const isAllSkipped = totalSets > 0 && setsSkipped === totalSets;
+            const isFullyResolved = totalSets > 0 && (setsDone + setsSkipped) === totalSets;
+            const badgeIcon = isAllCompleted ? '✓' : (isAllSkipped ? '⏭' : (isFullyResolved ? '✓' : `${i + 1}.`));
+            const pillColor = isCur ? '#ffffff' : (isAllCompleted ? '#10b981' : (isAllSkipped ? '#eab308' : (isFullyResolved ? '#10b981' : '#8a8d9f')));
             return `
-              <button type="button" onclick="selectExerciseToExecute('main', ${i})" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; white-space:nowrap; border:1px solid ${isCur ? 'rgba(124,92,252,0.6)' : 'rgba(255,255,255,0.08)'}; background:${isCur ? 'rgba(124,92,252,0.2)' : 'rgba(255,255,255,0.03)'}; color:${isCur ? '#ffffff' : (isExDone ? '#10b981' : '#8a8d9f')}; cursor:pointer;">
-                <span>${isExDone ? '✓' : `${i + 1}.`}</span>
+              <button type="button" id="main-card-${i}" onclick="selectExerciseToExecute('main', ${i})" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; white-space:nowrap; border:1px solid ${isCur ? 'rgba(124,92,252,0.6)' : 'rgba(255,255,255,0.08)'}; background:${isCur ? 'rgba(124,92,252,0.2)' : 'rgba(255,255,255,0.03)'}; color:${pillColor}; cursor:pointer;">
+                <span>${badgeIcon}</span>
                 <span>${ex.exercise_name}</span>
-                <span class="mono" style="font-size:11px; opacity:0.75;">(${setsDone}/${totalSets})</span>
+                <span class="mono" style="font-size:11px; opacity:0.75;">(${setsDone}/${totalSets}${setsSkipped > 0 ? ` · ${setsSkipped} skp` : ''})</span>
               </button>
             `;
           }).join('')}
@@ -5868,10 +6296,13 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
           <div class="runner-queue-selector-strip" style="display:flex; gap:8px; overflow-x:auto; padding:4px 2px 14px; scrollbar-width:none; -webkit-overflow-scrolling:touch; margin-bottom:12px;">
             ${list.map((stretch, i) => {
               const isCur = i === activeCdIdx;
-              const isDone = stretch.completed || stretch.skipped;
+              const isDone = !!stretch.completed;
+              const isSkipped = !!stretch.skipped;
+              const badgeIcon = isDone ? '✓' : (isSkipped ? '⏭' : `${i + 1}.`);
+              const pillColor = isCur ? '#ffffff' : (isDone ? '#10b981' : (isSkipped ? '#eab308' : '#8a8d9f'));
               return `
-                <button type="button" onclick="selectCooldownStretch(${i})" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; white-space:nowrap; border:1px solid ${isCur ? 'rgba(124,92,252,0.6)' : 'rgba(255,255,255,0.08)'}; background:${isCur ? 'rgba(124,92,252,0.2)' : 'rgba(255,255,255,0.03)'}; color:${isCur ? '#ffffff' : (isDone ? '#10b981' : '#8a8d9f')}; cursor:pointer;">
-                  <span>${isDone ? '✓' : `${i + 1}.`}</span>
+                <button type="button" id="cooldown-card-${i}" onclick="selectCooldownStretch(${i})" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; white-space:nowrap; border:1px solid ${isCur ? 'rgba(124,92,252,0.6)' : 'rgba(255,255,255,0.08)'}; background:${isCur ? 'rgba(124,92,252,0.2)' : 'rgba(255,255,255,0.03)'}; color:${pillColor}; cursor:pointer;">
+                  <span>${badgeIcon}</span>
                   <span>${stretch.exercise_name}</span>
                 </button>
               `;
@@ -6051,25 +6482,53 @@ function renderWarmupCardView(session) {
   const displayVal = isHold ? remaining : currentActual;
 
   const completedCount = warmupList.filter(w => w.completed).length;
+  const skippedCount = warmupList.filter(w => w.skipped).length;
+  const remainingCount = Math.max(0, totalCount - completedCount - skippedCount);
   const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const isNearComplete = pct >= 80;
 
+  const isStarted = !!(session.startTime || session.startedAt) && session.status !== 'ready';
+  const isPaused = isStarted && session.status === 'paused';
+  const elapsedSec = isStarted ? getSessionElapsedSec(session) : 0;
+
   const setDotsHtml = warmupList.map((w, w_i) => {
-    const isDone = w.completed || w.skipped;
+    const isDone = w.completed;
+    const isSkipped = w.skipped;
     const isCur = w_i === idx;
     let dotClass = 'pending';
     if (isDone) dotClass = 'done';
+    else if (isSkipped) dotClass = 'skipped';
     else if (isCur) dotClass = 'active';
     return `<span class="runner-set-dot ${dotClass}" title="Movement ${w_i + 1}: ${w.exercise_name}"></span>`;
   }).join('');
 
   return `
-    <div class="runner-active-exercise-card animate-card-reveal">
+    <div class="runner-session-view-wrapper runner-active-exercise-card animate-card-reveal">
+      <!-- Mobile Top Bar Controls -->
+      <div class="runner-card-top-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <button class="runner-card-back-btn" onclick="openExitWorkoutModal()" aria-label="Exit Workout" title="Exit Workout">
+          ${renderIcon('chevronLeft', 'cx-icon cx-icon-sm')}
+        </button>
+        <div class="runner-card-title-group" style="text-align:center;">
+          <span class="runner-card-phase-badge">WARM-UP</span>
+          <h2 class="runner-card-title" style="font-size:14px; font-weight:700;">MOVEMENT ${idx + 1} OF ${totalCount}</h2>
+        </div>
+        <div class="runner-card-top-right" style="display:flex; align-items:center; gap:8px;">
+          <span class="runner-card-timer mono" id="workout-elapsed-val">${fmtSecs(elapsedSec)}</span>
+          <button class="runner-card-pause-btn ${isPaused ? 'is-paused' : ''}" type="button" onclick="togglePauseWorkoutSession()" title="${isPaused ? 'Resume Workout' : 'Pause Workout'}" aria-label="${isPaused ? 'Resume Workout' : 'Pause Workout'}">
+            ${renderIcon(isPaused ? 'play' : 'pause', 'cx-icon cx-icon-xs')}
+          </button>
+          <button class="runner-card-finish-btn" type="button" onclick="requestFinishWorkout()" title="Finish Workout">
+            Finish
+          </button>
+        </div>
+      </div>
+
       <!-- Section 4: 3px Full-width Gradient Progress Bar & Stats -->
       <div class="runner-progress-header-zone">
         <div class="runner-progress-meta-row">
           <span class="runner-progress-exercise-count">Exercise ${idx + 1} of ${totalCount}</span>
-          <span class="runner-progress-percentage mono ${isNearComplete ? 'is-gold' : ''}">${pct}% · ${completedCount}/${totalCount} movements</span>
+          <span class="runner-progress-percentage mono ${isNearComplete ? 'is-gold' : ''}">${pct}% · ${completedCount} Completed${skippedCount > 0 ? ` · ${skippedCount} Skipped` : ''} · ${remainingCount} Remaining</span>
         </div>
         <div class="runner-progress-bar-3px">
           <div class="runner-progress-bar-fill-3px ${pct === 100 ? 'is-complete' : ''}" style="width: ${pct}%;"></div>
@@ -6207,17 +6666,25 @@ function renderMainWorkoutCardView(session) {
 
   const setDotsHtml = (currentEx.sets || []).map((s, s_i) => {
     const isDone = s.completed;
+    const isSkipped = s.skipped;
     const isCur = s_i === activeSetIdx;
     let dotClass = 'pending';
     if (isDone) dotClass = 'done';
+    else if (isSkipped) dotClass = 'skipped';
     else if (isCur) dotClass = 'active';
-    return `<span class="runner-set-dot ${dotClass}" title="Set ${s_i + 1}: ${isDone ? 'Completed' : (isCur ? 'Current' : 'Upcoming')}"></span>`;
+    return `<span class="runner-set-dot ${dotClass}" title="Set ${s_i + 1}: ${isDone ? 'Completed' : (isSkipped ? 'Skipped' : (isCur ? 'Current' : 'Upcoming'))}"></span>`;
   }).join('');
 
   const allMainSets = mainList.reduce((acc, ex) => acc + (ex.sets ? ex.sets.length : 0), 0);
   const allMainCompletedSets = mainList.reduce((acc, ex) => acc + (ex.sets ? ex.sets.filter(s => s.completed).length : 0), 0);
+  const allMainSkippedSets = mainList.reduce((acc, ex) => acc + (ex.sets ? ex.sets.filter(s => s.skipped).length : 0), 0);
+  const allMainRemainingSets = Math.max(0, allMainSets - allMainCompletedSets - allMainSkippedSets);
   const pct = allMainSets > 0 ? Math.round((allMainCompletedSets / allMainSets) * 100) : 0;
   const isNearComplete = pct >= 80;
+
+  const isStarted = !!(session.startTime || session.startedAt) && session.status !== 'ready';
+  const isPaused = isStarted && session.status === 'paused';
+  const elapsedSec = isStarted ? getSessionElapsedSec(session) : 0;
 
   const muscleMapObj = (typeof window !== 'undefined' && window.MuscleMap) ? window.MuscleMap.resolveMuscles({ name: currentEx.exercise_name }) : { primary: ['Chest', 'Triceps'], secondary: ['Core'] };
   const muscleListStr = (muscleMapObj.primary && muscleMapObj.primary.length > 0)
@@ -6228,12 +6695,32 @@ function renderMainWorkoutCardView(session) {
   const formTip = getExerciseContextualTip(currentEx);
 
   return `
-    <div class="runner-active-exercise-card animate-card-reveal">
+    <div class="runner-session-view-wrapper runner-active-exercise-card animate-card-reveal">
+      <!-- Mobile Top Bar Controls -->
+      <div class="runner-card-top-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <button class="runner-card-back-btn" onclick="openExitWorkoutModal()" aria-label="Exit Workout" title="Exit Workout">
+          ${renderIcon('chevronLeft', 'cx-icon cx-icon-sm')}
+        </button>
+        <div class="runner-card-title-group" style="text-align:center;">
+          <span class="runner-card-phase-badge">MAIN WORKOUT</span>
+          <h2 class="runner-card-title" style="font-size:14px; font-weight:700;">EXERCISE ${exIdx + 1} OF ${totalExCount}</h2>
+        </div>
+        <div class="runner-card-top-right" style="display:flex; align-items:center; gap:8px;">
+          <span class="runner-card-timer mono" id="workout-elapsed-val">${fmtSecs(elapsedSec)}</span>
+          <button class="runner-card-pause-btn ${isPaused ? 'is-paused' : ''}" type="button" onclick="togglePauseWorkoutSession()" title="${isPaused ? 'Resume Workout' : 'Pause Workout'}" aria-label="${isPaused ? 'Resume Workout' : 'Pause Workout'}">
+            ${renderIcon(isPaused ? 'play' : 'pause', 'cx-icon cx-icon-xs')}
+          </button>
+          <button class="runner-card-finish-btn" type="button" onclick="requestFinishWorkout()" title="Finish Workout">
+            Finish
+          </button>
+        </div>
+      </div>
+
       <!-- Section 4: 3px Full-width Gradient Progress Bar & Stats -->
       <div class="runner-progress-header-zone">
         <div class="runner-progress-meta-row">
           <span class="runner-progress-exercise-count">Exercise ${exIdx + 1} of ${totalExCount}</span>
-          <span class="runner-progress-percentage mono ${isNearComplete ? 'is-gold' : ''}">${pct}% · ${allMainCompletedSets}/${allMainSets} sets</span>
+          <span class="runner-progress-percentage mono ${isNearComplete ? 'is-gold' : ''}">${pct}% · ${allMainCompletedSets} Completed${allMainSkippedSets > 0 ? ` · ${allMainSkippedSets} Skipped` : ''} · ${allMainRemainingSets} Remaining</span>
         </div>
         <div class="runner-progress-bar-3px">
           <div class="runner-progress-bar-fill-3px ${pct === 100 ? 'is-complete' : ''}" style="width: ${pct}%;"></div>
@@ -6256,7 +6743,12 @@ function renderMainWorkoutCardView(session) {
       <!-- Exercise Name & Muscles -->
       <div class="runner-exercise-name-zone">
         <h2 class="runner-exercise-name-title">${currentEx.exercise_name}</h2>
-        <span class="runner-exercise-muscles-text">${muscleListStr}</span>
+        <div class="runner-card-badges-row" style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
+          <span class="runner-badge-set mono" style="font-size:12px; color:#a29bfe;">Set ${activeSetIdx + 1} / ${totalSets}</span>
+          <span class="runner-badge-target mono" style="font-size:12px; color:#cbd5e1;">Target: <strong>${targetVal} ${isHold ? 'sec' : 'reps'}</strong></span>
+          <span class="runner-badge-rest mono" style="font-size:12px; color:#cbd5e1;">Rest: <strong>${currentEx.rest_sec || 90}s</strong></span>
+        </div>
+        <span class="runner-exercise-muscles-text" style="margin-top:4px;">${muscleListStr}</span>
       </div>
 
       <!-- Target Row (2 columns) -->
@@ -6300,7 +6792,7 @@ function renderMainWorkoutCardView(session) {
           </button>
         ` : `
           <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="completeMainWorkoutSet()">
-            <span>COMPLETE SET</span>
+            <span>${session.mainWorkoutSubState === 'EXERCISE_READY' ? 'START' : 'COMPLETE SET'}</span>
             ${renderIcon('arrowRight', 'cx-icon cx-icon-sm cx-icon-inline')}
           </button>
         `}
@@ -6333,31 +6825,31 @@ function renderMainWorkoutCardView(session) {
         </div>
       </div>
 
-      ${formTip ? `
-        <div class="runner-coaching-tip-row">
-          ${renderIcon('lightbulb', 'cx-icon cx-icon-xs cx-icon-accent')}
-          <span><strong>Cue:</strong> ${formTip}</span>
-        </div>
-      ` : ''}
+      <div class="runner-coaching-tip-row">
+        ${renderIcon('lightbulb', 'cx-icon cx-icon-xs cx-icon-accent')}
+        <span><strong>Form Focus:</strong> ${formTip || 'Maintain full range of motion.'}</span>
+      </div>
     </div>
   `;
 }
 
 function renderCooldownCardView(session) {
   const cooldownList = getCooldownExercises(session);
-  const idx = session.cooldown_idx != null && session.cooldown_idx < cooldownList.length ? session.cooldown_idx : 0;
+  const idx = session.cooldownIndex != null && session.cooldownIndex < cooldownList.length
+    ? session.cooldownIndex
+    : (session.cooldown_idx != null && session.cooldown_idx < cooldownList.length ? session.cooldown_idx : 0);
   const currentStretch = cooldownList[idx] || { exercise_name: 'Cool-down Stretch', duration_sec: 30, target_val: 30 };
   const totalCount = cooldownList.length;
   const isHold = currentStretch.exercise_type === 'duration';
   const targetVal = isHold ? (currentStretch.duration_sec || 30) : (currentStretch.reps || 10);
   const targetText = isHold ? `${targetVal}s` : `${targetVal} reps`;
 
-  const pt = session.phaseTimer || {};
+  const pt = session.phaseTimer || session.movementTimer || {};
   const isRunning = pt.isRunning;
-  const remaining = pt.remaining != null ? pt.remaining : targetVal;
-  const totalDuration = pt.duration || targetVal || 30;
+  const remaining = pt.remaining != null ? pt.remaining : (pt.remainingSec != null ? pt.remainingSec : targetVal);
+  const totalDuration = pt.duration || pt.durationSec || targetVal || 30;
   const progressFraction = totalDuration > 0 ? Math.max(0, Math.min(1, remaining / totalDuration)) : 1;
-  const dashOffset = (351.8 * (1 - progressFraction)).toFixed(1);
+  const dashOffset = (427.2 * (1 - progressFraction)).toFixed(1);
 
   const isStarted = !!(session.startTime || session.startedAt) && session.status !== 'ready';
   const isPaused = isStarted && session.status === 'paused';
@@ -6366,7 +6858,10 @@ function renderCooldownCardView(session) {
   const muscleMapObj = (typeof window !== 'undefined' && window.MuscleMap) ? window.MuscleMap.resolveMuscles({ name: currentStretch.exercise_name }) : { primary: ['lower_back', 'lats'], secondary: ['glutes'] };
   const visualSvg = (typeof window !== 'undefined' && window.MuscleMap) ? window.MuscleMap.renderBackSVG(muscleMapObj.primary, muscleMapObj.secondary) : renderExerciseThumbnailSvg(currentStretch);
 
-  const pct = totalCount > 0 ? Math.round(((idx + (currentStretch.completed ? 1 : 0)) / totalCount) * 100) : 0;
+  const completedCount = cooldownList.filter(c => c.completed).length;
+  const skippedCount = cooldownList.filter(c => c.skipped).length;
+  const remainingCount = Math.max(0, totalCount - completedCount - skippedCount);
+  const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return `
     <div class="runner-session-view-wrapper animate-fade-in">
@@ -6395,7 +6890,7 @@ function renderCooldownCardView(session) {
         <div class="runner-card-progress-section">
           <div class="runner-card-progress-label">
             <span>Exercise ${idx + 1} of ${totalCount}</span>
-            <span class="mono">${pct}%</span>
+            <span class="mono">${pct}% · ${completedCount} Completed${skippedCount > 0 ? ` · ${skippedCount} Skipped` : ''} · ${remainingCount} Remaining</span>
           </div>
           <div class="runner-card-progress-track">
             <div class="runner-card-progress-fill" style="width:${pct}%;"></div>
