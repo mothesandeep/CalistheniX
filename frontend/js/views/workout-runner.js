@@ -1241,13 +1241,9 @@ function startWorkoutDurationTimer() {
             cueTimerComplete();
             const btnEl = document.getElementById('runner-phase-timer-toggle-btn');
             if (btnEl) {
-              btnEl.innerHTML = `${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} Restart Timer`;
+              btnEl.innerHTML = `${renderIcon('rotateCcw', 'cx-icon cx-icon-xs cx-icon-inline')} Restart Timer`;
             }
-
-            // Auto-advance with 3s grace period for timed movements
-            if (isAutoAdvanceEnabled()) {
-              triggerTimedAutoAdvance(isWarm ? advanceWarmupMovement : advanceCooldownStretch, session.currentPhase);
-            }
+            render();
           }
         }
       }
@@ -1271,6 +1267,17 @@ function selectWarmupMovement(idx) {
   cancelAutoAdvance(false);
   ensureSessionStarted(session);
   session = getActiveSession();
+
+  const currentIdx = session.warmupIndex != null ? session.warmupIndex : (session.warmup_idx != null ? session.warmup_idx : 0);
+
+  // Next movement becomes available only after completion or explicit skip
+  if (idx > currentIdx) {
+    const cur = session.warmup[currentIdx];
+    if (cur && !cur.completed && !cur.skipped) {
+      showToast('Complete or skip the current movement first to proceed.');
+      return;
+    }
+  }
 
   session.currentPhase = 'warmup';
   session.phase = (typeof WORKOUT_PHASES !== 'undefined' ? WORKOUT_PHASES.WARMUP : 'WARMUP');
@@ -1605,7 +1612,28 @@ function completeWarmupExercise() {
 }
 
 function handleWarmupNextClick() {
-  advanceWarmupMovement();
+  const session = getActiveSession();
+  if (!session || !session.warmup) return;
+  const idx = session.warmupIndex != null ? session.warmupIndex : (session.warmup_idx || 0);
+  const curEx = session.warmup[idx];
+
+  // Next Movement becomes available only after completion or explicit skip
+  if (!curEx || (!curEx.completed && !curEx.skipped)) {
+    showToast('Complete or skip the current movement first to proceed.');
+    return;
+  }
+
+  if (idx + 1 < session.warmup.length) {
+    selectWarmupMovement(idx + 1);
+  } else {
+    if (session.warmup.every(w => w.completed || w.skipped)) {
+      session.warmupStatus = 'COMPLETED';
+      session.warmup_status = 'completed';
+      syncAuthoritativeSessionState(session);
+      saveActiveSession(session);
+      render();
+    }
+  }
 }
 
 function adjustWarmupItemReps(idx, delta) {
@@ -6531,6 +6559,10 @@ function renderWarmupCardView(session) {
     return `<span class="runner-set-dot ${dotClass}" title="Movement ${w_i + 1}: ${w.exercise_name}"></span>`;
   }).join('');
 
+  const isMovementResolved = !!(currentEx.completed || currentEx.skipped);
+  const timerActionLabel = isRunning ? 'Pause Timer' : (remaining <= 0 ? 'Restart Timer' : (remaining < totalDuration ? 'Resume Timer' : 'Start Timer'));
+  const stepperUnitLabel = remaining <= 0 ? 'TIME COMPLETE · TAP MARK COMPLETE' : (isRunning ? 'SECONDS LEFT' : (remaining < totalDuration ? 'PAUSED · TAP TO RESUME' : 'SECONDS · TAP TO START'));
+
   return `
     <div class="runner-session-view-wrapper runner-active-exercise-card animate-card-reveal">
       <!-- Mobile Top Bar Controls -->
@@ -6599,9 +6631,9 @@ function renderWarmupCardView(session) {
       <div class="runner-stepper-zone">
         ${isHold ? `
           <button class="stepper-btn" type="button" onclick="adjustPhaseTimer(-5)" aria-label="Decrease time">−5s</button>
-          <div class="runner-stepper-display">
+          <div class="runner-stepper-display" onclick="togglePhaseTimer()" style="cursor:pointer;" title="${isRunning ? 'Pause Timer' : 'Start Timer'}">
             <span class="runner-stepper-number mono" id="runner-phase-timer-digits">${displayVal}</span>
-            <span class="runner-stepper-unit">SECONDS LEFT</span>
+            <span class="runner-stepper-unit">${stepperUnitLabel}</span>
           </div>
           <button class="stepper-btn" type="button" onclick="adjustPhaseTimer(5)" aria-label="Increase time">+5s</button>
         ` : `
@@ -6618,7 +6650,7 @@ function renderWarmupCardView(session) {
       <div class="runner-shortcut-pills-row">
         ${isHold ? `
           <button class="runner-shortcut-pill target-pill" type="button" onclick="togglePhaseTimer()">
-            <span>${renderIcon(isRunning ? 'pause' : 'play', 'cx-icon cx-icon-xs cx-icon-inline')} ${isRunning ? 'Pause Timer' : 'Start Timer'}</span>
+            <span>${renderIcon(isRunning ? 'pause' : 'play', 'cx-icon cx-icon-xs cx-icon-inline')} ${timerActionLabel}</span>
           </button>
         ` : `
           <button class="runner-shortcut-pill target-pill" type="button" onclick="adjustWarmupItemReps(${idx}, 0)">
@@ -6640,7 +6672,7 @@ function renderWarmupCardView(session) {
         <div class="runner-cta-sub-row">
           <button class="btn btn-ghost btn-sm" type="button" onclick="openSkipWarmupExerciseModal()">Skip Movement</button>
           <span class="runner-sub-sep">·</span>
-          <button class="btn btn-ghost btn-sm btn-accent-link" type="button" onclick="handleWarmupNextClick()">Next Movement →</button>
+          <button class="btn btn-ghost btn-sm ${isMovementResolved ? 'btn-accent-link' : ''}" type="button" onclick="handleWarmupNextClick()" style="${isMovementResolved ? '' : 'opacity:0.6;'}" title="${isMovementResolved ? 'Proceed to Next Movement' : 'Complete or skip this movement first'}">Next Movement →</button>
         </div>
       </div>
     </div>
