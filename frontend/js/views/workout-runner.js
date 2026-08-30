@@ -1295,6 +1295,15 @@ function selectCooldownStretch(idx) {
     return;
   }
 
+  const curIdx = session.cooldownIndex != null ? session.cooldownIndex : (session.cooldown_idx || 0);
+  if (idx > curIdx) {
+    const hasUnfinishedPreceding = session.cooldown.slice(0, idx).some(c => !c.completed && !c.skipped);
+    if (hasUnfinishedPreceding) {
+      showToast('Complete or skip the current stretch first to proceed.');
+      return;
+    }
+  }
+
   ensureSessionStarted(session);
   session = getActiveSession();
 
@@ -1306,7 +1315,6 @@ function selectCooldownStretch(idx) {
   session.cooldown_idx = idx;
   const curEx = session.cooldown[idx];
   const dur = curEx?.duration_sec || 30;
-  const isHold = curEx?.exercise_type === 'duration';
 
   session.movementTimer = {
     isRunning: false,
@@ -2104,6 +2112,36 @@ function advanceCooldownStretch() {
   }
 }
 
+function handleCooldownNextClick() {
+  const session = getActiveSession();
+  if (!session || !session.cooldown) return;
+  const idx = session.cooldownIndex != null ? session.cooldownIndex : (session.cooldown_idx || 0);
+  const curEx = session.cooldown[idx];
+
+  // Next Stretch becomes available only after completion or explicit skip
+  if (!curEx || (!curEx.completed && !curEx.skipped)) {
+    showToast('Complete or skip the current stretch first to proceed.');
+    return;
+  }
+
+  if (idx + 1 < session.cooldown.length) {
+    selectCooldownStretch(idx + 1);
+  } else {
+    if (session.cooldown.every(c => c.completed || c.skipped)) {
+      const now = Date.now();
+      session.cooldownStatus = 'COMPLETED';
+      session.cooldown_status = 'completed';
+      session.cooldown_completed_at = new Date(now).toISOString();
+      if (session.cooldown_started_at) {
+        session.cooldown_duration_sec = Math.max(0, Math.round((now - session.cooldown_started_at) / 1000));
+      }
+      syncAuthoritativeSessionState(session);
+      saveActiveSession(session);
+      finishWorkoutSession();
+    }
+  }
+}
+
 function skipCooldownPhase() {
   const session = getActiveSession();
   if (!session) return;
@@ -2168,6 +2206,54 @@ function skipCooldownExercise() {
 
 function completeCooldownExercise() {
   advanceCooldownStretch();
+}
+
+function openSkipCooldownExerciseModal() {
+  let modal = document.getElementById('skip-cooldown-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'skip-cooldown-modal';
+    modal.className = 'modal-backdrop';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'skip-cooldown-title');
+    modal.onclick = (e) => {
+      if (e.target === modal) closeSkipCooldownExerciseModal();
+    };
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px; background:#131422; border:1px solid rgba(234,179,8,0.3); border-radius:20px;" onclick="event.stopPropagation()">
+      <div style="width:44px; height:44px; border-radius:50%; background:rgba(234,179,8,0.1); color:#eab308; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
+        ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
+      </div>
+      <h2 class="modal-title" id="skip-cooldown-title" style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:8px;">Skip this stretch?</h2>
+      <p class="discard-modal-desc" style="font-size:13.5px; color:#cbd5e1; margin-bottom:22px; line-height:1.5;">
+        You are skipping this stretch. It will not count as completed.
+      </p>
+      <div style="display:flex; gap:10px; width:100%;">
+        <button class="btn btn-secondary" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; cursor:pointer;" type="button" onclick="closeSkipCooldownExerciseModal()">
+          Cancel
+        </button>
+        <button class="btn btn-danger" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:#eab308; color:#0f172a; border:none; box-shadow:0 4px 14px rgba(234,179,8,0.3); cursor:pointer;" type="button" onclick="confirmSkipCooldownExercise()">
+          Skip Stretch
+        </button>
+      </div>
+    </div>
+  `;
+
+  modal.style.display = 'flex';
+}
+
+function closeSkipCooldownExerciseModal() {
+  const modal = document.getElementById('skip-cooldown-modal');
+  if (modal) modal.remove();
+}
+
+function confirmSkipCooldownExercise() {
+  closeSkipCooldownExerciseModal();
+  skipCooldownExercise();
 }
 
 function openSkipWarmupExerciseModal() {
@@ -7078,140 +7164,138 @@ function renderCooldownCardView(session) {
   const idx = session.cooldownIndex != null && session.cooldownIndex < cooldownList.length
     ? session.cooldownIndex
     : (session.cooldown_idx != null && session.cooldown_idx < cooldownList.length ? session.cooldown_idx : 0);
-  const currentStretch = cooldownList[idx] || { exercise_name: 'Cool-down Stretch', duration_sec: 30, target_val: 30 };
+  const currentStretch = cooldownList[idx] || { exercise_name: 'Cool-down Stretch', duration_sec: 30, target_val: 30, reps: null };
   const totalCount = cooldownList.length;
-  const isHold = currentStretch.exercise_type === 'duration';
+  const isHold = currentStretch.exercise_type === 'duration' || currentStretch.duration_sec != null;
   const targetVal = isHold ? (currentStretch.duration_sec || 30) : (currentStretch.reps || 10);
-  const targetText = isHold ? `${targetVal}s` : `${targetVal} reps`;
+  const targetText = isHold ? `${targetVal}s hold` : `${targetVal} reps`;
 
   const pt = session.phaseTimer || session.movementTimer || {};
   const isRunning = pt.isRunning;
   const remaining = pt.remaining != null ? pt.remaining : (pt.remainingSec != null ? pt.remainingSec : targetVal);
   const totalDuration = pt.duration || pt.durationSec || targetVal || 30;
-  const progressFraction = totalDuration > 0 ? Math.max(0, Math.min(1, remaining / totalDuration)) : 1;
-  const dashOffset = (427.2 * (1 - progressFraction)).toFixed(1);
-
-  const isStarted = !!(session.startTime || session.startedAt) && session.status !== 'ready';
-  const isPaused = isStarted && session.status === 'paused';
-  const elapsedSec = isStarted ? getSessionElapsedSec(session) : 0;
-
-  const muscleMapObj = (typeof window !== 'undefined' && window.MuscleMap) ? window.MuscleMap.resolveMuscles({ name: currentStretch.exercise_name }) : { primary: ['lower_back', 'lats'], secondary: ['glutes'] };
-  const visualSvg = (typeof window !== 'undefined' && window.MuscleMap) ? window.MuscleMap.renderBackSVG(muscleMapObj.primary, muscleMapObj.secondary) : renderExerciseThumbnailSvg(currentStretch);
+  const displayVal = remaining;
 
   const completedCount = cooldownList.filter(c => c.completed).length;
   const skippedCount = cooldownList.filter(c => c.skipped).length;
   const remainingCount = Math.max(0, totalCount - completedCount - skippedCount);
   const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const isNearComplete = pct >= 80;
+
+  const isStarted = !!(session.startTime || session.startedAt) && session.status !== 'ready';
+  const isPaused = isStarted && session.status === 'paused';
+  const elapsedSec = isStarted ? getSessionElapsedSec(session) : 0;
+
+  const setDotsHtml = cooldownList.map((c, c_i) => {
+    const isDone = c.completed;
+    const isSkipped = c.skipped;
+    const isCur = c_i === idx;
+    let dotClass = 'pending';
+    if (isDone) dotClass = 'done';
+    else if (isSkipped) dotClass = 'skipped';
+    else if (isCur) dotClass = 'active';
+    return `<span class="runner-set-dot ${dotClass}" title="Stretch ${c_i + 1}: ${c.exercise_name}"></span>`;
+  }).join('');
+
+  const isStretchResolved = !!(currentStretch.completed || currentStretch.skipped);
+  const timerActionLabel = isRunning ? 'Pause Timer' : (remaining <= 0 ? 'Restart Timer' : (remaining < totalDuration ? 'Resume Timer' : 'Start Timer'));
+  const stepperUnitLabel = remaining <= 0 ? 'TIME COMPLETE · TAP DONE' : (isRunning ? 'SECONDS LEFT' : (remaining < totalDuration ? 'PAUSED · TAP TO RESUME' : 'SECONDS · TAP TO START'));
 
   return `
-    <div class="runner-session-view-wrapper animate-fade-in">
-      <div class="runner-session-card">
-        <!-- Top Bar -->
-        <div class="runner-card-top-bar">
-          <button class="runner-card-back-btn" onclick="openExitWorkoutModal()" aria-label="Exit Workout" title="Exit Workout">
-            ${renderIcon('chevronLeft', 'cx-icon cx-icon-sm')}
+    <div class="runner-session-view-wrapper runner-active-exercise-card animate-card-reveal">
+      <!-- Mobile Top Bar Controls -->
+      <div class="runner-card-top-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <button class="runner-card-back-btn" onclick="openExitWorkoutModal()" aria-label="Exit Workout" title="Exit Workout">
+          ${renderIcon('chevronLeft', 'cx-icon cx-icon-sm')}
+        </button>
+        <div class="runner-card-title-group" style="text-align:center;">
+          <span class="runner-card-phase-badge">COOL DOWN</span>
+          <h2 class="runner-card-title" style="font-size:14px; font-weight:700;">STRETCH ${idx + 1} OF ${totalCount}</h2>
+        </div>
+        <div class="runner-card-top-right" style="display:flex; align-items:center; gap:8px;">
+          <span class="runner-card-timer mono" id="workout-elapsed-val">${fmtSecs(elapsedSec)}</span>
+          <button class="runner-card-pause-btn ${isPaused ? 'is-paused' : ''}" type="button" onclick="togglePauseWorkoutSession()" title="${isPaused ? 'Resume Workout' : 'Pause Workout'}" aria-label="${isPaused ? 'Resume Workout' : 'Pause Workout'}">
+            ${renderIcon(isPaused ? 'play' : 'pause', 'cx-icon cx-icon-xs')}
           </button>
-          <div class="runner-card-title-group">
-            <span class="runner-card-phase-badge">COOL DOWN PHASE</span>
-            <h2 class="runner-card-title">STRETCH ${idx + 1} OF ${totalCount}</h2>
-          </div>
-          <div class="runner-card-top-right">
-            <span class="runner-card-timer mono" id="workout-elapsed-val">${fmtSecs(elapsedSec)}</span>
-            <button class="runner-card-pause-btn ${isPaused ? 'is-paused' : ''}" type="button" onclick="togglePauseWorkoutSession()" title="${isPaused ? 'Resume Workout' : 'Pause Workout'}" aria-label="${isPaused ? 'Resume Workout' : 'Pause Workout'}">
-              ${renderIcon(isPaused ? 'play' : 'pause', 'cx-icon cx-icon-xs')}
-            </button>
-            <button class="runner-card-finish-btn" type="button" onclick="requestFinishWorkout()" title="Finish Workout">
-              Finish
-            </button>
-          </div>
-        </div>
-
-        <!-- Progress Indicator -->
-        <div class="runner-card-progress-section">
-          <div class="runner-card-progress-label">
-            <span>Exercise ${idx + 1} of ${totalCount}</span>
-            <span class="mono">${pct}% · ${completedCount} Completed${skippedCount > 0 ? ` · ${skippedCount} Skipped` : ''} · ${remainingCount} Remaining</span>
-          </div>
-          <div class="runner-card-progress-track">
-            <div class="runner-card-progress-fill" style="width:${pct}%;"></div>
-          </div>
-        </div>
-
-        <!-- Flow Progression Strip -->
-        <div class="runner-card-flow-strip">
-          <div class="runner-flow-step">
-            <span class="runner-flow-label">Stretch</span>
-            <span class="runner-flow-val mono">${idx + 1} / ${totalCount}</span>
-          </div>
-          <div class="runner-flow-arrow">→</div>
-          <div class="runner-flow-step is-target">
-            <span class="runner-flow-label">Target</span>
-            <span class="runner-flow-val mono">${targetText}</span>
-          </div>
-          <div class="runner-flow-arrow">→</div>
-          <div class="runner-flow-step is-actual">
-            <span class="runner-flow-label">Remaining</span>
-            <span class="runner-flow-val mono">${remaining}s</span>
-          </div>
-          <div class="runner-flow-arrow">→</div>
-          <div class="runner-flow-step is-rest">
-            <span class="runner-flow-label">Phase</span>
-            <span class="runner-flow-val mono">Recovery</span>
-          </div>
-        </div>
-
-        <!-- Exercise Header -->
-        <div class="runner-card-exercise-header">
-          <h1 class="runner-card-ex-name">${currentStretch.exercise_name}</h1>
-          <div class="runner-card-badges-row">
-            <span class="runner-badge-set mono">STRETCH ${idx + 1} / ${totalCount}</span>
-            <span class="runner-badge-target mono">Target: <strong>${targetText}</strong></span>
-            <span class="runner-badge-rest mono">Recovery</span>
-          </div>
-        </div>
-
-        <!-- Center Stage Grid -->
-        <div class="runner-card-stage-grid">
-          <div class="runner-card-stage-visual" id="runner-visual-stage">
-            ${visualSvg}
-          </div>
-
-          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; width:100%;">
-            <div class="runner-card-stage-dial">
-              <svg class="runner-dial-svg" viewBox="0 0 160 160">
-                <circle class="runner-dial-track" cx="80" cy="80" r="68" />
-                <circle class="runner-dial-progress" id="runner-radial-progress-circle" cx="80" cy="80" r="68" stroke-dasharray="427.2" stroke-dashoffset="${(427.2 * (1 - progressFraction)).toFixed(1)}" />
-              </svg>
-              <div class="runner-dial-center-content">
-                <span class="runner-dial-number mono" id="runner-phase-timer-digits">${remaining}</span>
-                <span class="runner-dial-subtext">SEC LEFT</span>
-              </div>
-            </div>
-
-            <div class="runner-card-stepper-row">
-              <button class="runner-card-stepper-btn" type="button" onclick="adjustPhaseTimer(-5)" aria-label="Decrease time">-5s</button>
-              <button class="runner-card-btn runner-card-btn-skip" type="button" onclick="togglePhaseTimer()" style="max-width:120px; padding:10px 16px;">
-                ${renderIcon(isRunning ? 'pause' : 'play', 'cx-icon cx-icon-xs cx-icon-inline')} ${isRunning ? 'Pause' : 'Start'}
-              </button>
-              <button class="runner-card-stepper-btn" type="button" onclick="adjustPhaseTimer(5)" aria-label="Increase time">+5s</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Auto advance banner if active -->
-        ${renderAutoAdvanceHtml()}
-
-        <!-- Bottom Action Controls -->
-        <div class="runner-card-controls-row" style="margin-top:4px;">
-          <button class="runner-card-btn runner-card-btn-skip" type="button" onclick="skipCooldownExercise()" title="Skip this stretch">
-            ${renderIcon('rotateCcw', 'cx-icon cx-icon-xs cx-icon-inline')} Skip
+          <button class="runner-card-finish-btn" type="button" onclick="requestFinishWorkout()" title="Finish Workout">
+            Finish
           </button>
-          <button class="runner-card-btn runner-card-btn-done" type="button" onclick="completeCooldownExercise()" title="Mark stretch complete">
-            ${renderIcon('check', 'cx-icon cx-icon-sm cx-icon-inline')} Done
-          </button>
-          <button class="runner-card-btn runner-card-btn-next" type="button" onclick="completeCooldownExercise()" title="Move to next stretch">
-            Next ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')}
-          </button>
+        </div>
+      </div>
+
+      <!-- Section 4: 3px Full-width Gradient Progress Bar & Stats -->
+      <div class="runner-progress-header-zone">
+        <div class="runner-progress-meta-row">
+          <span class="runner-progress-exercise-count">Stretch ${idx + 1} of ${totalCount}</span>
+          <span class="runner-progress-percentage mono ${isNearComplete ? 'is-gold' : ''}">${pct}% · ${completedCount} Completed${skippedCount > 0 ? ` · ${skippedCount} Skipped` : ''} · ${remainingCount} Remaining</span>
+        </div>
+        <div class="runner-progress-bar-3px">
+          <div class="runner-progress-bar-fill-3px ${pct === 100 ? 'is-complete' : ''}" style="width: ${pct}%;"></div>
+        </div>
+      </div>
+
+      <!-- Header Row (Phase badge, Set dots, Biomechanics) -->
+      <div class="runner-card-top-header-row">
+        <div class="runner-card-header-left">
+          <span class="runner-badge-phase-pill phase-cooldown">COOL DOWN PHASE</span>
+          <div class="runner-set-dots-group">
+            ${setDotsHtml}
+          </div>
+        </div>
+        <button class="runner-muscle-map-btn" type="button" onclick="openBiomechanicsModal()" title="View Muscle Map" aria-label="Muscle Map">
+          ${renderIcon('activity', 'cx-icon cx-icon-xs')}
+        </button>
+      </div>
+
+      <!-- Stretch Name & Focus -->
+      <div class="runner-exercise-name-zone">
+        <h2 class="runner-exercise-name-title">${currentStretch.exercise_name}</h2>
+        <span class="runner-exercise-muscles-text">Flexibility & Downregulation · Stretch ${idx + 1} of ${totalCount}</span>
+      </div>
+
+      <!-- Target Row -->
+      <div class="runner-target-pills-row">
+        <div class="runner-target-pill target-goal">
+          <span class="runner-pill-lbl">Target</span>
+          <span class="runner-pill-val mono">${targetText}</span>
+        </div>
+        <div class="runner-target-pill target-last">
+          <span class="runner-pill-lbl">Focus</span>
+          <span class="runner-pill-val mono">Downregulation · Recovery</span>
+        </div>
+      </div>
+
+      <!-- Centered Stepper / Timer Display -->
+      <div class="runner-stepper-zone">
+        <button class="stepper-btn" type="button" onclick="adjustPhaseTimer(-5)" aria-label="Decrease time">−5s</button>
+        <div class="runner-stepper-display" onclick="togglePhaseTimer()" style="cursor:pointer;" title="${isRunning ? 'Pause Timer' : 'Start Timer'}">
+          <span class="runner-stepper-number mono" id="runner-phase-timer-digits">${displayVal}</span>
+          <span class="runner-stepper-unit">${stepperUnitLabel}</span>
+        </div>
+        <button class="stepper-btn" type="button" onclick="adjustPhaseTimer(5)" aria-label="Increase time">+5s</button>
+      </div>
+
+      <!-- Quick Shortcut Actions -->
+      <div class="runner-shortcut-pills-row">
+        <button class="runner-shortcut-pill target-pill" type="button" onclick="togglePhaseTimer()">
+          <span>${renderIcon(isRunning ? 'pause' : 'play', 'cx-icon cx-icon-xs cx-icon-inline')} ${timerActionLabel}</span>
+        </button>
+      </div>
+
+      <!-- Auto advance banner if active -->
+      ${renderAutoAdvanceHtml()}
+
+      <!-- Primary CTA Zone -->
+      <div class="runner-cta-zone">
+        <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="advanceCooldownStretch()">
+          <span>DONE</span>
+          ${renderIcon('check', 'cx-icon cx-icon-sm cx-icon-inline')}
+        </button>
+
+        <div class="runner-cta-sub-row">
+          <button class="btn btn-ghost btn-sm" type="button" onclick="openSkipCooldownExerciseModal()">Skip Stretch</button>
+          <span class="runner-sub-sep">·</span>
+          <button class="btn btn-ghost btn-sm ${isStretchResolved ? 'btn-accent-link' : ''}" type="button" onclick="handleCooldownNextClick()" style="${isStretchResolved ? '' : 'opacity:0.6;'}" title="${isStretchResolved ? 'Proceed to Next Stretch' : 'Complete or skip this stretch first'}">Next Stretch →</button>
         </div>
       </div>
     </div>
@@ -7341,6 +7425,15 @@ if (typeof window !== 'undefined') {
   window.startMainWorkoutSet = startMainWorkoutSet;
   window.selectWorkoutQueueExercise = selectWorkoutQueueExercise;
   window.getWorkoutPhaseModel = getWorkoutPhaseModel;
+  window.selectCooldownStretch = selectCooldownStretch;
+  window.handleCooldownNextClick = handleCooldownNextClick;
+  window.openSkipCooldownExerciseModal = openSkipCooldownExerciseModal;
+  window.closeSkipCooldownExerciseModal = closeSkipCooldownExerciseModal;
+  window.confirmSkipCooldownExercise = confirmSkipCooldownExercise;
+  window.advanceCooldownStretch = advanceCooldownStretch;
+  window.skipCooldownExercise = skipCooldownExercise;
+  window.completeCooldownExercise = completeCooldownExercise;
+  window.renderCooldownCardView = renderCooldownCardView;
   window.requestFinishWorkout = requestFinishWorkout;
   window.getWorkoutRestState = () => _workoutRestState;
   window.getWorkoutHoldState = () => _workoutHoldState;
