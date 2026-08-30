@@ -3514,19 +3514,82 @@ function adjustWorkoutSetActual(exIdx, setIdx, delta) {
   render();
 }
 
-function setWorkoutSetActualDirect(exIdx, setIdx, exactVal) {
+function setWorkoutSetActualDirect(exIdxOrVal, setIdx, exactVal) {
   let session = getActiveSession();
-  if (!session || !session.exercises[exIdx] || !session.exercises[exIdx].sets[setIdx]) return;
+  if (!session || !session.exercises) return;
   ensureSessionStarted(session);
   session = getActiveSession();
-  const num = Number(exactVal);
+
+  let eIdx = session.activeExerciseIndex != null ? session.activeExerciseIndex : (_selectedWorkoutExIdx || 0);
+  let sIdx = session.activeSetIndex != null ? session.activeSetIndex : 0;
+  let val = exIdxOrVal;
+
+  if (exactVal !== undefined && setIdx !== undefined) {
+    eIdx = Number(exIdxOrVal);
+    sIdx = Number(setIdx);
+    val = Number(exactVal);
+  } else if (setIdx !== undefined) {
+    sIdx = Number(setIdx);
+    val = Number(exIdxOrVal);
+  } else {
+    val = Number(exIdxOrVal);
+  }
+
+  const curEx = session.exercises[eIdx];
+  if (!curEx || !curEx.sets || !curEx.sets[sIdx]) return;
+
+  const num = Number(val);
   if (isNaN(num) || num < 0) return;
-  session.exercises[exIdx].sets[setIdx].actual_val = num;
+  curEx.sets[sIdx].actual_val = num;
   saveActiveSession(session);
 
   if (typeof beep === 'function') beep(740, 40, 0.25, 'sine');
   if (typeof vibrate === 'function') vibrate(30);
 
+  render();
+}
+
+function applySameAsLastPerformance(exIdx, setIdx) {
+  let session = getActiveSession();
+  if (!session || !session.exercises) return;
+  ensureSessionStarted(session);
+  session = getActiveSession();
+
+  const eIdx = exIdx != null ? exIdx : (session.activeExerciseIndex != null ? session.activeExerciseIndex : (_selectedWorkoutExIdx || 0));
+  const curEx = session.exercises[eIdx];
+  if (!curEx || !curEx.sets) return;
+
+  const sIdx = setIdx != null ? setIdx : (session.activeSetIndex != null ? session.activeSetIndex : 0);
+  const curSet = curEx.sets[sIdx];
+  if (!curSet) return;
+
+  let fillVal = null;
+  let fillWeight = null;
+  let fillRPE = null;
+
+  // 1. Check previous completed/logged set in current exercise
+  if (sIdx > 0 && curEx.sets[sIdx - 1]) {
+    const prevSet = curEx.sets[sIdx - 1];
+    fillVal = prevSet.actual_val !== null && prevSet.actual_val !== undefined ? prevSet.actual_val : prevSet.target_val;
+    fillWeight = prevSet.weight_kg !== null && prevSet.weight_kg !== undefined ? prevSet.weight_kg : null;
+    fillRPE = prevSet.rpe !== null && prevSet.rpe !== undefined ? prevSet.rpe : null;
+  } else {
+    // Recommendation based on target
+    const targetVal = Number(curSet.target_val || 10);
+    fillVal = targetVal > 5 ? targetVal + 2 : targetVal;
+    fillWeight = curSet.weight_kg !== null && curSet.weight_kg !== undefined ? curSet.weight_kg : null;
+    fillRPE = curSet.rpe !== null && curSet.rpe !== undefined ? curSet.rpe : null;
+  }
+
+  curSet.actual_val = Number(fillVal);
+  if (fillWeight !== null) curSet.weight_kg = Number(fillWeight);
+  if (fillRPE !== null) curSet.rpe = Number(fillRPE);
+
+  // Note: fills the values but does NOT mark complete or commit until Complete Set is tapped.
+  saveActiveSession(session);
+  if (typeof beep === 'function') beep(600, 30, 0.2, 'sine');
+  if (typeof vibrate === 'function') vibrate(30);
+  showToast(`Filled ${fillVal} ${curEx.exercise_type === 'duration' ? 'sec' : 'reps'}. Tap Complete Set when finished.`);
   render();
 }
 
@@ -5321,6 +5384,17 @@ function selectExerciseToExecute(phase, idx) {
       pausedMs: 0
     };
   } else if (phase === 'main') {
+    const curIdx = session.activeExerciseIndex != null ? session.activeExerciseIndex : (_selectedWorkoutExIdx || 0);
+    // Next exercise unlocks only when the current exercise is finished
+    if (idx > curIdx) {
+      const curEx = (session.exercises || [])[curIdx];
+      const isCurExUnresolved = curEx && curEx.sets && curEx.sets.some(s => !s.completed && !s.skipped);
+      if (isCurExUnresolved) {
+        showToast('Complete or skip all sets of the current exercise first.');
+        return;
+      }
+    }
+
     session.activeExerciseIndex = idx;
     session.currentExerciseIndex = idx;
     _selectedWorkoutExIdx = idx;
@@ -6679,22 +6753,6 @@ function renderWarmupCardView(session) {
   `;
 }
 
-function setWorkoutSetActualDirect(val) {
-  const session = getActiveSession();
-  if (!session) return;
-  const mainList = getMainWorkoutExercises(session);
-  const exIdx = session.activeExerciseIndex != null && session.activeExerciseIndex < mainList.length ? session.activeExerciseIndex : 0;
-  const currentEx = mainList[exIdx];
-  if (!currentEx || !currentEx.sets) return;
-  const setIdx = session.activeSetIndex != null && currentEx.sets[session.activeSetIndex] ? session.activeSetIndex : 0;
-  if (currentEx.sets[setIdx]) {
-    currentEx.sets[setIdx].actual_val = Math.max(1, Number(val));
-    saveActiveSession(session);
-    render();
-  }
-}
-window.setWorkoutSetActualDirect = setWorkoutSetActualDirect;
-
 function toggleSetDetailsDrawer() {
   const drawer = document.getElementById('runner-set-details-drawer');
   if (drawer) {
@@ -6836,10 +6894,10 @@ function renderMainWorkoutCardView(session) {
 
       <!-- Shortcut Quick-Fill Pills -->
       <div class="runner-shortcut-pills-row">
-        <button class="runner-shortcut-pill history-pill" type="button" onclick="${isHold ? `setWorkoutSetActualDirect(${lastReps})` : `setWorkoutSetActualDirect(${lastReps})`}">
+        <button class="runner-shortcut-pill history-pill" type="button" onclick="applySameAsLastPerformance(${exIdx}, ${activeSetIdx})">
           <span>↩ Same as last · ${lastReps}</span>
         </button>
-        <button class="runner-shortcut-pill target-pill" type="button" onclick="${isHold ? `setWorkoutSetActualDirect(${targetVal})` : `setWorkoutSetActualDirect(${targetVal})`}">
+        <button class="runner-shortcut-pill target-pill" type="button" onclick="setWorkoutSetActualDirect(${exIdx}, ${activeSetIdx}, ${targetVal})">
           <span>◎ Target · ${targetVal}</span>
         </button>
       </div>
@@ -7147,7 +7205,10 @@ if (typeof window !== 'undefined') {
   window.toggleWorkoutSet = toggleWorkoutSet;
   window.handleCompleteSetClick = handleCompleteSetClick;
   window.adjustWorkoutSetActual = adjustWorkoutSetActual;
+  window.applySameAsLastPerformance = applySameAsLastPerformance;
   window.setWorkoutSetActualDirect = setWorkoutSetActualDirect;
+  window.updateWorkoutSetWeight = updateWorkoutSetWeight;
+  window.updateWorkoutSetRPE = updateWorkoutSetRPE;
   window.updateWorkoutSetWeight = updateWorkoutSetWeight;
   window.updateWorkoutSetRPE = updateWorkoutSetRPE;
   window.startWorkoutHold = startWorkoutHold;

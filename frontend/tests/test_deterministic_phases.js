@@ -227,25 +227,32 @@ console.log('  ✓ Warm-up completion accurately unlocked Main Workout while kee
 
 // ─── TEST 3: Exercise Navigation Preserves Completion State & Index ───────────
 console.log('\n--- 3. Testing Exercise Navigation & State Preservation ---');
-// Complete set 0 of exercise 0
+// Complete all sets of exercise 0 to unlock exercise 1
 curSess.exercises[0].sets[0].completed = true;
 curSess.exercises[0].sets[0].completed_at = new Date().toISOString();
+curSess.exercises[0].sets[1].completed = true;
+curSess.exercises[0].sets[1].completed_at = new Date().toISOString();
+curSess.exercises[0].completed = true;
 sandbox.saveActiveSession(curSess);
 
-// User clicks to navigate to Exercise 1
+// User clicks to navigate to unlocked Exercise 1
 sandbox.selectExerciseToExecute('main', 1);
 curSess = sandbox.getActiveSession();
 assert.strictEqual(curSess.activeExerciseIndex, 1, 'Active exercise pointer moved to exercise 1');
 assert.strictEqual(curSess.exercises[0].sets[0].completed, true, 'Exercise 0 set 0 completion preserved');
-assert.strictEqual(curSess.exercises[0].sets[1].completed, false, 'Exercise 0 set 1 remaining intact');
+assert.strictEqual(curSess.exercises[0].sets[1].completed, true, 'Exercise 0 set 1 completion preserved');
 assert.strictEqual(curSess.exercises[1].sets[0].completed, false, 'Exercise 1 set 0 intact');
 
-// Navigate back to Exercise 0
+// Navigate back to Exercise 0 (completed exercise)
 sandbox.selectExerciseToExecute('main', 0);
 curSess = sandbox.getActiveSession();
 assert.strictEqual(curSess.activeExerciseIndex, 0, 'Active exercise pointer returned to exercise 0');
-assert.strictEqual(curSess.activeSetIndex, 1, 'Active set pointer automatically selects first unresolved set (set 1)');
 assert.strictEqual(curSess.exercises[0].sets[0].completed, true, 'Exercise 0 set 0 is still completed');
+
+// Navigate back to Exercise 1
+sandbox.selectExerciseToExecute('main', 1);
+curSess = sandbox.getActiveSession();
+assert.strictEqual(curSess.activeExerciseIndex, 1, 'Active exercise pointer returned to exercise 1');
 
 console.log('  ✓ Moving between exercises cleanly preserves exercise indices and set completion states.');
 
