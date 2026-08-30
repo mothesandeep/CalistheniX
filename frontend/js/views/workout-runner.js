@@ -316,7 +316,20 @@ function getAuthoritativeSessionState(session) {
   const isAllFinished = isWarmupDone && isMainDone && isCooldownDone;
 
   const currentPhaseRaw = session.currentPhase || (isWarmupPhase(session.phase) ? 'warmup' : (isCooldownPhase(session.phase) ? 'cooldown' : (isCompletedPhase(session.phase) ? 'completed' : 'main')));
-  const currentPhase = (currentPhaseRaw === 'warmup' || currentPhaseRaw === 'cooldown' || currentPhaseRaw === 'completed') ? currentPhaseRaw : 'main';
+  const isTerminalSession = session.status === 'completed' || session.status === 'completed_early' || currentPhaseRaw === 'completed' || isAllFinished;
+
+  let currentPhase = 'main';
+  if (isTerminalSession) {
+    currentPhase = 'completed';
+  } else if (!isWarmupDone && warmupTotal > 0) {
+    currentPhase = 'warmup';
+  } else if (currentPhaseRaw === 'cooldown') {
+    currentPhase = isMainDone ? 'cooldown' : 'main';
+  } else if (currentPhaseRaw === 'warmup') {
+    currentPhase = 'warmup';
+  } else {
+    currentPhase = 'main';
+  }
 
   const warmupRemaining = Math.max(0, warmupTotal - warmupCompleted - warmupSkipped);
   const mainRemainingSets = Math.max(0, mainTotalSets - mainCompletedSets - mainSkippedSets);
@@ -1259,18 +1272,6 @@ function selectWarmupMovement(idx) {
   ensureSessionStarted(session);
   session = getActiveSession();
 
-  const currentIdx = session.warmupIndex != null ? session.warmupIndex : (session.warmup_idx != null ? session.warmup_idx : 0);
-  if (idx > currentIdx) {
-    for (let i = currentIdx; i < idx; i++) {
-      const w = session.warmup[i];
-      if (w && !w.completed) {
-        w.skipped = true;
-        w.completed = false;
-        w.skipped_at = new Date().toISOString();
-      }
-    }
-  }
-
   session.currentPhase = 'warmup';
   session.phase = (typeof WORKOUT_PHASES !== 'undefined' ? WORKOUT_PHASES.WARMUP : 'WARMUP');
   session.warmupStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
@@ -1296,6 +1297,7 @@ function selectWarmupMovement(idx) {
     pausedMs: 0
   };
 
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   render();
 }
@@ -1304,25 +1306,25 @@ function selectCooldownStretch(idx) {
   let session = getActiveSession();
   if (!session || !session.cooldown || !session.cooldown[idx]) return;
   cancelAutoAdvance(false);
+
+  const lockStatus = getPhaseLockStatus(session, 'cooldown');
+  if (lockStatus.isLocked) {
+    showToast(lockStatus.lockReason);
+    return;
+  }
+
   ensureSessionStarted(session);
   session = getActiveSession();
 
-  const currentIdx = session.cooldownIndex != null ? session.cooldownIndex : (session.cooldown_idx != null ? session.cooldown_idx : 0);
-  if (idx > currentIdx) {
-    for (let i = currentIdx; i < idx; i++) {
-      const c = session.cooldown[i];
-      if (c && !c.completed) {
-        c.skipped = true;
-        c.completed = false;
-        c.skipped_at = new Date().toISOString();
-      }
-    }
-  }
-
+  session.currentPhase = 'cooldown';
+  session.phase = (typeof WORKOUT_PHASES !== 'undefined' ? WORKOUT_PHASES.COOLDOWN : 'COOLDOWN');
+  session.cooldownStatus = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
+  session.cooldown_status = 'in_progress';
   session.cooldownIndex = idx;
   session.cooldown_idx = idx;
   const curEx = session.cooldown[idx];
   const dur = curEx?.duration_sec || 30;
+  const isHold = curEx?.exercise_type === 'duration';
 
   session.movementTimer = {
     isRunning: false,
@@ -1339,6 +1341,7 @@ function selectCooldownStretch(idx) {
     pausedMs: 0
   };
 
+  syncAuthoritativeSessionState(session);
   saveActiveSession(session);
   render();
 }
@@ -5123,6 +5126,19 @@ function startPhaseAutoRunner(phase) {
   const session = getActiveSession();
   if (!session) return;
   cancelAutoAdvance(false);
+
+  const rawShort = isWarmupPhase(phase) ? 'warmup' : (isCooldownPhase(phase) ? 'cooldown' : (isCompletedPhase(phase) ? 'completed' : 'main'));
+  if (rawShort !== 'completed') {
+    const lockStatus = getPhaseLockStatus(session, rawShort);
+    if (lockStatus.isLocked) {
+      showToast(lockStatus.lockReason);
+      if (rawShort === 'main' && !lockStatus.isWarmupResolved) {
+        openSkipWarmupPhaseModal();
+      }
+      return;
+    }
+  }
+
   ensureSessionStarted(session);
 
   const now = Date.now();
@@ -5214,6 +5230,19 @@ function selectExerciseToExecute(phase, idx) {
   const session = getActiveSession();
   if (!session) return;
   cancelAutoAdvance(false);
+
+  const rawShort = isWarmupPhase(phase) ? 'warmup' : (isCooldownPhase(phase) ? 'cooldown' : (isCompletedPhase(phase) ? 'completed' : 'main'));
+  if (rawShort !== 'completed') {
+    const lockStatus = getPhaseLockStatus(session, rawShort);
+    if (lockStatus.isLocked) {
+      showToast(lockStatus.lockReason);
+      if (rawShort === 'main' && !lockStatus.isWarmupResolved) {
+        openSkipWarmupPhaseModal();
+      }
+      return;
+    }
+  }
+
   ensureSessionStarted(session);
 
   const now = Date.now();
