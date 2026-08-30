@@ -1,3 +1,4 @@
+const path = require('path');
 const fs = require('fs');
 const vm = require('vm');
 
@@ -80,10 +81,22 @@ const context = vm.createContext({
 });
 
 // Load state.js & workout.js into context
-const stateCode = fs.readFileSync('frontend/js/state.js', 'utf8');
-const workoutCode = fs.readFileSync('frontend/js/views/workout.js', 'utf8');
 
+const constantsCode = fs.readFileSync(path.join(__dirname, "../js/core/constants.js"), "utf8");
+const utilsCode = fs.readFileSync(path.join(__dirname, "../js/core/utils.js"), "utf8");
+const audioCode = fs.readFileSync(path.join(__dirname, "../js/core/audio.js"), "utf8");
+const storageCode = fs.readFileSync(path.join(__dirname, "../js/core/storage.js"), "utf8");
+const stateCode = fs.readFileSync(path.join(__dirname, "../js/core/state.js"), "utf8");
+
+const workoutCode = fs.readFileSync(path.join(__dirname, "../js/views/workout-runner.js"), 'utf8');
+
+
+vm.runInContext(constantsCode, context);
+vm.runInContext(utilsCode, context);
+vm.runInContext(audioCode, context);
+vm.runInContext(storageCode, context);
 vm.runInContext(stateCode, context);
+
 vm.runInContext(workoutCode, context);
 
 // Test startWorkoutFromData
@@ -134,33 +147,14 @@ if (!model.coolDown.id || !model.coolDown.completionState) {
   throw new Error('Cool-down phase model missing completion state');
 }
 
-// Test phase switch to main
-console.log('Testing phase switch to Main Workout...');
+// Test phase locking & navigation rules
+console.log('Testing phase lock rules...');
+// Main is locked before Warm-up is resolved
 context.setWorkoutPhase('main');
-const mainHtml = context.renderActiveWorkoutView();
-console.log('Contains Main Workout Focus:', mainHtml.includes('Main Workout Focus'));
-console.log('Contains Sets & Progression:', mainHtml.includes('SETS & PROGRESSION'));
-
-// Test phase switch to cooldown
-console.log('Testing phase switch to Cool Down...');
-context.setWorkoutPhase('cooldown');
-const cooldownHtml = context.renderActiveWorkoutView();
-console.log('Contains Why Cool Down?:', cooldownHtml.includes('Why Cool Down?'));
-console.log('Contains Stretch Hold Countdown:', cooldownHtml.includes('Stretch Hold Countdown'));
-
-// Test Navigation Rules & Skip Behavior (Step 14)
-console.log('Testing Step 14: Navigation Rules & Skip Behavior...');
-// 1. Can navigate back to warmup freely
-context.setWorkoutPhase('warmup');
 let currentSession = context.getActiveSession();
-console.log('Navigated back to Warm-up:', currentSession.currentPhase === 'warmup');
+console.log('Main workout is locked before warm-up resolved:', currentSession.currentPhase === 'warmup');
 
-// 2. Can navigate to main workout
-context.setWorkoutPhase('main');
-currentSession = context.getActiveSession();
-console.log('Navigated to Main Workout:', currentSession.currentPhase === 'main');
-
-// 3. Skip warm-up properly sets skipped without false completion
+// Skip Warm-up properly unlocks Main Workout
 context.skipWarmupPhase();
 currentSession = context.getActiveSession();
 console.log('Warmup status after skip:', currentSession.warmup_status);
@@ -173,13 +167,36 @@ if (warmupItemsCompleted > 0) {
   throw new Error('Skipped warm-up items should not be falsely marked as completed');
 }
 
+// Now on Main Workout
+const mainHtml = context.renderActiveWorkoutView();
+console.log('Contains Main Workout Focus:', mainHtml.includes('Main Workout Focus'));
+console.log('Contains Sets & Progression:', mainHtml.includes('SETS & PROGRESSION'));
+
+// Complete main workout sets to unlock Cool Down
+currentSession.exercises.forEach(ex => { (ex.sets || []).forEach(s => { s.completed = true; }); });
+currentSession.mainStatus = 'COMPLETED';
+context.saveActiveSession(currentSession);
+
+// Switch to Cool Down
+context.setWorkoutPhase('cooldown');
+const cooldownHtml = context.renderActiveWorkoutView();
+console.log('Contains Why Cool Down?:', cooldownHtml.includes('Why Cool Down?'));
+console.log('Contains Lower Heart Rate pill:', cooldownHtml.includes('Lower Heart Rate'));
+
 // Test Step 20: Workout Finishing & Confirmation Modal
 console.log('Testing Step 20: Workout Finishing...');
+// Create an incomplete session to test early modal
+const incSession = Object.assign({}, context.getActiveSession(), {
+  mainStatus: 'ACTIVE',
+  exercises: [{ exercise_id: 'pull_up', sets: [{ set_num: 1, completed: false }] }]
+});
+context.saveActiveSession(incSession);
+
 // Incomplete session triggers modal
 context.requestFinishWorkout();
 const modalEl = dom.document.getElementById('confirm-finish-workout-modal');
 console.log('Confirmation modal created for incomplete session:', !!modalEl);
-if (!modalEl || !modalEl.innerHTML.includes('Finish workout?')) {
+if (!modalEl || !modalEl.innerHTML.includes('Finish Workout Early?')) {
   throw new Error('Expected incomplete workout confirmation modal');
 }
 
@@ -209,7 +226,7 @@ const emptyPhaseSession = {
   currentPhase: 'warmup',
   startTime: Date.now(),
   warmup: [],
-  exercises: [{ exercise_name: 'Push-up', sets: [{ set_num: 1, target_val: 10, completed: false }] }],
+  exercises: [{ exercise_name: 'Push-up', sets: [{ set_num: 1, target_val: 10, completed: true }] }],
   cooldown: []
 };
 context.saveActiveSession(emptyPhaseSession);

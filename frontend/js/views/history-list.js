@@ -2,159 +2,48 @@
  * CalistheniX — Workout History & Session Logs View
  */
 
-function openLogView(exerciseId, returnView = 'home', levelExercise = null) {
-  stopRest();
-  stopTimer();
-  state.logExerciseId = exerciseId;
-  state.logReturnView = returnView;
-  state.logElapsed    = 0;
-  // Guided session: reset set counter when starting a fresh exercise session.
-  // If levelExercise is provided (opening from routine), wire up set tracking.
-  if (levelExercise) {
-    state.sessionSet       = 1;
-    state.sessionTotalSets = levelExercise.sets || null;
-    state.sessionRestSec   = levelExercise.rest_sec || null;
-  } else {
-    state.sessionSet       = 1;
-    state.sessionTotalSets = null;
-    state.sessionRestSec   = null;
-  }
-  state.view = 'log';
-  window.location.hash = `log-${exerciseId}`;
-  render();
-}
-
-// ── Timer helpers ────────────────────────────────────────────────────────────
-function startTimer() {
-  if (state.logTimer) return;       // already running
-  const startedAt = Date.now() - state.logElapsed * 1000;
-  const intervalId = setInterval(() => {
-    state.logElapsed = Math.floor((Date.now() - startedAt) / 1000);
-    const el = document.getElementById('timer-display');
-    if (el) el.textContent = fmtSecs(state.logElapsed);
-  }, 200);
-  state.logTimer = { startedAt, intervalId };
-  const btn = document.getElementById('timer-btn');
-  if (btn) { btn.textContent = 'Stop'; btn.classList.add('timer-btn-running'); }
-}
-
-function stopTimer() {
-  if (!state.logTimer) return;
-  clearInterval(state.logTimer.intervalId);
-  state.logTimer = null;
-  const btn = document.getElementById('timer-btn');
-  if (btn) { btn.textContent = 'Start'; btn.classList.remove('timer-btn-running'); }
-}
-
-
-function toggleTimer() {
-  if (state.logTimer) {
-    stopTimer();
-    // Auto-save the duration when the user stops the timer.
-    // Fire hold-save cue first (beep + vibrate) so the gym-user gets
-    // confirmation without needing to see the screen mid-hold.
-    if (state.logElapsed > 0) {
-      cueHoldSave();
-      saveLog({ duration_sec: state.logElapsed });
-    }
-  } else {
-    startTimer();
-  }
-}
-
-// ── Save log ─────────────────────────────────────────────────────────────────
-// Writes to localStorage only — no backend call.
-// Sync is wired separately (Step 5) via lsSyncPending() / startSyncLoop().
-function saveLog(extra = {}) {
-  const entry = {
-    exercise_id:  state.logExerciseId,
-    timestamp:    new Date().toISOString(),
-    client_uuid:  newUUID(),
-    ...extra,
-  };
-  lsWriteLog(entry);          // immediate localStorage write
-  lsSyncPending();            // trigger background sync
-  state.logElapsed = 0;
-  stopTimer();
-
-  // ── Guided session flow ───────────────────────────────────────────────────
-  if (state.sessionTotalSets !== null) {
-    const isLastSet = state.sessionSet >= state.sessionTotalSets;
-    if (isLastSet) {
-      // All sets complete — mark done, return to routine.
-      markExerciseDone(state.logExerciseId);
-      cueExerciseComplete();          // two-beep + pattern vibrate
-      showToast('Exercise complete');
-      state.view = state.logReturnView;
-      window.location.hash = state.logReturnView;
-      render();
-    } else {
-      // More sets remain — show rest countdown, then advance.
-      showToast('Set saved');
-      startRestCountdown(state.sessionRestSec || 90);
-    }
-  } else {
-    // Unguided (opened outside routine context) — original behaviour.
-    showToast('Saved');
-    render();
-  }
-}
-
-// ── Rest countdown ────────────────────────────────────────────────────────────
-function startRestCountdown(sec) {
-  stopRest();
-  state.restActive    = true;
-  state.restRemaining = sec;
-  render();  // show rest screen immediately
-  state.restIntervalId = setInterval(() => {
-    state.restRemaining--;
-    const el = document.getElementById('rest-countdown');
-    if (el) el.textContent = fmtSecs(state.restRemaining);
-    // Audible warning: quiet tick for last 3 seconds
-    if (state.restRemaining > 0 && state.restRemaining <= 3) cueTick();
-    if (state.restRemaining <= 0) {
-      cueRestEnd();   // beep + vibrate at zero
-      advanceSet();
-    }
-  }, 1000);
-}
-
-function stopRest() {
-  if (state.restIntervalId) {
-    clearInterval(state.restIntervalId);
-    state.restIntervalId = null;
-  }
-  state.restActive = false;
-}
-
-// Called when rest timer hits zero or user taps "Skip Rest".
-function advanceSet() {
-  stopRest();
-  state.sessionSet++;
-  state.restActive = false;
-  render();
-}
-
-function handleSaveReps(event) {
-  event.preventDefault();
-  const form = event.target;
-  const reps      = parseInt(form.reps.value, 10) || null;
-  const weight_kg = parseFloat(form.weight_kg?.value) || null;
-  const rpe       = parseInt(form.rpe?.value, 10) || null;
-  if (!reps) { showToast('Enter reps first', true); return; }
-  saveLog({ reps, weight_kg, rpe });
-  form.reset();
-}
-
-
-// ─── Phase 4: Unified Workout Session History Log ───────────────────────────
-
 async function loadWorkoutSessions() {
   try {
     state.workoutSessions = await API.getWorkoutSessions();
   } catch (e) {
     state.workoutSessions = [];
   }
+
+  // Merge any local sessions stored in localStorage if not already present in state.workoutSessions
+  try {
+    const existingUuids = new Set((state.workoutSessions || []).map(s => s.session_uuid || s.id));
+    const prefix = typeof LS_SESSION_PREFIX !== 'undefined' ? LS_SESSION_PREFIX : 'cx_session_';
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(prefix)) {
+        const item = JSON.parse(localStorage.getItem(k));
+        const sessId = item?.id || item?.session_uuid;
+        if (item && sessId && !existingUuids.has(sessId) && (item.is_completed || item.status === 'completed' || item.status === 'completed_early')) {
+          state.workoutSessions = state.workoutSessions || [];
+          state.workoutSessions.push({
+            session_uuid: sessId,
+            routine_name: item.routine || item.routine_name || 'Workout',
+            level: item.level || 1,
+            started_at: item.started_at || item.startTime,
+            completed_at: item.completed_at || item.endTime || new Date().toISOString(),
+            duration_sec: item.duration_sec || item.duration || 0,
+            total_sets: item.total_sets || (item.exercises ? item.exercises.reduce((acc, ex) => acc + (ex.sets ? ex.sets.length : 0), 0) : 0),
+            completed_sets: item.completed_sets || (item.exercises ? item.exercises.reduce((acc, ex) => acc + (ex.sets ? ex.sets.filter(s => s.completed).length : 0), 0) : 0),
+            warmup_status: item.warmup_status || 'none',
+            cooldown_status: item.cooldown_status || 'none',
+            warmup_duration_sec: item.warmup_duration_sec || 0,
+            cooldown_duration_sec: item.cooldown_duration_sec || 0,
+            main_duration_sec: item.main_duration_sec || 0,
+            status: item.status || 'completed'
+          });
+          existingUuids.add(sessId);
+        }
+      }
+    }
+    if (state.workoutSessions && state.workoutSessions.length > 0) {
+      state.workoutSessions.sort((a, b) => new Date(b.completed_at || b.started_at) - new Date(a.completed_at || a.started_at));
+    }
+  } catch (err) {}
 }
 
 async function openHistoryListView() {
@@ -214,10 +103,10 @@ function renderHistoryListView() {
         }
 
         return `
-          <div class="history-session-card" onclick="openSessionDetailView('${s.session_uuid}')">
+          <div class="history-session-card" onclick="openSessionDetailView('${s.session_uuid || s.id}')">
             <div class="history-session-top">
               <div>
-                <h3 class="history-session-title">${s.routine_name} <span style="font-size:12px; font-weight:400; color:var(--text-muted);">· Level ${s.level}</span></h3>
+                <h3 class="history-session-title">${s.routine_name || s.routine || 'Workout'} <span style="font-size:12px; font-weight:400; color:var(--text-muted);">· Level ${s.level || 1}</span></h3>
                 <span class="history-session-date mono">${dateStr}</span>
               </div>
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -424,31 +313,10 @@ function renderSessionDetailView() {
     </div>`;
 }
 
-
-
-
-function buildRpeRow() {
-  const row = document.getElementById('rpe-row');
-  const hidden = document.getElementById('rpe-hidden');
-  const descEl = document.getElementById('rpe-desc-text');
-  if (!row || !hidden) return;
-  row.innerHTML = '';
-  for (let i = 1; i <= 10; i++) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = `rpe-btn ${hidden.value == i ? 'rpe-active' : ''}`;
-    btn.textContent = i;
-    btn.title = RPE_DESCRIPTIONS[i];
-    btn.onclick = () => {
-      hidden.value = i;
-      row.querySelectorAll('.rpe-btn').forEach(b => b.classList.remove('rpe-active'));
-      btn.classList.add('rpe-active');
-      if (descEl) {
-        descEl.textContent = `RPE ${i}: ${RPE_DESCRIPTIONS[i]}`;
-      }
-    };
-    row.appendChild(btn);
-  }
+if (typeof window !== 'undefined') {
+  window.loadWorkoutSessions = loadWorkoutSessions;
+  window.openHistoryListView = openHistoryListView;
+  window.openSessionDetailView = openSessionDetailView;
+  window.renderHistoryListView = renderHistoryListView;
+  window.renderSessionDetailView = renderSessionDetailView;
 }
-
-

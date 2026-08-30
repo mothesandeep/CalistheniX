@@ -40,12 +40,19 @@ rows = conn.execute('''
 ''', ('${routineName}',)).fetchall()
 print(json.dumps([dict(r) for r in rows]))
 `;
-  return JSON.parse(execSync(`python3 -c "${pyCmd.replace(/"/g, '\\"')}"`, { cwd: path.join(__dirname, '..') }).toString());
+  return JSON.parse(execSync(`python3 -c "${pyCmd.replace(/"/g, '\\"')}"`, { cwd: path.join(__dirname, '../..') }).toString());
 }
 
 // 2. Setup environment for frontend runtime simulation
-const stateJsContent = fs.readFileSync(path.join(__dirname, '../frontend/js/state.js'), 'utf-8');
-const workoutJsContent = fs.readFileSync(path.join(__dirname, '../frontend/js/views/workout.js'), 'utf-8');
+const stateJsContent = fs.readFileSync(path.join(__dirname, "../js/core/state.js"), 'utf-8');
+
+const constantsCode = fs.readFileSync(path.join(__dirname, "../js/core/constants.js"), "utf8");
+const utilsCode = fs.readFileSync(path.join(__dirname, "../js/core/utils.js"), "utf8");
+const audioCode = fs.readFileSync(path.join(__dirname, "../js/core/audio.js"), "utf8");
+const storageCode = fs.readFileSync(path.join(__dirname, "../js/core/storage.js"), "utf8");
+const stateCode = fs.readFileSync(path.join(__dirname, "../js/core/state.js"), "utf8");
+const workoutJsContent = fs.readFileSync(path.join(__dirname, "../js/views/workout-runner.js"), "utf8");
+
 
 function createRunnerContext() {
   let activeSessionState = null;
@@ -115,7 +122,17 @@ function createRunnerContext() {
 
   const vm = require('vm');
   const context = vm.createContext(mockGlobals);
-  vm.runInContext(stateJsContent, context);
+context.window = context;
+context.location = { hash: "" };
+context.global = context;
+context.globalThis = context;
+  
+vm.runInContext(constantsCode, context);
+vm.runInContext(utilsCode, context);
+vm.runInContext(audioCode, context);
+vm.runInContext(storageCode, context);
+vm.runInContext(stateCode, context);
+
   vm.runInContext(workoutJsContent, context);
   return context;
 }
@@ -189,8 +206,8 @@ assert.strictEqual(model.warmUp.progressLabel, '5 / 5 completed ✓');
 console.log('  Testing tab switching state preservation...');
 pullBContext.setWorkoutPhase('main');
 assert.strictEqual(pullBContext.getActiveSession().currentPhase, 'main');
-pullBContext.setWorkoutPhase('cooldown');
-assert.strictEqual(pullBContext.getActiveSession().currentPhase, 'cooldown');
+pullBContext.setWorkoutPhase('cooldown'); // Locked -> stays on main
+assert.strictEqual(pullBContext.getActiveSession().currentPhase, 'main', 'Cool down is locked during main workout');
 pullBContext.setWorkoutPhase('warmup');
 assert.strictEqual(pullBContext.getActiveSession().currentPhase, 'warmup');
 

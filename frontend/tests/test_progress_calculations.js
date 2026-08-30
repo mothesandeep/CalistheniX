@@ -27,11 +27,18 @@ rows = conn.execute('''
 print(json.dumps([dict(r) for r in rows]))
 `;
 
-const rows = JSON.parse(execSync(`python3 -c "${pyCmd.replace(/"/g, '\\"')}"`, { cwd: path.join(__dirname, '..') }).toString());
+const rows = JSON.parse(execSync(`python3 -c "${pyCmd.replace(/"/g, '\\"')}"`, { cwd: path.join(__dirname, '../..') }).toString());
 
 // Load state.js & workout.js
-const stateJsContent = fs.readFileSync(path.join(__dirname, '../frontend/js/state.js'), 'utf-8');
-const workoutJsContent = fs.readFileSync(path.join(__dirname, '../frontend/js/views/workout.js'), 'utf-8');
+const stateJsContent = fs.readFileSync(path.join(__dirname, "../js/core/state.js"), 'utf-8');
+
+const constantsCode = fs.readFileSync(path.join(__dirname, "../js/core/constants.js"), "utf8");
+const utilsCode = fs.readFileSync(path.join(__dirname, "../js/core/utils.js"), "utf8");
+const audioCode = fs.readFileSync(path.join(__dirname, "../js/core/audio.js"), "utf8");
+const storageCode = fs.readFileSync(path.join(__dirname, "../js/core/storage.js"), "utf8");
+const stateCode = fs.readFileSync(path.join(__dirname, "../js/core/state.js"), "utf8");
+const workoutJsContent = fs.readFileSync(path.join(__dirname, "../js/views/workout-runner.js"), "utf8");
+
 
 let activeSessionState = null;
 
@@ -76,7 +83,17 @@ const mockGlobals = {
 
 const vm = require('vm');
 const context = vm.createContext(mockGlobals);
-vm.runInContext(stateJsContent, context);
+context.window = context;
+context.location = { hash: "" };
+context.global = context;
+context.globalThis = context;
+
+vm.runInContext(constantsCode, context);
+vm.runInContext(utilsCode, context);
+vm.runInContext(audioCode, context);
+vm.runInContext(storageCode, context);
+vm.runInContext(stateCode, context);
+
 vm.runInContext(workoutJsContent, context);
 
 // Initialize Session
@@ -161,4 +178,6 @@ assert.strictEqual(model.coolDown.progress, 20);
 assert.strictEqual(model.mainWorkout.completedSets, 3, 'Main Workout completed sets MUST remain 3');
 console.log('   ✓ Cool-Down stretch completion is isolated from Main Workout\n');
 
+context.stopWorkoutRest();
 console.log('=== ALL DYNAMIC PROGRESS CALCULATION TESTS PASSED! ✅ ===\n');
+process.exit(0);

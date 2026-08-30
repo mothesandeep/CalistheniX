@@ -27,12 +27,19 @@ rows = conn.execute('''
 print(json.dumps([dict(r) for r in rows]))
 `;
 
-const rows = JSON.parse(execSync(`python3 -c "${pyCmd.replace(/"/g, '\\"')}"`, { cwd: path.join(__dirname, '..') }).toString());
+const rows = JSON.parse(execSync(`python3 -c "${pyCmd.replace(/"/g, '\\"')}"`, { cwd: path.join(__dirname, '../..') }).toString());
 console.log(`Loaded ${rows.length} exercises from database for Pull B.`);
 
   // 2. Load state.js & workout.js
-  const stateJsContent = fs.readFileSync(path.join(__dirname, '../frontend/js/state.js'), 'utf-8');
-  const workoutJsContent = fs.readFileSync(path.join(__dirname, '../frontend/js/views/workout.js'), 'utf-8');
+  const stateJsContent = fs.readFileSync(path.join(__dirname, "../js/core/state.js"), 'utf-8');
+  
+const constantsCode = fs.readFileSync(path.join(__dirname, "../js/core/constants.js"), "utf8");
+const utilsCode = fs.readFileSync(path.join(__dirname, "../js/core/utils.js"), "utf8");
+const audioCode = fs.readFileSync(path.join(__dirname, "../js/core/audio.js"), "utf8");
+const storageCode = fs.readFileSync(path.join(__dirname, "../js/core/storage.js"), "utf8");
+const stateCode = fs.readFileSync(path.join(__dirname, "../js/core/state.js"), "utf8");
+const workoutJsContent = fs.readFileSync(path.join(__dirname, "../js/views/workout-runner.js"), "utf8");
+
 
   let activeSessionState = null;
   let renderCallCount = 0;
@@ -81,7 +88,17 @@ console.log(`Loaded ${rows.length} exercises from database for Pull B.`);
 
   const vm = require('vm');
   const context = vm.createContext(mockGlobals);
-  vm.runInContext(stateJsContent, context);
+context.window = context;
+context.location = { hash: "" };
+context.global = context;
+context.globalThis = context;
+  
+vm.runInContext(constantsCode, context);
+vm.runInContext(utilsCode, context);
+vm.runInContext(audioCode, context);
+vm.runInContext(storageCode, context);
+vm.runInContext(stateCode, context);
+
   vm.runInContext(workoutJsContent, context);
 
   // Initialize PULL B Session
@@ -168,12 +185,19 @@ console.log(`Loaded ${rows.length} exercises from database for Pull B.`);
   });
   console.log('  ✓ Warm-Up workspace renders ONLY warm-up exercises');
 
+  // Complete Warm-Up to unlock Main Workout
+  const sess1 = context.getActiveSession();
+  sess1.warmup.forEach(w => { w.completed = true; });
+  sess1.warmup_status = 'completed';
+  sess1.warmupStatus = 'COMPLETED';
+  context.saveActiveSession(sess1);
+
   // B. Main Workout Tab
   context.setWorkoutPhase('main');
   assert.strictEqual(context.getActiveSession().currentPhase, 'main');
   const mainHtml = context.renderWorkoutPhaseWorkspace(context.getActiveSession(), 'main');
 
-  assert.ok(mainHtml.includes('id="main-card-0"'), 'Main Workout tab must render main cards');
+  assert.ok(mainHtml.includes('workout-active-counter-digits'), 'Main Workout tab must render active tracker player');
   assert.ok(!mainHtml.includes('id="warmup-card-'), 'Main Workout tab must NOT render warmup cards');
   assert.ok(!mainHtml.includes('id="cooldown-card-'), 'Main Workout tab must NOT render cooldown cards');
 
@@ -181,6 +205,12 @@ console.log(`Loaded ${rows.length} exercises from database for Pull B.`);
     assert.ok(mainHtml.includes(name), `Main Workout workspace MUST include "${name}"`);
   });
   console.log('  ✓ Main Workout workspace renders ONLY main strength/skill exercises');
+
+  // Complete Main Workout to unlock Cool Down
+  const sess2 = context.getActiveSession();
+  sess2.exercises.forEach(ex => { (ex.sets || []).forEach(s => { s.completed = true; }); });
+  sess2.mainStatus = 'COMPLETED';
+  context.saveActiveSession(sess2);
 
   // C. Cool Down Tab
   context.setWorkoutPhase('cooldown');
@@ -198,6 +228,11 @@ console.log(`Loaded ${rows.length} exercises from database for Pull B.`);
 
   // --- 3. VERIFYING MAIN WORKOUT CORE FUNCTIONALITY (Sets, Reps, Weight, RPE, Logging) ---
   console.log('\n--- 3. VERIFYING MAIN WORKOUT SETS, REPS, WEIGHT, RPE, REST ---');
+  // Reset sets for interactive verification
+  const sess3 = context.getActiveSession();
+  sess3.exercises.forEach(ex => { (ex.sets || []).forEach(s => { s.completed = false; }); });
+  sess3.mainStatus = 'ACTIVE';
+  context.saveActiveSession(sess3);
   context.setWorkoutPhase('main');
 
   // Check Pull-ups Close Grip (4 sets)
@@ -241,4 +276,6 @@ console.log(`Loaded ${rows.length} exercises from database for Pull B.`);
   assert.strictEqual(context.getActiveSession().exercises[lsitExIdx].sets[0].completed, true, 'L-sit Hold Set 1 should be marked completed');
   console.log('  ✓ Isometric hold countdown and logging functional');
 
+  context.stopWorkoutRest();
   console.log('\n=== ALL MAIN WORKOUT & 3-PHASE ISOLATION TESTS PASSED! ✅ ===\n');
+  process.exit(0);

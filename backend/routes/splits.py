@@ -2,12 +2,13 @@ from flask import Blueprint, jsonify, request
 
 try:
     from backend.db import get_db
+    from backend.data.constants import DAY_NAMES
 except ImportError:
     from db import get_db
-
-DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    from data.constants import DAY_NAMES
 
 splits_bp = Blueprint('splits', __name__)
+
 
 
 @splits_bp.route('/splits', methods=['GET'])

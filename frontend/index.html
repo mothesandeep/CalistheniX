@@ -21,7 +21,20 @@
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/layout.css" />
-  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/components/buttons.css" />
+  <link rel="stylesheet" href="css/components/cards.css" />
+  <link rel="stylesheet" href="css/components/forms.css" />
+  <link rel="stylesheet" href="css/components/toast.css" />
+  <link rel="stylesheet" href="css/components/nav.css" />
+  <link rel="stylesheet" href="css/components/modals.css" />
+  <link rel="stylesheet" href="css/components/home-dashboard.css" />
+  <link rel="stylesheet" href="css/components/workout-runner.css" />
+  <link rel="stylesheet" href="css/components/split-editor.css" />
+  <link rel="stylesheet" href="css/components/history.css" />
+  <link rel="stylesheet" href="css/components/progress-charts.css" />
+  <link rel="stylesheet" href="css/components/prs.css" />
+  <link rel="stylesheet" href="css/components/calendar.css" />
+  <link rel="stylesheet" href="css/components/settings.css" />
 </head>
 
 <body>
@@ -167,19 +180,25 @@
 
   <!-- Chart.js via CDN (architecture.md §5 — no build step) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="js/state.js"></script>
+  <script src="js/core/constants.js"></script>
+  <script src="js/core/utils.js"></script>
+  <script src="js/core/audio.js"></script>
+  <script src="js/core/storage.js"></script>
+  <script src="js/core/state.js"></script>
   <script src="js/api.js"></script>
-  <script src="js/components/exerciseAnimation.js"></script>
-  <script src="js/components/muscleMap.js"></script>
+  <script src="js/components/exercise-animation.js"></script>
+  <script src="js/components/muscle-map.js"></script>
   <script src="js/views/home.js"></script>
-  <script src="js/views/workout.js"></script>
-  <script src="js/views/history.js"></script>
-  <script src="js/views/progress.js"></script>
-  <script src="js/views/prs.js"></script>
-  <script src="js/views/split.js"></script>
+  <script src="js/views/workout-runner.js"></script>
+  <script src="js/views/log-entry.js"></script>
+  <script src="js/views/history-list.js"></script>
+  <script src="js/views/progress-chart.js"></script>
+  <script src="js/views/personal-records.js"></script>
+  <script src="js/views/calendar.js"></script>
+  <script src="js/views/split-manager.js"></script>
   <script src="js/views/settings.js"></script>
   <script src="js/router.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/bootstrap.js"></script>
 </body>
 
 </html>

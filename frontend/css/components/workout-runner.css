@@ -1,0 +1,2927 @@
+/* ── Phase 3: Active Workout Execution Runner ──────────────────────────────── */
+
+.workout-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  color: var(--text);
+}
+
+@keyframes pulse-accent {
+  0%, 100% { border-color: rgba(124, 106, 247, 0.4); }
+  50% { border-color: rgba(124, 106, 247, 0.85); box-shadow: 0 0 8px rgba(124, 106, 247, 0.3); }
+}
+
+@keyframes pulse-hold {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(0.97); filter: brightness(1.2); }
+}
+
+/* ── Today Execution Hub Styles (Phase 2 Separation) ──────────────────────── */
+.today-hero-card {
+  background: #121217;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.today-hero-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.today-hero-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.today-hero-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.today-hero-metrics {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.today-metric-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.today-metric-val {
+  color: var(--text);
+  font-weight: 600;
+  font-family: var(--mono);
+}
+
+.today-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.today-status-active {
+  background: var(--accent-dim);
+  color: var(--accent-light);
+  border: 1px solid var(--border-accent);
+}
+
+.today-status-done {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+/* ── Workout Paused Banner ─────────────────────────────────────────────────── */
+
+/* ── Workout Rest Banner ─────────────────────────────────────────────────── */
+
+@keyframes restSlideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Decluttered Workout Runner (Priority P0) ─────────────────────────────── */
+.runner-screen {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.runner-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.runner-timer-pill {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--surface-2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.runner-progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 300ms ease;
+}
+.runner-exercise-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+.runner-benchmark-val {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+}
+.runner-hold-btn-lg.running {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Secondary Drawer for RPE / Weight / Notes */
+
+/* Active Rest Countdown Box */
+
+/* ── 3. Active Exercise Stage Card ────────────────────────────────────────── */
+.runner-stage-card {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  animation: runnerStageFadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+@keyframes runnerStageFadeIn {
+  from {
+    opacity: 0.75;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.runner-stage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.runner-stage-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runner-set-stepper-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  margin-bottom: 2px;
+}
+
+.runner-set-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-light, #a78bfa);
+  background: rgba(124, 92, 252, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.runner-set-pips-track {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.runner-set-pip {
+  height: 6px;
+  border-radius: 99px;
+  transition: all 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.runner-set-pip.completed {
+  width: 14px;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.45);
+  animation: pipCompleteBounce 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pipCompleteBounce {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.runner-set-pip.current {
+  width: 22px;
+  background: var(--accent, #7c5cfc);
+  box-shadow: 0 0 10px rgba(124, 92, 252, 0.55);
+}
+
+.runner-set-pip.upcoming {
+  width: 10px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.runner-set-pill {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-light, #a78bfa);
+  background: rgba(124, 92, 252, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+
+.runner-exercise-name {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.runner-exercise-context {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.runner-stage-art {
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
+  min-height: 58px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  transition: all var(--transition);
+}
+
+.runner-stage-art:hover {
+  border-color: rgba(124, 92, 252, 0.35);
+  background: rgba(124, 92, 252, 0.06);
+  transform: scale(1.04);
+}
+
+.runner-illustration-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ── Benchmarks Strip (Secondary comparison) ──────────────────────────────── */
+.runner-benchmarks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+
+.runner-benchmark-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.runner-benchmark-col-right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.runner-benchmark-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.runner-benchmark-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.runner-benchmark-time {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  line-height: 1.2;
+}
+
+/* ── Central Reps & Hold Counter Zone (Context-Aware Visual Focal Point) ──── */
+.runner-hero-counter-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 6px 0 2px;
+}
+
+.runner-reps-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.runner-reps-btn {
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  min-height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.runner-reps-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: scale(1.06);
+}
+
+.runner-reps-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.runner-reps-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.runner-reps-btn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.runner-reps-digits-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 140px;
+  text-align: center;
+}
+
+.runner-reps-num {
+  font-family: var(--mono);
+  font-size: 62px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #ffffff;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  min-width: 2ch;
+  text-align: center;
+}
+
+.runner-reps-unit {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.14em;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.runner-weight-pill {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-light, #a78bfa);
+  background: rgba(124, 92, 252, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.04em;
+}
+
+.runner-hold-live-control {
+  display: flex;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+/* ── Quick-Fill Performance Shortcut Chips ────────────────────────────────── */
+.runner-quick-fill-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.runner-quick-fill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.runner-quick-fill-chip:hover:not(:disabled) {
+  background: rgba(124, 92, 252, 0.14);
+  border-color: rgba(124, 92, 252, 0.38);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.runner-quick-fill-chip:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.runner-quick-fill-chip.active {
+  background: rgba(124, 92, 252, 0.18);
+  border-color: rgba(124, 92, 252, 0.45);
+  color: var(--accent-light, #a78bfa);
+  box-shadow: 0 0 12px rgba(124, 92, 252, 0.22);
+}
+
+.runner-quick-fill-chip:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.runner-ring-btn {
+  padding: 6px 16px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.runner-ring-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.runner-ring-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.runner-ring-btn.running {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #ef4444;
+}
+
+/* ── 4. Primary Complete Action CTA (Strongest Action) ────────────────────── */
+.runner-complete-action-btn {
+  width: 100%;
+  padding: 15px 20px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  background: var(--accent);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(124, 92, 252, 0.3);
+  transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1), background 160ms ease, box-shadow 160ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.runner-complete-action-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  box-shadow: 0 6px 20px rgba(124, 92, 252, 0.45);
+  transform: translateY(-1px);
+}
+
+.runner-complete-action-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.runner-complete-action-btn.btn-pop {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  box-shadow: 0 0 24px rgba(16, 185, 129, 0.55), 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+  animation: btnCompleteSpring 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.runner-complete-action-btn.btn-pop .runner-check-icon {
+  animation: checkmarkPop 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes btnCompleteSpring {
+  0% { transform: scale(0.95); }
+  50% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+
+@keyframes checkmarkPop {
+  0% { transform: scale(0.6) rotate(-20deg); }
+  60% { transform: scale(1.4) rotate(8deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* ── 5. Set Details Accordion ─────────────────────────────────────────────── */
+.runner-details-accordion {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 12px;
+}
+
+.runner-details-summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: color var(--transition);
+}
+
+.runner-details-summary:hover {
+  color: #ffffff;
+}
+
+.runner-details-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.runner-details-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.runner-details-summary:hover .runner-details-title {
+  color: #ffffff;
+}
+
+.runner-details-subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.runner-details-summary::-webkit-details-marker {
+  display: none;
+}
+
+.runner-details-body {
+  padding-top: 12px;
+}
+
+.runner-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.runner-form-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* ── 4. Session Overview Queue ────────────────────────────────────────────── */
+.runner-queue-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.runner-queue-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px 4px 4px;
+}
+
+.runner-queue-tag {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.runner-queue-summary {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.runner-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Base Sequence Row (Compact, strong alignment, not large cards) */
+.runner-seq-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 180ms ease;
+  user-select: none;
+}
+
+.runner-seq-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.runner-seq-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.runner-seq-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.runner-seq-name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-seq-sub {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.runner-seq-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.runner-seq-count {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* 1. COMPLETED: visually quieter, checkmark, reduced emphasis, reviewable with satisfying completion entry */
+.runner-seq-row.completed {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  opacity: 0.72;
+  animation: rowCompletedFlash 450ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes rowCompletedFlash {
+  0% {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: rgba(16, 185, 129, 0.5);
+    opacity: 1;
+    transform: scale(1.015);
+  }
+  100% {
+    background: rgba(255, 255, 255, 0.015);
+    border-color: rgba(255, 255, 255, 0.04);
+    opacity: 0.72;
+    transform: scale(1);
+  }
+}
+
+.runner-seq-row.completed:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.runner-seq-row.completed .runner-seq-icon {
+  color: #10b981;
+  animation: checkBounce 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes checkBounce {
+  0% { transform: scale(0.5) rotate(-15deg); }
+  60% { transform: scale(1.3) rotate(6deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.runner-seq-row.completed .runner-seq-name {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.runner-seq-row.completed .runner-seq-sub {
+  color: var(--text-dim);
+}
+
+.runner-seq-row.completed .runner-seq-count {
+  color: #10b981;
+}
+
+/* 2. CURRENT: strongest row, subtle active indicator, clearly connected to active card */
+.runner-seq-row.current {
+  background: rgba(124, 92, 252, 0.08);
+  border: 1px solid rgba(124, 92, 252, 0.28);
+  border-left: 3px solid var(--accent);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.runner-seq-row.current:hover {
+  background: rgba(124, 92, 252, 0.12);
+  border-color: rgba(124, 92, 252, 0.38);
+}
+
+.runner-seq-row.current .runner-seq-icon {
+  color: var(--accent-light, #a78bfa);
+  font-size: 13px;
+}
+
+.runner-seq-row.current .runner-seq-name {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.runner-seq-row.current .runner-seq-sub {
+  color: var(--text-muted);
+}
+
+.runner-seq-row.current .runner-seq-count {
+  color: #ffffff;
+}
+
+/* 3. UPCOMING: neutral/subdued, hollow circle, no unnecessary glow */
+.runner-seq-row.upcoming {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.runner-seq-row.upcoming:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.runner-seq-row.upcoming .runner-seq-icon {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.runner-seq-row.upcoming .runner-seq-name {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.runner-seq-row.upcoming .runner-seq-sub {
+  color: var(--text-dim);
+}
+
+.runner-seq-row.upcoming .runner-seq-count {
+  color: var(--text-dim);
+}
+
+.runner-coach-tip {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.runner-coach-tip-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--accent-light, #a78bfa);
+  display: flex;
+  align-items: center;
+}
+
+.runner-coach-tip-text {
+  flex: 1;
+  color: #cbd5e1;
+}
+
+.runner-coach-tip-text strong {
+  color: #ffffff;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+@media (max-width: 640px) {
+  .runner-top-bar {
+    gap: 8px;
+  }
+  .runner-header-routine-title {
+    font-size: 13px;
+  }
+  .runner-header-session-sub {
+    font-size: 10px;
+  }
+  .runner-timer-pill {
+    padding: 4px 9px;
+    font-size: 12px;
+    gap: 4px;
+  }
+  .runner-back-btn,
+  .runner-header-opt-btn {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+  }
+  .runner-finish-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .runner-stage-card {
+    padding: 16px 16px 14px;
+    gap: 14px;
+  }
+  .runner-exercise-name {
+    font-size: 22px;
+  }
+  .runner-exercise-context {
+    font-size: 12px;
+  }
+  .runner-stage-art {
+    width: 48px;
+    height: 48px;
+  }
+  .runner-reps-num {
+    font-size: 52px;
+  }
+  .runner-reps-stepper {
+    gap: 16px;
+  }
+  .runner-reps-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+  .runner-complete-action-btn {
+    padding: 14px 16px;
+    font-size: 14px;
+  }
+  .runner-benchmarks {
+    padding: 8px 12px;
+  }
+  .runner-form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ── Discard Workout Modal & Action Styling ───────────────────────────────── */
+.runner-discard-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition);
+}
+
+.runner-discard-btn:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+}
+
+.discard-modal-card {
+  max-width: 440px !important;
+  width: 92% !important;
+  padding: 22px 24px 20px !important;
+  gap: 14px;
+}
+
+.discard-modal-header {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.discard-modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.discard-modal-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.discard-modal-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.discard-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.discard-modal-btn {
+  padding: 11px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+}
+
+.discard-modal-keep-btn {
+  background: var(--surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.discard-modal-keep-btn:hover {
+  background: var(--surface-3);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.discard-modal-keep-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.discard-modal-danger-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.discard-modal-danger-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .runner-stage-card,
+  .runner-rest-card,
+  .runner-seq-row,
+  .runner-reps-btn,
+  .runner-complete-action-btn,
+  .runner-progress-bar-fill,
+  .modal-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── Minimalist Movement Animation Stick-Figure Component ─────────── */
+.cx-exercise-animation {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  overflow: visible;
+  box-sizing: border-box;
+  user-select: none;
+  flex-shrink: 0;
+  transition: transform var(--transition), filter var(--transition);
+}
+
+.cx-exercise-animation.cx-anim-card-badge {
+  background: rgba(124, 92, 252, 0.06);
+  border: 1px solid rgba(124, 92, 252, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 6px;
+  border-radius: var(--radius);
+}
+
+.cx-anim-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(124, 92, 252, 0.3));
+}
+
+.cx-anim-bone {
+  vector-effect: non-scaling-stroke;
+}
+
+.cx-anim-head {
+  filter: drop-shadow(0 0 6px rgba(124, 92, 252, 0.6));
+}
+
+.cx-anim-joint {
+  opacity: 0.85;
+}
+
+.cx-anim-ambient-glow {
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.cx-anim-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-align: center;
+}
+
+.card:hover .cx-exercise-animation .cx-anim-svg,
+.workout-exercise-item:hover .cx-exercise-animation .cx-anim-svg,
+.runner-stage-card:hover .cx-exercise-animation .cx-anim-svg {
+  filter: drop-shadow(0 4px 16px rgba(124, 92, 252, 0.55));
+}
+
+/* ── Paused Workout State Synchronisation ─────────────────────────────────── */
+.cx-anim-paused,
+.cx-anim-paused * {
+  animation-play-state: paused !important;
+}
+
+.cx-anim-paused .cx-anim-svg {
+  opacity: 0.55;
+  filter: grayscale(0.35) drop-shadow(0 2px 4px rgba(124, 92, 252, 0.15));
+  transition: opacity 200ms ease, filter 200ms ease;
+}
+
+.cx-anim-pause-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 9, 16, 0.6);
+  backdrop-filter: blur(1.5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius, 12px);
+  z-index: 5;
+  animation: fadeIn 150ms ease;
+}
+
+.cx-anim-pause-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.18);
+  border: 1px solid rgba(249, 115, 22, 0.38);
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.runner-timer-pill.paused {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.35);
+  color: #fb923c;
+}
+
+.runner-live-dot.paused {
+  background: #f97316;
+  box-shadow: 0 0 6px #f97316;
+  animation: none;
+  opacity: 0.8;
+}
+
+.runner-sticky-card.is-paused {
+  border-color: rgba(249, 115, 22, 0.2);
+}
+
+/* ── Sticky Left Visual Panel ─────────────────────────────────────────────── */
+.runner-sticky-visual-panel {
+  position: sticky;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+}
+
+.runner-sticky-card {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-card, 18px);
+  padding: 18px 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+  animation: runnerStickyFadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes runnerStickyFadeIn {
+  from {
+    opacity: 0.8;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.runner-sticky-card::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(124, 92, 252, 0.18) 0%, rgba(124, 92, 252, 0) 70%);
+  pointer-events: none;
+  border-radius: 50%;
+}
+
+.runner-sticky-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-sticky-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.runner-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent, #7c5cfc);
+  box-shadow: 0 0 8px var(--accent, #7c5cfc);
+  animation: runnerLiveDotPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes runnerLiveDotPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.5;
+  }
+}
+
+.runner-pattern-badge {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-badge, 5px);
+  background: rgba(124, 92, 252, 0.14);
+  border: 1px solid rgba(124, 92, 252, 0.32);
+  color: var(--accent-light, #a78bfa);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.runner-sticky-anim-stage {
+  width: 100%;
+  min-height: 230px;
+  background: radial-gradient(circle at 50% 50%, rgba(124, 92, 252, 0.09) 0%, rgba(0, 0, 0, 0.45) 80%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius, 14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.55);
+}
+
+.runner-sticky-anim-stage .cx-exercise-animation {
+  width: 92% !important;
+  height: 92% !important;
+  max-width: 270px !important;
+  max-height: 220px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-sticky-anim-stage .cx-anim-svg {
+  width: 100% !important;
+  height: 100% !important;
+  filter: drop-shadow(0 6px 20px rgba(124, 92, 252, 0.35));
+}
+
+.runner-sticky-anim-stage.is-muscle-view {
+  height: auto !important;
+  min-height: 220px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-sticky-anim-stage.is-muscle-view .cx-muscle-map-wrapper {
+  width: 100%;
+}
+
+.runner-sticky-anim-stage.is-muscle-view .cx-muscle-figure-card {
+  height: 142px;
+}
+
+.runner-sticky-anim-stage.is-muscle-view .cx-muscle-svg {
+  max-height: 132px;
+}
+
+.runner-sticky-cue {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(124, 92, 252, 0.08);
+  border: 1px solid rgba(124, 92, 252, 0.18);
+  border-radius: var(--radius-sm, 10px);
+  padding: 10px 14px;
+  margin-top: 0;
+}
+
+.runner-sticky-cue-icon {
+  color: var(--accent-light, #a78bfa);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.runner-sticky-cue-text {
+  font-size: 12px;
+  color: var(--text-secondary, #cbd5e1);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ── Up Next Preview Card (Left Panel Bottom) ────────────────────────────── */
+.runner-upnext-card {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-card, 16px);
+  padding: 12px 16px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 180ms ease;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+  animation: runnerStickyFadeIn 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.runner-upnext-card:hover {
+  background: rgba(124, 92, 252, 0.06);
+  border-color: rgba(124, 92, 252, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6), 0 0 20px rgba(124, 92, 252, 0.15);
+}
+
+.runner-upnext-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px 0 0 99px;
+  opacity: 0.85;
+}
+
+.runner-upnext-card.finish-preview::before {
+  background: #10b981;
+}
+
+.runner-upnext-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-upnext-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.runner-upnext-tag.finish {
+  color: #10b981;
+}
+
+.runner-upnext-pattern {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(124, 92, 252, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  color: var(--accent-light, #a78bfa);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.runner-upnext-pattern.finish {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.runner-upnext-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.runner-upnext-thumb {
+  width: 60px;
+  height: 52px;
+  min-width: 60px;
+  border-radius: var(--radius-sm, 10px);
+  background: radial-gradient(circle at 50% 50%, rgba(124, 92, 252, 0.12) 0%, rgba(0, 0, 0, 0.5) 80%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+.runner-upnext-thumb .cx-exercise-animation {
+  width: 56px !important;
+  height: 46px !important;
+}
+
+.runner-upnext-finish-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-upnext-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.runner-upnext-name {
+  font-family: var(--font-heading);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-upnext-target {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.runner-main-controls-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ─── Anatomical Muscle Map Component ───────────────────────────────────────── */
+.cx-muscle-map-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cx-muscle-map-dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.cx-muscle-map-dual.view-front,
+.cx-muscle-map-dual.view-back {
+  grid-template-columns: 1fr;
+  max-width: 180px;
+  margin: 0 auto;
+}
+
+.cx-muscle-figure-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cx-muscle-view-label {
+  font-family: var(--mono, monospace);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+}
+
+.cx-muscle-figure-card {
+  width: 100%;
+  height: 180px;
+  background: radial-gradient(circle at center, rgba(124, 92, 252, 0.08) 0%, rgba(15, 17, 26, 0.6) 80%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm, 10px);
+  padding: 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.cx-muscle-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 164px;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+
+.cx-body-base {
+  fill: #1a1d29;
+}
+
+.cx-muscle-part,
+.muscle {
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: all 250ms ease;
+  cursor: pointer;
+}
+
+/* Inactive Muscle Part (Dark charcoal anatomical segment) */
+.cx-muscle-part.is-inactive,
+.muscle.is-inactive,
+.muscle:not(.active):not(.is-primary):not(.is-secondary) {
+  fill: #232838;
+  stroke: #161924;
+  stroke-width: 1px;
+}
+
+.cx-muscle-part.is-inactive:hover,
+.muscle.is-inactive:hover,
+.muscle:not(.active):not(.is-primary):not(.is-secondary):hover {
+  fill: #363d54;
+  stroke: #485270;
+}
+
+/* Primary Target Muscle (Vibrant Neon Violet/Purple Glow) */
+.cx-muscle-part.is-primary,
+.cx-muscle-part.active,
+.muscle.is-primary,
+.muscle.active,
+[data-active="primary"] {
+  fill: #8b5cf6 !important;
+  stroke: #c4b5fd !important;
+  stroke-width: 1.4px;
+  filter: drop-shadow(0 0 7px rgba(139, 92, 246, 0.85));
+}
+
+.cx-muscle-part.is-primary:hover,
+.cx-muscle-part.active:hover,
+.muscle.is-primary:hover,
+.muscle.active:hover {
+  fill: #a78bfa !important;
+  stroke: #ddd6fe !important;
+  filter: drop-shadow(0 0 11px rgba(167, 139, 250, 1));
+}
+
+/* Secondary Target Muscle (Warm Amber/Gold Glow) */
+.cx-muscle-part.is-secondary,
+.muscle.is-secondary,
+[data-active="secondary"] {
+  fill: #f59e0b !important;
+  stroke: #fde68a !important;
+  stroke-width: 1.2px;
+  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.75));
+}
+
+.cx-muscle-part.is-secondary:hover,
+.muscle.is-secondary:hover {
+  fill: #fbbf24 !important;
+  stroke: #fef08a !important;
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.95));
+}
+
+/* Non-muscular joint/head parts */
+.cx-muscle-part.head.is-inactive,
+.cx-muscle-part.neck.is-inactive,
+.cx-muscle-part.hand.is-inactive,
+.cx-muscle-part.foot.is-inactive,
+.cx-muscle-part.knee.is-inactive,
+.neutral-joint {
+  fill: #1a1d28;
+  stroke: #141620;
+  stroke-width: 0.8px;
+  cursor: default;
+}
+
+/* ── Muscle Map Legend ── */
+.cx-muscle-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm, 8px);
+  padding: 6px 10px;
+}
+
+.cx-muscle-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary, #cbd5e1);
+  line-height: 1.3;
+}
+
+.cx-muscle-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cx-muscle-legend-dot.primary {
+  background: #8b5cf6;
+  box-shadow: 0 0 6px rgba(139, 92, 246, 0.9);
+}
+
+.cx-muscle-legend-dot.secondary {
+  background: #f59e0b;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.85);
+}
+
+.cx-muscle-legend-label strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* ── Stage View Switch Tabs (Form & Motion vs Target Muscles) ── */
+.runner-stage-tabs {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.runner-stage-tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  font-family: var(--font-heading, sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.runner-stage-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.runner-stage-tab-btn.is-active {
+  color: #ffffff;
+  background: rgba(124, 92, 252, 0.22);
+  border: 1px solid rgba(124, 92, 252, 0.4);
+  box-shadow: 0 2px 8px rgba(124, 92, 252, 0.25);
+}
+
+/* ── Interactive Muscle Explorer Guide Modal Styles ── */
+.bio-guide-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bio-guide-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bio-guide-view-tabs {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.bio-guide-view-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 180ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bio-guide-view-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.bio-guide-view-btn.active {
+  color: #fff;
+  background: var(--accent, #8b5cf6);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+}
+
+.bio-chips-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  max-height: 110px;
+  overflow-y: auto;
+}
+
+.bio-muscle-chip {
+  background: #191c28;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted, #94a3b8);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.bio-muscle-chip:hover {
+  color: #fff;
+  border-color: rgba(139, 92, 246, 0.5);
+  background: #252b3d;
+  transform: translateY(-1px);
+}
+
+.bio-muscle-chip.active {
+  color: #fff;
+  background: rgba(139, 92, 246, 0.25);
+  border-color: var(--accent, #8b5cf6);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.45);
+  font-weight: 700;
+}
+
+.bio-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background 200ms ease;
+}
+
+.bio-muscle-chip.active .bio-chip-dot {
+  background: var(--accent, #8b5cf6);
+  box-shadow: 0 0 6px var(--accent, #8b5cf6);
+}
+
+.bio-guide-main-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .bio-guide-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bio-diagram-card {
+  background: var(--surface-2, #141721);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 320px;
+}
+
+.bio-details-card {
+  background: var(--surface-2, #141721);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bio-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 12px;
+}
+
+.bio-detail-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 2px 0;
+}
+
+.bio-detail-latin {
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  font-style: italic;
+}
+
+.bio-detail-badge {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  color: var(--accent, #8b5cf6);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.bio-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.bio-field-text {
+  font-size: 13px;
+  color: var(--text, #e2e8f0);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.bio-exercises-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.bio-ex-tag {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 180ms ease;
+}
+
+.bio-ex-tag:hover {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+/* ── Database Exercise Targeting Discovery List ── */
+.bio-db-ex-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.bio-db-ex-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 4px;
+}
+
+.bio-ex-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.bio-ex-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 8px 12px;
+  transition: all 180ms ease;
+  gap: 10px;
+}
+
+.bio-ex-item:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.35);
+  transform: translateX(2px);
+}
+
+.bio-ex-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bio-ex-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.bio-ex-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--text-dim, #64748b);
+}
+
+.bio-ex-split-tag {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted, #94a3b8);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.bio-ex-role {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.bio-ex-role.primary {
+  background: rgba(139, 92, 246, 0.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+}
+
+.bio-ex-role.secondary {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+/* ── Mobile Viewport Optimizations (375px - 412px) ── */
+@media (max-width: 640px) {
+  .bio-guide-container {
+    gap: 12px;
+  }
+
+  .bio-guide-controls-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .bio-guide-view-tabs {
+    width: 100%;
+    display: flex;
+  }
+
+  .bio-guide-view-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 4px;
+    font-size: 11px;
+    min-height: 36px;
+    text-align: center;
+  }
+
+  .prs-filter-pills {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  .prs-filter-btn {
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .bio-chips-wrapper {
+    max-height: 120px;
+    padding: 8px;
+    gap: 5px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bio-muscle-chip {
+    font-size: 11px;
+    padding: 6px 10px;
+    min-height: 32px;
+    touch-action: manipulation;
+  }
+
+  .bio-diagram-card {
+    min-height: 280px;
+    padding: 12px 6px;
+  }
+
+  .bio-details-card {
+    padding: 14px 12px;
+    gap: 12px;
+  }
+
+  .bio-detail-title {
+    font-size: 15px;
+  }
+
+  .bio-detail-latin {
+    font-size: 11px;
+  }
+
+  .bio-ex-list {
+    max-height: 180px;
+  }
+
+  .bio-ex-item {
+    padding: 7px 10px;
+  }
+
+  .bio-ex-name {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .bio-guide-view-btn {
+    font-size: 10px;
+    padding: 6px 2px;
+  }
+
+  .bio-muscle-chip {
+    font-size: 10.5px;
+    padding: 5px 8px;
+  }
+}
+
+/* ==========================================================================
+   CalistheniX — Redesigned Mobile-Card Workout Session Runner
+   Matches Button Actions & User Flow Wireframe Specification
+   ========================================================================== */
+
+.runner-session-view-wrapper {
+  display: flex;
+  justify-content: stretch;
+  align-items: stretch;
+  width: 100%;
+  min-height: auto;
+  padding: 0 0 24px;
+}
+
+.runner-session-card {
+  width: 100%;
+  max-width: 100%;
+  background: #11121d;
+  background: linear-gradient(180deg, rgba(20, 21, 35, 0.98) 0%, rgba(13, 14, 24, 0.99) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.28);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 50px rgba(124, 92, 252, 0.1);
+  border-radius: 24px;
+  padding: 24px 28px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.runner-session-card::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(124, 92, 252, 0.22) 0%, rgba(124, 92, 252, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── 1. Top Header Bar ── */
+.runner-card-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  padding-bottom: 4px;
+}
+
+.runner-card-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted, #94a3b8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.runner-card-back-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  transform: translateX(-2px);
+}
+
+.runner-card-title-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.runner-card-phase-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a29bfe;
+}
+
+.runner-card-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  margin: 0;
+  text-align: center;
+}
+
+.runner-card-top-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-card-timer {
+  font-family: var(--mono, monospace);
+  font-size: 14px;
+  font-weight: 700;
+  color: #cbd5e1;
+  letter-spacing: 0.02em;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.runner-card-pause-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(124, 92, 252, 0.18);
+  border: 1px solid rgba(124, 92, 252, 0.35);
+  color: #a29bfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.runner-card-pause-btn:hover {
+  background: rgba(124, 92, 252, 0.35);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+.runner-card-pause-btn.is-paused {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+.runner-card-finish-btn {
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.runner-card-finish-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ── 2. Progress Indicator Bar ── */
+.runner-card-progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.runner-card-progress-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted, #8a8d9f);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-card-progress-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.runner-card-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c5cfc 0%, #a29bfe 100%);
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+/* ── 3. Exercise Flow Strip & Header ── */
+.runner-card-flow-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 10px 16px;
+  margin: 2px 0 4px;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.runner-card-flow-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.runner-flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 68px;
+  text-align: center;
+}
+
+.runner-flow-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #8a8d9f;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.runner-flow-val {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.runner-flow-step.is-highlight .runner-flow-val {
+  color: #c4b5fd;
+}
+
+.runner-flow-step.is-target .runner-flow-val {
+  color: #93c5fd;
+}
+
+.runner-flow-step.is-actual .runner-flow-val {
+  color: #a78bfa;
+}
+
+.runner-flow-step.is-rest .runner-flow-val {
+  color: #cbd5e1;
+}
+
+.runner-flow-arrow {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+  font-weight: 700;
+  user-select: none;
+}
+
+.runner-card-exercise-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.runner-card-ex-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.runner-card-ex-sub {
+  font-size: 13px;
+  font-weight: 700;
+  color: #a29bfe;
+  letter-spacing: 0.03em;
+}
+
+.runner-card-badges-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.runner-badge-set {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(124, 92, 252, 0.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(124, 92, 252, 0.35);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.runner-badge-target {
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.runner-badge-rest {
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.03);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.runner-badge-load {
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+/* ── 4. Center Stage: Dual Visualization & Radial Dial ── */
+.runner-card-stage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: center;
+  justify-items: center;
+  padding: 8px 4px;
+  min-height: 180px;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 640px) {
+  .runner-card-stage-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.runner-card-stage-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 180px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 8px;
+}
+
+.runner-card-stage-visual svg {
+  max-height: 165px;
+  max-width: 160px;
+}
+
+.runner-card-stage-dial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.runner-dial-svg {
+  transform: rotate(-90deg);
+  width: 160px;
+  height: 160px;
+}
+
+.runner-dial-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 8;
+}
+
+.runner-dial-progress {
+  fill: none;
+  stroke: #8b5cf6;
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.25s ease;
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
+}
+
+.runner-dial-center-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.runner-dial-number {
+  font-family: var(--mono, monospace);
+  font-size: 38px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.runner-dial-subtext {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted, #8a8d9f);
+  margin-top: 4px;
+}
+
+/* ── 5. Action Controls & Stepper Row ── */
+.runner-card-stepper-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 2px 0 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.runner-card-stepper-btn {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.runner-card-stepper-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.24);
+  transform: scale(1.05);
+}
+.runner-card-stepper-btn:active {
+  transform: scale(0.95);
+}
+
+.runner-stepper-val {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  min-width: 90px;
+  text-align: center;
+}
+
+.runner-card-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.runner-card-btn {
+  font-family: var(--font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: 15px;
+  font-weight: 800;
+  border-radius: 16px;
+  padding: 15px 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  outline: none;
+  letter-spacing: 0.03em;
+}
+
+.runner-card-btn-skip {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+.runner-card-btn-skip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.runner-card-btn-done {
+  flex: 1;
+  height: 54px;
+  background: linear-gradient(135deg, #7c5cfc 0%, #6366f1 100%);
+  color: #ffffff;
+  box-shadow: 0 8px 26px rgba(124, 92, 252, 0.45);
+}
+.runner-card-btn-done:hover {
+  background: linear-gradient(135deg, #8b6dfd 0%, #7073f3 100%);
+  box-shadow: 0 10px 32px rgba(124, 92, 252, 0.65);
+  transform: translateY(-2px);
+}
+.runner-card-btn-done:active {
+  transform: translateY(0);
+}
+
+.runner-card-btn-next {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+.runner-card-btn-next:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.runner-card-btn-skip-set {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 9px;
+  color: var(--text-muted, #8a8d9f);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+.runner-card-btn-skip-set:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ── 6. Workout Complete Modal & Screen ── */
+.runner-complete-screen {
+  width: 100%;
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.runner-complete-modal-card {
+  width: 100%;
+  max-width: 460px;
+  background: #131422;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 50px rgba(124, 92, 252, 0.25);
+  border-radius: 24px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.runner-complete-icon-wrap {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(124, 92, 252, 0.15);
+  border: 1px solid rgba(124, 92, 252, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #a29bfe;
+}
+
+.runner-complete-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a29bfe;
+}
+
+.runner-complete-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: -6px 0 0;
+  letter-spacing: -0.02em;
+}
+
+.runner-complete-subtitle {
+  font-size: 13.5px;
+  color: var(--text-muted, #8a8d9f);
+  margin-top: -8px;
+}
+
+.runner-complete-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 14px 10px;
+}
+
+.runner-complete-metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.runner-complete-metric-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #8a8d9f);
+}
+
+.runner-complete-metric-val {
+  font-family: var(--mono, monospace);
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.runner-complete-summary-box {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.runner-complete-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  gap: 8px;
+}
+
+.runner-complete-summary-title {
+  color: var(--text-muted, #8a8d9f);
+  font-weight: 600;
+}
+
+.runner-complete-summary-value {
+  color: #ffffff;
+  font-weight: 600;
+  text-align: right;
+}
+
+.runner-complete-summary-row.is-pr {
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.runner-complete-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.runner-complete-btn-secondary {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.runner-complete-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.runner-complete-btn-primary {
+  flex: 1.1;
+  background: linear-gradient(135deg, #7c5cfc 0%, #6366f1 100%);
+  color: #ffffff;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(124, 92, 252, 0.4);
+  transition: all 0.2s ease;
+}
+.runner-complete-btn-primary:hover {
+  background: linear-gradient(135deg, #8b6dfd 0%, #7073f3 100%);
+  box-shadow: 0 6px 20px rgba(124, 92, 252, 0.55);
+}
+

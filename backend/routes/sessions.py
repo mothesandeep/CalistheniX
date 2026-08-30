@@ -48,11 +48,26 @@ def create_log():
         return jsonify({'error': f'Missing required fields: {missing}'}), 400
 
     with get_db() as conn:
-        ex = conn.execute(
-            'SELECT type FROM exercises WHERE id = ?', (body['exercise_id'],)
-        ).fetchone()
-        if ex is None:
-            return jsonify({'error': f"exercise {body['exercise_id']} not found"}), 404
+        ex_id = body.get('exercise_id')
+        ex = None
+        if not ex_id and body.get('exercise_name'):
+            matched = conn.execute(
+                'SELECT id, type FROM exercises WHERE name = ? COLLATE NOCASE',
+                (body['exercise_name'],)
+            ).fetchone()
+            if matched:
+                ex_id = matched['id']
+                ex = matched
+            else:
+                return jsonify({'error': f"exercise '{body.get('exercise_name')}' not found"}), 404
+        elif ex_id is not None:
+            ex = conn.execute(
+                'SELECT type FROM exercises WHERE id = ?', (ex_id,)
+            ).fetchone()
+            if ex is None:
+                return jsonify({'error': f"exercise {ex_id} not found"}), 404
+        else:
+            return jsonify({'error': "exercise_id or exercise_name is required"}), 400
 
         ex_type = ex['type']
         if ex_type == 'duration' and body.get('duration_sec') is None:
@@ -75,7 +90,7 @@ def create_log():
                        (exercise_id, timestamp, reps, weight_kg, duration_sec, rpe, client_uuid, session_uuid, phase)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                 (
-                    body['exercise_id'],
+                    ex_id,
                     body['timestamp'],
                     body.get('reps'),
                     body.get('weight_kg'),
@@ -225,6 +240,7 @@ def create_or_sync_workout_session():
 
     for ex in exercises:
         ex_id = ex.get('exercise_id') or ex.get('id')
+        ex_name = ex.get('exercise_name') or ex.get('name')
         ex_type = ex.get('exercise_type') or ex.get('type', 'reps')
         phase = ex.get('phase', 'main')
         if phase not in ('warmup', 'main', 'cooldown'):
@@ -236,13 +252,14 @@ def create_or_sync_workout_session():
                 completed_sets += 1
                 raw_logs_to_insert.append({
                     'exercise_id': ex_id,
-                    'timestamp': s.get('completedAt') or completed_at,
+                    'exercise_name': ex_name,
+                    'timestamp': s.get('completedAt') or s.get('completed_at') or completed_at,
                     'reps': s.get('actual_val') if ex_type == 'reps' else None,
                     'duration_sec': s.get('actual_val') if ex_type == 'duration' else None,
                     'weight_kg': s.get('weight_kg'),
                     'rpe': s.get('rpe'),
                     'phase': phase,
-                    'client_uuid': s.get('client_uuid') or f"{session_uuid}_{ex_id}_{s.get('set_num', total_sets)}"
+                    'client_uuid': s.get('client_uuid') or f"{session_uuid}_{ex_id or ex_name}_{s.get('set_num', total_sets)}"
                 })
 
     raw_json_str = json.dumps(body)
@@ -307,6 +324,17 @@ def create_or_sync_workout_session():
             created = False
 
         for log_data in raw_logs_to_insert:
+            resolved_ex_id = log_data.get('exercise_id')
+            if not resolved_ex_id and log_data.get('exercise_name'):
+                match = conn.execute(
+                    'SELECT id FROM exercises WHERE name = ? COLLATE NOCASE',
+                    (log_data['exercise_name'],)
+                ).fetchone()
+                if match:
+                    resolved_ex_id = match['id']
+            if not resolved_ex_id:
+                continue
+
             try:
                 cursor.execute(
                     '''
@@ -314,7 +342,7 @@ def create_or_sync_workout_session():
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''',
                     (
-                        log_data['exercise_id'],
+                        resolved_ex_id,
                         str(log_data['timestamp']),
                         log_data.get('reps'),
                         log_data.get('weight_kg'),

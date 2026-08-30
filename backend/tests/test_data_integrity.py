@@ -5,9 +5,12 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 try:
-    from backend.app import app, get_db, init_db, reseed_data, _parse_int, DB_PATH
+    from backend.app import app, get_db, init_db, reseed_data, DB_PATH
+    from backend.validators import _parse_int
 except ImportError:
-    from app import app, get_db, init_db, reseed_data, _parse_int, DB_PATH
+    from app import app, get_db, init_db, reseed_data, DB_PATH
+    from validators import _parse_int
+
 
 
 class TestPhase1Hardening(unittest.TestCase):
@@ -206,13 +209,13 @@ class TestPhase1Hardening(unittest.TestCase):
 
     def test_movement_pattern_migration_step(self):
         """Verify movement_pattern column migration and backfill logic."""
-        from backend.app import _migrate_movement_pattern_column
+        from backend.migrations import migrate_movement_pattern_column
         with get_db() as conn:
             cols = [row[1] for row in conn.execute('PRAGMA table_info(exercises)').fetchall()]
             self.assertIn('movement_pattern', cols)
 
             # Re-running migration is safe (idempotent)
-            _migrate_movement_pattern_column()
+            migrate_movement_pattern_column()
 
             # Confirm no null values exist
             null_count = conn.execute("SELECT COUNT(*) FROM exercises WHERE movement_pattern IS NULL").fetchone()[0]

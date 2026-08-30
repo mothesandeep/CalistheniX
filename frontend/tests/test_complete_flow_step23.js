@@ -1,3 +1,4 @@
+const path = require('path');
 const fs = require('fs');
 const vm = require('vm');
 
@@ -98,8 +99,22 @@ const context = vm.createContext({
 });
 
 // Load workout.js
-const workoutCode = fs.readFileSync('./frontend/js/views/workout.js', 'utf8');
+
+const constantsCode = fs.readFileSync(path.join(__dirname, "../js/core/constants.js"), "utf8");
+const utilsCode = fs.readFileSync(path.join(__dirname, "../js/core/utils.js"), "utf8");
+const audioCode = fs.readFileSync(path.join(__dirname, "../js/core/audio.js"), "utf8");
+const storageCode = fs.readFileSync(path.join(__dirname, "../js/core/storage.js"), "utf8");
+const stateCode = fs.readFileSync(path.join(__dirname, "../js/core/state.js"), "utf8");
+const workoutCode = fs.readFileSync(path.join(__dirname, "../js/views/workout-runner.js"), "utf8");
+
+
+vm.runInContext(constantsCode, context);
+vm.runInContext(utilsCode, context);
+vm.runInContext(audioCode, context);
+vm.runInContext(storageCode, context);
+vm.runInContext(stateCode, context);
 vm.runInContext(workoutCode, context);
+
 
 console.log('=================================================================');
 console.log('STARTING COMPLETE END-TO-END FLOW VERIFICATION (STEP 23)');
@@ -244,9 +259,13 @@ console.log('✓ Advanced through all cool-down recovery stretches');
 
 // ─── 6. WORKOUT FINISHING & DATA PERSISTENCE ───────────────────────────────
 console.log('\n6. Testing Workout Finishing & Persistence Engine...');
-// Complete workout finishes cleanly
+// Complete workout finishes cleanly into Workout Complete
 context.finishWorkoutSession();
-console.log('✓ Finished workout session');
+console.log('✓ Reached terminal Workout Complete state');
+
+// Click Done on Workout Complete screen
+context.handleDoneWorkoutClick();
+console.log('✓ Clicked Done on Workout Complete');
 
 // Verify session snapshot structure
 console.log('✓ Total session snapshots assembled:', createdSessions.length);

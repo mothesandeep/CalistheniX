@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify
 
 try:
     from backend.db import get_db
+    from backend.data.constants import DAY_NAMES
     from backend.services.dashboard_service import (
         calculate_streak,
         calculate_week_stats,
@@ -12,6 +13,7 @@ try:
     )
 except ImportError:
     from db import get_db
+    from data.constants import DAY_NAMES
     from services.dashboard_service import (
         calculate_streak,
         calculate_week_stats,
@@ -20,9 +22,8 @@ except ImportError:
         compute_muscle_focus
     )
 
-DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
 dashboard_bp = Blueprint('dashboard', __name__)
+
 
 
 # ── Today Resolver Endpoint (Custom Split Model) ───────────────────────────────

@@ -7,9 +7,12 @@ from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 try:
-    from backend.app import app, get_db, init_db, reseed_data, _parse_int, DB_PATH
+    from backend.app import app, get_db, init_db, reseed_data, DB_PATH
+    from backend.validators import _parse_int
 except ImportError:
-    from app import app, get_db, init_db, reseed_data, _parse_int, DB_PATH
+    from app import app, get_db, init_db, reseed_data, DB_PATH
+    from validators import _parse_int
+
 
 
 class TestCalistheniXBackend(unittest.TestCase):
@@ -1028,7 +1031,7 @@ class TestCalistheniXBackend(unittest.TestCase):
         ex_patterns = {e['name']: e.get('movement_pattern') for e in exercises}
 
         # Check all 34 canonical exercises
-        from backend.app import EXERCISE_MOVEMENT_PATTERNS
+        from backend.data.movement_patterns import EXERCISE_MOVEMENT_PATTERNS
         for name, expected_pattern in EXERCISE_MOVEMENT_PATTERNS.items():
             self.assertIn(name, ex_patterns, f"Canonical exercise '{name}' missing from database")
             self.assertEqual(ex_patterns[name], expected_pattern, f"Pattern mismatch for '{name}'")

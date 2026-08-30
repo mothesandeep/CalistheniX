@@ -1,0 +1,141 @@
+/* ── Dedicated Personal Records (PRs) View ────────────────────────────────── */
+.prs-container, .calendar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.prs-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 900px) {
+  .prs-stats-strip { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 500px) {
+  .prs-stats-strip { grid-template-columns: 1fr; }
+}
+
+.prs-filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.prs-filter-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.prs-filter-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.prs-filter-btn:hover, .prs-filter-btn.active {
+  color: #ffffff;
+  background: var(--surface-2);
+  border-color: var(--accent);
+}
+
+.prs-filter-btn.active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent);
+}
+
+.prs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.pr-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.pr-card:hover {
+  border-color: rgba(234, 179, 8, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.pr-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pr-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.pr-card-routine {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.pr-card-trophy {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pr-card-values {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pr-card-primary-val {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #f4f4f5;
+  line-height: 1;
+}
+
+.pr-card-sub-vals {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pr-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+

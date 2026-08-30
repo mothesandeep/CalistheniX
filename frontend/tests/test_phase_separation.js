@@ -8,7 +8,14 @@ const assert = require('assert');
 console.log('=== TEST: WORKOUT PHASE SEPARATION & DATA INTEGRITY ===\n');
 
 // 1. Load workout.js definitions and test logic in headless environment
-const workoutJsContent = fs.readFileSync(path.join(__dirname, '../frontend/js/views/workout.js'), 'utf-8');
+
+const constantsCode = fs.readFileSync(path.join(__dirname, "../js/core/constants.js"), "utf8");
+const utilsCode = fs.readFileSync(path.join(__dirname, "../js/core/utils.js"), "utf8");
+const audioCode = fs.readFileSync(path.join(__dirname, "../js/core/audio.js"), "utf8");
+const storageCode = fs.readFileSync(path.join(__dirname, "../js/core/storage.js"), "utf8");
+const stateCode = fs.readFileSync(path.join(__dirname, "../js/core/state.js"), "utf8");
+const workoutJsContent = fs.readFileSync(path.join(__dirname, "../js/views/workout-runner.js"), "utf8");
+
 
 // Mock browser globals
 const mockGlobals = {
@@ -34,6 +41,10 @@ const mockGlobals = {
 // Evaluate workout.js in context
 const vm = require('vm');
 const context = vm.createContext(mockGlobals);
+context.window = context;
+context.location = { hash: "" };
+context.global = context;
+context.globalThis = context;
 vm.runInContext(workoutJsContent, context);
 
 // Test 1: Canonical phase helpers
