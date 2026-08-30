@@ -4175,3 +4175,328 @@
 }
 
 
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CalistheniX Workout Runner — Targeted UI Polish Pass
+   Scope: spacing, typography hierarchy, button hierarchy, states, modal polish
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. SPACING CONSISTENCY ──────────────────────────────────────────────── */
+
+.runner-session-card {
+  gap: 14px;
+  padding: 20px 22px 22px;
+}
+.runner-active-exercise-card {
+  gap: 14px;
+  padding: 20px 20px 18px;
+  margin-bottom: 16px;
+}
+.runner-progress-header-zone { gap: 5px; }
+.runner-stepper-zone { padding: 8px 0 4px; }
+.runner-shortcut-pills-row { gap: 8px; flex-wrap: wrap; }
+.runner-cta-zone { gap: 8px; margin-top: 2px; }
+.runner-set-details-drawer { padding: 12px 14px; margin-top: 4px; }
+.runner-rest-hero-countdown { padding: 16px 0 10px; }
+.runner-phase-transition-card { padding: 32px 28px; }
+
+/* ─── 2. TYPOGRAPHY HIERARCHY ──────────────────────────────────────────────── */
+
+.runner-exercise-name-title {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+.runner-exercise-muscles-text { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+.runner-benchmark-label { font-size: 10.5px; font-weight: 800; letter-spacing: 0.1em; }
+
+.runner-pill-lbl {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.runner-pill-val {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--mono);
+}
+
+.runner-stepper-number { font-size: 52px; }
+.runner-stepper-unit { font-size: 10px; letter-spacing: 0.12em; color: var(--text-dim); margin-top: 2px; }
+
+.runner-rest-hero-digits {
+  font-family: var(--mono);
+  font-size: 60px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.runner-rest-hero-unit { font-size: 10px; letter-spacing: 0.12em; margin-top: 4px; }
+.runner-queue-tag { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; color: var(--text-dim); }
+.runner-queue-summary { font-size: 11px; color: var(--text-dim); }
+.runner-set-badge, .runner-set-pill { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; padding: 2px 7px; }
+.runner-card-phase-badge { font-size: 9.5px; font-weight: 800; letter-spacing: 0.1em; color: var(--accent-light); }
+.runner-card-ex-name { font-size: 22px; font-weight: 800; letter-spacing: -0.025em; }
+.runner-card-ex-sub { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.02em; }
+
+/* ─── 3. BUTTON HIERARCHY ──────────────────────────────────────────────────── */
+
+.runner-complete-action-btn {
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  border-radius: var(--radius-md);
+  box-shadow: 0 6px 18px rgba(124, 92, 252, 0.35);
+  text-transform: none;
+  border: none;
+}
+.runner-card-btn-done { height: 52px; font-size: 14px; font-weight: 800; letter-spacing: 0.02em; }
+.runner-card-btn-skip, .runner-card-btn-next { font-size: 13px; font-weight: 600; }
+.runner-card-btn-skip-set {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-dim);
+  border-color: rgba(255, 255, 255, 0.06);
+  padding: 8px;
+}
+.runner-card-btn-skip-set:hover {
+  color: var(--text-muted);
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+.runner-header-end-btn { padding: 7px 14px; font-size: 12px; font-weight: 600; border-radius: var(--radius-btn); }
+
+.stepper-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 50%;
+  font-size: 22px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  user-select: none;
+  touch-action: manipulation;
+}
+.stepper-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); transform: scale(1.06); }
+.stepper-btn:active:not(:disabled) { transform: scale(0.94); }
+.stepper-btn:disabled { opacity: 0.22; cursor: not-allowed; transform: none; }
+
+/* ─── 4. STATE CLARITY: ACTIVE / COMPLETED / SKIPPED ─────────────────────── */
+
+.runner-set-pip.current { width: 24px; background: var(--accent); box-shadow: 0 0 12px rgba(124, 92, 252, 0.6); }
+.runner-set-pip.completed { width: 16px; background: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+.runner-set-pip.skipped { width: 12px; background: #eab308; opacity: 0.75; }
+.runner-set-pip.upcoming { width: 8px; background: rgba(255, 255, 255, 0.1); }
+
+.runner-seq-row.completed {
+  background: rgba(16, 185, 129, 0.04);
+  border: 1px solid rgba(16, 185, 129, 0.12);
+  opacity: 0.78;
+}
+.runner-seq-row.completed:hover { opacity: 1; background: rgba(16, 185, 129, 0.07); border-color: rgba(16, 185, 129, 0.2); }
+.runner-seq-row.completed .runner-seq-name { color: var(--text-muted); font-weight: 500; }
+.runner-seq-row.completed .runner-seq-count { color: var(--success); font-size: 12px; }
+
+.runner-seq-row.skipped {
+  background: rgba(234, 179, 8, 0.03);
+  border: 1px solid rgba(234, 179, 8, 0.14);
+  opacity: 0.72;
+}
+.runner-seq-row.skipped:hover { opacity: 0.9; background: rgba(234, 179, 8, 0.06); border-color: rgba(234, 179, 8, 0.22); }
+.runner-seq-row.skipped .runner-seq-icon { color: #eab308; }
+.runner-seq-row.skipped .runner-seq-name { color: var(--text-muted); font-weight: 500; }
+.runner-seq-row.skipped .runner-seq-count { color: #eab308; font-size: 12px; }
+
+.runner-seq-row.current {
+  background: rgba(124, 92, 252, 0.09);
+  border: 1px solid rgba(124, 92, 252, 0.3);
+  border-left: 3px solid var(--accent);
+}
+.runner-seq-row.current .runner-seq-name { font-weight: 700; color: #ffffff; }
+
+.runner-seq-row.locked {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.runner-phase-pill-btn.is-locked { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+.runner-phase-pill-btn.is-done { color: var(--success); opacity: 0.85; }
+
+.runner-set-dot.done { background: var(--success); box-shadow: 0 0 6px rgba(16, 185, 129, 0.5); }
+.runner-set-dot.skipped { background: #eab308; box-shadow: 0 0 5px rgba(234, 179, 8, 0.4); }
+.runner-set-dot.active { background: var(--accent); box-shadow: 0 0 8px rgba(124, 92, 252, 0.7); transform: scale(1.15); }
+.runner-set-dot.pending { background: var(--surface-3); opacity: 0.6; }
+
+.runner-complete-summary-value.is-skipped { color: #eab308; font-weight: 700; }
+.runner-complete-summary-value.is-completed { color: var(--success); font-weight: 700; }
+.runner-complete-summary-value.is-pr { color: #fbbf24; font-weight: 700; }
+
+/* ─── 5. CARD ALIGNMENT ────────────────────────────────────────────────────── */
+
+.runner-target-pills-row { align-items: stretch; }
+.runner-target-pill { padding: 10px 12px; border-radius: 10px; justify-content: space-between; }
+.runner-flow-arrow { font-size: 12px; color: rgba(255, 255, 255, 0.15); align-self: center; }
+.runner-card-exercise-header { gap: 4px; }
+.runner-benchmarks { padding: 10px 12px; gap: 10px; }
+.runner-benchmark-val { font-size: 14px; font-weight: 700; }
+.runner-details-grid { gap: 10px; }
+.runner-queue-list { gap: 5px; }
+.runner-seq-row { padding: 9px 12px; border-radius: var(--radius-md); }
+
+/* ─── 6. PROGRESS INDICATOR CLARITY ──────────────────────────────────────── */
+
+.runner-card-progress-track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 99px;
+}
+.runner-card-progress-fill {
+  background: linear-gradient(90deg, var(--accent) 0%, #a78bfa 100%);
+  box-shadow: 0 0 8px rgba(124, 92, 252, 0.4);
+}
+.runner-progress-bar-3px { height: 3px; background: rgba(255, 255, 255, 0.07); }
+.runner-progress-bar-fill-3px { box-shadow: 0 0 6px rgba(124, 92, 252, 0.35); }
+.runner-progress-bar-fill-3px.is-complete { background: var(--success); box-shadow: 0 0 6px rgba(16, 185, 129, 0.4); }
+.runner-rest-depleting-track { height: 5px; background: rgba(255, 255, 255, 0.07); }
+.runner-rest-depleting-fill { background: var(--accent); transition: width 1s linear; }
+.runner-rest-depleting-fill.is-warning { background: var(--danger); box-shadow: 0 0 8px rgba(244, 63, 94, 0.5); }
+.runner-progress-percentage { font-size: 11.5px; font-weight: 700; color: var(--accent-light); }
+.runner-progress-percentage.is-gold { color: #fbbf24; }
+.runner-progress-exercise-count { font-size: 11px; font-weight: 600; color: var(--text-dim); }
+
+/* ─── 7. TIMER VISIBILITY ─────────────────────────────────────────────────── */
+
+.runner-header-timer-pill { padding: 6px 12px; gap: 8px; background: var(--surface-2); border: 1px solid var(--border-light); }
+.runner-timer-digits { font-size: 15px; font-weight: 700; font-family: var(--mono); letter-spacing: -0.02em; color: var(--text); }
+.runner-header-timer-pill.is-paused { background: rgba(234, 179, 8, 0.1); border-color: rgba(234, 179, 8, 0.4); }
+.runner-header-timer-pill.is-paused .runner-timer-digits { color: #fbbf24; }
+.runner-live-dot { width: 7px; height: 7px; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.runner-card-timer {
+  font-family: var(--mono);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  padding: 4px 9px;
+  letter-spacing: -0.02em;
+}
+
+/* ─── 8. MODAL SPACING ────────────────────────────────────────────────────── */
+
+.discard-modal-card { padding: 20px 22px 18px !important; gap: 12px; border-radius: 20px; }
+.discard-modal-desc { font-size: 13.5px; line-height: 1.5; color: var(--text-muted); }
+.discard-modal-actions { gap: 10px; margin-top: 4px; }
+.discard-modal-btn { padding: 11px 14px; font-size: 13px; font-weight: 700; border-radius: var(--radius-md); text-align: center; }
+
+/* ─── 9. EXCESSIVE EMPTY SPACE ────────────────────────────────────────────── */
+
+.runner-complete-screen { padding: 16px; padding-top: 24px; min-height: auto; align-items: flex-start; }
+.runner-complete-modal-card { gap: 14px; padding: 24px 22px; }
+.runner-complete-icon-wrap { width: 52px; height: 52px; font-size: 22px; }
+.runner-complete-title { font-size: 21px; margin: -4px 0 0; }
+.runner-complete-subtitle { font-size: 13px; margin-top: -6px; }
+.runner-complete-metrics-grid { padding: 12px 8px; gap: 8px; }
+.runner-complete-metric-label { font-size: 9.5px; letter-spacing: 0.06em; }
+.runner-complete-metric-val { font-size: 14px; font-weight: 800; }
+.runner-complete-summary-box { padding: 11px 14px; gap: 7px; }
+.runner-complete-summary-row { font-size: 12px; }
+.runner-phase-transition-container { gap: 14px; margin: 12px auto; }
+.runner-transition-badge-wrap { width: 56px; height: 56px; font-size: 24px; margin-bottom: 12px; }
+.runner-transition-title { font-size: 24px; margin-bottom: 6px; }
+.runner-transition-sub { font-size: 13.5px; margin-bottom: 18px; }
+.runner-transition-chips-row { margin-bottom: 18px; gap: 8px; }
+.runner-queue-section { gap: 8px; margin-top: 6px; }
+.runner-queue-head { padding: 0 2px 2px 2px; }
+
+/* ─── 10. COLOR SYSTEM CONSISTENCY ───────────────────────────────────────── */
+
+.runner-target-pill.target-goal { background: rgba(124, 92, 252, 0.07); border-color: rgba(124, 92, 252, 0.2); }
+.runner-target-pill.target-goal .runner-pill-lbl { color: var(--accent-light); }
+.runner-target-pill.target-goal .runner-pill-val { color: #c4b5fd; }
+
+.runner-target-pill.target-last { background: rgba(255, 255, 255, 0.025); border-color: rgba(255, 255, 255, 0.07); }
+.runner-target-pill.target-last .runner-pill-lbl { color: var(--text-dim); }
+.runner-target-pill.target-last .runner-pill-val { color: var(--success); font-family: var(--mono); font-size: 12.5px; }
+
+.runner-shortcut-pill.history-pill { background: rgba(16, 185, 129, 0.06); border-color: rgba(16, 185, 129, 0.2); color: #34d399; }
+.runner-shortcut-pill.history-pill:hover { background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35); color: #6ee7b7; }
+.runner-shortcut-pill.target-pill { background: rgba(124, 92, 252, 0.06); border-color: rgba(124, 92, 252, 0.2); color: var(--accent-light); }
+.runner-shortcut-pill.target-pill:hover { background: rgba(124, 92, 252, 0.12); border-color: rgba(124, 92, 252, 0.35); color: #c4b5fd; }
+
+.runner-badge-phase-pill.phase-warmup { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.28); color: #fbbf24; }
+.runner-badge-phase-pill.phase-main { background: rgba(124, 92, 252, 0.1); border-color: rgba(124, 92, 252, 0.28); color: var(--accent-light); }
+.runner-badge-phase-pill.phase-cooldown, .runner-badge-phase-pill.phase-rest { background: rgba(20, 184, 166, 0.1); border-color: rgba(20, 184, 166, 0.28); color: #2dd4bf; }
+
+/* ─── 11. LOCKED / DISABLED STATE ────────────────────────────────────────── */
+
+.runner-seq-row.locked .runner-seq-name { color: var(--text-dim); }
+.runner-seq-row.locked .runner-seq-sub { color: rgba(90, 90, 112, 0.6); }
+.runner-seq-row.locked .runner-seq-icon { opacity: 0.3; }
+.runner-seq-row.locked .runner-seq-count { color: rgba(90, 90, 112, 0.5); font-size: 11px; }
+
+.runner-complete-action-btn:disabled,
+.runner-card-btn-done:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none !important;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-dim) !important;
+}
+
+/* ─── 12. WARMUP & COOLDOWN CARD POLISH ──────────────────────────────────── */
+
+.warmup-movement-item.is-completed,
+.cooldown-stretch-item.is-completed {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.18) !important;
+}
+.warmup-movement-item.is-skipped,
+.cooldown-stretch-item.is-skipped {
+  background: rgba(234, 179, 8, 0.03);
+  border-color: rgba(234, 179, 8, 0.18) !important;
+  opacity: 0.78;
+}
+
+/* ─── 13. REST CARD POLISH ────────────────────────────────────────────────── */
+
+.runner-rest-next-preview-card { border-radius: var(--radius-md); padding: 10px 14px; }
+.runner-rest-next-tag { font-size: 9.5px; font-weight: 800; letter-spacing: 0.1em; color: var(--accent-light); }
+.runner-rest-next-name { font-size: 13.5px; font-weight: 700; color: var(--text); margin-top: 1px; }
+.runner-rest-next-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+.runner-rest-adjust-row { gap: 8px; margin-top: 6px; }
+
+/* ─── 14. RESPONSIVE TWEAKS ───────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .runner-session-card { padding: 16px 16px 20px; gap: 12px; border-radius: 18px; }
+  .runner-active-exercise-card { padding: 16px 16px 14px; gap: 12px; margin-bottom: 12px; }
+  .runner-exercise-name-title { font-size: 19px; }
+  .runner-card-ex-name { font-size: 20px; }
+  .runner-stepper-number { font-size: 48px; }
+  .runner-rest-hero-digits { font-size: 54px; }
+  .runner-complete-modal-card { padding: 20px 18px; gap: 12px; }
+  .runner-complete-title { font-size: 19px; }
+  .runner-phase-transition-card { padding: 24px 20px; }
+  .runner-target-pill { padding: 8px 10px; }
+  .runner-shortcut-pill { font-size: 11.5px; padding: 7px 12px; }
+}
