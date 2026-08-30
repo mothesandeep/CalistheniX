@@ -96,31 +96,36 @@ function renderHistoryListView() {
           phasePills += `<span class="history-phase-badge badge-prep" style="opacity:0.65;" title="Warm-up Skipped">Prep Skipped</span>`;
         }
 
-        if (s.cooldown_status === 'completed') {
-          phasePills += `<span class="history-phase-badge badge-recover" title="Cool-down Completed (${cooldownMin}m)">${renderIcon('check', 'cx-icon cx-icon-xs')} Recover ${cooldownMin > 0 ? `${cooldownMin}m` : 'Done'}</span>`;
-        } else if (s.cooldown_status === 'skipped') {
-          phasePills += `<span class="history-phase-badge badge-recover" style="opacity:0.65;" title="Cool-down Skipped">Recover Skipped</span>`;
-        }
+        const totalSets = s.total_sets || s.completed_sets || 1;
+        const completedSets = s.completed_sets || 0;
+        const pct = Math.min(100, Math.round((completedSets / Math.max(1, totalSets)) * 100));
+        const isComplete = pct === 100;
+        const sessionTag = (s.warmup_status === 'completed' && s.cooldown_status === 'completed') ? 'Full session' : 'Training only';
 
         return `
-          <div class="history-session-card" onclick="openSessionDetailView('${s.session_uuid || s.id}')">
+          <div class="history-session-card animate-fade-in" onclick="openSessionDetailView('${s.session_uuid || s.id}')" title="View breakdown for ${s.routine_name || 'Workout'}">
             <div class="history-session-top">
-              <div>
-                <h3 class="history-session-title">${s.routine_name || s.routine || 'Workout'} <span style="font-size:12px; font-weight:400; color:var(--text-muted);">· Level ${s.level || 1}</span></h3>
-                <span class="history-session-date mono">${dateStr}</span>
+              <div class="history-session-left-meta">
+                <h3 class="history-session-title">${s.routine_name || s.routine || 'Workout'} <span class="history-session-level">· Level ${s.level || 1}</span></h3>
+                <span class="history-session-tag">${sessionTag}</span>
               </div>
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                ${phasePills}
-                <span style="font-size:12px; font-weight:600; color:#10b981; display:flex; align-items:center; gap:4px;">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} Finished</span>
+              <div class="history-session-right-meta">
+                <span class="history-session-date">${dateStr}</span>
+                <span class="history-session-arrow">${renderIcon('chevronRight', 'cx-icon cx-icon-xs')}</span>
               </div>
             </div>
-            <div class="history-session-metrics">
-              <div class="history-metric-badge"><span>Session:</span> <strong>${totalMin} min</strong></div>
-              <div class="history-metric-badge"><span>Training:</span> <strong>${mainMin} min</strong></div>
-              <div class="history-metric-badge"><span>Sets:</span> <strong>${s.completed_sets}/${s.total_sets || s.completed_sets}</strong></div>
-              <div style="margin-left:auto; color:var(--accent); font-size:13px; font-weight:600;">
-                View Breakdown ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}
+            <div class="history-session-stats-row">
+              <div class="history-session-stats-text">
+                <span><strong>${totalMin} min</strong> total</span>
+                <span class="history-stats-sep">·</span>
+                <span><strong>${mainMin} min</strong> training</span>
+                <span class="history-stats-sep">·</span>
+                <span><strong>${completedSets}/${totalSets}</strong> sets</span>
               </div>
+              <span class="history-session-pct mono ${isComplete ? 'is-complete' : ''}">${pct}%</span>
+            </div>
+            <div class="history-session-progress-bar">
+              <div class="history-session-progress-fill ${isComplete ? 'is-complete' : ''}" style="width: ${pct}%;"></div>
             </div>
           </div>`;
       }).join('');
@@ -134,7 +139,7 @@ function renderHistoryListView() {
             <p class="view-subtitle">Chronological log of your completed calisthenics workout sessions.</p>
           </div>
           <button class="btn btn-secondary btn-sm" onclick="switchView('dashboard')">
-            ← Dashboard
+            ${renderIcon('arrowLeft', 'cx-icon cx-icon-xs cx-icon-inline')} Dashboard
           </button>
         </div>
       </div>

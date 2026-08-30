@@ -124,62 +124,141 @@
   display: flex;
 }
 
-/* ── Phase 4: Workout Session History Logs ─────────────────────────────────── */
+/* ── Phase 4: Workout Session History Logs (Section 11 Spec) ─────────────── */
 .history-session-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px 18px;
+  border-radius: var(--radius-card);
+  padding: 20px 24px;
   margin-bottom: 12px;
+  min-height: 88px;
   cursor: pointer;
-  transition: transform var(--transition), border-color var(--transition), box-shadow var(--transition);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
 }
 
 .history-session-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--accent);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+  border-color: var(--border-light);
+  background: var(--surface-2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .history-session-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 10px;
+  gap: 12px;
+}
+
+.history-session-left-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .history-session-title {
-  font-size: 16px;
-  font-weight: 700;
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 600;
   color: var(--text);
-  margin: 0 0 4px 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-session-level {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.history-session-tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.history-session-right-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .history-session-date {
   font-size: 12px;
+  font-weight: 500;
   color: var(--text-muted);
 }
 
-.history-session-metrics {
+.history-session-arrow {
+  color: var(--text-dim);
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform var(--transition-fast), color var(--transition-fast);
 }
 
-.history-metric-badge {
+.history-session-card:hover .history-session-arrow {
+  color: var(--accent);
+  transform: translateX(2px);
+}
+
+.history-session-stats-row {
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: space-between;
   font-size: 12px;
   color: var(--text-muted);
+  gap: 12px;
 }
 
-.history-metric-badge strong {
+.history-session-stats-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.history-session-stats-text strong {
   color: var(--text);
-  font-family: var(--mono);
+  font-weight: 600;
+}
+
+.history-stats-sep {
+  color: var(--border-light);
+}
+
+.history-session-pct {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.history-session-pct.is-complete {
+  color: var(--success);
+}
+
+.history-session-progress-bar {
+  width: 100%;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.history-session-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-full);
+  transition: width var(--transition);
+}
+.history-session-progress-fill.is-complete {
+  background: var(--success);
 }
 
 .session-detail-ex-box {

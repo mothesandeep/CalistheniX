@@ -2925,3 +2925,1202 @@
   box-shadow: 0 6px 20px rgba(124, 92, 252, 0.55);
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   PREMIUM REDESIGN: WORKOUT RUNNER (Sections 3, 4, 5, 6, 7, 8, 9)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Section 3: Top Sticky Header ────────────────────────────────────────── */
+.runner-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(9, 9, 11, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.runner-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.runner-header-back-btn {
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.runner-header-back-btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-light);
+}
+
+.runner-header-title-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.runner-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-header-title {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.runner-header-difficulty-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: var(--radius-badge);
+}
+
+.runner-header-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.runner-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.runner-header-timer-pill {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.runner-header-timer-pill:hover {
+  border-color: var(--border-accent);
+}
+.runner-header-timer-pill.is-paused {
+  border-color: rgba(234, 179, 8, 0.4);
+  background: rgba(234, 179, 8, 0.08);
+}
+.runner-header-timer-pill.is-paused .runner-timer-digits {
+  color: var(--warning);
+}
+
+.runner-timer-digits {
+  font-family: var(--mono);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.runner-timer-pause-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  cursor: pointer;
+}
+.runner-timer-pause-btn:hover {
+  color: var(--text);
+}
+
+.runner-header-gear-btn {
+  width: 38px;
+  height: 38px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.runner-header-gear-btn:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-light);
+}
+
+.runner-header-end-btn {
+  background: transparent;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #f87171;
+  padding: 8px 16px;
+  border-radius: var(--radius-btn);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.runner-header-end-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ffffff;
+}
+
+/* ── Section 6: Segmented Phase Tabs Strip ───────────────────────────────── */
+.runner-header-phase-tabs {
+  display: flex;
+  align-items: center;
+}
+
+.runner-phase-pill-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+}
+
+.runner-phase-pill-btn {
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.runner-phase-pill-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.runner-phase-pill-btn.is-active {
+  background: var(--accent-surface);
+  color: #ffffff;
+  border: 1px solid var(--border-accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+.runner-phase-pill-btn.phase-warmup.is-active {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.2);
+}
+.runner-phase-pill-btn.phase-cooldown.is-active {
+  background: rgba(20, 184, 166, 0.15);
+  border-color: rgba(20, 184, 166, 0.35);
+  color: #2dd4bf;
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.2);
+}
+
+.runner-phase-pill-btn.is-done {
+  color: var(--success);
+}
+.runner-phase-pill-btn.is-locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.runner-phase-dot {
+  font-size: 11px;
+}
+.runner-phase-connector {
+  color: var(--border-light);
+  font-size: 11px;
+  user-select: none;
+}
+
+/* ── Section 4 & 5: Hero Active Exercise Card ─────────────────────────────── */
+.runner-active-exercise-card {
+  background: linear-gradient(135deg, #0e0e14 0%, #11101a 100%);
+  border: 1px solid rgba(124, 92, 252, 0.2);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow-accent);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  max-width: 600px;
+  margin: 0 auto 20px;
+}
+
+/* Section 4: Progress Bar */
+.runner-progress-header-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.runner-progress-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-progress-exercise-count {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.runner-progress-percentage {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.runner-progress-percentage.is-gold {
+  color: #fbbf24;
+}
+
+.runner-progress-bar-3px {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.runner-progress-bar-fill-3px {
+  height: 100%;
+  background: linear-gradient(90deg, #7c5cfc, #a78bfa);
+  border-radius: 999px;
+  transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.runner-progress-bar-fill-3px.is-complete {
+  background: var(--success);
+}
+
+/* Card Header Row */
+.runner-card-top-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.runner-badge-phase-pill {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: var(--radius-badge);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.runner-badge-phase-pill.phase-main {
+  background: rgba(124, 92, 252, 0.12);
+  border-color: rgba(124, 92, 252, 0.3);
+  color: var(--accent-light);
+}
+.runner-badge-phase-pill.phase-warmup {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+.runner-badge-phase-pill.phase-rest {
+  background: rgba(20, 184, 166, 0.12);
+  border-color: rgba(20, 184, 166, 0.3);
+  color: #2dd4bf;
+}
+
+.runner-set-dots-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.runner-set-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+}
+.runner-set-dot.pending {
+  background: var(--surface-3);
+}
+.runner-set-dot.active {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.runner-set-dot.done {
+  background: var(--success);
+}
+
+.runner-muscle-map-btn {
+  width: 36px;
+  height: 36px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.runner-muscle-map-btn:hover {
+  color: var(--accent);
+  border-color: var(--border-accent);
+  background: var(--surface-2);
+}
+
+/* Exercise Name Zone */
+.runner-exercise-name-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runner-exercise-name-title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.025em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.runner-exercise-muscles-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Target Row (2 columns) */
+.runner-target-pills-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.runner-target-pill {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.runner-target-pill.target-goal {
+  background: rgba(124, 92, 252, 0.08);
+  border-color: rgba(124, 92, 252, 0.22);
+}
+
+.runner-pill-lbl {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+.runner-target-pill.target-goal .runner-pill-lbl {
+  color: var(--accent-light);
+}
+
+.runner-pill-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+.runner-target-pill.target-goal .runner-pill-val {
+  color: #ffffff;
+}
+.runner-target-pill.target-last .runner-pill-val {
+  color: var(--success);
+}
+
+/* Centered Stepper */
+.runner-stepper-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 12px 0 6px;
+}
+
+.runner-stepper-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 140px;
+}
+
+.runner-stepper-number {
+  font-family: var(--mono);
+  font-size: 56px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.runner-stepper-unit {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+
+/* Shortcut Pills */
+.runner-shortcut-pills-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.runner-shortcut-pill {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.runner-shortcut-pill:hover {
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--border-light);
+}
+
+/* Primary CTA & Sub-actions */
+.runner-cta-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.runner-cta-btn {
+  width: 100%;
+}
+
+.runner-cta-sub-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-sub-sep {
+  color: var(--border-light);
+  font-size: 12px;
+}
+
+.runner-set-details-drawer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+  margin-top: 6px;
+}
+
+.runner-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.runner-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runner-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.runner-coaching-tip-row {
+  background: rgba(124, 92, 252, 0.06);
+  border: 1px solid rgba(124, 92, 252, 0.16);
+  border-radius: var(--radius-card);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+/* ── Section 8: In-Context Rest Morph ─────────────────────────────────────── */
+.runner-rest-morph-card {
+  text-align: center;
+}
+
+.runner-rest-depleting-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.runner-rest-depleting-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 1s linear;
+}
+.runner-rest-depleting-fill.is-warning {
+  background: var(--danger);
+}
+
+.runner-rest-hero-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0 16px;
+}
+
+.runner-rest-hero-digits {
+  font-size: 56px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.runner-rest-hero-unit {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
+.runner-rest-next-preview-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 12px 16px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.runner-rest-next-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent-light);
+}
+
+.runner-rest-next-name {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.runner-rest-next-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.runner-rest-adjust-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* ── Section 9: Phase Transition Card ─────────────────────────────────────── */
+.runner-phase-transition-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 480px;
+  margin: 20px auto;
+}
+
+.runner-phase-transition-card {
+  background: rgba(14, 14, 19, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  border-radius: 28px;
+  padding: 40px 32px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  width: 100%;
+}
+
+.runner-transition-top-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #7c5cfc, #a78bfa);
+}
+
+.runner-transition-badge-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(124, 92, 252, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin-bottom: 16px;
+}
+
+.runner-transition-title {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  margin: 0 0 8px;
+}
+
+.runner-transition-sub {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
+.runner-transition-chips-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.runner-transition-chip {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.runner-chip-icon {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.runner-transition-cta-btn {
+  width: 100%;
+}
+
+.runner-transition-upcoming-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px 18px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.runner-upcoming-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.runner-upcoming-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-upcoming-name {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.runner-upcoming-sets {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DUAL-STAGE WORKSPACE & VISUAL MOTION / MUSCLE FOCUS MAP
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.runner-stage-dual-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 1.15fr) minmax(320px, 1fr);
+  gap: 20px;
+  align-items: start;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1100px) {
+  .runner-stage-dual-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.runner-stage-col-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.runner-stage-col-card .runner-active-exercise-card {
+  max-width: 100%;
+  margin: 0;
+}
+
+.runner-stage-col-visuals {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/* ── Right Column: Exercise Visual Motion Card ─────────────────────────────── */
+.runner-visual-motion-card {
+  background: linear-gradient(135deg, #0e0e14 0%, #12111d 100%);
+  border: 1px solid rgba(124, 92, 252, 0.18);
+  border-radius: 20px;
+  padding: 18px 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.runner-visual-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-visual-card-tag-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-visual-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: cxGlowBreathe 2s ease-in-out infinite alternate;
+}
+
+.runner-visual-card-tag {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.runner-visual-badge-category {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-light);
+  background: rgba(124, 92, 252, 0.1);
+  border: 1px solid rgba(124, 92, 252, 0.25);
+  padding: 3px 8px;
+  border-radius: var(--radius-badge);
+}
+
+/* Graphic Motion Stage */
+.runner-motion-graphic-stage {
+  width: 100%;
+  height: 160px;
+  background: radial-gradient(circle at center, rgba(124, 92, 252, 0.12) 0%, rgba(9, 9, 11, 0.6) 75%);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.runner-motion-stage-ambient-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(124, 92, 252, 0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.runner-motion-stage-floor-reflection {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 14px;
+  background: linear-gradient(180deg, transparent 0%, rgba(124, 92, 252, 0.08) 100%);
+  pointer-events: none;
+}
+
+.cx-anim-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cx-anim-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 155px;
+}
+
+/* Motion Footer Bar */
+.runner-motion-footer-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.runner-tempo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.runner-tempo-label {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.runner-tempo-val {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.runner-motion-form-tip {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.runner-tip-lead {
+  font-weight: 700;
+  color: var(--accent-light);
+}
+
+/* ── Right Column: Muscle Engagement Anatomy Card ─────────────────────────── */
+.runner-muscle-anatomy-card {
+  background: linear-gradient(135deg, #0e0e14 0%, #12111d 100%);
+  border: 1px solid rgba(124, 92, 252, 0.18);
+  border-radius: 20px;
+  padding: 18px 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.runner-anatomy-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.runner-anatomy-badge-focus {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2dd4bf;
+  background: rgba(20, 184, 166, 0.1);
+  border: 1px solid rgba(20, 184, 166, 0.25);
+  padding: 3px 8px;
+  border-radius: var(--radius-badge);
+}
+
+.runner-anatomy-dual-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 8px 8px;
+}
+
+.runner-anatomy-figure-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 10px;
+  transition: all var(--transition-fast);
+}
+
+.runner-anatomy-figure-box.is-dominant {
+  background: rgba(124, 92, 252, 0.06);
+  border: 1px solid rgba(124, 92, 252, 0.2);
+}
+
+.runner-anatomy-figure-lbl {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.runner-anatomy-figure-box.is-dominant .runner-anatomy-figure-lbl {
+  color: var(--accent-light);
+}
+
+.runner-anatomy-svg-wrap {
+  width: 100%;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-anatomy-svg-wrap svg {
+  max-height: 135px;
+  width: auto;
+}
+
+.runner-anatomy-legend-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.runner-legend-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runner-legend-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.runner-legend-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.runner-muscle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+}
+
+.runner-muscle-pill.primary-pill {
+  background: rgba(124, 92, 252, 0.12);
+  border-color: rgba(124, 92, 252, 0.35);
+  color: #ffffff;
+}
+
+.runner-muscle-pill.secondary-pill {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.runner-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.runner-pill-dot.primary-dot {
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+.runner-pill-dot.secondary-dot {
+  background: var(--text-dim);
+}
+
+/* ── Motion Stage Keyframes & Animations ───────────────────────────────────── */
+
+/* 1. Leg Swing Pendulum */
+@keyframes cxLegSwing {
+  0% { transform: rotate(-24deg); transform-origin: 96px 92px; }
+  50% { transform: rotate(32deg); transform-origin: 96px 92px; }
+  100% { transform: rotate(-24deg); transform-origin: 96px 92px; }
+}
+
+.cx-swinging-leg {
+  animation: cxLegSwing 1.8s ease-in-out infinite;
+}
+
+/* 2. Squat Motion */
+@keyframes cxSquatAscent {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(22px) scaleY(0.85); }
+  55% { transform: translateY(22px) scaleY(0.85); }
+  100% { transform: translateY(0); }
+}
+
+.cx-anim-squat-figure {
+  animation: cxSquatAscent 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  transform-origin: 100px 146px;
+}
+
+/* 3. Push-up Motion */
+@keyframes cxPushupPress {
+  0% { transform: rotate(0deg); transform-origin: 45px 126px; }
+  45% { transform: rotate(-14deg); transform-origin: 45px 126px; }
+  55% { transform: rotate(-14deg); transform-origin: 45px 126px; }
+  100% { transform: rotate(0deg); transform-origin: 45px 126px; }
+}
+
+.cx-anim-pushup-figure {
+  animation: cxPushupPress 2.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+/* 4. Pull-up Motion */
+@keyframes cxPullupHang {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(-24px); }
+  55% { transform: translateY(-24px); }
+  100% { transform: translateY(0); }
+}
+
+.cx-anim-pullup-figure {
+  animation: cxPullupHang 2.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+/* 5. Mobility Rotator */
+@keyframes cxArmOrbit {
+  0% { transform: rotate(0deg); transform-origin: 100px 58px; }
+  100% { transform: rotate(360deg); transform-origin: 100px 58px; }
+}
+
+.cx-anim-arm-rotator {
+  animation: cxArmOrbit 3.5s linear infinite;
+}
+
+@keyframes cxOrbitSpin {
+  0% { transform: rotate(0deg); transform-origin: 100px 75px; }
+  100% { transform: rotate(360deg); transform-origin: 100px 75px; }
+}
+
+.cx-anim-orbit-ring {
+  animation: cxOrbitSpin 6s linear infinite;
+}
+
+@keyframes cxPulseRing {
+  0% { r: 8; opacity: 0.8; }
+  100% { r: 24; opacity: 0; }
+}
+
+.cx-anim-pulse-ring {
+  animation: cxPulseRing 1.8s ease-out infinite;
+}
+
+@keyframes cxGlowBreathe {
+  0% { opacity: 0.6; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1.1); }
+}
+
+.cx-anim-joint-glow {
+  animation: cxGlowBreathe 1.5s ease-in-out infinite alternate;
+}
+
+

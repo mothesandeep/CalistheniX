@@ -1,51 +1,172 @@
-/* ── Buttons ───────────────────────────────────────────────────────────────── */
+/* ============================================================
+   buttons.css — Design System Buttons & Steppers (Section 13)
+   ============================================================ */
+
+/* ── Base Button ───────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 9px 18px;
-  border-radius: var(--radius-sm);
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-btn);
   font-family: var(--sans);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  text-decoration: none;
+  line-height: 1.2;
+  transition: all var(--transition-fast);
+  user-select: none;
+  -webkit-user-select: none;
 }
-.btn:active { transform: scale(0.97); }
+.btn:active { transform: scale(0.98); }
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none !important;
+}
 
+/* ── Primary Button (Complete Set, Start Workout, CTA) ────────────────────── */
 .btn-primary {
-  background: var(--accent);
-  color: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, #7c5cfc 0%, #6947eb 100%);
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 16px rgba(124, 92, 252, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .btn-primary:hover {
-  background: var(--accent-hover);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c5cfc 100%);
+  box-shadow: 0 6px 22px rgba(124, 92, 252, 0.35);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(124, 92, 252, 0.2);
 }
 
+.btn-hero {
+  height: 56px;
+  padding: 0 28px;
+  font-size: 15px;
+  border-radius: var(--radius-btn-lg);
+}
+
+/* ── Secondary Button (Edit Day, Actions) ─────────────────────────────────── */
+.btn-secondary {
+  height: 40px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--radius-btn);
+}
+.btn-secondary:hover {
+  border-color: var(--border-light);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.btn-sm {
+  height: 32px;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Ghost Button (Skip Set, Skip Rest, Back) ─────────────────────────────── */
+.btn-ghost {
+  height: 36px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+}
+.btn-ghost:hover {
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* ── Danger Ghost Button (End Session) ────────────────────────────────────── */
+.btn-danger-ghost {
+  height: 36px;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+}
+.btn-danger-ghost:hover {
+  color: var(--danger);
+  background: rgba(244, 63, 94, 0.08);
+}
+
+/* ── Stepper (+ / − rep controls) ─────────────────────────────────────────── */
+.stepper-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-light);
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--transition-fast);
+}
+.stepper-btn:hover {
+  border-color: var(--border-focus);
+  background: var(--surface-3);
+  color: #ffffff;
+}
+.stepper-btn:active {
+  transform: scale(0.92);
+}
+
+/* ── Icon Button ─────────────────────────────────────────────────────────── */
 .btn-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-sm);
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text-muted);
   font-size: 14px;
   cursor: pointer;
-  transition: background var(--transition), color var(--transition), border-color var(--transition);
+  transition: all var(--transition-fast);
 }
-.btn-icon:hover { background: var(--surface-2); color: var(--text); border-color: rgba(255,255,255,0.15); }
+.btn-icon:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-light);
+}
 
 /* ── Badges & Tags ───────────────────────────────────────────────────────── */
 .badge {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-badge);
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -53,4 +174,8 @@
   white-space: nowrap;
 }
 .badge-reps { background: rgba(255, 255, 255, 0.06); color: #e4e4e7; }
+.badge-hold { background: rgba(124, 92, 252, 0.12); color: #c4b5fd; border: 1px solid rgba(124, 92, 252, 0.25); }
+.badge-accent { background: rgba(124, 92, 252, 0.12); color: #c4b5fd; border: 1px solid rgba(124, 92, 252, 0.25); }
+.badge-success { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.25); }
+.badge-warning { background: rgba(249, 115, 22, 0.12); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.25); }
 

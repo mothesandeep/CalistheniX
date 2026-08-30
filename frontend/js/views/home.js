@@ -484,8 +484,8 @@ function renderHomeView() {
       <!-- Card 1: Workouts This Week -->
       <div class="home-metric-card">
         <div class="home-metric-top">
-          <span class="home-metric-lbl">Workouts This Week</span>
-          <div class="home-metric-icon">${renderIcon('dumbbell', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
+          <span class="home-metric-lbl">Workouts this week</span>
+          <div class="home-metric-icon">${renderIcon('dumbbell', 'cx-icon cx-icon-md cx-icon-muted')}</div>
         </div>
         <div class="home-metric-val">${card1Val}</div>
         <div class="home-metric-sub">${card1Sub}</div>
@@ -495,8 +495,8 @@ function renderHomeView() {
       <!-- Card 2: Total Sets -->
       <div class="home-metric-card">
         <div class="home-metric-top">
-          <span class="home-metric-lbl">Total Sets</span>
-          <div class="home-metric-icon">${renderIcon('barChart', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
+          <span class="home-metric-lbl">Total sets</span>
+          <div class="home-metric-icon">${renderIcon('barChart', 'cx-icon cx-icon-md cx-icon-muted')}</div>
         </div>
         <div class="home-metric-val">${card2Val}</div>
         <div class="home-metric-sub">${card2Sub}</div>
@@ -506,8 +506,8 @@ function renderHomeView() {
       <!-- Card 3: Training Volume -->
       <div class="home-metric-card">
         <div class="home-metric-top">
-          <span class="home-metric-lbl">Training Volume</span>
-          <div class="home-metric-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
+          <span class="home-metric-lbl">Training volume</span>
+          <div class="home-metric-icon">${renderIcon('trendingUp', 'cx-icon cx-icon-md cx-icon-muted')}</div>
         </div>
         <div class="home-metric-val">${card3Val}</div>
         <div class="home-metric-sub">${card3Sub}</div>
@@ -517,8 +517,8 @@ function renderHomeView() {
       <!-- Card 4: Avg. Workout Time -->
       <div class="home-metric-card">
         <div class="home-metric-top">
-          <span class="home-metric-lbl">Avg. Workout Time</span>
-          <div class="home-metric-icon">${renderIcon('timer', 'cx-icon cx-icon-lg cx-icon-muted')}</div>
+          <span class="home-metric-lbl">Avg. workout time</span>
+          <div class="home-metric-icon">${renderIcon('timer', 'cx-icon cx-icon-md cx-icon-muted')}</div>
         </div>
         <div class="home-metric-val">${card4Val}</div>
         <div class="home-metric-sub">${card4Sub}</div>
@@ -721,26 +721,23 @@ function renderHomeView() {
 
   return `
     <div class="home-container">
-      <!-- Top Header & Controls (Phase.md Section 6, 7, 8) -->
+      <!-- Top Header & Controls (Section 10 Spec) -->
       <div class="home-header-row fade-in-up">
-        <div>
-          <h1 class="home-greeting-title">${greeting}, Sandeep!</h1>
-          <p class="home-greeting-sub">Discipline today, strength forever.</p>
+        <div class="home-greeting-group">
+          <span class="home-greeting-lead">Good ${greeting.toLowerCase()}</span>
+          <h1 class="home-greeting-name">Sandeep</h1>
         </div>
         <div class="home-header-controls">
           <button class="home-notif-btn" onclick="openNotifModal()" title="Notifications" aria-label="Notifications">
-            ${renderIcon('bell', 'cx-icon')}
+            ${renderIcon('bell', 'cx-icon cx-icon-sm')}
             <span class="home-notif-dot"></span>
           </button>
           <div class="home-week-select-pill" onclick="switchView('split')" title="View Active Week Schedule">
-            <span>${renderIcon('calendar', 'cx-icon cx-icon-inline cx-icon-sm')} This Week ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}</span>
+            <span>This Week ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}</span>
           </div>
-          <div class="home-streak-pill" title="Current Daily Streak">
+          <div class="home-streak-pill-compact" title="Current Daily Streak">
             <span>${renderIcon('flame', 'cx-icon cx-icon-fire cx-icon-sm')}</span>
-            <div>
-              <span class="home-streak-pill-num">${summary.streak_days || 0}</span>
-              <span style="font-size:11px; margin-left:2px;">Day Streak</span>
-            </div>
+            <span class="home-streak-pill-num">${summary.streak_days || 0}</span>
           </div>
         </div>
       </div>

@@ -217,42 +217,48 @@ function renderSplitView() {
       </div>`;
   }
 
-  // Schedule Grid (7 days Monday-Sunday)
+  // Schedule Grid (7 days Monday-Sunday, Section 12 Spec)
   const todayDow = (new Date().getDay() + 6) % 7; // 0=Monday .. 6=Sunday
   const scheduleDays = currentSplit.schedule || [];
 
-  const dayCardsHtml = scheduleDays.map(d => {
+  const dayCardsHtml = scheduleDays.map((d, idx) => {
     const isToday = d.day_of_week === todayDow;
+    const isPast = d.day_of_week < todayDow;
     const isWorkout = d.day_type === 'workout' && d.workout_id;
 
     const typeBadge = isWorkout
       ? `<span class="badge badge-reps">Workout</span>`
-      : `<span class="badge badge-duration">Rest Day</span>`;
+      : `<span class="badge badge-hold">Rest Day</span>`;
 
     const titleStr = isWorkout ? (d.workout_name || 'Workout') : 'Rest & Recovery';
-    const metaStr = isWorkout
-      ? (d.workout_desc || 'Scheduled Training Session')
-      : 'Muscular recovery & adaptations';
+
+    let actionBtnHtml = '';
+    if (isToday) {
+      if (isWorkout) {
+        actionBtnHtml = `<button class="btn btn-primary btn-sm" style="width:100%;" onclick="startWorkoutFromId(${d.workout_id})">${renderIcon('zap', 'cx-icon cx-icon-xs cx-icon-inline')} Start Today</button>`;
+      } else {
+        actionBtnHtml = `<button class="btn btn-secondary btn-sm" style="width:100%; opacity:0.85;" onclick="openDayEditor(${d.day_of_week})">Rest Day · Edit</button>`;
+      }
+    } else if (isPast) {
+      actionBtnHtml = `<button class="btn btn-ghost btn-sm" onclick="switchView('history_list')">View Log →</button>`;
+    } else {
+      actionBtnHtml = `<button class="btn btn-ghost btn-sm" onclick="openDayEditor(${d.day_of_week})">${renderIcon('edit', 'cx-icon cx-icon-xs cx-icon-inline')} Edit</button>`;
+    }
 
     return `
-      <div class="schedule-day-card ${isToday ? 'schedule-day-today' : ''}">
-        <div>
-          <div class="schedule-day-header">
-            <span class="schedule-day-name">
-              ${d.day_name}
-              ${isToday ? '<span class="schedule-today-pill">Today</span>' : ''}
-            </span>
-            ${typeBadge}
+      <div class="schedule-day-card ${isToday ? 'schedule-day-today' : ''} ${!isWorkout && !isToday ? 'is-rest-day' : ''}">
+        <div class="schedule-day-header">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="schedule-day-name">${d.day_name}</span>
+            ${isToday ? '<span class="schedule-today-pill">TODAY</span>' : ''}
           </div>
-          <div class="schedule-workout-info" style="margin-top:10px;">
-            <div class="schedule-workout-title">${titleStr}</div>
-            <div class="schedule-workout-meta">${metaStr}</div>
-          </div>
+          ${typeBadge}
         </div>
-
+        <div class="schedule-workout-info">
+          <div class="schedule-workout-title">${titleStr}</div>
+        </div>
         <div class="schedule-day-actions">
-          ${isWorkout ? `<button class="btn btn-secondary btn-sm" onclick="startWorkoutFromId(${d.workout_id})">${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} Start</button>` : ''}
-          <button class="btn btn-secondary btn-sm" onclick="openDayEditor(${d.day_of_week})">${renderIcon('edit', 'cx-icon cx-icon-xs cx-icon-inline')} Edit Day</button>
+          ${actionBtnHtml}
         </div>
       </div>`;
   }).join('');
