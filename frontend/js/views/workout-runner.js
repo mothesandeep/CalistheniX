@@ -2349,11 +2349,16 @@ function confirmExitWarmup() {
 function renderWarmupCompleteView(session) {
   const warmupList = getWarmupExercises(session);
   const completedCount = warmupList.filter(w => w.completed).length;
+  const skippedCount = warmupList.filter(w => w.skipped).length;
   const totalCount = warmupList.length;
   const isStarted = !!(session.startTime || session.startedAt);
   const elapsedSec = isStarted ? getSessionElapsedSec(session) : 0;
   const mainList = getMainWorkoutExercises(session);
   const nextFirstEx = mainList && mainList.length > 0 ? mainList[0] : null;
+  const hasSkipped = skippedCount > 0;
+  const headline = hasSkipped
+    ? `${completedCount} movements completed · ${skippedCount} skipped`
+    : `All ${completedCount} warm-up movements completed`;
 
   return `
     <div class="runner-phase-transition-container animate-card-reveal">
@@ -2362,14 +2367,20 @@ function renderWarmupCompleteView(session) {
         <div class="runner-transition-badge-wrap">
           <span class="runner-transition-fire-icon">🔥</span>
         </div>
-        <h2 class="runner-transition-title">Warm-Up Complete</h2>
-        <p class="runner-transition-sub">Warm-Up complete. You're ready for the main workout. Your body is primed and muscles are activated.</p>
+        <h2 class="runner-transition-title">${hasSkipped ? 'Warm-Up Finished' : 'Warm-Up Complete'}</h2>
+        <p class="runner-transition-sub mono" style="font-weight:700; color:${hasSkipped ? '#f59e0b' : '#10b981'};">${headline}</p>
 
         <div class="runner-transition-chips-row">
           <div class="runner-transition-chip">
-            <span class="runner-chip-icon">✓</span>
-            <span>${completedCount} / ${totalCount} movements</span>
+            <span class="runner-chip-icon" style="color:#10b981;">✓</span>
+            <span style="color:#10b981;">${completedCount} / ${totalCount} done</span>
           </div>
+          ${skippedCount > 0 ? `
+            <div class="runner-transition-chip">
+              <span class="runner-chip-icon" style="color:#eab308;">⏭</span>
+              <span style="color:#eab308;">${skippedCount} skipped</span>
+            </div>
+          ` : ''}
           <div class="runner-transition-chip">
             <span class="runner-chip-icon">⏱</span>
             <span>${fmtSecs(elapsedSec)}</span>
@@ -2404,6 +2415,10 @@ function renderMainWorkoutCompleteView(session) {
   const elapsedSec = isStarted ? getSessionElapsedSec(session) : 0;
   const cooldownList = getCooldownExercises(session);
   const nextCooldownEx = cooldownList && cooldownList.length > 0 ? cooldownList[0] : null;
+  const hasSkipped = skippedSets > 0;
+  const headline = hasSkipped
+    ? `${completedSets} sets completed · ${skippedSets} skipped`
+    : `All ${completedSets} sets completed`;
 
   return `
     <div class="runner-phase-transition-container animate-card-reveal">
@@ -2412,8 +2427,8 @@ function renderMainWorkoutCompleteView(session) {
         <div class="runner-transition-badge-wrap">
           <span class="runner-transition-fire-icon">⚡</span>
         </div>
-        <h2 class="runner-transition-title">Main Workout Complete</h2>
-        <p class="runner-transition-sub">All strength and skill sets resolved. Move into cool-down for recovery.</p>
+        <h2 class="runner-transition-title">${hasSkipped ? 'Main Workout Finished' : 'Main Workout Complete'}</h2>
+        <p class="runner-transition-sub mono" style="font-weight:700; color:${hasSkipped ? '#f59e0b' : '#10b981'};">${headline}</p>
 
         <div class="runner-transition-chips-row">
           <div class="runner-transition-chip">
@@ -2666,10 +2681,9 @@ function getWorkoutSessionSummaryMetrics(session) {
       completionPercentage: 0,
       volumeKg: 0,
       volumeText: 'Bodyweight',
-      calories: 0,
       completedSummary: '0 sets',
-      skippedSummary: 'None',
-      bestPerformance: null
+      skippedSummary: '0 sets skipped',
+      achievedPR: null
     };
   }
 
@@ -2681,12 +2695,6 @@ function getWorkoutSessionSummaryMetrics(session) {
   let totalVolumeKg = 0;
   let totalReps = 0;
   let totalHoldSec = 0;
-  let maxWeightKg = 0;
-  let maxWeightEx = '';
-  let maxReps = 0;
-  let maxRepsEx = '';
-  let maxHoldSec = 0;
-  let maxHoldEx = '';
 
   // 1. Warm-up
   auth.warmup.list.forEach(w => {
@@ -2706,26 +2714,11 @@ function getWorkoutSessionSummaryMetrics(session) {
         const actual = Number(s.actual_val !== null && s.actual_val !== undefined ? s.actual_val : (isHold ? 0 : s.target_val || 10));
         const weight = s.weight_kg != null && s.weight_kg !== '' ? Number(s.weight_kg) : 0;
 
-        if (isHold) {
-          totalHoldSec += actual;
-          if (actual > maxHoldSec) {
-            maxHoldSec = actual;
-            maxHoldEx = ex.exercise_name;
-          }
-        } else {
-          totalReps += actual;
-          if (actual > maxReps) {
-            maxReps = actual;
-            maxRepsEx = ex.exercise_name;
-          }
-        }
+        if (isHold) totalHoldSec += actual;
+        else totalReps += actual;
 
         if (weight > 0) {
           totalVolumeKg += (actual * weight);
-          if (weight > maxWeightKg) {
-            maxWeightKg = weight;
-            maxWeightEx = `${ex.exercise_name} (${actual} reps @ ${weight}kg)`;
-          }
         }
       }
     });
@@ -2746,20 +2739,41 @@ function getWorkoutSessionSummaryMetrics(session) {
   const setsCompleted = auth.overall.completedSets;
   const setsSkipped = auth.overall.skippedSets;
   const totalSets = auth.overall.totalSets;
-  const completionPercentage = totalSets > 0 ? Math.round((setsCompleted / totalSets) * 100) : 100;
+  const completionPercentage = totalSets > 0 ? Math.round((setsCompleted / totalSets) * 100) : (setsSkipped > 0 ? 0 : 100);
   const volumeText = totalVolumeKg > 0 ? `${totalVolumeKg.toLocaleString()} kg` : 'Bodyweight';
-  const calories = Math.max(15, Math.round((durationSec / 60) * 6.5 + (totalReps * 0.18) + (totalVolumeKg > 0 ? totalVolumeKg * 0.012 : 0) + (totalHoldSec * 0.08)));
 
-  const completedSummary = `${setsCompleted} of ${totalSets} sets (${exercisesCompleted} exercises)`;
-  const skippedSummary = setsSkipped > 0 ? `${setsSkipped} sets skipped` : 'None';
+  const completedSummary = `${setsCompleted} of ${totalSets} sets (${exercisesCompleted} of ${totalExercises} exercises)`;
+  const skippedSummary = setsSkipped > 0 ? `${setsSkipped} sets skipped` : '0 sets skipped';
 
-  let bestPerformance = null;
-  if (maxWeightKg > 0 && maxWeightEx) {
-    bestPerformance = maxWeightEx;
-  } else if (maxReps > 0 && maxRepsEx) {
-    bestPerformance = `${maxRepsEx}: ${maxReps} reps`;
-  } else if (maxHoldSec > 0 && maxHoldEx) {
-    bestPerformance = `${maxHoldEx}: ${maxHoldSec}s hold`;
+  // Real PR detection: only if an actual historical record was beaten
+  let achievedPR = null;
+  if (session.achievedPRs && session.achievedPRs.length > 0) {
+    achievedPR = session.achievedPRs.join(' · ');
+  } else if (typeof state !== 'undefined' && state.dashboardRecords && state.dashboardRecords.length > 0) {
+    const prsAchieved = [];
+    auth.main.list.forEach(ex => {
+      const rec = state.dashboardRecords.find(r => r.exercise_id === ex.exercise_id || r.exercise_name === ex.exercise_name);
+      if (rec) {
+        const isHold = ex.exercise_type === 'duration';
+        (ex.sets || []).forEach(s => {
+          if (s.completed) {
+            const actual = Number(s.actual_val !== null && s.actual_val !== undefined ? s.actual_val : (s.target_val || 0));
+            const weight = s.weight_kg != null && s.weight_kg !== '' ? Number(s.weight_kg) : 0;
+            if (isHold && rec.max_duration_sec && actual > rec.max_duration_sec) {
+              prsAchieved.push(`${ex.exercise_name}: ${actual}s hold (beat ${rec.max_duration_sec}s)`);
+            } else if (!isHold && rec.max_reps && actual > rec.max_reps) {
+              prsAchieved.push(`${ex.exercise_name}: ${actual} reps (beat ${rec.max_reps} reps)`);
+            }
+            if (weight > 0 && rec.max_weight_kg && weight > rec.max_weight_kg) {
+              prsAchieved.push(`${ex.exercise_name}: +${weight}kg (beat ${rec.max_weight_kg}kg)`);
+            }
+          }
+        });
+      }
+    });
+    if (prsAchieved.length > 0) {
+      achievedPR = prsAchieved[0];
+    }
   }
 
   return {
@@ -2774,10 +2788,9 @@ function getWorkoutSessionSummaryMetrics(session) {
     completionPercentage,
     volumeKg: totalVolumeKg,
     volumeText,
-    calories,
     completedSummary,
     skippedSummary,
-    bestPerformance
+    achievedPR
   };
 }
 
@@ -2800,14 +2813,20 @@ function renderWorkoutCompleteModal(summaryData) {
   }
 
   const s = summaryData || {};
+  const hasSkipped = (s.setsSkipped || 0) > 0;
+  const statusHeadline = hasSkipped
+    ? `${s.setsCompleted || 0} sets completed · ${s.setsSkipped || 0} skipped`
+    : `All ${s.setsCompleted || 0} sets completed`;
+
   modal.innerHTML = `
     <div class="runner-complete-modal-card" onclick="event.stopPropagation()">
       <div class="runner-complete-icon-wrap">
         ${renderIcon('award', 'cx-icon cx-icon-lg')}
       </div>
-      <span class="runner-complete-kicker">SESSION TERMINATED · FINISHED</span>
-      <h1 class="runner-complete-title" id="workout-complete-title">WORKOUT COMPLETE</h1>
+      <span class="runner-complete-kicker">SESSION FINISHED</span>
+      <h1 class="runner-complete-title" id="workout-complete-title">WORKOUT FINISHED</h1>
       <h2 class="runner-complete-subtitle">${s.workoutName || 'Workout'}</h2>
+      <p class="runner-complete-status-line mono" style="font-size:13.5px; font-weight:700; color:${hasSkipped ? '#f59e0b' : '#10b981'}; margin: -8px 0 18px;">${statusHeadline}</p>
 
       <div class="runner-complete-metrics-grid">
         <div class="runner-complete-metric-item">
@@ -2824,19 +2843,22 @@ function renderWorkoutCompleteModal(summaryData) {
         </div>
         <div class="runner-complete-metric-item">
           <span class="runner-complete-metric-label">Sets Skipped</span>
-          <span class="runner-complete-metric-val mono" style="color:${s.setsSkipped > 0 ? '#f59e0b' : '#8a8d9f'};">${s.setsSkipped || 0}</span>
+          <span class="runner-complete-metric-val mono" style="color:${hasSkipped ? '#f59e0b' : '#8a8d9f'};">${s.setsSkipped || 0}</span>
         </div>
         <div class="runner-complete-metric-item">
           <span class="runner-complete-metric-label">Volume</span>
           <span class="runner-complete-metric-val mono">${s.volumeText || 'Bodyweight'}</span>
         </div>
         <div class="runner-complete-metric-item">
-          <span class="runner-complete-metric-label">Calories</span>
-          <span class="runner-complete-metric-val mono" style="color:#f97316;">${s.calories || 0} kcal</span>
+          <span class="runner-complete-metric-label">Completion</span>
+          <span class="runner-complete-metric-val mono" style="color:#7c5cfc;">${s.completionPercentage || 0}%</span>
         </div>
         <div class="runner-complete-metric-item" style="grid-column: span 3; padding-top:4px;">
-          <span class="runner-complete-metric-label">Completion: ${s.completionPercentage || 0}%</span>
-          <div style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; margin-top:2px;">
+          <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#8a8d9f;">
+            <span>Progress</span>
+            <span class="mono">${s.completionPercentage || 0}%</span>
+          </div>
+          <div style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
             <div style="width:${s.completionPercentage || 0}%; height:100%; background:linear-gradient(90deg, #7c5cfc, #10b981); border-radius:3px;"></div>
           </div>
         </div>
@@ -2849,12 +2871,12 @@ function renderWorkoutCompleteModal(summaryData) {
         </div>
         <div class="runner-complete-summary-row">
           <span class="runner-complete-summary-title">Skipped:</span>
-          <span class="runner-complete-summary-value">${s.skippedSummary || 'None'}</span>
+          <span class="runner-complete-summary-value">${s.skippedSummary || '0 sets skipped'}</span>
         </div>
-        ${s.bestPerformance ? `
+        ${s.achievedPR ? `
           <div class="runner-complete-summary-row is-pr">
-            <span class="runner-complete-summary-title">🏆 Best Performance / PR:</span>
-            <span class="runner-complete-summary-value" style="color:#facc15;">${s.bestPerformance}</span>
+            <span class="runner-complete-summary-title">🏆 Personal Record (PR):</span>
+            <span class="runner-complete-summary-value" style="color:#facc15;">${s.achievedPR}</span>
           </div>
         ` : ''}
       </div>
@@ -2875,15 +2897,21 @@ function renderWorkoutCompleteModal(summaryData) {
 
 function renderWorkoutCompleteView(session, summaryData) {
   const s = summaryData || getWorkoutSessionSummaryMetrics(session);
+  const hasSkipped = (s.setsSkipped || 0) > 0;
+  const statusHeadline = hasSkipped
+    ? `${s.setsCompleted || 0} sets completed · ${s.setsSkipped || 0} skipped`
+    : `All ${s.setsCompleted || 0} sets completed`;
+
   return `
     <div class="runner-complete-screen animate-fade-in" id="workout-complete-container">
       <div class="runner-complete-modal-card" style="box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
         <div class="runner-complete-icon-wrap">
           ${renderIcon('award', 'cx-icon cx-icon-lg')}
         </div>
-        <span class="runner-complete-kicker">SESSION TERMINATED · FINISHED</span>
-        <h1 class="runner-complete-title">WORKOUT COMPLETE</h1>
+        <span class="runner-complete-kicker">SESSION FINISHED</span>
+        <h1 class="runner-complete-title">WORKOUT FINISHED</h1>
         <h2 class="runner-complete-subtitle">${s.workoutName || 'Workout'}</h2>
+        <p class="runner-complete-status-line mono" style="font-size:13.5px; font-weight:700; color:${hasSkipped ? '#f59e0b' : '#10b981'}; margin: -8px 0 18px;">${statusHeadline}</p>
 
         <div class="runner-complete-metrics-grid">
           <div class="runner-complete-metric-item">
@@ -2900,19 +2928,22 @@ function renderWorkoutCompleteView(session, summaryData) {
           </div>
           <div class="runner-complete-metric-item">
             <span class="runner-complete-metric-label">Sets Skipped</span>
-            <span class="runner-complete-metric-val mono" style="color:${s.setsSkipped > 0 ? '#f59e0b' : '#8a8d9f'};">${s.setsSkipped || 0}</span>
+            <span class="runner-complete-metric-val mono" style="color:${hasSkipped ? '#f59e0b' : '#8a8d9f'};">${s.setsSkipped || 0}</span>
           </div>
           <div class="runner-complete-metric-item">
             <span class="runner-complete-metric-label">Volume</span>
             <span class="runner-complete-metric-val mono">${s.volumeText || 'Bodyweight'}</span>
           </div>
           <div class="runner-complete-metric-item">
-            <span class="runner-complete-metric-label">Calories</span>
-            <span class="runner-complete-metric-val mono" style="color:#f97316;">${s.calories || 0} kcal</span>
+            <span class="runner-complete-metric-label">Completion</span>
+            <span class="runner-complete-metric-val mono" style="color:#7c5cfc;">${s.completionPercentage || 0}%</span>
           </div>
           <div class="runner-complete-metric-item" style="grid-column: span 3; padding-top:4px;">
-            <span class="runner-complete-metric-label">Completion: ${s.completionPercentage || 0}%</span>
-            <div style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden; margin-top:2px;">
+            <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#8a8d9f;">
+              <span>Progress</span>
+              <span class="mono">${s.completionPercentage || 0}%</span>
+            </div>
+            <div style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
               <div style="width:${s.completionPercentage || 0}%; height:100%; background:linear-gradient(90deg, #7c5cfc, #10b981); border-radius:3px;"></div>
             </div>
           </div>
@@ -2925,12 +2956,12 @@ function renderWorkoutCompleteView(session, summaryData) {
           </div>
           <div class="runner-complete-summary-row">
             <span class="runner-complete-summary-title">Skipped:</span>
-            <span class="runner-complete-summary-value">${s.skippedSummary || 'None'}</span>
+            <span class="runner-complete-summary-value">${s.skippedSummary || '0 sets skipped'}</span>
           </div>
-          ${s.bestPerformance ? `
+          ${s.achievedPR ? `
             <div class="runner-complete-summary-row is-pr">
-              <span class="runner-complete-summary-title">🏆 Best Performance / PR:</span>
-              <span class="runner-complete-summary-value" style="color:#facc15;">${s.bestPerformance}</span>
+              <span class="runner-complete-summary-title">🏆 Personal Record (PR):</span>
+              <span class="runner-complete-summary-value" style="color:#facc15;">${s.achievedPR}</span>
             </div>
           ` : ''}
         </div>
