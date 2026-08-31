@@ -6339,37 +6339,10 @@ function renderWorkoutStructureSidebar(session, activePhase) {
 
   return `
     <aside class="runner-rail-sidebar" aria-label="Workout Progress and Exercise Queue">
-      <!-- Phase Switcher Tabs -->
-      <div class="runner-rail-phase-tabs" role="tablist">
-        ${phases.map(p => {
-          const isActive = rawShort === p.id;
-          const lockStatus = getPhaseLockStatus(session, p.id);
-          const isLocked = lockStatus.isLocked;
-          const isDone = p.isCompleted;
-
-          let badgeIcon = '';
-          if (isDone) badgeIcon = renderIcon('check', 'cx-icon cx-icon-xs cx-icon-success');
-          else if (isLocked) badgeIcon = renderIcon('lock', 'cx-icon cx-icon-xs');
-          else badgeIcon = `<span class="runner-phase-count-pill mono">${p.stepNumber}</span>`;
-
-          return `
-            <button class="runner-rail-phase-btn ${isActive ? 'is-active' : ''} ${isDone ? 'is-completed' : ''} ${isLocked ? 'is-locked' : ''}"
-                    type="button"
-                    role="tab"
-                    aria-selected="${isActive}"
-                    onclick="setWorkoutPhase('${p.id}')"
-                    title="${isLocked ? lockStatus.lockReason : `Switch to ${p.title} Phase`}">
-              <span class="runner-rail-phase-badge">${badgeIcon}</span>
-              <span class="runner-rail-phase-label">${p.title}</span>
-            </button>
-          `;
-        }).join('')}
-      </div>
-
       <!-- Overall Compact Segmented Progress Bar -->
       <div class="runner-rail-progress-box">
         <div class="runner-rail-progress-header">
-          <span class="runner-rail-progress-label">OVERALL PROGRESS</span>
+          <span class="runner-rail-progress-label">SESSION PROGRESS</span>
           <span class="runner-rail-progress-val mono">${overall.completedSets} / ${overall.totalSets} sets · ${overall.progressPct}%</span>
         </div>
         <div class="runner-rail-progress-bar">

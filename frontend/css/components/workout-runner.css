@@ -4752,57 +4752,6 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
-.runner-rail-phase-tabs {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.runner-rail-phase-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  color: var(--cx-text-secondary, #8A8A93);
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.runner-rail-phase-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: var(--cx-text, #F2F2F0);
-}
-
-.runner-rail-phase-btn.is-active {
-  background: var(--phase-accent-dim, rgba(255, 93, 93, 0.12));
-  border-color: var(--phase-accent-border, rgba(255, 93, 93, 0.35));
-  color: #ffffff;
-}
-
-.runner-rail-phase-btn.is-completed {
-  border-color: rgba(62, 207, 142, 0.25);
-  color: var(--cx-success, #3ECF8E);
-}
-
-.runner-rail-phase-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-}
-
-.runner-phase-count-pill {
-  font-size: 11px;
-  font-weight: 800;
-  color: inherit;
-}
 
 .runner-rail-progress-box {
   background: var(--cx-surface, #151519);
