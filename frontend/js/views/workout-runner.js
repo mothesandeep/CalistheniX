@@ -5805,14 +5805,14 @@ function renderWorkoutSegmentedTabs(session, currentPhase) {
         <span class="runner-phase-label">Warm-Up</span>
       </button>
 
-      <span class="runner-phase-connector ${conn1Class}"></span>
+      <span class="runner-phase-arrow-sep" aria-hidden="true">→</span>
 
-      <button class="${mainClasses}" type="button" role="tab" aria-selected="${isMainActive}" onclick="setWorkoutPhase('main')" title="${mainLock.isLocked ? mainLock.lockReason : 'Main Workout Phase'}">
+      <button class="${mainClasses}" type="button" role="tab" aria-selected="${isMainActive}" onclick="setWorkoutPhase('main')" title="${mainLock.isLocked ? mainLock.lockReason : 'Train Phase'}">
         <span class="runner-phase-dot">${mainDotSvg}</span>
         <span class="runner-phase-label">Train</span>
       </button>
 
-      <span class="runner-phase-connector ${conn2Class}"></span>
+      <span class="runner-phase-arrow-sep" aria-hidden="true">→</span>
 
       <button class="${cooldownClasses}" type="button" role="tab" aria-selected="${isCooldownActive}" onclick="setWorkoutPhase('cooldown')" title="${cooldownLock.isLocked ? cooldownLock.lockReason : 'Cool Down Phase'}">
         <span class="runner-phase-dot">${cooldownDotSvg}</span>

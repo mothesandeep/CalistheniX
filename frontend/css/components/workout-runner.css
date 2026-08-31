@@ -3171,29 +3171,36 @@
 .runner-phase-pill-group {
   display: inline-flex;
   align-items: center;
-  gap: 0;
+  gap: 4px;
   background: var(--cx-surface, #151519);
-  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
-  padding: 4px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 3px 8px;
   border-radius: var(--radius-full);
   position: relative;
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 50%);
+}
+
+.runner-phase-arrow-sep {
+  color: var(--cx-text-secondary, #8A8A93);
+  opacity: 0.35;
+  font-size: 11px;
+  user-select: none;
+  padding: 0 1px;
 }
 
 .runner-phase-pill-btn {
   background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-full);
-  padding: 6px 14px;
+  padding: 5px 12px;
   font-family: var(--font-heading);
   font-size: 12px;
   font-weight: 600;
   color: var(--cx-text-secondary, #8A8A93);
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   cursor: pointer;
-  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   z-index: 1;
 }
@@ -3204,32 +3211,28 @@
 }
 
 .runner-phase-pill-btn.is-active {
-  background: rgba(var(--phase-accent-rgb), 0.15);
+  background: rgba(var(--phase-accent-rgb), 0.12);
   color: var(--phase-accent);
   border-color: rgba(var(--phase-accent-rgb), 0.35);
-  box-shadow: 0 0 16px rgba(var(--phase-accent-rgb), 0.2);
 }
 
 /* Phase-specific active overrides — use the per-phase accent */
 .runner-phase-pill-btn.phase-warmup.is-active {
-  background: rgba(255, 138, 61, 0.15);
+  background: rgba(255, 138, 61, 0.12);
   border-color: rgba(255, 138, 61, 0.35);
   color: #FF8A3D;
-  box-shadow: 0 0 16px rgba(255, 138, 61, 0.2);
 }
 
 .runner-phase-pill-btn.phase-main.is-active {
-  background: rgba(255, 93, 93, 0.15);
+  background: rgba(255, 93, 93, 0.12);
   border-color: rgba(255, 93, 93, 0.35);
   color: #FF5D5D;
-  box-shadow: 0 0 16px rgba(255, 93, 93, 0.2);
 }
 
 .runner-phase-pill-btn.phase-cooldown.is-active {
-  background: rgba(53, 216, 176, 0.15);
+  background: rgba(53, 216, 176, 0.12);
   border-color: rgba(53, 216, 176, 0.35);
   color: #35D8B0;
-  box-shadow: 0 0 16px rgba(53, 216, 176, 0.2);
 }
 
 .runner-phase-pill-btn.is-done {
