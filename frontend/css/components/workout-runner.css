@@ -4751,6 +4751,24 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
+.runner-rail-sidebar::-webkit-scrollbar,
+.runner-right-panel::-webkit-scrollbar {
+  width: 4px;
+}
+.runner-rail-sidebar::-webkit-scrollbar-track,
+.runner-right-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+.runner-rail-sidebar::-webkit-scrollbar-thumb,
+.runner-right-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+.runner-rail-sidebar::-webkit-scrollbar-thumb:hover,
+.runner-right-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
 .runner-rail-progress-box {
   background: transparent;
   border: none;
