@@ -183,7 +183,7 @@
   function renderPushHorizontalSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.4s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-push-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Horizontal push animation">
@@ -248,7 +248,7 @@
   function renderPushArcherSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.6s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-archer-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Archer push-up animation">
@@ -317,7 +317,7 @@
   function renderPushInclineSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.4s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-pike-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Incline pike push animation">
@@ -382,7 +382,7 @@
   function renderPushVerticalSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.5s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-hspu-svg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Vertical push handstand animation">
@@ -442,7 +442,7 @@
   // ─────────────────────────────────────────────────────────────
   function renderPushDipSVG(options = {}) {
     const dur = options.speed || '2.4s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-dip-svg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Triceps dip animation">
@@ -522,7 +522,7 @@
   // ─────────────────────────────────────────────────────────────
   function renderPullVerticalSVG(options = {}) {
     const dur = options.speed || '2.4s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-pull-svg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Vertical pull movement animation">
@@ -588,7 +588,7 @@
   function renderPullHorizontalSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.4s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-row-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Horizontal pull rowing animation">
@@ -646,7 +646,7 @@
   function renderSquatSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.6s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-squat-svg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Squat movement animation">
@@ -723,7 +723,7 @@
   function renderLungeSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.5s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-lunge-svg" viewBox="0 0 110 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Lunge movement animation">
@@ -809,7 +809,7 @@
   function renderHingeSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.4s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-hinge-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Hinge movement animation">
@@ -864,7 +864,7 @@
   // ─────────────────────────────────────────────────────────────
   function renderCoreSVG(options = {}) {
     const dur = options.speed || '2.5s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-core-svg" viewBox="0 0 110 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Core movement animation">
@@ -912,7 +912,7 @@
   function renderHoldIsometricSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.8s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-hold-svg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Isometric hold animation">
@@ -959,7 +959,7 @@
   // ─────────────────────────────────────────────────────────────
   function renderHangingSVG(options = {}) {
     const dur = options.speed || '2.6s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-hanging-svg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Hanging movement animation">
@@ -1016,7 +1016,7 @@
   function renderIsolationLateralSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.4s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-latraise-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Lateral raise animation">
@@ -1101,7 +1101,7 @@
   function renderIsolationCalfSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.2s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-isolation-svg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Calf raise animation">
@@ -1161,7 +1161,7 @@
   function renderIsolationCurlSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.3s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-curl-svg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Biceps curl animation">
@@ -1220,7 +1220,7 @@
   function renderMobilityWristSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.0s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-wrist-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Wrist mobility circular rotation animation">
@@ -1266,7 +1266,7 @@
   function renderMobilityShoulderSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.6s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-shoulder-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Shoulder mobility circumduction animation">
@@ -1311,7 +1311,7 @@
   function renderMobilityHipSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.4s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-hip-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Hip mobility leg swing animation">
@@ -1356,7 +1356,7 @@
   function renderMobilityAnkleSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.2s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-ankle-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Ankle mobility circular rotation animation">
@@ -1401,7 +1401,7 @@
   function renderMobilitySpineSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.8s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-catcow-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Cat-cow spinal mobility animation">
@@ -1451,7 +1451,7 @@
   function renderMobilityFullSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.7s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-world-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Thoracic rotation mobility animation">
@@ -1493,7 +1493,7 @@
   function renderPlancheSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.5s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-planche-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Planche lean prep animation">
@@ -1535,7 +1535,7 @@
   function renderHandstandSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.4s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-hs-svg" viewBox="0 0 100 120" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Wall-facing handstand prep animation">
@@ -1576,7 +1576,7 @@
   function renderStretchChestSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.6s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-chest-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Pectoral chest stretch animation">
@@ -1624,7 +1624,7 @@
   function renderStretchShoulderSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.6s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-sh-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Cross-body shoulder stretch animation">
@@ -1674,7 +1674,7 @@
   function renderStretchTricepsSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.5s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-tri-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Overhead triceps stretch animation">
@@ -1720,7 +1720,7 @@
   function renderStretchLatSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.6s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-lat-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Latissimus dorsi side stretch animation">
@@ -1776,7 +1776,7 @@
   function renderStretchBicepsSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.6s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-bi-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Biceps and forearm stretch animation">
@@ -1818,7 +1818,7 @@
   function renderStretchWristSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.5s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-wri-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Reverse wrist extensor stretch animation">
@@ -1859,7 +1859,7 @@
   function renderStretchUpperBackSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.4s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-ub-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Eagle arms rhomboid stretch animation">
@@ -1901,7 +1901,7 @@
   function renderStretchHipSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.6s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-hip-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Hip flexor lunge stretch animation">
@@ -1948,7 +1948,7 @@
   function renderStretchHamstringSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.6s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-ham-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Hamstring forward fold stretch animation">
@@ -1993,7 +1993,7 @@
   function renderStretchGluteSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.6s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-glt-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Pigeon pose glute stretch animation">
@@ -2029,7 +2029,7 @@
   function renderStretchCalfSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.5s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-calf-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Standing calf stretch animation">
@@ -2074,7 +2074,7 @@
   function renderStretchSpineSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.8s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-child-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Child pose spinal decompression stretch animation">
@@ -2117,7 +2117,7 @@
   function renderStretchCoreSVG(options = {}) {
     const showFloor = options.showFloor !== false;
     const dur = options.speed || '2.6s';
-    const accent = options.accentColor || 'var(--accent, #7c5cfc)';
+    const accent = options.accentColor || 'var(--phase-train, #FF5D5D)';
 
     return `
       <svg class="cx-anim-svg cx-anim-str-cobra-svg" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Cobra pose anterior abdominal stretch animation">

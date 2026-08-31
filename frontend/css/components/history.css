@@ -126,9 +126,11 @@
 
 /* ── Phase 4: Workout Session History Logs (Section 11 Spec) ─────────────── */
 .history-session-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
+  background: var(--liquid-surface-1-grad, rgba(16, 16, 23, 0.78));
+  backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  border: var(--liquid-border);
+  border-radius: var(--radius-card, 16px);
   padding: 20px 24px;
   margin-bottom: 12px;
   min-height: 88px;
@@ -140,13 +142,14 @@
   transition: all var(--transition-fast);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--liquid-shadow-sm), var(--liquid-highlight-top);
 }
 
 .history-session-card:hover {
-  transform: translateY(-1px);
-  border-color: var(--border-light);
-  background: var(--surface-2);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--liquid-surface-2-grad, rgba(22, 22, 30, 0.84));
+  box-shadow: var(--liquid-shadow-md), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
 }
 
 .history-session-top {
@@ -256,11 +259,12 @@
 }
 
 .session-detail-ex-box {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 14px 16px;
+  background: var(--liquid-surface-inset, rgba(10, 10, 15, 0.6));
+  border: var(--liquid-border-subtle);
+  border-radius: var(--radius-card, 16px);
+  padding: 16px 18px;
   margin-bottom: 12px;
+  box-shadow: var(--liquid-highlight-inset);
 }
 
 .session-detail-ex-header {

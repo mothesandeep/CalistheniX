@@ -689,7 +689,7 @@ function renderPhaseSlotCard(phase, ex, idx, totalInPhase) {
   if (phase === 'main') {
     extraFieldsHtml = `
       <details style="margin-top:6px;">
-        <summary style="font-size:11.5px; color:var(--accent-light, #a29bfe); cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+        <summary style="font-size:11.5px; color:var(--phase-train, #FF5D5D); cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
           Advanced Parameters (Tempo, Superset, Notes) ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}
         </summary>
         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-top:8px;">

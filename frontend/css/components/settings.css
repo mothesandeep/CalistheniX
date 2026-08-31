@@ -1,33 +1,36 @@
+/* ==========================================================================
+   CalistheniX — Settings & Modal Dialogs (Liquid Morphism)
+   ========================================================================== */
+
 /* ── Settings Modal ───────────────────────────────────────────────────────── */
 .settings-modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(4, 4, 10, 0.82);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-lg, 16px));
   z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
 }
+
 .settings-modal {
-  background: #0d0d16;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-lg);
+  background: var(--liquid-surface-overlay, #0d0d16);
+  backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  border: var(--liquid-border-highlight);
+  border-radius: 20px;
   max-width: 500px;
   width: 100%;
   padding: 24px;
-  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+  box-shadow: var(--liquid-shadow-overlay), var(--liquid-highlight-top-elevated);
   display: flex;
   flex-direction: column;
   gap: 20px;
   animation: modalPopIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-
-/* ═══════════════════════════════════════════════════════════════════════════
-   HOME SCREEN REDESIGN (ATHLETIC PURPLE ATMOSPHERE)
-   ═══════════════════════════════════════════════════════════════════════════ */
 
 .home-container {
   display: flex;
@@ -70,24 +73,28 @@
 }
 
 .home-notif-btn {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--liquid-surface-1, rgba(18, 18, 25, 0.72));
+  backdrop-filter: blur(var(--liquid-blur-sm, 8px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-sm, 8px));
+  border: var(--liquid-border);
+  border-radius: 12px;
   width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text);
+  color: #ffffff;
   cursor: pointer;
   position: relative;
   font-size: 16px;
-  transition: all var(--transition);
+  box-shadow: var(--liquid-highlight-top-subtle);
+  transition: all var(--transition-fast);
 }
 
 .home-notif-btn:hover {
-  border-color: var(--border-accent);
-  background: var(--surface-2);
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
 }
 
 .home-notif-dot {
@@ -96,35 +103,41 @@
   right: 9px;
   width: 7px;
   height: 7px;
-  background: var(--accent);
+  background: var(--phase-train, #FF5D5D);
   border-radius: 50%;
-  box-shadow: none;
+  box-shadow: 0 0 6px rgba(255, 93, 93, 0.6);
 }
 
 .home-week-select-pill {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--liquid-surface-1, rgba(18, 18, 25, 0.72));
+  backdrop-filter: blur(var(--liquid-blur-sm, 8px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-sm, 8px));
+  border: var(--liquid-border);
+  border-radius: 12px;
   padding: 9px 14px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--text);
+  color: #ffffff;
   display: flex;
   align-items: center;
   gap: 6px;
   cursor: pointer;
-  transition: all var(--transition);
+  box-shadow: var(--liquid-highlight-top-subtle);
+  transition: all var(--transition-fast);
 }
 
 .home-week-select-pill:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-  background: var(--surface-2);
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
 }
 
 .home-streak-pill {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  background: var(--liquid-surface-1, rgba(18, 18, 25, 0.72));
+  backdrop-filter: blur(var(--liquid-blur-sm, 8px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-sm, 8px));
+  border: var(--liquid-border);
+  border-radius: 12px;
   padding: 8px 14px;
   font-size: 13px;
   font-weight: 600;
@@ -132,7 +145,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: none;
+  box-shadow: var(--liquid-highlight-top-subtle);
 }
 
 .home-streak-pill-num {
@@ -141,4 +154,3 @@
   font-weight: 800;
   color: #ffffff;
 }
-
