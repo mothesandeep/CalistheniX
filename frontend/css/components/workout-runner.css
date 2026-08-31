@@ -5196,31 +5196,131 @@
   user-select: none;
 }
 
-/* Right Panel & Collapsible Anatomy */
+/* Right Panel & Exercise Intelligence Hierarchy */
 .runner-right-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   position: sticky;
   top: 80px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+.runner-intelligence-card {
+  background: var(--cx-surface, #151519);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.runner-intel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.runner-intel-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-intel-type-badge {
+  font-family: var(--font-heading);
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--phase-accent, #FF5D5D);
+  background: rgba(var(--phase-accent-rgb), 0.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(var(--phase-accent-rgb), 0.2);
+}
+
+.runner-intel-tempo {
+  font-size: 11px;
+  color: var(--cx-text-secondary, #8A8A93);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.runner-intel-cue-box {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.runner-intel-cue-label,
+.runner-intel-why-label,
+.runner-intel-section-label {
+  font-family: var(--font-heading);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cx-text-secondary, #8A8A93);
+}
+
+.runner-intel-cue-text,
+.runner-intel-why-text {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.runner-intel-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-intel-focus-label {
+  font-size: 10.5px;
+  color: var(--cx-text-secondary, #8A8A93);
+  font-weight: 600;
+}
+
+.runner-intel-muscle-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.runner-intel-why-box {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .runner-anatomy-accordion {
-  background: var(--cx-surface, #151519);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
   padding: 0;
   overflow: hidden;
+  margin-top: 6px;
 }
 
 .runner-anatomy-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
+  padding: 8px 10px;
   cursor: pointer;
   user-select: none;
-  font-size: 12px;
+  font-size: 11px;
   color: #cbd5e1;
   list-style: none;
 }
@@ -5229,26 +5329,20 @@
   display: none;
 }
 
-.runner-anatomy-summary-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .runner-anatomy-toggle-label {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
-  color: #8a8d9f;
+  font-size: 10.5px;
+  color: var(--cx-text-secondary, #8A8A93);
 }
 
 .runner-anatomy-content {
-  padding: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 /* Mobile Drawer Sheet & Header button */

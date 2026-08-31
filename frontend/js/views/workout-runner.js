@@ -6437,10 +6437,22 @@ function renderWorkoutStructureSidebar(session, activePhase) {
   `;
 }
 
-// ─── Collapsible Anatomy Accordion Component ────────────────────────────────
+// ─── Right Panel: Exercise Intelligence (7-Tier Hierarchy) ───────────────────
 
-function renderExerciseMuscleFocusCollapsible(currentEx, activePhase) {
+function renderWorkoutRightPanel(session, activePhase, currentEx) {
   if (!currentEx) return '';
+  const rawShort = isWarmupPhase(activePhase) ? 'warmup' : (isCooldownPhase(activePhase) ? 'cooldown' : 'main');
+
+  const animSvg = renderAnimatedExerciseSvg(currentEx);
+  const formTip = getExerciseContextualTip(currentEx) || 'Maintain full range of motion with controlled breathing.';
+  const tempoText = currentEx.exercise_type === 'duration'
+    ? 'Constant Isometric Tension'
+    : '2s Eccentric · 1s Pause · 1s Explosive';
+
+  const categoryLabel = (currentEx.movement_pattern ? currentEx.movement_pattern.toUpperCase() : (
+    rawShort === 'warmup' ? 'DYNAMIC MOBILITY' : (rawShort === 'cooldown' ? 'RESTORATIVE STRETCH' : 'STRENGTH & HYPERTROPHY')
+  ));
+
   const muscleMapObj = (typeof window !== 'undefined' && window.MuscleMap)
     ? window.MuscleMap.resolveMuscles({ name: currentEx.exercise_name })
     : { primary: ['Chest', 'Triceps'], secondary: ['Front Delts', 'Core'] };
@@ -6460,101 +6472,86 @@ function renderExerciseMuscleFocusCollapsible(currentEx, activePhase) {
   const primaryList = (muscleMapObj.primary || []).map(formatMuscleName);
   const secondaryList = (muscleMapObj.secondary || []).map(formatMuscleName);
 
-  return `
-    <details class="runner-anatomy-accordion">
-      <summary class="runner-anatomy-summary">
-        <div class="runner-anatomy-summary-left">
-          <span class="runner-anatomy-icon">${renderIcon('activity', 'cx-icon cx-icon-xs cx-icon-accent')}</span>
-          <span class="runner-anatomy-summary-title">Muscles: <strong>${primaryList.slice(0, 2).join(', ') || 'Chest & Core'}</strong></span>
-        </div>
-        <span class="runner-anatomy-toggle-label">Anatomy View ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}</span>
-      </summary>
-
-      <div class="runner-anatomy-content">
-        <!-- Dual Vector Anatomy Views (Front & Back) -->
-        <div class="runner-anatomy-dual-view">
-          <div class="runner-anatomy-figure-box ${!isBackFocused ? 'is-dominant' : ''}">
-            <span class="runner-anatomy-figure-lbl">ANTERIOR (FRONT)</span>
-            <div class="runner-anatomy-svg-wrap">
-              ${frontSvg}
-            </div>
-          </div>
-          <div class="runner-anatomy-figure-box ${isBackFocused ? 'is-dominant' : ''}">
-            <span class="runner-anatomy-figure-lbl">POSTERIOR (BACK)</span>
-            <div class="runner-anatomy-svg-wrap">
-              ${backSvg}
-            </div>
-          </div>
-        </div>
-
-        <!-- Targeted Muscle Chips -->
-        <div class="runner-anatomy-legend-zone">
-          <div class="runner-legend-group">
-            <span class="runner-legend-title">Primary Drivers</span>
-            <div class="runner-legend-chips">
-              ${primaryList.length > 0 ? primaryList.map(m => `
-                <span class="runner-muscle-pill primary-pill">
-                  <span class="runner-pill-dot primary-dot"></span>
-                  <span>${m}</span>
-                </span>
-              `).join('') : '<span class="runner-muscle-pill primary-pill">Full Body</span>'}
-            </div>
-          </div>
-          ${secondaryList.length > 0 ? `
-            <div class="runner-legend-group" style="margin-top: 6px;">
-              <span class="runner-legend-title">Secondary Stabilizers</span>
-              <div class="runner-legend-chips">
-                ${secondaryList.slice(0, 4).map(m => `
-                  <span class="runner-muscle-pill secondary-pill">
-                    <span class="runner-pill-dot secondary-dot"></span>
-                    <span>${m}</span>
-                  </span>
-                `).join('')}
-              </div>
-            </div>
-          ` : ''}
-        </div>
-      </div>
-    </details>
-  `;
-}
-
-// ─── Right Panel: Motion Stage & Form Cues + Collapsible Anatomy ────────────
-
-function renderWorkoutRightPanel(session, activePhase, currentEx) {
-  if (!currentEx) return '';
-  const rawShort = isWarmupPhase(activePhase) ? 'warmup' : (isCooldownPhase(activePhase) ? 'cooldown' : 'main');
-
-  let phaseEducationHtml = '';
+  let whyText = '';
   if (rawShort === 'warmup') {
-    phaseEducationHtml = `
-      <div class="runner-phase-why-card" style="background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:14px; padding:14px 16px; margin-top:12px;">
-        <h4 style="font-family:var(--font-heading); font-size:12.5px; font-weight:700; color:var(--phase-warmup, #FF8A3D); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Why Warm-Up?</h4>
-        <p style="font-size:12px; color:var(--cx-text-secondary, #8A8A93); line-height:1.4; margin:0;">Increase core temperature, lubricate joints, and prime motor pathways before heavy compound loading.</p>
-      </div>
-    `;
+    whyText = 'Increases joint synovial lubrication, elevates core temperature, and primes neuromuscular pathways before loaded training.';
   } else if (rawShort === 'cooldown') {
-    phaseEducationHtml = `
-      <div class="runner-phase-why-card" style="background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:14px; padding:14px 16px; margin-top:12px;">
-        <h4 style="font-family:var(--font-heading); font-size:12.5px; font-weight:700; color:var(--phase-cooldown, #35D8B0); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Why Cool Down?</h4>
-        <p style="font-size:12px; color:var(--cx-text-secondary, #8A8A93); line-height:1.4; margin:0;">Lower Heart Rate, downregulate central nervous system, and restore muscle resting length safely.</p>
-      </div>
-    `;
+    whyText = 'Downregulates the central nervous system, lowers heart rate, and restores resting muscle length to accelerate recovery.';
   } else {
-    phaseEducationHtml = `
-      <div class="runner-phase-why-card" style="background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:14px; padding:14px 16px; margin-top:12px;">
-        <h4 style="font-family:var(--font-heading); font-size:12.5px; font-weight:700; color:var(--phase-train, #FF5D5D); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Main Workout Focus</h4>
-        <p style="font-size:12px; color:var(--cx-text-secondary, #8A8A93); line-height:1.4; margin:0;">SETS & PROGRESSION: Execute each rep with full range of motion and 2-second controlled eccentric tempo.</p>
-      </div>
-    `;
+    whyText = currentEx.why_it_matters || 'Primary compound movement targeting the kinetic chain for progressive strength adaptation and motor control.';
   }
 
   return `
-    <aside class="runner-right-panel" aria-label="Exercise Motion and Anatomy">
+    <aside class="runner-right-panel" aria-label="Exercise Intelligence">
       <div class="runner-phase-hero-banner runner-timeline-step-wrapper runner-segmented-tabs-bar" style="display:none;" aria-hidden="true"></div>
-      ${renderExerciseVisualStageCard(currentEx, rawShort)}
-      ${renderExerciseMuscleFocusCollapsible(currentEx, rawShort)}
-      ${phaseEducationHtml}
+      <div class="runner-intelligence-card animate-card-reveal">
+        <!-- 1. Movement Visual Stage -->
+        <div class="runner-motion-graphic-stage">
+          <div class="runner-motion-stage-ambient-glow"></div>
+          ${animSvg}
+        </div>
+
+        <!-- 2. Movement Type & 3. Tempo / Cadence -->
+        <div class="runner-intel-section">
+          <div class="runner-intel-meta-row">
+            <span class="runner-intel-type-badge">${categoryLabel}</span>
+            <span class="runner-intel-tempo mono">${tempoText}</span>
+          </div>
+        </div>
+
+        <!-- 4. Form Cue -->
+        <div class="runner-intel-section runner-intel-cue-box">
+          <span class="runner-intel-cue-label">FORM CUE</span>
+          <p class="runner-intel-cue-text">${formTip}</p>
+        </div>
+
+        <!-- 5. Muscles & 6. Anatomy Information -->
+        <div class="runner-intel-section">
+          <div class="runner-intel-label-row">
+            <span class="runner-intel-section-label">TARGET MUSCLES</span>
+            <span class="runner-intel-focus-label">${isBackFocused ? 'Posterior Chain' : 'Anterior Chain'}</span>
+          </div>
+          <div class="runner-intel-muscle-chips">
+            ${primaryList.length > 0 ? primaryList.map(m => `
+              <span class="runner-muscle-pill primary-pill">
+                <span class="runner-pill-dot primary-dot"></span>
+                <span>${m}</span>
+              </span>
+            `).join('') : '<span class="runner-muscle-pill primary-pill">Target Muscles</span>'}
+            ${secondaryList.slice(0, 3).map(m => `
+              <span class="runner-muscle-pill secondary-pill">
+                <span class="runner-pill-dot secondary-dot"></span>
+                <span>${m}</span>
+              </span>
+            `).join('')}
+          </div>
+
+          <!-- Dual Silhouette Anatomy View -->
+          <details class="runner-anatomy-accordion">
+            <summary class="runner-anatomy-summary">
+              <span class="runner-anatomy-toggle-label">Anatomy Visual ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}</span>
+            </summary>
+            <div class="runner-anatomy-content">
+              <div class="runner-anatomy-dual-view">
+                <div class="runner-anatomy-figure-box ${!isBackFocused ? 'is-dominant' : ''}">
+                  <span class="runner-anatomy-figure-lbl">ANTERIOR</span>
+                  <div class="runner-anatomy-svg-wrap">${frontSvg}</div>
+                </div>
+                <div class="runner-anatomy-figure-box ${isBackFocused ? 'is-dominant' : ''}">
+                  <span class="runner-anatomy-figure-lbl">POSTERIOR</span>
+                  <div class="runner-anatomy-svg-wrap">${backSvg}</div>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <!-- 7. Why This Movement Matters -->
+        <div class="runner-intel-section runner-intel-why-box">
+          <span class="runner-intel-why-label">WHY THIS MATTERS</span>
+          <p class="runner-intel-why-text">${whyText}</p>
+        </div>
+      </div>
     </aside>
   `;
 }
@@ -6756,10 +6753,9 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
         }).join('')}
       </div>
 
-      <!-- Mobile-only Supplemental Section (Demo & Anatomy below controls) -->
+      <!-- Mobile-only Supplemental Section (Exercise Intelligence below controls) -->
       <div class="runner-mobile-supplemental">
-        ${renderExerciseVisualStageCard(currentItem, rawShort)}
-        ${renderExerciseMuscleFocusCollapsible(currentItem, rawShort)}
+        ${renderWorkoutRightPanel(session, rawShort, currentItem)}
       </div>
     </main>
   `;
