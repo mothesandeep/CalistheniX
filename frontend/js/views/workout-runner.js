@@ -6840,30 +6840,20 @@ function renderWarmupCardView(session) {
         </div>
       </div>
 
-      <!-- Movement Name & Focus -->
+      <!-- Movement Name & Context -->
       <div class="runner-exercise-name-zone">
         <h2 class="runner-exercise-name-title">${currentEx.exercise_name}</h2>
-        <span class="runner-exercise-muscles-text">Mobility & Activation · Movement ${idx + 1} of ${totalCount}</span>
+        <div class="runner-exercise-context-text">Mobility & Joint Prep · Movement ${idx + 1} of ${totalCount}</div>
       </div>
 
-      <!-- Target Row -->
+      <!-- Target & Focus Row -->
       <div class="runner-target-pills-row">
         <div class="runner-target-pill target-goal">
-          <span class="runner-pill-lbl">
-            <span class="runner-pill-lbl-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-            </span>
-            Target
-          </span>
+          <span class="runner-pill-lbl">Target</span>
           <span class="runner-pill-val mono">${isHold ? `${targetVal}s hold` : `${targetVal} reps`}</span>
         </div>
         <div class="runner-target-pill target-last">
-          <span class="runner-pill-lbl">
-            <span class="runner-pill-lbl-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            </span>
-            Focus
-          </span>
+          <span class="runner-pill-lbl">Focus</span>
           <span class="runner-pill-val mono">Joint Prep · Activation</span>
         </div>
       </div>
@@ -6889,7 +6879,7 @@ function renderWarmupCardView(session) {
         `}
       </div>
 
-      <!-- Primary CTA Zone -->
+      <!-- Primary Action & Secondary Controls -->
       <div class="runner-cta-zone">
         <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="advanceWarmupMovement()">
           <span>MARK COMPLETE</span>
@@ -6972,7 +6962,7 @@ function renderMainWorkoutCardView(session) {
       <!-- Header Zone -->
       <div class="runner-card-header">
         <div class="runner-card-header-left">
-          <span class="runner-badge-phase-pill phase-main">MAIN WORKOUT</span>
+          <span class="runner-badge-phase-pill phase-main">TRAIN</span>
           <span class="runner-badge-ex-counter mono">EXERCISE ${exIdx + 1} OF ${totalExCount}</span>
         </div>
         <div class="runner-set-dots-group">
@@ -6980,46 +6970,29 @@ function renderMainWorkoutCardView(session) {
         </div>
       </div>
 
-      <!-- Exercise Name & Set Indicator -->
+      <!-- 1. Exercise Name & 2. Context -->
       <div class="runner-exercise-name-zone">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-          <h2 class="runner-exercise-name-title">${currentEx.exercise_name}</h2>
-          <span class="runner-badge-set mono">Set ${activeSetIdx + 1} of ${totalSets}</span>
-        </div>
+        <h2 class="runner-exercise-name-title">${currentEx.exercise_name}</h2>
+        <div class="runner-exercise-context-text mono">Set ${activeSetIdx + 1} of ${totalSets} · ${currentEx.movement_pattern ? currentEx.movement_pattern.toUpperCase() : 'CALISTHENICS'}</div>
       </div>
 
-      <!-- Clean Key Metrics Bar (Target / Last / Rest) -->
+      <!-- 3. Target & Focus Metrics Bar -->
       <div class="runner-target-pills-row">
         <div class="runner-target-pill target-goal">
-          <span class="runner-pill-lbl">
-            <span class="runner-pill-lbl-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-            </span>
-            Target
-          </span>
+          <span class="runner-pill-lbl">Target</span>
           <span class="runner-pill-val mono">${targetVal} ${isHold ? 'sec' : 'reps'}</span>
         </div>
         <div class="runner-target-pill target-last">
-          <span class="runner-pill-lbl">
-            <span class="runner-pill-lbl-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
-            </span>
-            Last
-          </span>
+          <span class="runner-pill-lbl">Last</span>
           <span class="runner-pill-val mono">${lastDisplayVal}</span>
         </div>
         <div class="runner-target-pill target-rest">
-          <span class="runner-pill-lbl">
-            <span class="runner-pill-lbl-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            </span>
-            Rest
-          </span>
+          <span class="runner-pill-lbl">Rest</span>
           <span class="runner-pill-val mono">${currentEx.rest_sec || 90}s</span>
         </div>
       </div>
 
-      <!-- Centered Stepper with Progress Ring -->
+      <!-- 4. Centered Stepper & Timer Zone -->
       <div class="runner-stepper-zone">
         <button class="stepper-btn" type="button" onclick="${isHold ? 'adjustPhaseTimer(-5)' : 'adjustCurrentSetReps(-1)'}" aria-label="Decrease quantity">−</button>
         ${renderProgressRing(displayVal, targetVal, `
@@ -7049,7 +7022,7 @@ function renderMainWorkoutCardView(session) {
         </button>
       </div>
 
-      <!-- Primary CTA Zone (56px Button) -->
+      <!-- 5. Primary Action (56px Strongest Action) & Secondary Actions -->
       <div class="runner-cta-zone">
         ${isHold ? `
           <button class="btn btn-primary btn-hero runner-cta-btn" id="workout-active-hold-btn" type="button" onclick="${isHolding ? 'stopWorkoutHold(true)' : `startWorkoutHold(${exIdx}, ${activeSetIdx})`}">
@@ -7150,30 +7123,20 @@ function renderCooldownCardView(session) {
         </div>
       </div>
 
-      <!-- Stretch Name & Focus -->
+      <!-- Stretch Name & Context -->
       <div class="runner-exercise-name-zone">
         <h2 class="runner-exercise-name-title">${currentStretch.exercise_name}</h2>
-        <span class="runner-exercise-muscles-text">Flexibility & Downregulation · Stretch ${idx + 1} of ${totalCount}</span>
+        <div class="runner-exercise-context-text">Flexibility & Downregulation · Stretch ${idx + 1} of ${totalCount}</div>
       </div>
 
-      <!-- Target Row -->
+      <!-- Target & Focus Row -->
       <div class="runner-target-pills-row">
         <div class="runner-target-pill target-goal">
-          <span class="runner-pill-lbl">
-            <span class="runner-pill-lbl-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-            </span>
-            Target
-          </span>
+          <span class="runner-pill-lbl">Target</span>
           <span class="runner-pill-val mono">${targetText}</span>
         </div>
         <div class="runner-target-pill target-last">
-          <span class="runner-pill-lbl">
-            <span class="runner-pill-lbl-icon">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </span>
-            Focus
-          </span>
+          <span class="runner-pill-lbl">Focus</span>
           <span class="runner-pill-val mono">Downregulation · Recovery</span>
         </div>
       </div>
@@ -7190,7 +7153,7 @@ function renderCooldownCardView(session) {
         <button class="stepper-btn" type="button" onclick="adjustPhaseTimer(5)" aria-label="Increase time">+5s</button>
       </div>
 
-      <!-- Primary CTA Zone -->
+      <!-- Primary Action & Secondary Controls -->
       <div class="runner-cta-zone">
         <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="advanceCooldownStretch()">
           <span>DONE</span>

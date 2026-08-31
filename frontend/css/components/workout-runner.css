@@ -3483,22 +3483,19 @@
 }
 
 .runner-target-pill {
-  background: var(--cx-surface, #151519);
-  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
-  border-radius: 12px;
-  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  position: relative;
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
-  transition: all 0.2s ease;
+  gap: 2px;
+  transition: all 0.15s ease;
 }
 
 .runner-target-pill.target-goal {
-  background: rgba(var(--phase-accent-rgb), 0.06);
-  border-color: rgba(var(--phase-accent-rgb), 0.35);
-  box-shadow: 0 0 12px rgba(var(--phase-accent-rgb), 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: rgba(var(--phase-accent-rgb), 0.05);
+  border-color: rgba(var(--phase-accent-rgb), 0.2);
 }
 
 .runner-pill-lbl {
@@ -4975,12 +4972,21 @@
 
 .runner-exercise-name-title {
   font-family: var(--font-heading);
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.025em;
   line-height: 1.15;
   margin: 0;
+}
+
+.runner-exercise-context-text {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cx-text-secondary, #8A8A93);
+  letter-spacing: 0.04em;
+  margin-top: 4px;
 }
 
 .runner-card-badges-row {
