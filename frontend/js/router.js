@@ -75,14 +75,6 @@ function render() {
 async function onRoutineChange(value) {
   state.routine   = value;
   state.editingId = null;
-  await loadLevel();
-  render();
-}
-
-async function onLevelChange(value) {
-  state.level     = parseInt(value, 10);
-  state.editingId = null;
-  await loadLevel();
   render();
 }
 

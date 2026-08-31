@@ -390,7 +390,6 @@ def reseed_data(force=False):
                VALUES (?, ?, 1)''',
             (
                 'Aesthetic Physique — Complete PPL A/B Plan',
-                'Push = Advanced | Pull = Intermediate | Legs = Beginner-Int — '
                 '6 days training (Push A → Pull A → Legs A → Push B → Pull B → Legs B → Rest)'
             )
         )

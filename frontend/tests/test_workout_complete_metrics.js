@@ -226,8 +226,7 @@ console.log('  ✓ 2. Passed: 100% completed workout displays "All sets complete
 console.log('\n--- 3. Testing Pure Bodyweight Session Volume Handling ---');
 const bwSession = {
   id: 'session-bw-3',
-  routine: 'BEGINNER BODYWEIGHT',
-  level: 1,
+  routine: 'BODYWEIGHT FOUNDATIONS',
   status: 'completed',
   duration_sec: 900, // 15:00
   startTime: Date.now() - 900000,

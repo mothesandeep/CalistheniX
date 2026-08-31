@@ -2,17 +2,17 @@
  * CalistheniX — Individual Exercise Log Entry View & Timers
  */
 
-function openLogView(exerciseId, returnView = 'home', levelExercise = null) {
+function openLogView(exerciseId, returnView = 'home', exerciseConfig = null) {
   stopRest();
   stopTimer();
   state.logExerciseId = exerciseId;
   state.logReturnView = returnView;
   state.logElapsed    = 0;
   // Guided session: reset set counter when starting a fresh exercise session.
-  if (levelExercise) {
+  if (exerciseConfig) {
     state.sessionSet       = 1;
-    state.sessionTotalSets = levelExercise.sets || null;
-    state.sessionRestSec   = levelExercise.rest_sec || null;
+    state.sessionTotalSets = exerciseConfig.sets || null;
+    state.sessionRestSec   = exerciseConfig.rest_sec || null;
   } else {
     state.sessionSet       = 1;
     state.sessionTotalSets = null;

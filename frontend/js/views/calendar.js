@@ -160,7 +160,6 @@ function renderCalendarView() {
             <div>
               <div style="display:flex; align-items:center; gap:8px;">
                 <h3 style="font-size:16px; font-weight:700; color:#ffffff;">${s.routine_name}</h3>
-                <span class="badge badge-reps">Level ${s.level}</span>
                 <span style="font-size:12px; font-weight:600; color:#10b981; display:flex; align-items:center; gap:4px;">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} Finished</span>
               </div>
               <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">

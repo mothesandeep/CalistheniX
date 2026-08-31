@@ -57,50 +57,6 @@ async function loadWorkoutDetail(workoutId) {
   }
 }
 
-
-async function loadLevel() {
-  const all = await API.getRoutineLevels(state.routine);
-  const found = all.find(l => l.level === state.level);
-  if (found) {
-    state.levelId        = found.id;
-    state.levelExercises = found.exercises;
-  } else {
-    state.levelId        = null;
-    state.levelExercises = [];
-  }
-}
-
-// Auto-creates the routine_level row on first add — idempotent on backend.
-async function ensureLevel() {
-  if (state.levelId !== null) return;
-  const row = await API.createRoutineLevel({
-    routine_name: state.routine,
-    level: state.level,
-  });
-  state.levelId = row.id;
-}
-
-// ─── CRUD operations ──────────────────────────────────────────────────────────
-async function addExercise(payload) {
-  await ensureLevel();
-  payload.order_index = state.levelExercises.length + 1;
-  await API.addLevelExercise(state.levelId, payload);
-  state.editingId = null;
-  await loadLevel();
-}
-
-async function updateExercise(leId, payload) {
-  await API.updateLevelExercise(leId, payload);
-  state.editingId = null;
-  await loadLevel();
-}
-
-async function deleteExercise(leId) {
-  await API.deleteLevelExercise(leId);
-  if (state.editingId === leId) state.editingId = null;
-  await loadLevel();
-}
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function exercisesForRoutine() {
   return state.exercises.filter(e => e.day === state.routine);

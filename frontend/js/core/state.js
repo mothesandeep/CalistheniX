@@ -7,11 +7,8 @@
 const state = {
   view:            'dashboard', // 'dashboard' | 'home' | 'routine' | 'edit' | 'log' | 'history' | 'prs' | 'calendar'
   routine:         'Push A',
-  level:           1,
   exercises:       [],       // all exercises from GET /exercises
-  levelId:         null,     // current routine_level.id (null = not yet created)
-  levelExercises:  [],       // level_exercises joined with exercise data
-  editingId:       null,     // id of level_exercise being edited (null = none)
+  editingId:       null,     // id of exercise being edited (null = none)
   // Training Splits & Weekly Schedules (Custom Split Phase)
   splits:                [],       // list of all training splits from GET /splits
   activeSplit:           null,     // currently active split object
@@ -34,8 +31,8 @@ const state = {
   logReturnView:   'home',   // view to return to on goBack()
   // Guided session state (populated when opening from Today's Routine)
   sessionSet:      1,        // current set number (1-indexed)
-  sessionTotalSets:null,     // total sets from level_exercise; null = unguided
-  sessionRestSec:  null,     // rest_sec from level_exercise; null = unguided
+  sessionTotalSets:null,     // total sets from workout exercise; null = unguided
+  sessionRestSec:  null,     // rest_sec from workout exercise; null = unguided
   // Rest countdown
   restActive:      false,    // true while countdown is showing
   restRemaining:   0,        // seconds left on countdown

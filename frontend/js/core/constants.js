@@ -73,7 +73,6 @@ function renderIcon(name, cls = 'cx-icon') {
 
 // ─── Training routine / cycle constants ───────────────────────────────────────
 const ROUTINES = ['Push A', 'Push B', 'Pull A', 'Pull B', 'Legs A', 'Legs B'];
-const LEVELS   = [1, 2, 3, 4, 5];
 
 /**
  * Rolling 7-day cycle (not tied to weekday).
@@ -153,7 +152,6 @@ if (typeof window !== 'undefined') {
   window.ICONS           = ICONS;
   window.renderIcon      = renderIcon;
   window.ROUTINES        = ROUTINES;
-  window.LEVELS          = LEVELS;
   window.CYCLE           = CYCLE;
   window.DAY_NAMES       = DAY_NAMES;
   window.MONTH_NAMES     = MONTH_NAMES;

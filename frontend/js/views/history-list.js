@@ -106,7 +106,7 @@ function renderHistoryListView() {
           <div class="history-session-card animate-fade-in" onclick="openSessionDetailView('${s.session_uuid || s.id}')" title="View breakdown for ${s.routine_name || 'Workout'}">
             <div class="history-session-top">
               <div class="history-session-left-meta">
-                <h3 class="history-session-title">${s.routine_name || s.routine || 'Workout'} <span class="history-session-level">· Level ${s.level || 1}</span></h3>
+                <h3 class="history-session-title">${s.routine_name || s.routine || 'Workout'}</h3>
                 <span class="history-session-tag">${sessionTag}</span>
               </div>
               <div class="history-session-right-meta">
@@ -271,7 +271,7 @@ function renderSessionDetailView() {
         <div class="today-hero-header">
           <div>
             <span class="today-hero-tag">COMPLETED WORKOUT SESSION</span>
-            <h1 class="today-hero-title">${detail.routine_name} <span style="font-size:14px; font-weight:400; color:var(--text-muted);">· Level ${detail.level}</span></h1>
+            <h1 class="today-hero-title">${detail.routine_name}</h1>
             <p style="color:var(--text-muted); font-size:13px; margin:4px 0 0 0;">${dateStr}</p>
           </div>
           <span class="today-status-badge today-status-done">${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} Finished</span>

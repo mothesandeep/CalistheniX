@@ -1070,7 +1070,7 @@ function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
 }
 
 // Fallback compatibility wrapper for any legacy calls
-async function startWorkoutSession(routineName, levelNum = 1) {
+async function startWorkoutSession(routineName) {
   const matchingWorkout = state.workouts.find(w => w.name.toLowerCase() === routineName.toLowerCase());
   if (matchingWorkout) {
     return startWorkoutFromId(matchingWorkout.id);
@@ -1079,8 +1079,7 @@ async function startWorkoutSession(routineName, levelNum = 1) {
   let exercises = [];
   try {
     const levels = await API.getRoutineLevels(routineName);
-    const lvl = levels.find(l => l.level === levelNum) || levels[0];
-    if (lvl) exercises = lvl.exercises;
+    if (levels && levels.length) exercises = levels[0].exercises || [];
   } catch (e) {
     // fallback
   }
@@ -4895,14 +4894,13 @@ function confirmFinishAnyway() {
 
 
 async function promoteProgression(exerciseId, nextId) {
-  if (!confirm('Advance this exercise to the next progression tier in your routine levels?')) return;
-  const leRows = state.levelExercises.filter(le => le.exercise_id === exerciseId);
+  if (!confirm('Advance this exercise to the next progression tier in your routine?')) return;
+  const leRows = (state.levelExercises || []).filter(le => le.exercise_id === exerciseId);
   try {
     for (const le of leRows) {
-      await API.updateLevelExercise(le.id, { exercise_id: nextId });
+      if (API.updateLevelExercise) await API.updateLevelExercise(le.id, { exercise_id: nextId });
     }
-    await loadLevel();
-    await loadExercises();
+    if (typeof loadExercises === 'function') await loadExercises();
     showToast('Progression advanced in Routine!');
     render();
   } catch (e) {
@@ -6149,7 +6147,6 @@ function renderWorkoutTopHeader(session) {
         <div class="runner-header-title-zone">
           <div class="runner-header-title-row">
             <h1 class="runner-header-title">${session.routine || session.workout_name || 'Workout'}</h1>
-            <span class="runner-header-difficulty-badge">${session.level ? `Level ${session.level}` : 'Level 1'}</span>
           </div>
           <span class="runner-header-subtitle">${phaseLabel}</span>
         </div>
