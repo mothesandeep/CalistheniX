@@ -262,3 +262,5 @@ console.log('  ✓ 3. Passed: Bodyweight workouts cleanly report Bodyweight volu
 console.log('\n=============================================================');
 console.log('🎉 ALL WORKOUT COMPLETE METRICS TESTS VERIFIED & PASSED 100%!');
 console.log('=============================================================');
+if (typeof sandbox !== 'undefined' && sandbox.cleanupAllWorkoutTimers) sandbox.cleanupAllWorkoutTimers();
+process.exit(0);

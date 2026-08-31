@@ -251,3 +251,5 @@ console.log('  ✓ 4. Passed: Quick-fill applies real historical or current sess
 console.log('\n=============================================================');
 console.log('🎉 ALL PR & PREVIOUS PERFORMANCE AUDIT TESTS PASSED 100%!');
 console.log('=============================================================');
+if (typeof sandbox !== 'undefined' && sandbox.cleanupAllWorkoutTimers) sandbox.cleanupAllWorkoutTimers();
+process.exit(0);

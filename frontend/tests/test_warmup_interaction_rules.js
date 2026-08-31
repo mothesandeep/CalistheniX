@@ -277,3 +277,5 @@ console.log('  ✓ Rule 8 & 9 PASSED: Completed movements render green check ✓
 console.log('\n=============================================================');
 console.log('🎉 ALL 9 WARM-UP INTERACTION RULES VERIFIED & PASSED 100%!');
 console.log('=============================================================');
+if (typeof sandbox !== 'undefined' && sandbox.cleanupAllWorkoutTimers) sandbox.cleanupAllWorkoutTimers();
+process.exit(0);

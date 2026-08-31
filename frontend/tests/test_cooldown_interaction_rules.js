@@ -280,3 +280,5 @@ console.log('  ✓ Rule 8 PASSED: Final stretch resolution deterministically tra
 console.log('\n=============================================================');
 console.log('🎉 ALL COOL DOWN INTERACTION RULES VERIFIED & PASSED 100%!');
 console.log('=============================================================');
+if (typeof sandbox !== 'undefined' && sandbox.cleanupAllWorkoutTimers) sandbox.cleanupAllWorkoutTimers();
+process.exit(0);

@@ -342,3 +342,5 @@ console.log('  ✓ Single authoritative engine eliminates all conflicting phase 
 console.log('\n=============================================================');
 console.log('🎉 ALL DETERMINISTIC WORKOUT PHASE TESTS PASSED 100%!');
 console.log('=============================================================');
+if (typeof sandbox !== 'undefined' && sandbox.cleanupAllWorkoutTimers) sandbox.cleanupAllWorkoutTimers();
+process.exit(0);

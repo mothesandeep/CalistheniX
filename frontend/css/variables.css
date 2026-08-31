@@ -42,9 +42,38 @@
   --badge-hold-bg:   rgba(255, 255, 255, 0.06);
   --badge-hold-fg:   #e4e4e7;
 
+  /* ── 1.1b Workout Runner — Phase-Accent Tokens ─────────────────────────── */
+  --cx-bg:            #0A0A0D;
+  --cx-surface:       #151519;
+  --cx-surface-border: rgba(255, 255, 255, 0.06);
+  --cx-text:          #F2F2F0;
+  --cx-text-secondary: #8A8A93;
+  --cx-success:       #3ECF8E;
+  --cx-skipped:       #C98A3D;
+
+  /* Phase accent — defaults to Train (coral-red), overridden via data-phase */
+  --phase-accent:     #FF5D5D;
+  --phase-accent-rgb: 255, 93, 93;
+
+  /* Explicit Phase Accent Tokens */
+  --phase-prep:        #FF8A3D;
+  --phase-prep-rgb:    255, 138, 61;
+  --phase-prep-dim:    rgba(255, 138, 61, 0.1);
+  --phase-prep-border: rgba(255, 138, 61, 0.3);
+
+  --phase-train:        #FF5D5D;
+  --phase-train-rgb:    255, 93, 93;
+  --phase-train-dim:    rgba(255, 93, 93, 0.1);
+  --phase-train-border: rgba(255, 93, 93, 0.3);
+
+  --phase-recover:        #35D8B0;
+  --phase-recover-rgb:    53, 216, 176;
+  --phase-recover-dim:    rgba(53, 216, 176, 0.1);
+  --phase-recover-border: rgba(53, 216, 176, 0.3);
+
   /* ── 1.2 Typography Hierarchy ───────────────────────────────────────────── */
   --sans:            'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-heading:    'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-heading:    'Inter', 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
   --mono:            'JetBrains Mono', monospace;
 
   --type-hero:       48px;

@@ -190,11 +190,11 @@ function renderSplitView() {
 
   // Sub-tabs: 7-Day Weekly Schedule vs Reusable Workouts & Catalog
   const subTabsHtml = `
-    <div style="display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:8px;">
-      <button class="btn ${currentTab === 'schedule' ? 'btn-primary' : 'btn-secondary'}" onclick="setSplitSubTab('schedule')">
+    <div class="split-subtabs-nav">
+      <button class="split-subtab-btn ${currentTab === 'schedule' ? 'active' : ''}" onclick="setSplitSubTab('schedule')">
         ${renderIcon('calendar', 'cx-icon cx-icon-inline')} 7-Day Weekly Schedule
       </button>
-      <button class="btn ${currentTab === 'workouts' ? 'btn-primary' : 'btn-secondary'}" onclick="setSplitSubTab('workouts')">
+      <button class="split-subtab-btn ${currentTab === 'workouts' ? 'active' : ''}" onclick="setSplitSubTab('workouts')">
         ${renderIcon('dumbbell', 'cx-icon cx-icon-inline')} Reusable Workouts (${state.workouts.length})
       </button>
     </div>`;
@@ -221,10 +221,42 @@ function renderSplitView() {
   const todayDow = (new Date().getDay() + 6) % 7; // 0=Monday .. 6=Sunday
   const scheduleDays = currentSplit.schedule || [];
 
+  // Monday of current calendar week
+  const now = new Date();
+  const currentDow = (now.getDay() + 6) % 7;
+  const mondayThisWeek = new Date(now);
+  mondayThisWeek.setDate(now.getDate() - currentDow);
+  mondayThisWeek.setHours(0, 0, 0, 0);
+
+  const completedDowSet = new Set();
+  (state.workoutSessions || []).forEach(s => {
+    const dDate = new Date(s.completed_at || s.started_at);
+    if (dDate >= mondayThisWeek) {
+      completedDowSet.add((dDate.getDay() + 6) % 7);
+    }
+  });
+
   const dayCardsHtml = scheduleDays.map((d, idx) => {
     const isToday = d.day_of_week === todayDow;
     const isPast = d.day_of_week < todayDow;
     const isWorkout = d.day_type === 'workout' && d.workout_id;
+    const hasCompleted = completedDowSet.has(d.day_of_week);
+
+    let statusType = 'upcoming';
+    let statusTitle = 'Upcoming';
+    if (hasCompleted) {
+      statusType = 'done';
+      statusTitle = 'Completed this week';
+    } else if (isToday) {
+      statusType = 'today';
+      statusTitle = "Today's Target";
+    } else if (!isWorkout) {
+      statusType = 'rest';
+      statusTitle = 'Rest & Recovery';
+    } else if (isPast) {
+      statusType = 'missed';
+      statusTitle = 'Rest / Missed';
+    }
 
     const typeBadge = isWorkout
       ? `<span class="badge badge-reps">Workout</span>`
@@ -235,7 +267,7 @@ function renderSplitView() {
     let actionBtnHtml = '';
     if (isToday) {
       if (isWorkout) {
-        actionBtnHtml = `<button class="btn btn-primary btn-sm" style="width:100%;" onclick="startWorkoutFromId(${d.workout_id})">${renderIcon('zap', 'cx-icon cx-icon-xs cx-icon-inline')} Start Today</button>`;
+        actionBtnHtml = `<button class="btn-start-today" onclick="startWorkoutFromId(${d.workout_id})">${renderIcon('zap', 'cx-icon cx-icon-xs cx-icon-inline')} Start Today</button>`;
       } else {
         actionBtnHtml = `<button class="btn btn-secondary btn-sm" style="width:100%; opacity:0.85;" onclick="openDayEditor(${d.day_of_week})">Rest Day · Edit</button>`;
       }
@@ -248,11 +280,14 @@ function renderSplitView() {
     return `
       <div class="schedule-day-card ${isToday ? 'schedule-day-today' : ''} ${!isWorkout && !isToday ? 'is-rest-day' : ''}">
         <div class="schedule-day-header">
-          <div style="display:flex; align-items:center; gap:6px;">
+          <div class="schedule-day-name-wrap">
             <span class="schedule-day-name">${d.day_name}</span>
             ${isToday ? '<span class="schedule-today-pill">TODAY</span>' : ''}
           </div>
-          ${typeBadge}
+          <div class="schedule-header-right">
+            ${typeBadge}
+            <span class="schedule-status-dot status-${statusType}" title="${statusTitle}"></span>
+          </div>
         </div>
         <div class="schedule-workout-info">
           <div class="schedule-workout-title">${titleStr}</div>
@@ -362,9 +397,9 @@ function renderSplitView() {
             <h1 class="view-title">My Training Split</h1>
             <p class="view-subtitle">7-Day weekly planner from Monday to Sunday.</p>
           </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            ${!isActive ? `<button class="btn btn-secondary btn-sm" onclick="activateSplit(${currentSplit.id})">${renderIcon('star', 'cx-icon cx-icon-xs cx-icon-inline cx-gold')} Set as Active Split</button>` : `<span class="today-status-badge today-status-active">${renderIcon('star', 'cx-icon cx-icon-xs cx-icon-inline cx-gold')} Active Program</span>`}
-            <button class="btn btn-primary btn-sm" onclick="openCreateSplitModal()">+ New Split</button>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            ${!isActive ? `<button class="btn btn-secondary btn-sm" onclick="activateSplit(${currentSplit.id})">${renderIcon('star', 'cx-icon cx-icon-xs cx-icon-inline cx-gold')} Set as Active Split</button>` : `<span class="split-active-badge">${renderIcon('star', 'cx-icon cx-icon-xs cx-icon-inline')} Active Program</span>`}
+            <button class="btn-new-split" onclick="openCreateSplitModal()">${renderIcon('plus', 'cx-icon cx-icon-xs cx-icon-inline')} + New Split</button>
           </div>
         </div>
       </div>
@@ -660,6 +695,15 @@ function detectSmartIntent(workoutName = '', exercises = []) {
   return 'full_body';
 }
 
+function toggleBuilderSection(phase) {
+  syncWorkoutEditorFormToState();
+  if (!state.builderSections) {
+    state.builderSections = { warmup: false, main: true, cooldown: false };
+  }
+  state.builderSections[phase] = !state.builderSections[phase];
+  render();
+}
+
 function renderPhaseSlotCard(phase, ex, idx, totalInPhase) {
   const isHold = ex.exercise_type === 'duration';
   const targetVal = isHold ? (ex.duration_sec || 30) : (ex.reps || 10);
@@ -679,7 +723,7 @@ function renderPhaseSlotCard(phase, ex, idx, totalInPhase) {
       <button type="button" class="builder-icon-btn" title="Move Down" ${isLast ? 'disabled' : ''} onclick="moveWorkoutExerciseSlot('${phase}', ${idx}, 1)">
         ${renderIcon('arrowDown', 'cx-icon cx-icon-xs')}
       </button>
-      <button type="button" class="builder-icon-btn danger" title="Remove" onclick="removeWorkoutExerciseSlot('${phase}', ${idx})">
+      <button type="button" class="builder-icon-btn btn-remove-slot" title="Remove" onclick="removeWorkoutExerciseSlot('${phase}', ${idx})">
         ${renderIcon('x', 'cx-icon cx-icon-xs')}
       </button>
     </div>
@@ -688,28 +732,30 @@ function renderPhaseSlotCard(phase, ex, idx, totalInPhase) {
   let extraFieldsHtml = '';
   if (phase === 'main') {
     extraFieldsHtml = `
-      <details style="margin-top:4px;">
-        <summary style="font-size:11px; color:var(--accent); cursor:pointer; font-weight:600;">Advanced Settings (Tempo, Superset, Notes) ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}</summary>
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap:10px; margin-top:8px;">
+      <details style="margin-top:6px;">
+        <summary style="font-size:11.5px; color:var(--accent-light, #a29bfe); cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+          Advanced Parameters (Tempo, Superset, Notes) ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}
+        </summary>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:10px; margin-top:8px;">
           <div class="form-group">
-            <label class="form-label">Tempo <span class="opt">opt</span></label>
-            <input class="form-input mono" type="text" id="slot-${phase}-tempo-${idx}" value="${ex.tempo || ''}" placeholder="3010" style="padding:5px 8px; font-size:13px;">
+            <label class="form-label" style="font-size:10.5px;">Tempo <span class="opt">opt</span></label>
+            <input class="form-input mono" type="text" id="slot-${phase}-tempo-${idx}" value="${ex.tempo || ''}" placeholder="3010" style="padding:5px 8px; font-size:12.5px;">
           </div>
           <div class="form-group">
-            <label class="form-label">Superset # <span class="opt">opt</span></label>
-            <input class="form-input mono" type="number" id="slot-${phase}-ss-${idx}" value="${ex.superset_group || ''}" placeholder="1, 2" min="1" style="padding:5px 8px; font-size:13px;">
+            <label class="form-label" style="font-size:10.5px;">Superset # <span class="opt">opt</span></label>
+            <input class="form-input mono" type="number" id="slot-${phase}-ss-${idx}" value="${ex.superset_group || ''}" placeholder="1, 2" min="1" style="padding:5px 8px; font-size:12.5px;">
           </div>
         </div>
         <div class="form-group" style="margin-top:8px;">
-          <label class="form-label">Coaching Notes <span class="opt">opt</span></label>
+          <label class="form-label" style="font-size:10.5px;">Coaching Notes <span class="opt">opt</span></label>
           <input class="form-input" type="text" id="slot-${phase}-notes-${idx}" value="${ex.notes || ''}" placeholder="e.g. Full protraction at top, core braced" style="font-size:12px; padding:6px 10px;">
         </div>
       </details>
     `;
   } else {
     extraFieldsHtml = `
-      <div class="form-group" style="margin-top:2px;">
-        <input class="form-input" type="text" id="slot-${phase}-notes-${idx}" value="${ex.notes || ''}" placeholder="Coaching cue (e.g. Focus on joint lubrication / deep breath)" style="font-size:11.5px; padding:4px 8px;">
+      <div class="form-group" style="margin-top:4px;">
+        <input class="form-input" type="text" id="slot-${phase}-notes-${idx}" value="${ex.notes || ''}" placeholder="Coaching cue (e.g. Focus on joint lubrication / deep nasal breath)" style="font-size:11.5px; padding:4px 8px;">
       </div>
     `;
   }
@@ -718,6 +764,7 @@ function renderPhaseSlotCard(phase, ex, idx, totalInPhase) {
     <div class="builder-slot-card" id="builder-slot-${phase}-${idx}">
       <div class="builder-slot-header">
         <div class="builder-slot-title-wrap">
+          <span class="builder-drag-handle" title="Drag to reorder">${renderIcon('grip', 'cx-icon cx-icon-xs')}</span>
           <span class="builder-slot-idx">#${String(idx + 1).padStart(2, '0')}</span>
           <span class="builder-slot-name">${ex.exercise_name}</span>
           <span class="builder-slot-type-badge">${isHold ? 'Duration' : 'Reps'}</span>
@@ -725,9 +772,9 @@ function renderPhaseSlotCard(phase, ex, idx, totalInPhase) {
         ${controlsHtml}
       </div>
 
-      <div class="builder-slot-grid">
-        <div class="form-group">
-          <label class="form-label">Sets</label>
+      <div class="builder-slot-params-row">
+        <div class="builder-param-item">
+          <span class="builder-param-label">Sets</span>
           <div class="stepper-group">
             <button type="button" class="stepper-btn" onclick="adjustPhaseSlotSets('${phase}', ${idx}, -1)">-</button>
             <span class="stepper-val mono" id="slot-${phase}-sets-${idx}">${setsVal}</span>
@@ -735,14 +782,14 @@ function renderPhaseSlotCard(phase, ex, idx, totalInPhase) {
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">${isHold ? 'Hold (sec)' : 'Target Reps'}</label>
-          <input class="form-input mono" type="number" id="slot-${phase}-target-${idx}" value="${targetVal}" min="1" style="padding:5px 8px; font-size:13px;">
+        <div class="builder-param-item">
+          <span class="builder-param-label">${isHold ? 'Hold (sec)' : 'Target Reps'}</span>
+          <input class="builder-param-input" type="number" id="slot-${phase}-target-${idx}" value="${targetVal}" min="1">
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Rest (sec)</label>
-          <input class="form-input mono" type="number" id="slot-${phase}-rest-${idx}" value="${restVal}" min="0" step="5" style="padding:5px 8px; font-size:13px;">
+        <div class="builder-param-item">
+          <span class="builder-param-label">Rest (sec)</span>
+          <input class="builder-param-input" type="number" id="slot-${phase}-rest-${idx}" value="${restVal}" min="0" step="5">
         </div>
       </div>
 
@@ -752,13 +799,24 @@ function renderPhaseSlotCard(phase, ex, idx, totalInPhase) {
 }
 
 function renderPhaseBuilderSection(phase, exercises) {
+  if (!state.builderSections) {
+    state.builderSections = { warmup: false, main: true, cooldown: false };
+  }
+  const isExpanded = !!state.builderSections[phase];
+
   const isPrep = phase === 'warmup';
   const isTrain = phase === 'main';
   const isRecover = phase === 'cooldown';
 
   const badgeClass = isPrep ? 'badge-prep' : (isTrain ? 'badge-train' : 'badge-recover');
   const badgeLabel = isPrep ? 'PREP' : (isTrain ? 'TRAIN' : 'RECOVER');
-  const title = isPrep ? 'Warm-up' : (isTrain ? 'Main Workout' : 'Cool-down & Stretching');
+  const title = isPrep ? 'Warm-up & Mobility' : (isTrain ? 'Main Workout Progressions' : 'Cool-down & Stretching');
+  const phaseIcon = isPrep
+    ? renderIcon('flame', 'cx-icon cx-icon-sm')
+    : (isTrain
+        ? renderIcon('zap', 'cx-icon cx-icon-sm')
+        : renderIcon('sparkles', 'cx-icon cx-icon-sm'));
+
   const sub = isPrep
     ? 'Dynamic mobility & joint activation · Happens BEFORE training (Optional)'
     : (isTrain
@@ -779,7 +837,7 @@ function renderPhaseBuilderSection(phase, exercises) {
     const chips = tpls.map(t => {
       const isRec = t.category === detectedIntent;
       return `
-        <button type="button" class="builder-template-chip ${isRec ? 'is-recommended' : ''}" onclick="applyBuilderStarterTemplate('${phase}', '${t.id}')" title="${t.description}">
+        <button type="button" class="builder-template-chip ${isRec ? 'is-recommended' : ''}" onclick="event.stopPropagation(); applyBuilderStarterTemplate('${phase}', '${t.id}')" title="${t.description}">
           ${isRec ? renderIcon('sparkles', 'cx-icon cx-icon-xs cx-icon-inline') : ''}
           ${t.name}
           ${isRec ? '<span class="builder-rec-badge">Intent Match</span>' : ''}
@@ -788,12 +846,12 @@ function renderPhaseBuilderSection(phase, exercises) {
     }).join('');
 
     templatesHtml = `
-      <div style="margin-top:10px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:6px;">
-          <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
+      <div style="margin-top:10px; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+          <span style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
             Intent-Based Starter Templates:
           </span>
-          <span style="font-size:11px; color:var(--accent-light);">
+          <span style="font-size:11px; color:#FF8A3D;">
             Detected: <strong>${detectedIntent.replace('_', ' ').toUpperCase()}</strong>
           </span>
         </div>
@@ -807,7 +865,7 @@ function renderPhaseBuilderSection(phase, exercises) {
   let actionsHtml = '';
   if (phaseExs.length > 0 && !isTrain) {
     actionsHtml = `
-      <button type="button" class="btn btn-secondary btn-sm" style="padding:3px 8px; font-size:11px;" onclick="clearBuilderPhase('${phase}')">
+      <button type="button" class="btn btn-secondary btn-sm" style="padding:3px 8px; font-size:11px;" onclick="event.stopPropagation(); clearBuilderPhase('${phase}')">
         ${renderIcon('trash', 'cx-icon cx-icon-xs cx-icon-inline')} Clear Section
       </button>
     `;
@@ -835,34 +893,38 @@ function renderPhaseBuilderSection(phase, exercises) {
   const selectOpts = phaseCatalog.map(e => `<option value="${e.id}">${e.name} (${e.type})</option>`).join('');
 
   return `
-    <div class="builder-phase-section phase-${isPrep ? 'prep' : (isTrain ? 'train' : 'recover')}">
-      <div class="builder-phase-header">
-        <div>
-          <div class="builder-phase-title-wrap">
-            <span class="builder-phase-badge ${badgeClass}">${badgeLabel}</span>
-            <h4 class="builder-phase-title">${title}</h4>
-            <span class="badge badge-reps" style="font-size:10.5px;">${countLabel}</span>
+    <div class="builder-accordion-panel phase-${isPrep ? 'prep' : (isTrain ? 'train' : 'recover')} ${isExpanded ? 'is-expanded' : ''}">
+      <div class="builder-accordion-header" onclick="toggleBuilderSection('${phase}')" role="button" aria-expanded="${isExpanded}">
+        <div class="builder-header-left">
+          <div class="builder-phase-icon-wrap">
+            ${phaseIcon}
           </div>
-          <p class="builder-phase-sub">${sub}</p>
+          <span class="builder-phase-badge ${badgeClass}">${badgeLabel}</span>
+          <h4 class="builder-phase-title">${title}</h4>
+          <span class="builder-phase-count-badge">${countLabel}</span>
         </div>
-        <div class="builder-phase-actions">
+        <div class="builder-header-right">
           ${actionsHtml}
+          <span class="builder-accordion-chevron">${renderIcon('chevronDown', 'cx-icon cx-icon-sm')}</span>
         </div>
       </div>
 
-      ${templatesHtml}
+      <div class="builder-accordion-body">
+        <p class="builder-phase-sub">${sub}</p>
+        ${templatesHtml}
 
-      <div style="margin-top:12px;">
-        ${slotsHtml}
-      </div>
+        <div style="margin-top:14px;">
+          ${slotsHtml}
+        </div>
 
-      <div class="builder-add-row">
-        <select class="form-input form-select" id="add-${phase}-exercise-id" style="flex:1; min-width:180px; font-size:12.5px; padding:6px 10px;">
-          ${selectOpts}
-        </select>
-        <button type="button" class="btn btn-secondary btn-sm" onclick="addExerciseSlotToWorkout('${phase}')">
-          ${renderIcon('plus', 'cx-icon cx-icon-xs cx-icon-inline')} + Add to ${isPrep ? 'Warm-up' : (isRecover ? 'Cool-down' : 'Main Workout')}
-        </button>
+        <div class="builder-add-row">
+          <select class="form-input form-select" id="add-${phase}-exercise-id" style="flex:1; min-width:180px; font-size:12.5px; padding:6px 10px;">
+            ${selectOpts}
+          </select>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addExerciseSlotToWorkout('${phase}')">
+            ${renderIcon('plus', 'cx-icon cx-icon-xs cx-icon-inline')} + Add to ${isPrep ? 'Warm-up' : (isRecover ? 'Cool-down' : 'Main Workout')}
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -872,25 +934,25 @@ function renderEditViewInner() {
   const selectedWorkout = state.selectedWorkoutDetail || state.workouts.find(w => w.id === state.selectedWorkoutId) || state.workouts[0];
 
   const workoutsListHtml = state.workouts.map(w => `
-    <div class="workout-summary-card" style="${selectedWorkout && selectedWorkout.id === w.id ? 'border-color:var(--accent); background:rgba(124,106,247,0.06);' : ''}">
+    <div class="workout-summary-card ${selectedWorkout && selectedWorkout.id === w.id ? 'is-selected' : ''}">
       <div>
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
-          <h3 style="font-size:17px; font-weight:700; color:var(--text);">${w.name}</h3>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; gap:8px;">
+          <h3 style="font-size:17px; font-weight:700; color:#F2F2F0; margin:0;">${w.name}</h3>
           <span class="badge badge-reps">${w.exercise_count || 0} exercises</span>
         </div>
-        <p style="color:var(--text-muted); font-size:12px; margin:0;">${w.description || 'Reusable workout template'}</p>
-        <div style="font-size:12px; color:var(--text-muted); margin-top:8px; display:flex; gap:10px; flex-wrap:wrap;" class="mono">
-          <span>Total Sets: <strong>${w.total_sets || 0}</strong></span>
-          ${w.warmup_sets ? `<span style="color:#f5a623;">Prep: <strong>${w.warmup_sets}</strong></span>` : ''}
-          <span style="color:var(--accent);">Train: <strong>${w.main_sets || w.total_sets || 0}</strong></span>
-          ${w.cooldown_sets ? `<span style="color:#2ed573;">Recover: <strong>${w.cooldown_sets}</strong></span>` : ''}
+        <p style="color:#8A8A93; font-size:12.5px; margin:0; line-height:1.4;">${w.description || 'Reusable workout template'}</p>
+        <div class="workout-phase-counts">
+          <span class="phase-count-pill">Total Sets: <strong>${w.total_sets || 0}</strong></span>
+          <span class="phase-count-pill"><span class="phase-dot dot-prep"></span>Prep: <strong>${w.warmup_sets || 0}</strong></span>
+          <span class="phase-count-pill"><span class="phase-dot dot-train"></span>Train: <strong>${w.main_sets || w.total_sets || 0}</strong></span>
+          <span class="phase-count-pill"><span class="phase-dot dot-recover"></span>Recover: <strong>${w.cooldown_sets || 0}</strong></span>
         </div>
       </div>
 
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; align-items:center;">
         <button class="btn btn-secondary btn-sm" onclick="selectWorkoutForEditing(${w.id})">${renderIcon('edit', 'cx-icon cx-icon-xs cx-icon-inline')} Edit</button>
         <button class="btn btn-secondary btn-sm" onclick="handleDuplicateWorkout(${w.id})">${renderIcon('copy', 'cx-icon cx-icon-xs cx-icon-inline')} Duplicate</button>
-        <button class="btn btn-primary btn-sm" onclick="startWorkoutFromId(${w.id})">${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} Test Run</button>
+        <button class="btn-test-run" onclick="startWorkoutFromId(${w.id})">${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} Test Run</button>
       </div>
     </div>
   `).join('');
@@ -912,7 +974,7 @@ function renderEditViewInner() {
     workoutMuscles.secondary = Array.from(new Set(workoutMuscles.secondary.filter(s => !workoutMuscles.primary.includes(s))));
 
     workoutEditorHtml = `
-      <div class="card" style="margin-top:24px;">
+      <div class="card" style="margin-top:28px;">
         <div class="card-header" style="justify-content:space-between; align-items:center;">
           <span class="card-title">Editing: ${selectedWorkout.name}</span>
           <div style="display:flex; gap:8px;">
@@ -921,9 +983,9 @@ function renderEditViewInner() {
           </div>
         </div>
 
-        <div class="card-body">
+        <div class="card-body" style="padding-bottom:0;">
           <form onsubmit="handleSaveWorkout(event, ${selectedWorkout.id})">
-            <div class="form-row" style="margin-bottom:16px;">
+            <div class="form-row" style="margin-bottom:20px;">
               <div class="form-group form-group-wide">
                 <label class="form-label">Workout Name</label>
                 <input class="form-input" type="text" id="edit-workout-name" value="${selectedWorkout.name}" required>
@@ -937,28 +999,39 @@ function renderEditViewInner() {
             <!-- PREP: Warm-up Section -->
             ${renderPhaseBuilderSection('warmup', exercises)}
 
+            <hr class="builder-section-divider divider-prep" />
+
             <!-- TRAIN: Main Workout Section -->
             ${renderPhaseBuilderSection('main', exercises)}
+
+            <hr class="builder-section-divider divider-train" />
 
             <!-- RECOVER: Cool-down Section -->
             ${renderPhaseBuilderSection('cooldown', exercises)}
 
+            <hr class="builder-section-divider divider-recover" />
+
             <!-- Workout Target Muscle Activation Map -->
-            <div class="card" style="background:var(--surface-2); padding:16px; margin-bottom:20px; border:1px solid rgba(124,92,252,0.18);">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <span style="font-size:12.5px; font-weight:700; color:var(--text); text-transform:uppercase; letter-spacing:0.04em;">
+            <div class="builder-muscle-map-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span style="font-size:13px; font-weight:800; color:#F2F2F0; text-transform:uppercase; letter-spacing:0.04em; display:flex; align-items:center; gap:8px;">
                   ${renderIcon('target', 'cx-icon cx-icon-xs cx-icon-inline')} Workout Target Muscle Activation Map
                 </span>
-                <span class="badge badge-reps" style="font-size:10.5px;">${workoutMuscles.primary.length} Primary Targets</span>
+                <span class="badge badge-reps" style="font-size:11px;">${workoutMuscles.primary.length} Primary Targets</span>
               </div>
               ${(typeof window !== 'undefined' && window.MuscleMap)
-                ? window.MuscleMap.render({ primaryMuscles: workoutMuscles.primary, secondaryMuscles: workoutMuscles.secondary, size: 'sm', view: 'both', showLegend: true })
+                ? window.MuscleMap.render({ primaryMuscles: workoutMuscles.primary, secondaryMuscles: workoutMuscles.secondary, size: 'md', view: 'both', showLegend: true })
                 : ''}
             </div>
 
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-              <button type="button" class="btn btn-secondary" onclick="startWorkoutFromId(${selectedWorkout.id})">${renderIcon('zap', 'cx-icon cx-icon-xs cx-icon-inline')} Test Run Runner ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}</button>
-              <button type="submit" class="btn btn-primary">Save Workout Changes</button>
+            <!-- Sticky Bottom Save Bar -->
+            <div class="builder-sticky-save-bar">
+              <button type="button" class="btn btn-secondary" onclick="startWorkoutFromId(${selectedWorkout.id})">
+                ${renderIcon('zap', 'cx-icon cx-icon-xs cx-icon-inline')} Test Run Runner ${renderIcon('arrowRight', 'cx-icon cx-icon-xs')}
+              </button>
+              <button type="submit" class="btn-save-workout">
+                ${renderIcon('check', 'cx-icon cx-icon-xs cx-icon-inline')} Save Workout Changes
+              </button>
             </div>
           </form>
         </div>
@@ -1689,6 +1762,7 @@ if (typeof window !== 'undefined') {
   window.closeCreateWorkoutModal = closeCreateWorkoutModal;
   window.autoSelectModalTemplates = autoSelectModalTemplates;
   window.detectSmartIntent = detectSmartIntent;
+  window.toggleBuilderSection = toggleBuilderSection;
 }
 
 

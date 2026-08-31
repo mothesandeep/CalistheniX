@@ -348,7 +348,10 @@ async function runTests() {
   console.log('=============================================================');
 }
 
-runTests().catch(err => {
+runTests().then(() => {
+  if (typeof context !== 'undefined' && context.cleanupAllWorkoutTimers) context.cleanupAllWorkoutTimers();
+  process.exit(0);
+}).catch(err => {
   console.error(err);
   process.exit(1);
 });

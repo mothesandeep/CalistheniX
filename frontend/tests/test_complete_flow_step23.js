@@ -283,3 +283,5 @@ if (createdSessions.length > 0) {
 console.log('\n=================================================================');
 console.log('ALL COMPLETE FLOW TEST ASSERTIONS PASSED SUCCESSFULLY! ✅');
 console.log('=================================================================');
+if (typeof context !== 'undefined' && context.cleanupAllWorkoutTimers) context.cleanupAllWorkoutTimers();
+process.exit(0);

@@ -385,3 +385,5 @@ runTest('Completing last exercise shows "Main Workout Complete" screen with "Sta
 console.log('\n=============================================================');
 console.log(`🎉 ALL ${testPassCount}/${testTotalCount} TESTS PASSED SUCCESSFULLY!`);
 console.log('=============================================================\n');
+if (typeof ctx !== 'undefined' && ctx.cleanupAllWorkoutTimers) ctx.cleanupAllWorkoutTimers();
+process.exit(0);

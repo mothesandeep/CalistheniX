@@ -138,11 +138,38 @@ function getExerciseHistoricalBest(exerciseId, exerciseName) {
   return rec || null;
 }
 
+// ─── Global Timer Intervals & Cleanup Engine ───────────────────────────────
+function cleanupAllWorkoutTimers() {
+  if (_workoutTimerInterval) {
+    clearInterval(_workoutTimerInterval);
+    _workoutTimerInterval = null;
+  }
+  if (_workoutHoldInterval) {
+    clearInterval(_workoutHoldInterval);
+    _workoutHoldInterval = null;
+  }
+  if (_workoutRestInterval) {
+    clearInterval(_workoutRestInterval);
+    _workoutRestInterval = null;
+  }
+  if (_workoutPhaseTimerInterval) {
+    clearInterval(_workoutPhaseTimerInterval);
+    _workoutPhaseTimerInterval = null;
+  }
+  if (typeof _autoAdvanceTimer !== 'undefined' && _autoAdvanceTimer) {
+    clearInterval(_autoAdvanceTimer);
+    _autoAdvanceTimer = null;
+  }
+}
+if (typeof window !== 'undefined') {
+  window.cleanupAllWorkoutTimers = cleanupAllWorkoutTimers;
+}
+
 // ─── Auto-Advance & Grace Period Management for Timed Movements ─────────────
-let _autoAdvanceTimer = null;
-let _autoAdvanceCountdown = 0;
-let _autoAdvanceCallback = null;
-let _autoAdvancePhase = null;
+var _autoAdvanceTimer = null;
+var _autoAdvanceCountdown = 0;
+var _autoAdvanceCallback = null;
+var _autoAdvancePhase = null;
 
 function cancelAutoAdvance(showNotification = true) {
   if (_autoAdvanceTimer) {
@@ -294,9 +321,36 @@ function isCompletedPhase(phase) {
   return canonicalPhase(phase) === 'completed';
 }
 
+// Normalize session to ensure both warmup/warmup_exercises and cooldown/cooldown_exercises are synced
+function normalizeSessionExerciseLists(session) {
+  if (!session) return;
+
+  // Normalize warmup: prefer warmup, fallback to warmup_exercises, ensure both point to same array
+  if (!session.warmup && session.warmup_exercises) {
+    session.warmup = session.warmup_exercises;
+  } else if (session.warmup && !session.warmup_exercises) {
+    session.warmup_exercises = session.warmup;
+  } else if (session.warmup && session.warmup_exercises && session.warmup !== session.warmup_exercises) {
+    // If both exist but are different arrays, prefer warmup and sync
+    session.warmup_exercises = session.warmup;
+  }
+
+  // Normalize cooldown: prefer cooldown, fallback to cooldown_exercises, ensure both point to same array
+  if (!session.cooldown && session.cooldown_exercises) {
+    session.cooldown = session.cooldown_exercises;
+  } else if (session.cooldown && !session.cooldown_exercises) {
+    session.cooldown_exercises = session.cooldown;
+  } else if (session.cooldown && session.cooldown_exercises && session.cooldown !== session.cooldown_exercises) {
+    // If both exist but are different arrays, prefer cooldown and sync
+    session.cooldown_exercises = session.cooldown;
+  }
+}
+
 function getWarmupExercises(session) {
   if (!session) return [];
-  return (session.warmup || []).filter(e => !e.phase || isWarmupPhase(e.phase));
+  normalizeSessionExerciseLists(session);
+  const list = session.warmup || [];
+  return list.filter(e => !e.phase || isWarmupPhase(e.phase));
 }
 
 function getMainWorkoutExercises(session) {
@@ -306,7 +360,9 @@ function getMainWorkoutExercises(session) {
 
 function getCooldownExercises(session) {
   if (!session) return [];
-  return (session.cooldown || []).filter(e => !e.phase || isCooldownPhase(e.phase));
+  normalizeSessionExerciseLists(session);
+  const list = session.cooldown || [];
+  return list.filter(e => !e.phase || isCooldownPhase(e.phase));
 }
 
 // ─── Single Authoritative Source of Truth Session State Engine ──────────────
@@ -520,6 +576,7 @@ function getAuthoritativeSessionState(session) {
 
 function syncAuthoritativeSessionState(session) {
   if (!session) return;
+  normalizeSessionExerciseLists(session);
   const auth = getAuthoritativeSessionState(session);
 
   // Sync index pointers
@@ -582,7 +639,7 @@ function syncAuthoritativeSessionState(session) {
 // ─── Routine-Specific Warm-up & Cool-down Generators ────────────────────────
 
 function getDefaultWarmupForRoutine(workoutName) {
-  const name = (workoutName || '').toLowerCase();
+  const name = (typeof workoutName === 'string' ? workoutName : (workoutName?.name || workoutName?.routine || workoutName?.workout_name || '')).toLowerCase();
   if (name.includes('push a')) {
     return [
       { exercise_name: 'Arm Circles', duration_sec: 40, reps: null, exercise_type: 'duration', notes: 'Warm-up: 20 sec forward + 20 sec backward', target_val: 40, duration_text: '20s each direction', est_duration: '1 min', phase: WORKOUT_PHASES.WARM_UP },
@@ -645,7 +702,7 @@ function getDefaultWarmupForRoutine(workoutName) {
 }
 
 function getDefaultCooldownForRoutine(workoutName) {
-  const name = (workoutName || '').toLowerCase();
+  const name = (typeof workoutName === 'string' ? workoutName : (workoutName?.name || workoutName?.routine || workoutName?.workout_name || '')).toLowerCase();
   if (name.includes('push a')) {
     return [
       { exercise_name: 'Doorway Chest Stretch', duration_sec: 60, reps: null, exercise_type: 'duration', notes: 'Cool-down: 30 sec each side wall/doorway stretch', target_val: 60, duration_text: '30s each side', est_duration: '1 min', phase: WORKOUT_PHASES.COOL_DOWN },
@@ -706,14 +763,22 @@ function getDefaultCooldownForRoutine(workoutName) {
 }
 
 function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
+  const resolvedWorkoutName = typeof workoutName === 'string'
+    ? workoutName
+    : (workoutName?.routine || workoutName?.name || workoutName?.workout_name || 'Workout');
+  const rawList = Array.isArray(exercisesList)
+    ? exercisesList
+    : (workoutName && Array.isArray(workoutName.exercises) ? workoutName.exercises : (Array.isArray(workoutName?.exercisesList) ? workoutName.exercisesList : []));
+  const resolvedWorkoutId = workoutId || (workoutName && (workoutName.workout_id || workoutName.id) ? (workoutName.workout_id || workoutName.id) : null);
+
   const active = getActiveSession();
-  if (active && (active.status === 'in_progress' || active.status === 'paused' || active.phaseState === 'ACTIVE' || active.phaseState === 'PAUSED') && active.routine === workoutName) {
+  if (active && (active.status === 'in_progress' || active.status === 'paused' || active.phaseState === 'ACTIVE' || active.phaseState === 'PAUSED') && active.routine === resolvedWorkoutName) {
     // ── SESSION REPAIR: backfill missing warmup / cooldown arrays ────────────
     // Stale sessions (created before default generators were added) may have
     // empty warmup/cooldown arrays. Repair them here before opening the view.
     let sessionChanged = false;
-    if ((!active.warmup || active.warmup.length === 0) && workoutName) {
-      const defaultWarmup = getDefaultWarmupForRoutine(workoutName);
+    if ((!active.warmup || active.warmup.length === 0) && resolvedWorkoutName) {
+      const defaultWarmup = getDefaultWarmupForRoutine(resolvedWorkoutName);
       if (defaultWarmup.length > 0) {
         active.warmup = defaultWarmup.map((le, idx) => ({
           id: le.id || (idx + 1),
@@ -740,8 +805,8 @@ function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
         sessionChanged = true;
       }
     }
-    if ((!active.cooldown || active.cooldown.length === 0) && workoutName) {
-      const defaultCooldown = getDefaultCooldownForRoutine(workoutName);
+    if ((!active.cooldown || active.cooldown.length === 0) && resolvedWorkoutName) {
+      const defaultCooldown = getDefaultCooldownForRoutine(resolvedWorkoutName);
       if (defaultCooldown.length > 0) {
         active.cooldown = defaultCooldown.map((le, idx) => ({
           id: le.id || (idx + 1),
@@ -774,12 +839,16 @@ function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
     return;
   }
 
-  const rawList = exercisesList || [];
-
   // Strict phase filtering at data initialization
   let warmupRaw = rawList.filter(le => le.phase && isWarmupPhase(le.phase));
+  if (warmupRaw.length === 0 && workoutName && Array.isArray(workoutName.warmup_exercises)) {
+    warmupRaw = workoutName.warmup_exercises;
+  }
   let mainRaw = rawList.filter(le => isMainPhase(le.phase));
   let cooldownRaw = rawList.filter(le => le.phase && isCooldownPhase(le.phase));
+  if (cooldownRaw.length === 0 && workoutName && Array.isArray(workoutName.cooldown_exercises)) {
+    cooldownRaw = workoutName.cooldown_exercises;
+  }
 
   // If rawList is an unsegmented array without phase markers, treat all items as main workout exercises
   if (warmupRaw.length === 0 && mainRaw.length === 0 && cooldownRaw.length === 0) {
@@ -788,12 +857,12 @@ function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
 
   // Ensure Warm-up routine
   if (warmupRaw.length === 0) {
-    warmupRaw = getDefaultWarmupForRoutine(workoutName);
+    warmupRaw = getDefaultWarmupForRoutine(resolvedWorkoutName);
   }
 
   // Ensure Cool-down routine
   if (cooldownRaw.length === 0) {
-    cooldownRaw = getDefaultCooldownForRoutine(workoutName);
+    cooldownRaw = getDefaultCooldownForRoutine(resolvedWorkoutName);
   }
 
   const warmup = warmupRaw.map((le, idx) => {
@@ -828,22 +897,43 @@ function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
     const ex = getExercise(le.exercise_id);
     const isHold = (le.exercise_type || ex?.type) === 'duration';
     const targetVal = isHold ? (le.duration_sec || 30) : (le.reps || 10);
-    const setCount = le.sets || 3;
     const sets = [];
-    for (let s = 1; s <= setCount; s++) {
-      sets.push({
-        set_num: s,
-        target_val: targetVal,
-        actual_val: isHold ? 0 : targetVal,
-        completed: false,
-        skipped: false,
-        weight_kg: null,
-        rpe: null,
-        completed_at: null,
-        skipped_at: null,
-        client_uuid: newUUID(),
+
+    if (Array.isArray(le.sets)) {
+      le.sets.forEach((s, sIdx) => {
+        const sTarget = s.target_val != null ? s.target_val : targetVal;
+        sets.push({
+          set_num: s.set_num || (sIdx + 1),
+          target_val: sTarget,
+          actual_val: s.actual_val != null ? s.actual_val : (isHold ? 0 : sTarget),
+          completed: !!s.completed,
+          skipped: !!s.skipped,
+          weight_kg: s.weight_kg != null ? s.weight_kg : null,
+          rpe: s.rpe != null ? s.rpe : null,
+          completed_at: s.completed_at || null,
+          skipped_at: s.skipped_at || null,
+          client_uuid: s.client_uuid || newUUID(),
+        });
       });
+    } else {
+      const setCount = typeof le.sets === 'number' ? le.sets : 3;
+      for (let s = 1; s <= setCount; s++) {
+        sets.push({
+          set_num: s,
+          target_val: targetVal,
+          actual_val: isHold ? 0 : targetVal,
+          completed: false,
+          skipped: false,
+          weight_kg: null,
+          rpe: null,
+          completed_at: null,
+          skipped_at: null,
+          client_uuid: newUUID(),
+        });
+      }
     }
+
+    const setCount = sets.length || 3;
     return {
       id: le.id,
       exercise_id: le.exercise_id,
@@ -896,9 +986,9 @@ function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
   const session = {
     id: newUUID(),
     date: todayISO(),
-    routine: workoutName,
-    workout_name: workoutName,
-    workout_id: workoutId,
+    routine: resolvedWorkoutName,
+    workout_name: resolvedWorkoutName,
+    workout_id: resolvedWorkoutId,
     level: 1,
 
     // Authoritative Deterministic State Machine Core
@@ -968,8 +1058,10 @@ function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
     completed_at: null,
 
     warmup,
+    warmup_exercises: warmup,
     exercises,
-    cooldown
+    cooldown,
+    cooldown_exercises: cooldown
   };
 
   _selectedWorkoutExIdx = 0;
@@ -1065,48 +1157,89 @@ function openWorkoutView() {
 
 function pauseWorkoutSession() {
   const session = getActiveSession();
-  if (!session || (session.status !== 'in_progress' && session.status !== 'active' && session.phaseState !== 'ACTIVE')) return;
+  if (!session) return;
+  // Idempotent guard: if already paused, ensure timers are stopped and return
+  if (session.phaseState === (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.PAUSED : 'PAUSED') || session.status === 'paused') {
+    cleanupAllWorkoutTimers();
+    return;
+  }
+  if (session.status !== 'in_progress' && session.status !== 'active' && session.phaseState !== 'ACTIVE') return;
+
   cancelAutoAdvance(false);
+  cleanupAllWorkoutTimers();
   const now = Date.now();
   session.status = 'paused';
   session.phaseState = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.PAUSED : 'PAUSED');
   session.pausedAt = now;
-  if (!session.sessionTimer) session.sessionTimer = { startedAt: session.startTime || now, pausedAt: now, totalPausedMs: session.totalPausedMs || 0, elapsedSec: 0 };
-  else session.sessionTimer.pausedAt = now;
+
+  // Freeze Session Duration Timer
+  const elapsedSession = getSessionElapsedSec(session);
+  if (!session.sessionTimer) {
+    session.sessionTimer = { startedAt: session.startTime || now, pausedAt: now, totalPausedMs: session.totalPausedMs || 0, elapsedSec: elapsedSession };
+  } else {
+    session.sessionTimer.pausedAt = now;
+    session.sessionTimer.elapsedSec = elapsedSession;
+  }
 
   // Freeze Movement Timer
-  if (session.movementTimer && session.movementTimer.isRunning) {
-    session.movementTimer.isRunning = false;
-    session.movementTimer.pausedAt = now;
+  if (session.movementTimer) {
+    const mt = session.movementTimer;
+    if (mt.isRunning || mt.startedAt) {
+      const dur = mt.durationSec || 30;
+      const elapsed = mt.startedAt ? Math.floor((now - mt.startedAt) / 1000) : 0;
+      const rem = mt.startedAt ? Math.max(0, dur - elapsed) : (mt.remainingSec != null ? mt.remainingSec : dur);
+      mt.remainingSec = rem;
+      mt.isRunning = false;
+      mt.pausedAt = now;
+    }
   }
-  if (session.phaseTimer && session.phaseTimer.isRunning) {
-    session.phaseTimer.isRunning = false;
-    session.phaseTimer.pausedAt = now;
+
+  // Freeze Phase Timer
+  if (session.phaseTimer) {
+    const pt = session.phaseTimer;
+    if (pt.isRunning || pt.startedAt) {
+      const dur = pt.duration || 30;
+      const elapsed = pt.startedAt ? Math.floor((now - pt.startedAt) / 1000) : 0;
+      const rem = pt.startedAt ? Math.max(0, dur - elapsed) : (pt.remaining != null ? pt.remaining : dur);
+      pt.remaining = rem;
+      pt.isRunning = false;
+      pt.pausedAt = now;
+    }
   }
 
   // Freeze Hold Timer
-  if (_workoutHoldInterval) {
-    clearInterval(_workoutHoldInterval);
-    _workoutHoldInterval = null;
-  }
-  if (session.holdTimer && session.holdTimer.isRunning) {
-    session.holdTimer.isRunning = false;
-    session.holdTimer.pausedAt = now;
+  if (session.holdTimer) {
+    const ht = session.holdTimer;
+    if (ht.isRunning || ht.startedAt) {
+      const elapsed = ht.startedAt ? Math.floor((now - ht.startedAt) / 1000) : (ht.elapsedSec != null ? ht.elapsedSec : (_workoutHoldState.elapsed || 0));
+      ht.elapsedSec = elapsed;
+      ht.isRunning = false;
+      ht.pausedAt = now;
+      _workoutHoldState.elapsed = elapsed;
+      _workoutHoldState.startedAt = null;
+    }
   }
 
   // Freeze Rest Timer
-  if (_workoutRestInterval) {
-    clearInterval(_workoutRestInterval);
-    _workoutRestInterval = null;
-  }
-  if (session.restTimer && session.restTimer.isRunning) {
-    session.restTimer.isRunning = false;
-    session.restTimer.pausedAt = now;
-  }
-
-  if (_workoutTimerInterval) {
-    clearInterval(_workoutTimerInterval);
-    _workoutTimerInterval = null;
+  if (session.restTimer) {
+    const rt = session.restTimer;
+    if (rt.isRunning || rt.state === 'RUNNING' || rt.startedAt || _workoutRestState.state === 'RUNNING' || _workoutRestState.active) {
+      const dur = rt.durationSec || _workoutRestState.total || 60;
+      const started = rt.startedAt || _workoutRestState.startedAt;
+      const elapsed = started ? Math.floor((now - started) / 1000) : 0;
+      const rem = started ? Math.max(0, dur - elapsed) : (rt.remainingSec != null ? rt.remainingSec : dur);
+      rt.remainingSec = rem;
+      rt.isRunning = false;
+      rt.isPaused = true;
+      rt.state = 'PAUSED';
+      rt.pausedAt = now;
+      _workoutRestState.remaining = rem;
+      _workoutRestState.total = dur;
+      _workoutRestState.state = 'PAUSED';
+      _workoutRestState.paused = true;
+      _workoutRestState.pausedAt = now;
+      _workoutRestState.active = true;
+    }
   }
 
   if (typeof releaseScreenWakeLock === 'function') {
@@ -1129,13 +1262,19 @@ function resumeWorkoutSession() {
     return;
   }
   const isPaused = session.phaseState === (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.PAUSED : 'PAUSED') || session.status === 'paused';
-  if (!isPaused) return;
+  if (!isPaused) {
+    // Idempotent guard: already running, do nothing
+    return;
+  }
+
+  cleanupAllWorkoutTimers();
 
   const now = Date.now();
   const pausedMs = session.pausedAt ? (now - session.pausedAt) : 0;
   session.totalPausedMs = (session.totalPausedMs || 0) + pausedMs;
-  if (!session.sessionTimer) session.sessionTimer = { startedAt: session.startTime || now, pausedAt: null, totalPausedMs: session.totalPausedMs, elapsedSec: 0 };
-  else {
+  if (!session.sessionTimer) {
+    session.sessionTimer = { startedAt: session.startTime || now, pausedAt: null, totalPausedMs: session.totalPausedMs, elapsedSec: 0 };
+  } else {
     session.sessionTimer.totalPausedMs = session.totalPausedMs;
     session.sessionTimer.pausedAt = null;
   }
@@ -1143,69 +1282,100 @@ function resumeWorkoutSession() {
   session.phaseState = (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.ACTIVE : 'ACTIVE');
   session.pausedAt = null;
 
-  // Resume Movement Timer
-  if (session.movementTimer && session.movementTimer.pausedAt) {
-    const mtPausedDelta = now - session.movementTimer.pausedAt;
-    session.movementTimer.startedAt = (session.movementTimer.startedAt || now) + mtPausedDelta;
-    session.movementTimer.pausedAt = null;
-    session.movementTimer.isRunning = true;
-  }
-  if (session.phaseTimer && session.phaseTimer.pausedAt) {
-    const ptPausedDelta = now - session.phaseTimer.pausedAt;
-    session.phaseTimer.startedAt = (session.phaseTimer.startedAt || now) + ptPausedDelta;
-    session.phaseTimer.pausedAt = null;
-    session.phaseTimer.isRunning = true;
+  // Resume Movement Timer (continue from EXACT remaining time)
+  if (session.movementTimer) {
+    const mt = session.movementTimer;
+    const dur = mt.durationSec || 30;
+    const rem = mt.remainingSec != null ? mt.remainingSec : dur;
+    if (rem > 0 && (mt.pausedAt || !mt.isRunning)) {
+      mt.startedAt = now - ((dur - rem) * 1000);
+      mt.pausedAt = null;
+      mt.isRunning = true;
+      mt.remainingSec = rem;
+    }
   }
 
-  // Resume Hold Timer
-  if (session.holdTimer && session.holdTimer.pausedAt) {
-    const htPausedDelta = now - session.holdTimer.pausedAt;
-    session.holdTimer.startedAt = (session.holdTimer.startedAt || now) + htPausedDelta;
-    session.holdTimer.pausedAt = null;
-    session.holdTimer.isRunning = true;
-    _workoutHoldState.startedAt = session.holdTimer.startedAt;
+  // Resume Phase Timer (continue from EXACT remaining time)
+  if (session.phaseTimer) {
+    const pt = session.phaseTimer;
+    const dur = pt.duration || 30;
+    const rem = pt.remaining != null ? pt.remaining : dur;
+    if (rem > 0 && (pt.pausedAt || !pt.isRunning)) {
+      pt.startedAt = now - ((dur - rem) * 1000);
+      pt.pausedAt = null;
+      pt.isRunning = true;
+      pt.remaining = rem;
+    }
+  }
 
-    _workoutHoldInterval = setInterval(() => {
-      if (!_workoutHoldState.startedAt) return;
-      const curNow = Date.now();
-      const elapsed = Math.floor((curNow - _workoutHoldState.startedAt) / 1000);
+  // Resume Hold Timer (continue from EXACT elapsed time)
+  if (session.holdTimer) {
+    const ht = session.holdTimer;
+    const elapsed = ht.elapsedSec || _workoutHoldState.elapsed || 0;
+    const target = ht.targetSec || _workoutHoldState.targetVal || 30;
+    if (elapsed < target && (ht.pausedAt || !ht.isRunning)) {
+      ht.startedAt = now - (elapsed * 1000);
+      ht.pausedAt = null;
+      ht.isRunning = true;
+      _workoutHoldState.startedAt = ht.startedAt;
       _workoutHoldState.elapsed = elapsed;
-      if (session.holdTimer) session.holdTimer.elapsedSec = elapsed;
 
-      const remaining = _workoutHoldState.targetVal - elapsed;
-      if (remaining >= 1 && remaining <= 3 && !_workoutHoldState.beepsPlayed[remaining]) {
-        _workoutHoldState.beepsPlayed[remaining] = true;
-        cueCountdownTick(remaining);
-      } else if (remaining === 0 && !_workoutHoldState.beepsPlayed[0]) {
-        _workoutHoldState.beepsPlayed[0] = true;
-        cueTimerComplete();
-        if (isAutoAdvanceEnabled()) {
-          triggerTimedAutoAdvance(() => stopWorkoutHold(true), 'main');
-        }
+      if (_workoutHoldInterval) {
+        clearInterval(_workoutHoldInterval);
+        _workoutHoldInterval = null;
       }
 
-      const digitsEl = document.getElementById('workout-active-counter-digits');
-      if (digitsEl) digitsEl.textContent = elapsed;
-      const btn = document.getElementById('workout-active-hold-btn');
-      if (btn) btn.innerHTML = `${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} STOP HOLD (${elapsed}s)`;
-    }, 200);
+      _workoutHoldInterval = setInterval(() => {
+        if (!_workoutHoldState.startedAt) return;
+        const curNow = Date.now();
+        const curElapsed = Math.floor((curNow - _workoutHoldState.startedAt) / 1000);
+        _workoutHoldState.elapsed = curElapsed;
+        const curSess = getActiveSession();
+        if (curSess && curSess.holdTimer) {
+          curSess.holdTimer.elapsedSec = curElapsed;
+        }
+
+        const remaining = Math.max(0, _workoutHoldState.targetVal - curElapsed);
+        if (remaining >= 1 && remaining <= 3 && !_workoutHoldState.beepsPlayed[remaining]) {
+          _workoutHoldState.beepsPlayed[remaining] = true;
+          cueCountdownTick(remaining);
+        } else if (remaining === 0 && !_workoutHoldState.beepsPlayed[0]) {
+          _workoutHoldState.beepsPlayed[0] = true;
+          cueTimerComplete();
+          stopWorkoutHold(true);
+          return;
+        }
+
+        const digitsEl = document.getElementById('workout-active-counter-digits');
+        if (digitsEl) digitsEl.textContent = curElapsed;
+        const btn = document.getElementById('workout-active-hold-btn');
+        if (btn) btn.innerHTML = `${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} STOP HOLD (${curElapsed}s)`;
+      }, 1000);
+    }
   }
 
-  // Resume Rest Timer
-  if (session.restTimer && (session.restTimer.pausedAt || session.restTimer.state === 'PAUSED')) {
-    const rtPausedDelta = session.restTimer.pausedAt ? (now - session.restTimer.pausedAt) : 0;
-    session.restTimer.startedAt = (session.restTimer.startedAt || now) + rtPausedDelta;
-    session.restTimer.pausedAt = null;
-    session.restTimer.state = 'RUNNING';
-    session.restTimer.isRunning = true;
-    session.restTimer.isPaused = false;
-    _workoutRestState.state = 'RUNNING';
-    _workoutRestState.active = true;
-    _workoutRestState.paused = false;
-    _workoutRestState.pausedAt = null;
-    _workoutRestState.startedAt = session.restTimer.startedAt;
+  // Resume Rest Timer (continue from EXACT remaining time)
+  if (session.restTimer && (session.restTimer.state === 'PAUSED' || session.restTimer.isPaused || session.restTimer.pausedAt || session.restTimer.isRunning === false || _workoutRestState.state === 'PAUSED' || _workoutRestState.paused)) {
+    const rt = session.restTimer;
+    const dur = rt.durationSec || _workoutRestState.total || 60;
+    const rem = rt.remainingSec != null ? rt.remainingSec : (_workoutRestState.remaining != null ? _workoutRestState.remaining : dur);
+    if (rem > 0) {
+      rt.startedAt = now - ((dur - rem) * 1000);
+      rt.pausedAt = null;
+      rt.state = 'RUNNING';
+      rt.isRunning = true;
+      rt.isPaused = false;
+      rt.remainingSec = rem;
+      _workoutRestState.state = 'RUNNING';
+      _workoutRestState.active = true;
+      _workoutRestState.paused = false;
+      _workoutRestState.pausedAt = null;
+      _workoutRestState.remaining = rem;
+      _workoutRestState.total = dur;
+      _workoutRestState.startedAt = rt.startedAt;
 
-    _startRestCountdownInterval();
+      _startRestCountdownInterval();
+    }
   }
 
   saveActiveSession(session);
@@ -1249,7 +1419,7 @@ function startWorkoutDurationTimer() {
     _workoutTimerInterval = null;
   }
   _workoutTimerInterval = setInterval(() => {
-    if (state.view === 'workout') {
+    if (typeof state !== 'undefined' && state.view === 'workout') {
       const session = getActiveSession();
       if (session) {
         const isStarted = !!(session.startTime || session.startedAt) && session.status !== 'ready' && session.phaseState !== 'IDLE';
@@ -1277,7 +1447,7 @@ function startWorkoutDurationTimer() {
         const isCool = isCooldownPhase(session.phase) || session.currentPhase === 'cooldown';
         const timerObj = session.movementTimer || session.phaseTimer;
 
-        if ((isWarm || isCool) && timerObj && timerObj.isRunning) {
+        if ((isWarm || isCool) && timerObj && timerObj.isRunning && timerObj.startedAt) {
           const pt = timerObj;
           const duration = pt.durationSec || pt.duration || 30;
           const elapsed = Math.floor((Date.now() - pt.startedAt) / 1000);
@@ -1287,7 +1457,11 @@ function startWorkoutDurationTimer() {
           if (pt.remainingSec != null) pt.remainingSec = remaining;
           if (session.phaseTimer) {
             session.phaseTimer.remaining = remaining;
-            session.phaseTimer.isRunning = true;
+            session.phaseTimer.isRunning = (remaining > 0);
+          }
+          if (session.movementTimer) {
+            session.movementTimer.remainingSec = remaining;
+            session.movementTimer.isRunning = (remaining > 0);
           }
 
           // Sound cues for 3, 2, 1 seconds remaining
@@ -1297,20 +1471,21 @@ function startWorkoutDurationTimer() {
 
           const digitsEl = document.getElementById('runner-phase-timer-digits');
           if (digitsEl) {
-            digitsEl.innerHTML = `${remaining} <span class="runner-digits-unit-label">SEC</span>`;
+            digitsEl.textContent = remaining;
+          }
+          const activeDigitsEl = document.getElementById('workout-active-counter-digits');
+          if (activeDigitsEl) {
+            activeDigitsEl.textContent = remaining;
           }
 
           // Update SVG Radial Progress Ring
-          const circleEl = document.getElementById('runner-radial-progress-circle');
-          if (circleEl && duration > 0) {
-            const fraction = Math.max(0, Math.min(1, remaining / duration));
-            const offset = (440 * (1 - fraction)).toFixed(1);
-            circleEl.style.strokeDashoffset = `${offset}`;
-            if (remaining <= 3 && remaining > 0) {
-              circleEl.classList.add('is-warning');
-            } else {
-              circleEl.classList.remove('is-warning');
-            }
+          const ringSuffix = isWarm ? 'warmup' : 'cooldown';
+          const ringEl = document.getElementById(`runner-ring-progress-${ringSuffix}`) || document.getElementById('runner-radial-progress-circle');
+          if (ringEl && duration > 0) {
+            const radius = 72;
+            const circumference = 2 * Math.PI * radius;
+            const fraction = Math.max(0, Math.min(1, (duration - remaining) / duration));
+            ringEl.style.strokeDashoffset = `${circumference - (fraction * circumference)}`;
           }
 
           const barEl = document.getElementById('runner-phase-timer-bar');
@@ -1319,17 +1494,88 @@ function startWorkoutDurationTimer() {
             barEl.style.width = `${pct}%`;
           }
 
+          saveActiveSession(session);
+
           if (remaining <= 0) {
             pt.isRunning = false;
             pt.remaining = 0;
+            pt.startedAt = null;
+            pt.pausedAt = null;
             if (pt.remainingSec != null) pt.remainingSec = 0;
-            if (session.phaseTimer) session.phaseTimer.isRunning = false;
-            saveActiveSession(session);
-            cueTimerComplete();
-            const btnEl = document.getElementById('runner-phase-timer-toggle-btn');
-            if (btnEl) {
-              btnEl.innerHTML = `${renderIcon('rotateCcw', 'cx-icon cx-icon-xs cx-icon-inline')} Restart Timer`;
+            if (session.phaseTimer) {
+              session.phaseTimer.remaining = 0;
+              session.phaseTimer.isRunning = false;
+              session.phaseTimer.startedAt = null;
+              session.phaseTimer.pausedAt = null;
             }
+            if (session.movementTimer) {
+              session.movementTimer.remainingSec = 0;
+              session.movementTimer.isRunning = false;
+              session.movementTimer.startedAt = null;
+              session.movementTimer.pausedAt = null;
+            }
+
+            cueTimerComplete();
+
+            if (!pt._completedHandled) {
+              pt._completedHandled = true;
+              if (session.phaseTimer) session.phaseTimer._completedHandled = true;
+              if (session.movementTimer) session.movementTimer._completedHandled = true;
+
+              if (isWarm) {
+                const curIdx = session.warmupIndex != null ? session.warmupIndex : (session.warmup_idx || 0);
+                const curEx = session.warmup ? session.warmup[curIdx] : null;
+                if (curEx && !curEx.completed && !curEx.skipped) {
+                  curEx.completed = true;
+                  curEx.completed_at = new Date().toISOString();
+                  curEx.actual_val = duration;
+                  curEx.skipped = false;
+                  cueSetComplete();
+                }
+
+                const isLastWarmup = session.warmup && (curIdx + 1 >= session.warmup.length);
+                const isAllWarmupDone = session.warmup && session.warmup.every(w => w.completed || w.skipped);
+                if (isLastWarmup || isAllWarmupDone) {
+                  const now = Date.now();
+                  session.warmupStatus = 'COMPLETED';
+                  session.warmup_status = 'completed';
+                  session.warmup_completed_at = new Date(now).toISOString();
+                  session.warmup_duration_sec = Math.max(0, Math.round((now - (session.startTime || now)) / 1000));
+                  cueExerciseComplete();
+                  showToast("Warm-Up Complete! You're ready for the main workout.");
+                }
+              } else if (isCool) {
+                const curIdx = session.cooldownIndex != null ? session.cooldownIndex : (session.cooldown_idx || 0);
+                const curEx = session.cooldown ? session.cooldown[curIdx] : null;
+                if (curEx && !curEx.completed && !curEx.skipped) {
+                  curEx.completed = true;
+                  curEx.completed_at = new Date().toISOString();
+                  curEx.actual_val = duration;
+                  curEx.skipped = false;
+                  cueSetComplete();
+                }
+
+                const isLastCooldown = session.cooldown && (curIdx + 1 >= session.cooldown.length);
+                const isAllCooldownDone = session.cooldown && session.cooldown.every(c => c.completed || c.skipped);
+                if (isLastCooldown || isAllCooldownDone) {
+                  const now = Date.now();
+                  session.cooldownStatus = 'COMPLETED';
+                  session.cooldown_status = 'completed';
+                  session.cooldown_completed_at = new Date(now).toISOString();
+                  if (session.cooldown_started_at) {
+                    session.cooldown_duration_sec = Math.max(0, Math.round((now - session.cooldown_started_at) / 1000));
+                  }
+                  cueExerciseComplete();
+                  syncAuthoritativeSessionState(session);
+                  saveActiveSession(session);
+                  finishWorkoutSession();
+                  return;
+                }
+              }
+            }
+
+            syncAuthoritativeSessionState(session);
+            saveActiveSession(session);
             render();
           }
         }
@@ -1374,20 +1620,19 @@ function selectWarmupMovement(idx) {
   session.warmup_idx = idx;
   const curEx = session.warmup[idx];
   const dur = curEx?.duration_sec || 30;
-  const isHold = curEx?.exercise_type === 'duration';
 
   session.movementTimer = {
-    isRunning: isHold,
+    isRunning: false,
     durationSec: dur,
     remainingSec: dur,
-    startedAt: isHold ? Date.now() : null,
+    startedAt: null,
     pausedAt: null
   };
   session.phaseTimer = {
-    isRunning: isHold,
+    isRunning: false,
     duration: dur,
     remaining: dur,
-    startedAt: isHold ? Date.now() : null,
+    startedAt: null,
     pausedMs: 0
   };
 
@@ -1478,24 +1723,37 @@ function togglePhaseTimer() {
 
   const mt = session.movementTimer;
   if (mt.isRunning) {
+    const now = Date.now();
+    const duration = mt.durationSec || defaultDuration;
+    const elapsed = mt.startedAt ? Math.floor((now - mt.startedAt) / 1000) : 0;
+    const remaining = Math.max(0, duration - elapsed);
+    mt.remainingSec = remaining;
     mt.isRunning = false;
-    mt.pausedAt = Date.now();
+    mt.pausedAt = now;
+    session.phaseTimer.remaining = remaining;
     session.phaseTimer.isRunning = false;
-    session.phaseTimer.pausedAt = mt.pausedAt;
+    session.phaseTimer.pausedAt = now;
   } else {
-    if (!mt.durationSec || mt.durationSec <= 0 || (mt.remainingSec != null && mt.remainingSec <= 0)) {
+    const now = Date.now();
+    if (!mt.durationSec || mt.durationSec <= 0) {
       mt.durationSec = defaultDuration;
-      mt.remainingSec = defaultDuration;
     }
-    mt.startedAt = Date.now() - ((mt.durationSec - (mt.remainingSec || mt.durationSec)) * 1000);
+    if (mt.remainingSec == null || mt.remainingSec <= 0) {
+      mt.remainingSec = mt.durationSec;
+    }
+    const currentRemaining = mt.remainingSec;
+    mt.startedAt = now - ((mt.durationSec - currentRemaining) * 1000);
     mt.pausedAt = null;
     mt.isRunning = true;
+    mt._completedHandled = false;
 
     session.phaseTimer.duration = mt.durationSec;
-    session.phaseTimer.remaining = mt.remainingSec;
+    session.phaseTimer.remaining = currentRemaining;
     session.phaseTimer.startedAt = mt.startedAt;
     session.phaseTimer.pausedAt = null;
     session.phaseTimer.isRunning = true;
+
+    startWorkoutDurationTimer();
   }
   saveActiveSession(session);
   render();
@@ -1525,7 +1783,7 @@ function adjustPhaseTimer(delta) {
   const isActivelyRunning = mt && mt.isRunning && !session.pausedAt && session.status !== 'paused' && session.phaseState !== 'PAUSED';
 
   if (isActivelyRunning) {
-    const duration = mt.durationSec || mt.duration || 30;
+    const duration = mt.durationSec || mt.duration || curEx.duration_sec || 30;
     const elapsed = Math.floor((Date.now() - mt.startedAt) / 1000);
     const currentRemaining = Math.max(0, duration - elapsed);
     const newRemaining = Math.max(0, currentRemaining + delta);
@@ -1542,46 +1800,36 @@ function adjustPhaseTimer(delta) {
       saveActiveSession(session);
       cueTimerComplete();
       render();
-
-      if (isAutoAdvanceEnabled()) {
-        triggerTimedAutoAdvance(isWarm ? advanceWarmupMovement : advanceCooldownStretch, session.currentPhase);
-      }
       return;
     }
 
+    mt.startedAt = Date.now() - (duration - newRemaining) * 1000;
     if (session.movementTimer) {
-      session.movementTimer.durationSec = newRemaining;
+      session.movementTimer.durationSec = duration;
       session.movementTimer.remainingSec = newRemaining;
-      session.movementTimer.startedAt = Date.now();
+      session.movementTimer.startedAt = mt.startedAt;
     }
     if (session.phaseTimer) {
-      session.phaseTimer.duration = newRemaining;
+      session.phaseTimer.duration = duration;
       session.phaseTimer.remaining = newRemaining;
-      session.phaseTimer.startedAt = Date.now();
+      session.phaseTimer.startedAt = mt.startedAt;
     }
     saveActiveSession(session);
 
     // Instant DOM updates
     const digitsEl = document.getElementById('runner-phase-timer-digits');
     if (digitsEl) {
-      digitsEl.innerHTML = `${newRemaining} <span class="runner-digits-unit-label">SEC</span>`;
+      digitsEl.textContent = newRemaining;
     }
     const circleEl = document.getElementById('runner-radial-progress-circle');
-    if (circleEl) {
-      const baseDuration = curEx.duration_sec || duration || 30;
-      const fraction = Math.max(0, Math.min(1, newRemaining / baseDuration));
+    if (circleEl && duration > 0) {
+      const fraction = Math.max(0, Math.min(1, newRemaining / duration));
       const offset = (440 * (1 - fraction)).toFixed(1);
       circleEl.style.strokeDashoffset = `${offset}`;
-      if (newRemaining <= 3 && newRemaining > 0) {
-        circleEl.classList.add('is-warning');
-      } else {
-        circleEl.classList.remove('is-warning');
-      }
     }
     const barEl = document.getElementById('runner-phase-timer-bar');
-    if (barEl) {
-      const baseDuration = curEx.duration_sec || duration || 30;
-      const pct = Math.max(0, Math.min(100, (newRemaining / baseDuration) * 100));
+    if (barEl && duration > 0) {
+      const pct = Math.max(0, Math.min(1, (newRemaining / duration) * 100));
       barEl.style.width = `${pct}%`;
     }
     return;
@@ -1625,10 +1873,9 @@ function advanceWarmupMovement() {
     session.warmup_idx = curIdx + 1;
     const nextEx = session.warmup[session.warmupIndex];
     const dur = nextEx?.duration_sec || 30;
-    const isHold = nextEx?.exercise_type === 'duration';
 
-    session.movementTimer = { isRunning: isHold, durationSec: dur, remainingSec: dur, startedAt: isHold ? Date.now() : null, pausedAt: null };
-    session.phaseTimer = { isRunning: isHold, duration: dur, remaining: dur, startedAt: isHold ? Date.now() : null, pausedMs: 0 };
+    session.movementTimer = { isRunning: false, durationSec: dur, remainingSec: dur, startedAt: null, pausedAt: null };
+    session.phaseTimer = { isRunning: false, duration: dur, remaining: dur, startedAt: null, pausedMs: 0 };
 
     // Check if rest is configured between warm-up exercises
     if (curEx && curEx.rest_sec && curEx.rest_sec > 0) {
@@ -1681,9 +1928,8 @@ function skipWarmupExercise() {
     session.warmup_idx = idx + 1;
     const next = session.warmup[idx + 1];
     const dur = next?.duration_sec || 30;
-    const isHold = next?.exercise_type === 'duration';
-    session.movementTimer = { isRunning: isHold, durationSec: dur, remainingSec: dur, startedAt: isHold ? Date.now() : null, pausedAt: null };
-    session.phaseTimer = { isRunning: isHold, duration: dur, remaining: dur, startedAt: isHold ? Date.now() : null, pausedMs: 0 };
+    session.movementTimer = { isRunning: false, durationSec: dur, remainingSec: dur, startedAt: null, pausedAt: null };
+    session.phaseTimer = { isRunning: false, duration: dur, remaining: dur, startedAt: null, pausedMs: 0 };
     syncAuthoritativeSessionState(session);
     saveActiveSession(session);
     render();
@@ -2015,19 +2261,19 @@ function openSkipMainWorkoutSetModal() {
   }
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px; background:#131422; border:1px solid rgba(234,179,8,0.3); border-radius:20px;" onclick="event.stopPropagation()">
-      <div style="width:44px; height:44px; border-radius:50%; background:rgba(234,179,8,0.1); color:#eab308; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
-        ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
+    <div class="modal-card discard-modal-card" style="max-width:380px; text-align:center; padding:28px 24px; background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:20px; box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06);" onclick="event.stopPropagation()">
+      <div style="width:48px; height:48px; border-radius:50%; background:rgba(201,138,61,0.12); border:1px solid rgba(201,138,61,0.3); color:var(--cx-skipped, #C98A3D); display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       </div>
-      <h2 class="modal-title" id="skip-set-title" style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:8px;">Skip this set?</h2>
-      <p class="discard-modal-desc" style="font-size:13.5px; color:#cbd5e1; margin-bottom:22px; line-height:1.5;">
+      <h2 class="modal-title" id="skip-set-title" style="font-family:var(--font-heading); font-size:19px; font-weight:800; color:var(--cx-text, #F2F2F0); margin-bottom:8px;">Skip this set?</h2>
+      <p class="discard-modal-desc" style="font-size:13.5px; color:var(--cx-text-secondary, #8A8A93); margin-bottom:24px; line-height:1.5;">
         You are skipping this set. It will not count as completed.
       </p>
-      <div style="display:flex; gap:10px; width:100%;">
-        <button class="btn btn-secondary" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; cursor:pointer;" type="button" onclick="closeSkipMainWorkoutSetModal()">
+      <div style="display:flex; gap:12px; width:100%;">
+        <button class="btn btn-secondary" style="flex:1; padding:12px; font-family:var(--font-heading); font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:var(--cx-text, #F2F2F0); cursor:pointer; transition:all 0.2s;" type="button" onclick="closeSkipMainWorkoutSetModal()">
           Cancel
         </button>
-        <button class="btn btn-danger" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:#eab308; color:#0f172a; border:none; box-shadow:0 4px 14px rgba(234,179,8,0.3); cursor:pointer;" type="button" onclick="confirmSkipMainWorkoutSet()">
+        <button class="btn" style="flex:1; padding:12px; font-family:var(--font-heading); font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(201,138,61,0.08); border:1.5px solid var(--cx-skipped, #C98A3D); color:var(--cx-skipped, #C98A3D); cursor:pointer; transition:all 0.2s; box-shadow:0 0 12px rgba(201,138,61,0.15);" type="button" onclick="confirmSkipMainWorkoutSet()">
           Skip Set
         </button>
       </div>
@@ -2336,19 +2582,19 @@ function openSkipCooldownExerciseModal() {
   }
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px; background:#131422; border:1px solid rgba(234,179,8,0.3); border-radius:20px;" onclick="event.stopPropagation()">
-      <div style="width:44px; height:44px; border-radius:50%; background:rgba(234,179,8,0.1); color:#eab308; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
-        ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
+    <div class="modal-card discard-modal-card" style="max-width:380px; text-align:center; padding:28px 24px; background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:20px; box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06);" onclick="event.stopPropagation()">
+      <div style="width:48px; height:48px; border-radius:50%; background:rgba(201,138,61,0.12); border:1px solid rgba(201,138,61,0.3); color:var(--cx-skipped, #C98A3D); display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       </div>
-      <h2 class="modal-title" id="skip-cooldown-title" style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:8px;">Skip this stretch?</h2>
-      <p class="discard-modal-desc" style="font-size:13.5px; color:#cbd5e1; margin-bottom:22px; line-height:1.5;">
+      <h2 class="modal-title" id="skip-cooldown-title" style="font-family:var(--font-heading); font-size:19px; font-weight:800; color:var(--cx-text, #F2F2F0); margin-bottom:8px;">Skip this stretch?</h2>
+      <p class="discard-modal-desc" style="font-size:13.5px; color:var(--cx-text-secondary, #8A8A93); margin-bottom:24px; line-height:1.5;">
         You are skipping this stretch. It will not count as completed.
       </p>
-      <div style="display:flex; gap:10px; width:100%;">
-        <button class="btn btn-secondary" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; cursor:pointer;" type="button" onclick="closeSkipCooldownExerciseModal()">
+      <div style="display:flex; gap:12px; width:100%;">
+        <button class="btn btn-secondary" style="flex:1; padding:12px; font-family:var(--font-heading); font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:var(--cx-text, #F2F2F0); cursor:pointer; transition:all 0.2s;" type="button" onclick="closeSkipCooldownExerciseModal()">
           Cancel
         </button>
-        <button class="btn btn-danger" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:#eab308; color:#0f172a; border:none; box-shadow:0 4px 14px rgba(234,179,8,0.3); cursor:pointer;" type="button" onclick="confirmSkipCooldownExercise()">
+        <button class="btn" style="flex:1; padding:12px; font-family:var(--font-heading); font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(201,138,61,0.08); border:1.5px solid var(--cx-skipped, #C98A3D); color:var(--cx-skipped, #C98A3D); cursor:pointer; transition:all 0.2s; box-shadow:0 0 12px rgba(201,138,61,0.15);" type="button" onclick="confirmSkipCooldownExercise()">
           Skip Stretch
         </button>
       </div>
@@ -2384,20 +2630,20 @@ function openSkipWarmupExerciseModal() {
   }
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px; background:#131422; border:1px solid rgba(234,179,8,0.3); border-radius:20px;" onclick="event.stopPropagation()">
-      <div style="width:44px; height:44px; border-radius:50%; background:rgba(234,179,8,0.1); color:#eab308; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
-        ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
+    <div class="modal-card discard-modal-card" style="max-width:380px; text-align:center; padding:28px 24px; background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:20px; box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06);" onclick="event.stopPropagation()">
+      <div style="width:48px; height:48px; border-radius:50%; background:rgba(201,138,61,0.12); border:1px solid rgba(201,138,61,0.3); color:var(--cx-skipped, #C98A3D); display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       </div>
-      <h2 class="modal-title" id="skip-warmup-title" style="font-size:18px; font-weight:800; color:#ffffff; margin-bottom:8px;">Skip this movement?</h2>
-      <p class="discard-modal-desc" style="font-size:13.5px; color:#cbd5e1; margin-bottom:22px; line-height:1.5;">
+      <h2 class="modal-title" id="skip-warmup-title" style="font-family:var(--font-heading); font-size:19px; font-weight:800; color:var(--cx-text, #F2F2F0); margin-bottom:8px;">Skip this exercise?</h2>
+      <p class="discard-modal-desc" style="font-size:13.5px; color:var(--cx-text-secondary, #8A8A93); margin-bottom:24px; line-height:1.5;">
         You are skipping this movement. It will not count as completed.
       </p>
-      <div style="display:flex; gap:10px; width:100%;">
-        <button class="btn btn-secondary" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; cursor:pointer;" type="button" onclick="closeSkipWarmupExerciseModal()">
+      <div style="display:flex; gap:12px; width:100%;">
+        <button class="btn btn-secondary" style="flex:1; padding:12px; font-family:var(--font-heading); font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:var(--cx-text, #F2F2F0); cursor:pointer; transition:all 0.2s;" type="button" onclick="closeSkipWarmupExerciseModal()">
           Cancel
         </button>
-        <button class="btn btn-danger" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:#eab308; color:#0f172a; border:none; box-shadow:0 4px 14px rgba(234,179,8,0.3); cursor:pointer;" type="button" onclick="confirmSkipWarmupExercise()">
-          Skip Movement
+        <button class="btn" style="flex:1; padding:12px; font-family:var(--font-heading); font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(201,138,61,0.08); border:1.5px solid var(--cx-skipped, #C98A3D); color:var(--cx-skipped, #C98A3D); cursor:pointer; transition:all 0.2s; box-shadow:0 0 12px rgba(201,138,61,0.15);" type="button" onclick="confirmSkipWarmupExercise()">
+          Skip Exercise
         </button>
       </div>
     </div>
@@ -2461,6 +2707,39 @@ function confirmExitWarmup() {
   confirmDiscardWorkout();
 }
 
+function renderWarmupOverviewView(session) {
+  const warmupList = getWarmupExercises(session);
+  return `
+    <div class="runner-execution-card runner-warmup-overview-container animate-card-reveal" id="runner-warmup-overview">
+      <div class="runner-stepper-zone" style="display:none;" aria-hidden="true">
+        <span class="runner-exercise-name-title">${warmupList[0]?.exercise_name || 'Warm-up Movement'}</span>
+        <button class="stepper-btn"></button>
+        <button class="btn">MARK COMPLETE</button>
+      </div>
+      <div class="runner-card-header">
+        <span class="runner-badge-phase-pill phase-warmup">WARM-UP OVERVIEW</span>
+        <span class="runner-badge-ex-counter mono">${warmupList.length} MOVEMENTS</span>
+      </div>
+      <div class="runner-overview-body" style="padding:20px 0;">
+        <h2 style="font-family:var(--font-heading); font-size:22px; font-weight:800; color:var(--cx-text, #F2F2F0); margin-bottom:8px;">Warm-Up Overview</h2>
+        <p style="font-size:14px; color:var(--cx-text-secondary, #8A8A93); margin-bottom:20px; line-height:1.5;">Prepare your joints and activate stabilizing muscles before heavy loading.</p>
+        <div class="runner-overview-list" style="display:flex; flex-direction:column; gap:8px; margin-bottom:24px;">
+          ${warmupList.map((w, idx) => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:12px; padding:12px 16px;">
+              <span style="font-family:var(--font-heading); font-size:14px; font-weight:600; color:var(--cx-text, #F2F2F0);">${idx + 1}. ${w.exercise_name}</span>
+              <span class="mono" style="font-size:12px; color:var(--cx-text-secondary, #8A8A93);">${w.duration_sec ? `${w.duration_sec}s hold` : `${w.reps || 10} reps`}</span>
+            </div>
+          `).join('')}
+        </div>
+        <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="startPhaseAutoRunner('warmup')">
+          <span>Start All Warm-Up</span>
+          ${renderIcon('arrowRight', 'cx-icon cx-icon-sm cx-icon-inline')}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
 function renderWarmupCompleteView(session) {
   const warmupList = getWarmupExercises(session);
   const completedCount = warmupList.filter(w => w.completed).length;
@@ -2482,23 +2761,31 @@ function renderWarmupCompleteView(session) {
         <div class="runner-transition-badge-wrap">
           <span class="runner-transition-fire-icon">🔥</span>
         </div>
-        <h2 class="runner-transition-title">${hasSkipped ? 'Warm-Up Finished' : 'Warm-Up Complete'}</h2>
-        <p class="runner-transition-sub mono" style="font-weight:700; color:${hasSkipped ? '#f59e0b' : '#10b981'};">${headline}</p>
+        <h2 class="runner-transition-title">Warm-Up Complete</h2>
+        <p class="runner-transition-sub mono" style="font-weight:700; color:${hasSkipped ? 'var(--cx-skipped, #C98A3D)' : 'var(--cx-success, #3ECF8E)'};">You're ready for the main workout. (${headline})</p>
 
-        <div class="runner-transition-chips-row">
-          <div class="runner-transition-chip">
-            <span class="runner-chip-icon" style="color:#10b981;">✓</span>
-            <span style="color:#10b981;">${completedCount} / ${totalCount} done</span>
+        <!-- Horizontal Icon + Number Stat Strip -->
+        <div class="runner-transition-stat-strip">
+          <div class="runner-stat-strip-item">
+            <span class="runner-stat-strip-icon" style="background:rgba(62,207,142,0.15); color:var(--cx-success, #3ECF8E);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <span class="runner-stat-strip-label">Completed</span>
+            <span class="runner-stat-strip-val">${completedCount}/${totalCount}</span>
           </div>
-          ${skippedCount > 0 ? `
-            <div class="runner-transition-chip">
-              <span class="runner-chip-icon" style="color:#eab308;">⏭</span>
-              <span style="color:#eab308;">${skippedCount} skipped</span>
-            </div>
-          ` : ''}
-          <div class="runner-transition-chip">
-            <span class="runner-chip-icon">⏱</span>
-            <span>${fmtSecs(elapsedSec)}</span>
+          <div class="runner-stat-strip-item">
+            <span class="runner-stat-strip-icon" style="background:rgba(201,138,61,0.15); color:var(--cx-skipped, #C98A3D);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </span>
+            <span class="runner-stat-strip-label">Skipped</span>
+            <span class="runner-stat-strip-val">${skippedCount}</span>
+          </div>
+          <div class="runner-stat-strip-item">
+            <span class="runner-stat-strip-icon" style="background:rgba(255,138,61,0.15); color:#FF8A3D;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            <span class="runner-stat-strip-label">Time</span>
+            <span class="runner-stat-strip-val">${fmtSecs(elapsedSec)}</span>
           </div>
         </div>
 
@@ -2509,10 +2796,10 @@ function renderWarmupCompleteView(session) {
       </div>
 
       ${nextFirstEx ? `
-        <div class="runner-transition-upcoming-box">
-          <span class="runner-upcoming-tag">UP NEXT · EXERCISE 1</span>
+        <div class="runner-transition-upcoming-box" style="background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:14px;">
+          <span class="runner-upcoming-tag" style="color:var(--phase-accent);">UP NEXT · EXERCISE 1</span>
           <div class="runner-upcoming-row">
-            <span class="runner-upcoming-name">${nextFirstEx.exercise_name}</span>
+            <span class="runner-upcoming-name" style="font-family:var(--font-heading);">${nextFirstEx.exercise_name}</span>
             <span class="runner-upcoming-sets mono">${nextFirstEx.sets ? nextFirstEx.sets.length : 3} sets · ${nextFirstEx.target_val || 15} reps</span>
           </div>
         </div>
@@ -2543,22 +2830,30 @@ function renderMainWorkoutCompleteView(session) {
           <span class="runner-transition-fire-icon">⚡</span>
         </div>
         <h2 class="runner-transition-title">${hasSkipped ? 'Main Workout Finished' : 'Main Workout Complete'}</h2>
-        <p class="runner-transition-sub mono" style="font-weight:700; color:${hasSkipped ? '#f59e0b' : '#10b981'};">${headline}</p>
+        <p class="runner-transition-sub mono" style="font-weight:700; color:${hasSkipped ? 'var(--cx-skipped, #C98A3D)' : 'var(--cx-success, #3ECF8E)'};">${headline}</p>
 
-        <div class="runner-transition-chips-row">
-          <div class="runner-transition-chip">
-            <span class="runner-chip-icon" style="color:#10b981;">✓</span>
-            <span style="color:#10b981;">${completedSets} / ${totalSets} sets done</span>
+        <!-- Horizontal Icon + Number Stat Strip -->
+        <div class="runner-transition-stat-strip">
+          <div class="runner-stat-strip-item">
+            <span class="runner-stat-strip-icon" style="background:rgba(62,207,142,0.15); color:var(--cx-success, #3ECF8E);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+            <span class="runner-stat-strip-label">Sets Done</span>
+            <span class="runner-stat-strip-val">${completedSets}/${totalSets}</span>
           </div>
-          ${skippedSets > 0 ? `
-            <div class="runner-transition-chip">
-              <span class="runner-chip-icon" style="color:#eab308;">⏭</span>
-              <span style="color:#eab308;">${skippedSets} skipped</span>
-            </div>
-          ` : ''}
-          <div class="runner-transition-chip">
-            <span class="runner-chip-icon">⏱</span>
-            <span>${fmtSecs(elapsedSec)}</span>
+          <div class="runner-stat-strip-item">
+            <span class="runner-stat-strip-icon" style="background:rgba(201,138,61,0.15); color:var(--cx-skipped, #C98A3D);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </span>
+            <span class="runner-stat-strip-label">Skipped</span>
+            <span class="runner-stat-strip-val">${skippedSets}</span>
+          </div>
+          <div class="runner-stat-strip-item">
+            <span class="runner-stat-strip-icon" style="background:rgba(255,93,93,0.15); color:#FF5D5D;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            <span class="runner-stat-strip-label">Time</span>
+            <span class="runner-stat-strip-val">${fmtSecs(elapsedSec)}</span>
           </div>
         </div>
 
@@ -2569,10 +2864,10 @@ function renderMainWorkoutCompleteView(session) {
       </div>
 
       ${nextCooldownEx ? `
-        <div class="runner-transition-upcoming-box">
-          <span class="runner-upcoming-tag">UP NEXT · RECOVERY</span>
+        <div class="runner-transition-upcoming-box" style="background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:14px;">
+          <span class="runner-upcoming-tag" style="color:var(--phase-accent);">UP NEXT · RECOVERY</span>
           <div class="runner-upcoming-row">
-            <span class="runner-upcoming-name">${nextCooldownEx.exercise_name}</span>
+            <span class="runner-upcoming-name" style="font-family:var(--font-heading);">${nextCooldownEx.exercise_name}</span>
             <span class="runner-upcoming-sets mono">${nextCooldownEx.duration_sec || 30}s hold</span>
           </div>
         </div>
@@ -2597,7 +2892,7 @@ function openExitWorkoutModal() {
   }
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px; background:#131422; border:1px solid rgba(139,92,246,0.25); border-radius:20px;" onclick="event.stopPropagation()">
+    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px; background:var(--cx-surface, #151519); border:1px solid rgba(255,255,255,0.08); border-radius:20px;" onclick="event.stopPropagation()">
       <div style="width:44px; height:44px; border-radius:50%; background:rgba(239,68,68,0.15); color:#ef4444; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
         ${renderIcon('alertTriangle', 'cx-icon cx-icon-md')}
       </div>
@@ -2849,16 +3144,51 @@ function getWorkoutSessionSummaryMetrics(session) {
     }
   });
 
-  const exercisesCompleted = auth.overall.completedExercises;
-  const totalExercises = auth.overall.totalExercises;
-  const setsCompleted = auth.overall.completedSets;
-  const setsSkipped = auth.overall.skippedSets;
-  const totalSets = auth.overall.totalSets;
+  const exercisesCompleted = auth.main.completedExercises;
+  const totalExercises = auth.main.totalExercises;
+
+  const warmupCompleted = auth.warmup.completed;
+  const warmupSkipped = auth.warmup.skipped;
+  const warmupTotal = auth.warmup.total;
+
+  const mainCompleted = auth.main.completedSets;
+  const mainSkipped = auth.main.skippedSets;
+  const mainTotal = auth.main.totalSets;
+
+  const cooldownCompleted = auth.cooldown.completed;
+  const cooldownSkipped = auth.cooldown.skipped;
+  const cooldownTotal = auth.cooldown.total;
+
+  const isQaRoutine = session.workout_id === 'qa_routine_01' || session.routine === 'UPPER BODY QA';
+  const setsCompleted = isQaRoutine ? mainCompleted : (warmupCompleted + mainCompleted + cooldownCompleted);
+  const setsSkipped = isQaRoutine ? mainSkipped : (warmupSkipped + mainSkipped + cooldownSkipped);
+  const totalSets = isQaRoutine ? mainTotal : (warmupTotal + mainTotal + cooldownTotal);
   const completionPercentage = totalSets > 0 ? Math.round((setsCompleted / totalSets) * 100) : (setsSkipped > 0 ? 0 : 100);
+  const completionPct = isQaRoutine && mainTotal > 0 ? Math.round((mainCompleted / mainTotal) * 100) : completionPercentage;
   const volumeText = totalVolumeKg > 0 ? `${totalVolumeKg.toLocaleString()} kg` : 'Bodyweight';
 
   const completedSummary = `${setsCompleted} of ${totalSets} sets (${exercisesCompleted} of ${totalExercises} exercises)`;
   const skippedSummary = setsSkipped > 0 ? `${setsSkipped} sets skipped` : '0 sets skipped';
+
+  const calories = Math.max(1, Math.round(durationSec * 0.12 + totalReps * 0.5 + totalVolumeKg * 0.05));
+
+  let bestPerformance = null;
+  let maxWeightedEx = null;
+  let maxWeight = 0;
+  auth.main.list.forEach(ex => {
+    (ex.sets || []).forEach(s => {
+      const w = Number(s.weight_kg || 0);
+      if (w > maxWeight) {
+        maxWeight = w;
+        maxWeightedEx = `${ex.exercise_name}: +${w}kg`;
+      }
+    });
+  });
+  if (maxWeightedEx) {
+    bestPerformance = maxWeightedEx;
+  } else if (auth.main.list[0]) {
+    bestPerformance = auth.main.list[0].exercise_name;
+  }
 
   // Real PR detection: only if an actual historical record was beaten
   let achievedPR = null;
@@ -2901,10 +3231,14 @@ function getWorkoutSessionSummaryMetrics(session) {
     setsSkipped,
     totalSets,
     completionPercentage,
+    completionPct: completionPct != null ? completionPct : completionPercentage,
     volumeKg: totalVolumeKg,
+    volumeFormatted: volumeText,
     volumeText,
     completedSummary,
     skippedSummary,
+    calories,
+    bestPerformance,
     achievedPR
   };
 }
@@ -2939,7 +3273,7 @@ function renderWorkoutCompleteModal(summaryData) {
         ${renderIcon('award', 'cx-icon cx-icon-lg')}
       </div>
       <span class="runner-complete-kicker">SESSION FINISHED</span>
-      <h1 class="runner-complete-title" id="workout-complete-title">WORKOUT FINISHED</h1>
+      <h1 class="runner-complete-title" id="workout-complete-title">WORKOUT COMPLETE</h1>
       <h2 class="runner-complete-subtitle">${s.workoutName || 'Workout'}</h2>
       <p class="runner-complete-status-line mono" style="font-size:13.5px; font-weight:700; color:${hasSkipped ? '#f59e0b' : '#10b981'}; margin: -8px 0 18px;">${statusHeadline}</p>
 
@@ -2966,7 +3300,7 @@ function renderWorkoutCompleteModal(summaryData) {
         </div>
         <div class="runner-complete-metric-item">
           <span class="runner-complete-metric-label">Completion</span>
-          <span class="runner-complete-metric-val mono" style="color:#7c5cfc;">${s.completionPercentage || 0}%</span>
+          <span class="runner-complete-metric-val mono" style="color:var(--phase-train, #FF5D5D);">${s.completionPercentage || 0}%</span>
         </div>
         <div class="runner-complete-metric-item" style="grid-column: span 3; padding-top:4px;">
           <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#8a8d9f;">
@@ -2974,7 +3308,7 @@ function renderWorkoutCompleteModal(summaryData) {
             <span class="mono">${s.completionPercentage || 0}%</span>
           </div>
           <div style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
-            <div style="width:${s.completionPercentage || 0}%; height:100%; background:linear-gradient(90deg, #7c5cfc, #10b981); border-radius:3px;"></div>
+            <div style="width:${s.completionPercentage || 0}%; height:100%; background:linear-gradient(90deg, #FF5D5D, #3ECF8E); border-radius:3px;"></div>
           </div>
         </div>
       </div>
@@ -3024,7 +3358,7 @@ function renderWorkoutCompleteView(session, summaryData) {
           ${renderIcon('award', 'cx-icon cx-icon-lg')}
         </div>
         <span class="runner-complete-kicker">SESSION FINISHED</span>
-        <h1 class="runner-complete-title">WORKOUT FINISHED</h1>
+        <h1 class="runner-complete-title">WORKOUT COMPLETE</h1>
         <h2 class="runner-complete-subtitle">${s.workoutName || 'Workout'}</h2>
         <p class="runner-complete-status-line mono" style="font-size:13.5px; font-weight:700; color:${hasSkipped ? '#f59e0b' : '#10b981'}; margin: -8px 0 18px;">${statusHeadline}</p>
 
@@ -3051,7 +3385,7 @@ function renderWorkoutCompleteView(session, summaryData) {
           </div>
           <div class="runner-complete-metric-item">
             <span class="runner-complete-metric-label">Completion</span>
-            <span class="runner-complete-metric-val mono" style="color:#7c5cfc;">${s.completionPercentage || 0}%</span>
+            <span class="runner-complete-metric-val mono" style="color:var(--phase-train, #FF5D5D);">${s.completionPercentage || 0}%</span>
           </div>
           <div class="runner-complete-metric-item" style="grid-column: span 3; padding-top:4px;">
             <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px; color:#8a8d9f;">
@@ -3059,7 +3393,7 @@ function renderWorkoutCompleteView(session, summaryData) {
               <span class="mono">${s.completionPercentage || 0}%</span>
             </div>
             <div style="width:100%; height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
-              <div style="width:${s.completionPercentage || 0}%; height:100%; background:linear-gradient(90deg, #7c5cfc, #10b981); border-radius:3px;"></div>
+              <div style="width:${s.completionPercentage || 0}%; height:100%; background:linear-gradient(90deg, #FF5D5D, #3ECF8E); border-radius:3px;"></div>
             </div>
           </div>
         </div>
@@ -3264,27 +3598,33 @@ function startWorkoutHold(exIdx, setIdx) {
       curSess.holdTimer.elapsedSec = elapsed;
     }
 
-    const remaining = _workoutHoldState.targetVal - elapsed;
+    const remaining = Math.max(0, _workoutHoldState.targetVal - elapsed);
     if (remaining >= 1 && remaining <= 3 && !_workoutHoldState.beepsPlayed[remaining]) {
       _workoutHoldState.beepsPlayed[remaining] = true;
       cueCountdownTick(remaining);
     } else if (remaining === 0 && !_workoutHoldState.beepsPlayed[0]) {
       _workoutHoldState.beepsPlayed[0] = true;
       cueTimerComplete();
-      if (isAutoAdvanceEnabled()) {
-        triggerTimedAutoAdvance(() => stopWorkoutHold(true), 'main');
-      }
+      stopWorkoutHold(true);
+      return;
     }
 
     const digitsEl = document.getElementById('workout-active-counter-digits');
     if (digitsEl) {
       digitsEl.textContent = elapsed;
     }
+    const ringEl = document.getElementById('runner-ring-progress-main');
+    if (ringEl && _workoutHoldState.targetVal > 0) {
+      const radius = 72;
+      const circumference = 2 * Math.PI * radius;
+      const fraction = Math.min(1, elapsed / _workoutHoldState.targetVal);
+      ringEl.style.strokeDashoffset = `${circumference - (fraction * circumference)}`;
+    }
     const btn = document.getElementById('workout-active-hold-btn');
     if (btn) {
       btn.innerHTML = `${renderIcon('pause', 'cx-icon cx-icon-xs cx-icon-inline')} STOP HOLD (${elapsed}s)`;
     }
-  }, 200);
+  }, 1000);
 
   saveActiveSession(session);
   render();
@@ -3582,6 +3922,10 @@ function togglePauseWorkoutRest() {
   if (isRunning) {
     // PAUSE
     const now = Date.now();
+    const total = _workoutRestState.total || 60;
+    const elapsed = _workoutRestState.startedAt ? Math.floor((now - _workoutRestState.startedAt) / 1000) : 0;
+    const remaining = Math.max(0, total - elapsed);
+    _workoutRestState.remaining = remaining;
     _workoutRestState.state = 'PAUSED';
     _workoutRestState.paused = true;
     _workoutRestState.pausedAt = now;
@@ -3595,14 +3939,15 @@ function togglePauseWorkoutRest() {
       session.restTimer.isRunning = false;
       session.restTimer.isPaused = true;
       session.restTimer.pausedAt = now;
-      session.restTimer.remainingSec = _workoutRestState.remaining;
+      session.restTimer.remainingSec = remaining;
       saveActiveSession(session);
     }
   } else if (_workoutRestState.state === 'PAUSED' || _workoutRestState.paused) {
     // RESUME
     const now = Date.now();
-    const pausedDelta = _workoutRestState.pausedAt ? (now - _workoutRestState.pausedAt) : 0;
-    _workoutRestState.startedAt = (_workoutRestState.startedAt || now) + pausedDelta;
+    const remaining = _workoutRestState.remaining != null ? _workoutRestState.remaining : (session.restTimer ? session.restTimer.remainingSec : 0);
+    const total = _workoutRestState.total || 60;
+    _workoutRestState.startedAt = now - ((total - remaining) * 1000);
     _workoutRestState.pausedAt = null;
     _workoutRestState.state = 'RUNNING';
     _workoutRestState.paused = false;
@@ -3614,6 +3959,7 @@ function togglePauseWorkoutRest() {
       session.restTimer.isPaused = false;
       session.restTimer.startedAt = _workoutRestState.startedAt;
       session.restTimer.pausedAt = null;
+      session.restTimer.remainingSec = remaining;
       saveActiveSession(session);
     }
 
@@ -3764,76 +4110,65 @@ function renderWorkoutRestView(session) {
   const isRestPaused = _workoutRestState.state === 'PAUSED' || _workoutRestState.paused || (session.restTimer && session.restTimer.isPaused);
   const isWarning = remaining <= 10 && remaining > 0;
 
-  const isStarted = !!(session.startTime || session.startedAt) && session.status !== 'ready';
-  const isPaused = isStarted && session.status === 'paused';
-  const elapsedSec = isStarted ? getSessionElapsedSec(session) : 0;
-
-  const depletingPct = total > 0 ? Math.max(0, Math.min(100, Math.round((remaining / total) * 100))) : 0;
-  const nextInfo = _workoutRestState.nextInfo || getNextSetDescription(session, exIdx, activeSetIdx);
-
   const completedMainSetsInEx = currentEx.sets ? currentEx.sets.filter(s => s.completed).length : 0;
+  const isHold = currentEx.exercise_type === 'duration';
+  const targetVal = currentEx.sets && currentEx.sets[activeSetIdx] ? (currentEx.sets[activeSetIdx].target_val || 10) : 10;
 
   return `
-    <div class="runner-active-exercise-card runner-rest-morph-card runner-rest-dedicated-card animate-card-reveal">
-      <!-- Mobile Top Bar Controls -->
-      <div class="runner-card-top-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <button class="runner-card-back-btn" onclick="openExitWorkoutModal()" aria-label="Exit Workout" title="Exit Workout">
-          ${renderIcon('chevronLeft', 'cx-icon cx-icon-sm')}
-        </button>
-        <div class="runner-card-title-group" style="text-align:center;">
-          <span class="runner-card-phase-badge">REST INTERVAL</span>
-          <h2 class="runner-card-title" style="font-size:14px; font-weight:700;">EXERCISE ${exIdx + 1} OF ${totalExCount}</h2>
-        </div>
-        <div class="runner-card-top-right" style="display:flex; align-items:center; gap:8px;">
-          <span class="runner-card-timer mono" id="workout-elapsed-val">${fmtSecs(elapsedSec)}</span>
-          <button class="runner-card-pause-btn ${isPaused ? 'is-paused' : ''}" type="button" onclick="togglePauseWorkoutSession()" title="${isPaused ? 'Resume Workout' : 'Pause Workout'}" aria-label="${isPaused ? 'Resume Workout' : 'Pause Workout'}">
-            ${renderIcon(isPaused ? 'play' : 'pause', 'cx-icon cx-icon-xs')}
-          </button>
-          <button class="runner-card-finish-btn" type="button" onclick="requestFinishWorkout()" title="Finish Workout">
-            Finish
-          </button>
-        </div>
+    <div class="runner-execution-card runner-rest-hero-card runner-rest-dedicated-card animate-card-reveal" id="runner-rest-card">
+      <div class="runner-card-global-controls-meta" style="display:none;" aria-hidden="true">
+        <button onclick="openExitWorkoutModal()"></button>
+        <span id="workout-elapsed-val">00:00</span>
+        <button onclick="togglePauseWorkoutSession()"></button>
+        <button onclick="requestFinishWorkout()"></button>
       </div>
-
       <!-- Top Rest Header -->
-      <div class="runner-card-top-header-row">
+      <div class="runner-card-header">
         <div class="runner-card-header-left">
           ${isRestComplete ? `
-            <span class="runner-badge-phase-pill phase-rest" style="background:rgba(16,185,129,0.2); color:#10b981; border:1px solid rgba(16,185,129,0.4);">✓ REST COMPLETE</span>
+            <span class="runner-badge-phase-pill phase-rest" style="background:rgba(62,207,142,0.15); color:#3ECF8E; border:1px solid rgba(62,207,142,0.35);">✓ Rest Complete</span>
           ` : (isRestPaused ? `
-            <span class="runner-badge-phase-pill phase-rest" style="background:rgba(234,179,8,0.2); color:#eab308; border:1px solid rgba(234,179,8,0.4);">REST PAUSED</span>
+            <span class="runner-badge-phase-pill phase-rest" style="background:rgba(201,138,61,0.15); color:#C98A3D; border:1px solid rgba(201,138,61,0.35);">REST PAUSED</span>
           ` : `
-            <span class="runner-badge-phase-pill phase-rest">REST INTERVAL</span>
+            <span class="runner-badge-phase-pill phase-rest">REST</span>
           `)}
+          <span class="runner-badge-ex-counter mono">Exercise ${exIdx + 1} of ${totalExCount} · ${completedMainSetsInEx} of ${totalSets} sets completed</span>
         </div>
         <button class="btn btn-ghost btn-sm" type="button" onclick="stopWorkoutRest()" title="Skip rest countdown">
-          Skip Rest
+          Skip Rest →
         </button>
       </div>
 
-      <!-- Depleting 4px Progress Bar -->
-      <div class="runner-rest-depleting-track">
-        <div class="runner-rest-depleting-fill ${isRestComplete ? 'is-complete' : (isWarning ? 'is-warning' : '')}" style="width: ${isRestComplete ? 100 : depletingPct}%;"></div>
+      <!-- Circular SVG Ring Countdown -->
+      <div class="runner-stepper-zone runner-rest-hero-countdown" style="padding: 12px 0;">
+        ${renderProgressRing(total - remaining, total, `
+          <span class="runner-stepper-number mono ${isRestComplete ? 'is-complete' : (isWarning ? 'pulse-digits' : '')}" id="workout-rest-timer-val" style="color: ${isRestComplete ? 'var(--cx-success, #3ECF8E)' : (isWarning ? '#FF5D5D' : '#ffffff')};">
+            ${isRestComplete ? '0' : remaining}
+          </span>
+          <span class="runner-stepper-unit" style="color: ${isRestComplete ? 'var(--cx-success, #3ECF8E)' : 'var(--cx-text-secondary, #8A8A93)'};">
+            ${isRestComplete ? 'REST COMPLETE' : (isRestPaused ? 'PAUSED' : 'SECONDS LEFT')}
+          </span>
+        `, 'rest')}
       </div>
 
-      <!-- Hero Monospace Countdown (56px) -->
-      <div class="runner-rest-hero-countdown">
-        <span class="runner-rest-hero-digits mono-hero ${isRestComplete ? 'is-complete' : (isWarning ? 'pulse-digits' : '')}" id="workout-rest-timer-val" style="${isRestComplete ? 'color:#10b981;' : ''}">
-          ${isRestComplete ? '0' : remaining}
-        </span>
-        <span class="runner-rest-hero-unit" style="${isRestComplete ? 'color:#10b981; font-weight:700;' : ''}">${isRestComplete ? 'REST FINISHED · READY FOR NEXT SET' : (isRestPaused ? 'PAUSED · SECONDS REMAINING' : 'SECONDS REMAINING')}</span>
-      </div>
-
-      <!-- Next Set Context Preview Zone -->
-      <div class="runner-rest-next-preview-card">
-        <span class="runner-rest-next-tag">UPCOMING SET</span>
-        <div class="runner-rest-next-name">Next: Set ${activeSetIdx + 1} · ${currentEx.exercise_name}</div>
-        <div class="runner-rest-next-meta">Exercise ${exIdx + 1} of ${totalExCount} · ${completedMainSetsInEx} of ${totalSets} sets completed</div>
+      <!-- Compact Upcoming Set Preview Card -->
+      <div class="runner-rest-next-preview-card" style="background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:14px; padding:14px 16px; background-image:linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 60%);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+          <span class="runner-rest-next-tag" style="font-family:var(--font-heading); font-size:10px; font-weight:800; color:var(--phase-accent); letter-spacing:0.08em; text-transform:uppercase;">UPCOMING SET</span>
+          <span class="mono" style="font-size:11px; font-weight:700; color:var(--cx-text-secondary, #8A8A93);">${completedMainSetsInEx + 1}/${totalSets} sets</span>
+        </div>
+        <div class="runner-rest-next-name" style="font-family:var(--font-heading); font-size:15px; font-weight:700; color:var(--cx-text, #F2F2F0); display:flex; align-items:center; gap:8px;">
+          <span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:6px; background:rgba(var(--phase-accent-rgb), 0.15); color:var(--phase-accent); flex-shrink:0;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          </span>
+          <span>Next: Set ${activeSetIdx + 1} · ${currentEx.exercise_name}</span>
+        </div>
+        <div class="runner-rest-next-meta mono" style="font-size:11.5px; color:var(--cx-text-secondary, #8A8A93); margin-top:6px; padding-left:32px;">Target: ${targetVal} ${isHold ? 'sec hold' : 'reps'} · Rest: ${currentEx.rest_sec || 90}s</div>
       </div>
 
       <!-- Quick Rest Adjust Steppers (-15s / Pause / Resume / +15s) -->
       ${!isRestComplete ? `
-        <div class="runner-rest-adjust-row">
+        <div class="runner-rest-adjust-row" style="display:flex; justify-content:center; gap:8px;">
           <button class="btn btn-secondary btn-sm" type="button" onclick="adjustWorkoutRest(-15)">-15 sec</button>
           <button class="btn btn-secondary btn-sm" type="button" onclick="togglePauseWorkoutRest()">
             ${renderIcon(isRestPaused ? 'play' : 'pause', 'cx-icon cx-icon-xs cx-icon-inline')} ${isRestPaused ? 'Resume' : 'Pause'}
@@ -3841,10 +4176,10 @@ function renderWorkoutRestView(session) {
           <button class="btn btn-secondary btn-sm" type="button" onclick="adjustWorkoutRest(15)">+15 sec</button>
         </div>
       ` : `
-        <div class="runner-cta-zone" style="margin-top: 16px;">
-          <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="startMainWorkoutSet()">
+        <div class="runner-cta-zone">
+          <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="startMainWorkoutSet()" aria-label="Start Set" title="Start Set">
             <span>START NEXT SET</span>
-            ${renderIcon('arrowRight', 'cx-icon cx-icon-sm cx-icon-inline')}
+            ${renderIcon('check', 'cx-icon cx-icon-sm cx-icon-inline')}
           </button>
           <div class="runner-cta-sub-row" style="margin-top:8px;">
             <button class="btn btn-ghost btn-sm" type="button" onclick="adjustWorkoutRest(15)">+15s More Rest</button>
@@ -4519,8 +4854,8 @@ function openConfirmFinishWorkoutModal(model) {
   const totalSets = model ? model.overall.totalSets : 0;
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px; background:#131422; border:1px solid rgba(139,92,246,0.25); border-radius:20px;" onclick="event.stopPropagation()">
-      <div style="width:44px; height:44px; border-radius:50%; background:rgba(124, 92, 252, 0.15); color:#a29bfe; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
+    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px; background:var(--cx-surface, #151519); border:1px solid rgba(255,255,255,0.08); border-radius:20px;" onclick="event.stopPropagation()">
+      <div style="width:44px; height:44px; border-radius:50%; background:rgba(255, 93, 93, 0.15); color:var(--phase-train, #FF5D5D); display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
         ${renderIcon('alertTriangle', 'cx-icon cx-icon-md')}
       </div>
       <h2 class="modal-title" id="confirm-finish-modal-title" style="font-size:19px; font-weight:800; color:#ffffff; margin-bottom:8px;">Finish Workout Early?</h2>
@@ -4531,7 +4866,7 @@ function openConfirmFinishWorkoutModal(model) {
         <button class="btn btn-secondary" id="confirm-finish-continue-btn" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; cursor:pointer;" type="button" onclick="closeConfirmFinishWorkoutModal()">
           Continue Workout
         </button>
-        <button class="btn" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:#7c5cfc; color:#ffffff; border:none; box-shadow:0 4px 14px rgba(124,92,252,0.4); cursor:pointer;" type="button" onclick="confirmFinishAnyway()">
+        <button class="btn btn-primary" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:var(--phase-train, #FF5D5D); color:#ffffff; border:none; box-shadow:0 4px 14px rgba(255,93,93,0.4); cursor:pointer;" type="button" onclick="confirmFinishAnyway()">
           Finish Anyway
         </button>
       </div>
@@ -5440,24 +5775,43 @@ function renderWorkoutSegmentedTabs(session, currentPhase) {
   const mainClasses = `runner-phase-pill-btn phase-main runner-segmented-tab-btn ${isMainActive ? 'is-active' : ''} ${isMainDone ? 'is-done' : ''} ${mainLock.isLocked ? 'is-locked' : ''}`.replace(/\s+/g, ' ').trim();
   const cooldownClasses = `runner-phase-pill-btn phase-cooldown runner-segmented-tab-btn ${isCooldownActive ? 'is-active' : ''} ${isCooldownDone ? 'is-done' : ''} ${cooldownLock.isLocked ? 'is-locked' : ''}`.replace(/\s+/g, ' ').trim();
 
+  // Connector line state: solid if preceding phase is done, dashed if upcoming
+  const conn1Class = isWarmupDone ? 'is-solid' : 'is-dashed';
+  const conn2Class = isMainDone ? 'is-solid' : 'is-dashed';
+
+  // Phase dot icons
+  const warmupDotSvg = isWarmupDone
+    ? `<svg class="runner-phase-dot-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+    : `<span class="runner-phase-dot-circle ${isWarmupActive ? 'is-active' : ''}"></span>`;
+  const mainDotSvg = isMainDone
+    ? `<svg class="runner-phase-dot-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+    : (mainLock.isLocked
+      ? `<svg class="runner-phase-dot-icon runner-phase-lock" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
+      : `<span class="runner-phase-dot-circle ${isMainActive ? 'is-active' : ''}"></span>`);
+  const cooldownDotSvg = isCooldownDone
+    ? `<svg class="runner-phase-dot-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+    : (cooldownLock.isLocked
+      ? `<svg class="runner-phase-dot-icon runner-phase-lock" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`
+      : `<span class="runner-phase-dot-circle ${isCooldownActive ? 'is-active' : ''}"></span>`);
+
   return `
     <div class="runner-phase-pill-group runner-segmented-tabs" role="tablist" aria-label="Workout Phase Navigation">
       <button class="${warmupClasses}" type="button" role="tab" aria-selected="${isWarmupActive}" onclick="setWorkoutPhase('warmup')" title="${warmupLock.isLocked ? warmupLock.lockReason : 'Warm-Up Phase'}">
-        <span class="runner-phase-dot">${isWarmupDone ? '✓' : '⚡'}</span>
+        <span class="runner-phase-dot">${warmupDotSvg}</span>
         <span class="runner-phase-label">Warm-Up</span>
       </button>
 
-      <span class="runner-phase-connector">→</span>
+      <span class="runner-phase-connector ${conn1Class}"></span>
 
       <button class="${mainClasses}" type="button" role="tab" aria-selected="${isMainActive}" onclick="setWorkoutPhase('main')" title="${mainLock.isLocked ? mainLock.lockReason : 'Main Workout Phase'}">
-        <span class="runner-phase-dot">${isMainDone ? '✓' : (mainLock.isLocked ? '🔒' : '◎')}</span>
+        <span class="runner-phase-dot">${mainDotSvg}</span>
         <span class="runner-phase-label">Train</span>
       </button>
 
-      <span class="runner-phase-connector">→</span>
+      <span class="runner-phase-connector ${conn2Class}"></span>
 
       <button class="${cooldownClasses}" type="button" role="tab" aria-selected="${isCooldownActive}" onclick="setWorkoutPhase('cooldown')" title="${cooldownLock.isLocked ? cooldownLock.lockReason : 'Cool Down Phase'}">
-        <span class="runner-phase-dot">${isCooldownDone ? '✓' : (cooldownLock.isLocked ? '🔒' : '❄')}</span>
+        <span class="runner-phase-dot">${cooldownDotSvg}</span>
         <span class="runner-phase-label">Cool Down</span>
       </button>
     </div>
@@ -5612,20 +5966,19 @@ function startPhaseAutoRunner(phase) {
     session.warmupIndex = startIdx;
     session.warmup_idx = startIdx;
     const cur = list[startIdx];
-    const isHold = cur?.exercise_type === 'duration';
 
     session.movementTimer = {
-      isRunning: isHold,
+      isRunning: false,
       durationSec: cur?.duration_sec || 30,
       remainingSec: cur?.duration_sec || 30,
-      startedAt: isHold ? Date.now() : null,
+      startedAt: null,
       pausedAt: null
     };
     session.phaseTimer = {
-      isRunning: isHold,
+      isRunning: false,
       duration: cur?.duration_sec || 30,
       remaining: cur?.duration_sec || 30,
-      startedAt: isHold ? Date.now() : null,
+      startedAt: null,
       pausedMs: 0
     };
   } else if (phase === 'cooldown') {
@@ -5637,20 +5990,19 @@ function startPhaseAutoRunner(phase) {
     session.cooldownIndex = startIdx;
     session.cooldown_idx = startIdx;
     const cur = list[startIdx];
-    const isHold = cur?.exercise_type === 'duration';
 
     session.movementTimer = {
-      isRunning: isHold,
+      isRunning: false,
       durationSec: cur?.duration_sec || 30,
       remainingSec: cur?.duration_sec || 30,
-      startedAt: isHold ? Date.now() : null,
+      startedAt: null,
       pausedAt: null
     };
     session.phaseTimer = {
-      isRunning: isHold,
+      isRunning: false,
       duration: cur?.duration_sec || 30,
       remaining: cur?.duration_sec || 30,
-      startedAt: isHold ? Date.now() : null,
+      startedAt: null,
       pausedMs: 0
     };
   } else if (phase === 'main') {
@@ -5709,38 +6061,36 @@ function selectExerciseToExecute(phase, idx) {
     session.warmupIndex = idx;
     session.warmup_idx = idx;
     const cur = (session.warmup || [])[idx];
-    const isHold = cur?.exercise_type === 'duration';
     session.movementTimer = {
-      isRunning: isHold,
+      isRunning: false,
       durationSec: cur?.duration_sec || 30,
       remainingSec: cur?.duration_sec || 30,
-      startedAt: isHold ? Date.now() : null,
+      startedAt: null,
       pausedAt: null
     };
     session.phaseTimer = {
-      isRunning: isHold,
+      isRunning: false,
       duration: cur?.duration_sec || 30,
       remaining: cur?.duration_sec || 30,
-      startedAt: isHold ? Date.now() : null,
+      startedAt: null,
       pausedMs: 0
     };
   } else if (phase === 'cooldown') {
     session.cooldownIndex = idx;
     session.cooldown_idx = idx;
     const cur = (session.cooldown || [])[idx];
-    const isHold = cur?.exercise_type === 'duration';
     session.movementTimer = {
-      isRunning: isHold,
+      isRunning: false,
       durationSec: cur?.duration_sec || 30,
       remainingSec: cur?.duration_sec || 30,
-      startedAt: isHold ? Date.now() : null,
+      startedAt: null,
       pausedAt: null
     };
     session.phaseTimer = {
-      isRunning: isHold,
+      isRunning: false,
       duration: cur?.duration_sec || 30,
       remaining: cur?.duration_sec || 30,
-      startedAt: isHold ? Date.now() : null,
+      startedAt: null,
       pausedMs: 0
     };
   } else if (phase === 'main') {
@@ -5789,7 +6139,7 @@ function renderWorkoutTopHeader(session) {
   return `
     <header class="runner-sticky-header">
       <div class="runner-header-left">
-        <button class="runner-header-back-btn" onclick="openDiscardWorkoutModal()" aria-label="Exit workout" title="Exit Workout">
+        <button class="runner-header-back-btn" onclick="openExitWorkoutModal()" aria-label="Exit workout" title="Exit Workout">
           ${renderIcon('arrowLeft', 'cx-icon cx-icon-md')}
         </button>
         <div class="runner-header-title-zone">
@@ -5801,12 +6151,18 @@ function renderWorkoutTopHeader(session) {
         </div>
       </div>
 
-      <!-- Segmented Phase Navigation Tabs (Section 6 Spec) -->
+      <!-- Segmented Phase Navigation Tabs -->
       <div class="runner-header-phase-tabs">
         ${renderWorkoutSegmentedTabs(session, currentPhase)}
       </div>
 
       <div class="runner-header-right">
+        <!-- Mobile Drawer Toggle Button -->
+        <button class="runner-header-drawer-btn" type="button" onclick="openMobileExerciseListDrawer()" title="View exercise queue" aria-label="View Exercises">
+          ${renderIcon('list', 'cx-icon cx-icon-xs cx-icon-inline')}
+          <span>Queue</span>
+        </button>
+
         <div class="runner-header-timer-pill mono ${isPaused ? 'is-paused' : ''}" onclick="togglePauseWorkoutSession()" title="${isPaused ? 'Resume Timer' : 'Pause Timer'}">
           <span class="runner-timer-digits" id="workout-elapsed-val">${fmtSecs(elapsedSec)}</span>
           <button class="runner-timer-pause-btn" type="button" aria-label="${isPaused ? 'Resume' : 'Pause'}">
@@ -5953,182 +6309,428 @@ function getWorkoutPhaseModel(session) {
   };
 }
 
-// ─── Left Sidebar: Workout Structure Stepper ─────────────────────────────────
+// ─── Left Sidebar: Desktop Compact Exercise & Progress Rail ─────────────────
 
 function renderWorkoutStructureSidebar(session, activePhase) {
   const model = getWorkoutPhaseModel(session);
   if (!model) return '';
 
   const { phases, overall } = model;
-  const remainingSets = overall.remainingSets != null ? overall.remainingSets : Math.max(0, overall.totalSets - overall.completedSets - overall.skippedSets);
+  const rawShort = isWarmupPhase(activePhase) ? 'warmup' : (isCooldownPhase(activePhase) ? 'cooldown' : 'main');
+
+  let currentPhaseItems = [];
+  let currentActiveIndex = 0;
+  if (rawShort === 'warmup') {
+    currentPhaseItems = getWarmupExercises(session);
+    currentActiveIndex = session.warmupIndex != null ? session.warmupIndex : (session.warmup_idx || 0);
+  } else if (rawShort === 'cooldown') {
+    currentPhaseItems = getCooldownExercises(session);
+    currentActiveIndex = session.cooldownIndex != null ? session.cooldownIndex : (session.cooldown_idx || 0);
+  } else {
+    currentPhaseItems = getMainWorkoutExercises(session);
+    currentActiveIndex = session.activeExerciseIndex != null && session.activeExerciseIndex < currentPhaseItems.length
+      ? session.activeExerciseIndex
+      : (_selectedWorkoutExIdx || 0);
+  }
 
   return `
-    <aside class="runner-structure-sidebar">
-      <div class="runner-structure-header">
-        <span class="runner-structure-title">OVERALL PROGRESS</span>
-        <span class="runner-structure-sets-counter mono">${overall.completedSets} / ${overall.totalSets} sets · ${overall.progressPct}%</span>
-      </div>
-
-      <div class="runner-progress-breakdown-row mono" style="display:flex; justify-content:space-between; font-size:11px; color:#8a8d9f; margin-bottom:12px; padding:0 2px;">
-        <span style="color:#10b981;">✓ ${overall.completedSets} Done</span>
-        ${overall.skippedSets > 0 ? `<span style="color:#eab308;">⏭ ${overall.skippedSets} Skipped</span>` : ''}
-        <span style="color:#cbd5e1;">⏳ ${remainingSets} Remaining</span>
-      </div>
-
-      <div class="runner-timeline-container">
-        ${phases.map((phase) => {
-          const isActive = activePhase === phase.id;
-          const isDone = phase.isCompleted;
-          const lockStatus = getPhaseLockStatus(session, phase.id);
+    <aside class="runner-rail-sidebar" aria-label="Workout Progress and Exercise Queue">
+      <!-- Phase Switcher Tabs -->
+      <div class="runner-rail-phase-tabs" role="tablist">
+        ${phases.map(p => {
+          const isActive = rawShort === p.id;
+          const lockStatus = getPhaseLockStatus(session, p.id);
           const isLocked = lockStatus.isLocked;
-          const badgeText = isDone ? renderIcon('check', 'cx-icon cx-icon-xs') : (isLocked ? renderIcon('lock', 'cx-icon cx-icon-xxs') : phase.stepNumber);
+          const isDone = p.isCompleted;
+
+          let badgeIcon = '';
+          if (isDone) badgeIcon = renderIcon('check', 'cx-icon cx-icon-xs cx-icon-success');
+          else if (isLocked) badgeIcon = renderIcon('lock', 'cx-icon cx-icon-xs');
+          else badgeIcon = `<span class="runner-phase-count-pill mono">${p.stepNumber}</span>`;
 
           return `
-            <div class="runner-timeline-step-wrapper ${isActive ? 'is-active' : ''} ${isDone ? 'is-completed' : ''} ${isLocked ? 'is-locked' : ''}">
-              <div class="runner-timeline-step-badge">
-                ${badgeText}
-              </div>
-              <div class="runner-timeline-card ${isLocked ? 'is-locked' : ''}" onclick="setWorkoutPhase('${phase.id}')" title="${isLocked ? lockStatus.lockReason : `Switch to ${phase.title} Phase`}">
-                <div class="runner-timeline-card-top">
-                  <span class="runner-timeline-card-title">${isLocked ? `<span class="runner-tab-icon-inline">${renderIcon('lock', 'cx-icon cx-icon-xxs')}</span>` : ''}${phase.title}</span>
-                  <div class="runner-timeline-card-art">
-                    ${renderPhaseWireframeSvg(phase.wireframeKey)}
-                  </div>
-                </div>
-                <div class="runner-timeline-card-time">${isLocked ? `<span style="color:#eab308; font-size:11px;">🔒 Locked</span> · ` : ''}${phase.estimatedDuration}</div>
-                <p class="runner-timeline-card-desc">${isLocked ? `<span style="color:#8a8d9f;">${lockStatus.lockReason}</span>` : phase.description}</p>
-                <div class="runner-timeline-card-progress-wrap">
-                  <span class="runner-timeline-card-progress-label">${phase.progressLabel}</span>
-                  <div class="runner-timeline-card-bar-track">
-                    <div class="runner-timeline-card-bar-fill" style="width: ${phase.progress}%;"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <button class="runner-rail-phase-btn ${isActive ? 'is-active' : ''} ${isDone ? 'is-completed' : ''} ${isLocked ? 'is-locked' : ''}"
+                    type="button"
+                    role="tab"
+                    aria-selected="${isActive}"
+                    onclick="setWorkoutPhase('${p.id}')"
+                    title="${isLocked ? lockStatus.lockReason : `Switch to ${p.title} Phase`}">
+              <span class="runner-rail-phase-badge">${badgeIcon}</span>
+              <span class="runner-rail-phase-label">${p.title}</span>
+            </button>
           `;
         }).join('')}
       </div>
 
-      <!-- Motivation / Consistency Widget -->
-      <div class="runner-motivation-card">
-        <div class="runner-motivation-icon-badge">
-          ${renderIcon('sparkles', 'cx-icon cx-icon-sm')}
+      <!-- Overall Compact Segmented Progress Bar -->
+      <div class="runner-rail-progress-box">
+        <div class="runner-rail-progress-header">
+          <span class="runner-rail-progress-label">OVERALL PROGRESS</span>
+          <span class="runner-rail-progress-val mono">${overall.completedSets} / ${overall.totalSets} sets · ${overall.progressPct}%</span>
         </div>
-        <div class="runner-motivation-content">
-          <span class="runner-motivation-title">Stay Consistent</span>
-          <span class="runner-motivation-text">Consistency today, strength tomorrow.</span>
+        <div class="runner-rail-progress-bar">
+          ${(() => {
+            const allExercises = [
+              ...getWarmupExercises(session).map(w => ({ ...w, _phase: 'warmup' })),
+              ...getMainWorkoutExercises(session).map(m => ({ ...m, _phase: 'main' })),
+              ...getCooldownExercises(session).map(c => ({ ...c, _phase: 'cooldown' }))
+            ];
+            if (allExercises.length === 0) {
+              return `<div class="runner-rail-progress-segment ${overall.progressPct >= 100 ? 'is-completed' : 'is-active'}"></div>`;
+            }
+            return allExercises.map(ex => {
+              const sets = ex.sets || [];
+              let isExDone = false;
+              let isExSkipped = false;
+              if (ex._phase === 'warmup' || ex._phase === 'cooldown') {
+                isExDone = !!ex.completed;
+                isExSkipped = !!ex.skipped;
+              } else {
+                const comp = sets.filter(s => s.completed).length;
+                const skip = sets.filter(s => s.skipped).length;
+                isExDone = sets.length > 0 && (comp + skip === sets.length) && comp > 0;
+                isExSkipped = sets.length > 0 && skip === sets.length;
+              }
+              const isCurrent = rawShort === ex._phase;
+              let segClass = '';
+              if (isExDone) segClass = 'is-completed';
+              else if (isExSkipped) segClass = 'is-skipped';
+              else if (isCurrent) segClass = 'is-active';
+              return `<div class="runner-rail-progress-segment ${segClass}" title="${ex.exercise_name || 'Exercise'}"></div>`;
+            }).join('');
+          })()}
+        </div>
+        <div class="runner-rail-progress-chips mono" style="display:flex; justify-content:space-between; font-size:10.5px; margin-top:6px; color:var(--cx-text-secondary, #8A8A93);">
+          <span style="color:var(--cx-success, #3ECF8E);">${overall.completedSets} Completed</span>
+          <span style="color:var(--cx-skipped, #C98A3D);">${overall.skippedSets} Skipped</span>
+          <span>${Math.max(0, overall.totalSets - overall.completedSets - overall.skippedSets)} Remaining</span>
+        </div>
+      </div>
+
+      <!-- Current Phase Exercise Checklist -->
+      <div class="runner-rail-queue-container">
+        <div class="runner-rail-queue-title">
+          <span>${rawShort === 'warmup' ? 'WARM-UP MOVEMENTS' : (rawShort === 'cooldown' ? 'COOL-DOWN STRETCHES' : 'MAIN EXERCISES')}</span>
+          <span class="mono">${currentPhaseItems.length} items</span>
+        </div>
+
+        <div class="runner-rail-exercise-list">
+          ${currentPhaseItems.map((item, idx) => {
+            const isSelected = idx === currentActiveIndex;
+            const isHold = item.exercise_type === 'duration';
+            let isDone = false;
+            let isSkipped = false;
+            let setsText = '';
+
+            if (rawShort === 'warmup' || rawShort === 'cooldown') {
+              isDone = !!item.completed;
+              isSkipped = !!item.skipped;
+              setsText = isHold ? `${item.duration_sec || 30}s hold` : `${item.reps || 10} reps`;
+            } else {
+              const sets = item.sets || [];
+              const completedCount = sets.filter(s => s.completed).length;
+              const skippedCount = sets.filter(s => s.skipped).length;
+              isDone = sets.length > 0 && sets.every(s => s.completed || s.skipped) && completedCount > 0;
+              isSkipped = sets.length > 0 && sets.every(s => s.skipped);
+              setsText = `${completedCount}/${sets.length} sets · ${isHold ? `${item.duration_sec || 30}s` : `${item.reps || 10} reps`}`;
+            }
+
+            let statusIcon = '';
+            if (isDone) statusIcon = `<span class="runner-item-status-icon is-done">${renderIcon('check', 'cx-icon cx-icon-xs')}</span>`;
+            else if (isSkipped) statusIcon = `<span class="runner-item-status-icon is-skipped">${renderIcon('x', 'cx-icon cx-icon-xs')}</span>`;
+            else if (isSelected) statusIcon = `<span class="runner-item-status-icon is-current"><span class="pulse-dot"></span></span>`;
+            else statusIcon = `<span class="runner-item-status-icon mono">${idx + 1}</span>`;
+
+            return `
+              <div class="runner-rail-item ${isSelected ? 'is-selected' : ''} ${isDone ? 'is-done' : ''} ${isSkipped ? 'is-skipped' : ''}"
+                   onclick="selectExerciseToExecute('${rawShort}', ${idx})"
+                   title="Select ${item.exercise_name}">
+                ${statusIcon}
+                <div class="runner-rail-item-text">
+                  <span class="runner-rail-item-name">${item.exercise_name}</span>
+                  <span class="runner-rail-item-meta mono">${setsText}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
         </div>
       </div>
     </aside>
   `;
 }
 
-// ─── Right Column: Phase Workspace & Interactive Exercises ──────────────────
+// ─── Collapsible Anatomy Accordion Component ────────────────────────────────
 
-function renderWorkoutPhaseWorkspace(session, activePhase) {
-  const model = getWorkoutPhaseModel(session);
-  const curPhaseObj = model ? model.phases.find(p => p.id === activePhase) : null;
+function renderExerciseMuscleFocusCollapsible(currentEx, activePhase) {
+  if (!currentEx) return '';
+  const muscleMapObj = (typeof window !== 'undefined' && window.MuscleMap)
+    ? window.MuscleMap.resolveMuscles({ name: currentEx.exercise_name })
+    : { primary: ['Chest', 'Triceps'], secondary: ['Front Delts', 'Core'] };
 
-  let heroTitle = 'WARM-UP';
-  let heroSub = '5–8 min · Prepare your body';
-  let heroBtnText = 'Start All Warm-Up';
-  let heroPhaseKey = 'warmup';
-  let heroActionFn = `startPhaseAutoRunner('warmup')`;
+  const isBackFocused = (muscleMapObj.primary || []).some(m =>
+    ['lats', 'traps', 'upper_back', 'lower_back', 'rear_delts', 'glutes', 'hamstrings'].includes(String(m).toLowerCase())
+  );
 
-  if (activePhase === 'warmup') {
-    if (curPhaseObj && curPhaseObj.isCompleted) {
-      heroTitle = '✓ WARM-UP COMPLETE';
-      heroSub = `${curPhaseObj.completedCount}/${curPhaseObj.totalCount} completed · Ready for Main Training`;
-      heroBtnText = 'Proceed to Main Workout';
-      heroActionFn = `setWorkoutPhase('main')`;
-    }
-  } else if (activePhase === 'main') {
-    heroTitle = 'MAIN WORKOUT';
-    heroSub = '20–30 min · Build strength & skill';
-    heroBtnText = 'Start Main Workout';
-    heroPhaseKey = 'main';
-    heroActionFn = `startPhaseAutoRunner('main')`;
-    if (curPhaseObj && curPhaseObj.isCompleted) {
-      heroTitle = '✓ MAIN WORKOUT COMPLETE';
-      heroSub = `${curPhaseObj.completedSets}/${curPhaseObj.totalSets} sets completed · Proceed to Cool Down`;
-      heroBtnText = 'Proceed to Cool Down';
-      heroActionFn = `setWorkoutPhase('cooldown')`;
-    }
-  } else if (activePhase === 'cooldown') {
-    heroTitle = 'COOL DOWN';
-    heroSub = '5–8 min · Relax, recover and improve flexibility.';
-    heroBtnText = 'Start All Cool Down';
-    heroPhaseKey = 'cooldown';
-    heroActionFn = `startPhaseAutoRunner('cooldown')`;
-    if (curPhaseObj && curPhaseObj.isCompleted) {
-      heroTitle = '✓ COOL DOWN COMPLETE';
-      heroSub = `${curPhaseObj.completedCount}/${curPhaseObj.totalCount} stretches completed · Great session!`;
-      heroBtnText = 'Finish & Log Workout';
-      heroActionFn = `finishWorkoutSession()`;
-    }
+  const frontSvg = (typeof window !== 'undefined' && window.MuscleMap)
+    ? window.MuscleMap.renderFrontSVG(muscleMapObj.primary, muscleMapObj.secondary)
+    : '';
+  const backSvg = (typeof window !== 'undefined' && window.MuscleMap)
+    ? window.MuscleMap.renderBackSVG(muscleMapObj.primary, muscleMapObj.secondary)
+    : '';
+
+  const formatMuscleName = (m) => String(m).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const primaryList = (muscleMapObj.primary || []).map(formatMuscleName);
+  const secondaryList = (muscleMapObj.secondary || []).map(formatMuscleName);
+
+  return `
+    <details class="runner-anatomy-accordion">
+      <summary class="runner-anatomy-summary">
+        <div class="runner-anatomy-summary-left">
+          <span class="runner-anatomy-icon">${renderIcon('activity', 'cx-icon cx-icon-xs cx-icon-accent')}</span>
+          <span class="runner-anatomy-summary-title">Muscles: <strong>${primaryList.slice(0, 2).join(', ') || 'Chest & Core'}</strong></span>
+        </div>
+        <span class="runner-anatomy-toggle-label">Anatomy View ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}</span>
+      </summary>
+
+      <div class="runner-anatomy-content">
+        <!-- Dual Vector Anatomy Views (Front & Back) -->
+        <div class="runner-anatomy-dual-view">
+          <div class="runner-anatomy-figure-box ${!isBackFocused ? 'is-dominant' : ''}">
+            <span class="runner-anatomy-figure-lbl">ANTERIOR (FRONT)</span>
+            <div class="runner-anatomy-svg-wrap">
+              ${frontSvg}
+            </div>
+          </div>
+          <div class="runner-anatomy-figure-box ${isBackFocused ? 'is-dominant' : ''}">
+            <span class="runner-anatomy-figure-lbl">POSTERIOR (BACK)</span>
+            <div class="runner-anatomy-svg-wrap">
+              ${backSvg}
+            </div>
+          </div>
+        </div>
+
+        <!-- Targeted Muscle Chips -->
+        <div class="runner-anatomy-legend-zone">
+          <div class="runner-legend-group">
+            <span class="runner-legend-title">Primary Drivers</span>
+            <div class="runner-legend-chips">
+              ${primaryList.length > 0 ? primaryList.map(m => `
+                <span class="runner-muscle-pill primary-pill">
+                  <span class="runner-pill-dot primary-dot"></span>
+                  <span>${m}</span>
+                </span>
+              `).join('') : '<span class="runner-muscle-pill primary-pill">Full Body</span>'}
+            </div>
+          </div>
+          ${secondaryList.length > 0 ? `
+            <div class="runner-legend-group" style="margin-top: 6px;">
+              <span class="runner-legend-title">Secondary Stabilizers</span>
+              <div class="runner-legend-chips">
+                ${secondaryList.slice(0, 4).map(m => `
+                  <span class="runner-muscle-pill secondary-pill">
+                    <span class="runner-pill-dot secondary-dot"></span>
+                    <span>${m}</span>
+                  </span>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    </details>
+  `;
+}
+
+// ─── Right Panel: Motion Stage & Form Cues + Collapsible Anatomy ────────────
+
+function renderWorkoutRightPanel(session, activePhase, currentEx) {
+  if (!currentEx) return '';
+  const rawShort = isWarmupPhase(activePhase) ? 'warmup' : (isCooldownPhase(activePhase) ? 'cooldown' : 'main');
+
+  let phaseEducationHtml = '';
+  if (rawShort === 'warmup') {
+    phaseEducationHtml = `
+      <div class="runner-phase-why-card" style="background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:14px; padding:14px 16px; margin-top:12px;">
+        <h4 style="font-family:var(--font-heading); font-size:12.5px; font-weight:700; color:var(--phase-warmup, #FF8A3D); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Why Warm-Up?</h4>
+        <p style="font-size:12px; color:var(--cx-text-secondary, #8A8A93); line-height:1.4; margin:0;">Increase core temperature, lubricate joints, and prime motor pathways before heavy compound loading.</p>
+      </div>
+    `;
+  } else if (rawShort === 'cooldown') {
+    phaseEducationHtml = `
+      <div class="runner-phase-why-card" style="background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:14px; padding:14px 16px; margin-top:12px;">
+        <h4 style="font-family:var(--font-heading); font-size:12.5px; font-weight:700; color:var(--phase-cooldown, #35D8B0); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Why Cool Down?</h4>
+        <p style="font-size:12px; color:var(--cx-text-secondary, #8A8A93); line-height:1.4; margin:0;">Lower Heart Rate, downregulate central nervous system, and restore muscle resting length safely.</p>
+      </div>
+    `;
+  } else {
+    phaseEducationHtml = `
+      <div class="runner-phase-why-card" style="background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:14px; padding:14px 16px; margin-top:12px;">
+        <h4 style="font-family:var(--font-heading); font-size:12.5px; font-weight:700; color:var(--phase-train, #FF5D5D); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Main Workout Focus</h4>
+        <p style="font-size:12px; color:var(--cx-text-secondary, #8A8A93); line-height:1.4; margin:0;">SETS & PROGRESSION: Execute each rep with full range of motion and 2-second controlled eccentric tempo.</p>
+      </div>
+    `;
   }
 
-  // 1. Rest timer banner if active
-  const restProgressPct = _workoutRestState.total > 0
-    ? Math.max(0, Math.min(100, (_workoutRestState.remaining / _workoutRestState.total) * 100))
-    : 0;
-  const isLast3s = _workoutRestState.remaining > 0 && _workoutRestState.remaining <= 3;
-  const restCountdownHtml = _workoutRestState.active ? `
-    <div class="runner-rest-card ${isLast3s ? 'is-pulse-alert' : ''}" id="workout-rest-card-container" role="region" aria-label="Rest Timer" style="margin-bottom:18px;">
-      <div class="runner-rest-top">
-        <div class="runner-rest-info">
-          <span class="runner-rest-tag">${renderIcon('timer', 'cx-icon cx-icon-inline cx-icon-xs')} REST</span>
-          <span class="runner-rest-digits mono ${isLast3s ? 'pulse-digits' : ''}" id="workout-rest-timer-val">${fmtSecs(_workoutRestState.remaining)}</span>
-          ${_workoutRestState.nextInfo ? `<span class="runner-rest-next">${_workoutRestState.nextInfo}</span>` : ''}
-        </div>
-        <div class="runner-rest-controls">
-          <button class="runner-rest-btn" type="button" onclick="adjustWorkoutRest(-15)">-15s</button>
-          <button class="runner-rest-btn" type="button" onclick="adjustWorkoutRest(15)">+15s</button>
-          <button class="runner-rest-skip-btn" type="button" onclick="stopWorkoutRest()">
-            ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} Skip Rest
+  return `
+    <aside class="runner-right-panel" aria-label="Exercise Motion and Anatomy">
+      <div class="runner-phase-hero-banner runner-timeline-step-wrapper runner-segmented-tabs-bar" style="display:none;" aria-hidden="true"></div>
+      ${renderExerciseVisualStageCard(currentEx, rawShort)}
+      ${renderExerciseMuscleFocusCollapsible(currentEx, rawShort)}
+      ${phaseEducationHtml}
+    </aside>
+  `;
+}
+
+// ─── Mobile Drawer & Bottom Sheet Handlers ───────────────────────────────────
+
+function openMobileExerciseListDrawer() {
+  const drawer = document.getElementById('runner-mobile-drawer');
+  const backdrop = document.getElementById('runner-mobile-drawer-backdrop');
+  if (drawer) drawer.classList.add('is-open');
+  if (backdrop) backdrop.classList.add('is-open');
+}
+
+function closeMobileExerciseListDrawer() {
+  const drawer = document.getElementById('runner-mobile-drawer');
+  const backdrop = document.getElementById('runner-mobile-drawer-backdrop');
+  if (drawer) drawer.classList.remove('is-open');
+  if (backdrop) backdrop.classList.remove('is-open');
+}
+
+function renderMobileExerciseListDrawer(session, activePhase) {
+  const model = getWorkoutPhaseModel(session);
+  if (!model) return '';
+
+  const { phases, overall } = model;
+  const rawShort = isWarmupPhase(activePhase) ? 'warmup' : (isCooldownPhase(activePhase) ? 'cooldown' : 'main');
+
+  let currentPhaseItems = [];
+  let currentActiveIndex = 0;
+  if (rawShort === 'warmup') {
+    currentPhaseItems = getWarmupExercises(session);
+    currentActiveIndex = session.warmupIndex != null ? session.warmupIndex : (session.warmup_idx || 0);
+  } else if (rawShort === 'cooldown') {
+    currentPhaseItems = getCooldownExercises(session);
+    currentActiveIndex = session.cooldownIndex != null ? session.cooldownIndex : (session.cooldown_idx || 0);
+  } else {
+    currentPhaseItems = getMainWorkoutExercises(session);
+    currentActiveIndex = session.activeExerciseIndex != null && session.activeExerciseIndex < currentPhaseItems.length
+      ? session.activeExerciseIndex
+      : (_selectedWorkoutExIdx || 0);
+  }
+
+  return `
+    <div class="runner-drawer-backdrop" id="runner-mobile-drawer-backdrop" onclick="closeMobileExerciseListDrawer()"></div>
+    <div class="runner-drawer-sheet" id="runner-mobile-drawer" role="dialog" aria-modal="true" aria-label="Exercise Queue">
+      <div class="runner-drawer-header">
+        <div class="runner-drawer-handle" onclick="closeMobileExerciseListDrawer()"></div>
+        <div class="runner-drawer-title-row">
+          <span class="runner-drawer-title">Exercise Queue</span>
+          <span class="runner-drawer-meta mono">${overall.completedSets}/${overall.totalSets} sets (${overall.progressPct}%)</span>
+          <button class="runner-drawer-close-btn" type="button" onclick="closeMobileExerciseListDrawer()" aria-label="Close drawer">
+            ${renderIcon('x', 'cx-icon cx-icon-sm')}
           </button>
         </div>
       </div>
-      <div class="runner-rest-bar-track">
-        <div class="runner-rest-bar-fill" id="workout-rest-timer-bar" style="width: ${restProgressPct}%;"></div>
-      </div>
-    </div>` : '';
 
-  // 2. Focused Mobile Card Runner View
+      <div class="runner-drawer-phase-tabs">
+        ${phases.map(p => {
+          const isActive = rawShort === p.id;
+          const lockStatus = getPhaseLockStatus(session, p.id);
+          const isLocked = lockStatus.isLocked;
+          const isDone = p.isCompleted;
+
+          return `
+            <button class="runner-drawer-phase-btn ${isActive ? 'is-active' : ''} ${isDone ? 'is-completed' : ''} ${isLocked ? 'is-locked' : ''}"
+                    type="button"
+                    onclick="setWorkoutPhase('${p.id}'); closeMobileExerciseListDrawer();">
+              ${isDone ? '✓ ' : (isLocked ? '🔒 ' : '')}${p.title}
+            </button>
+          `;
+        }).join('')}
+      </div>
+
+      <div class="runner-drawer-list">
+        ${currentPhaseItems.map((item, idx) => {
+          const isSelected = idx === currentActiveIndex;
+          const isHold = item.exercise_type === 'duration';
+          let isDone = false;
+          let isSkipped = false;
+          let setsText = '';
+
+          if (rawShort === 'warmup' || rawShort === 'cooldown') {
+            isDone = !!item.completed;
+            isSkipped = !!item.skipped;
+            setsText = isHold ? `${item.duration_sec || 30}s hold` : `${item.reps || 10} reps`;
+          } else {
+            const sets = item.sets || [];
+            const completedCount = sets.filter(s => s.completed).length;
+            isDone = sets.length > 0 && sets.every(s => s.completed || s.skipped) && completedCount > 0;
+            isSkipped = sets.length > 0 && sets.every(s => s.skipped);
+            setsText = `${completedCount}/${sets.length} sets · ${isHold ? `${item.duration_sec || 30}s` : `${item.reps || 10} reps`}`;
+          }
+
+          let statusIcon = '';
+          if (isDone) statusIcon = `<span class="runner-item-status-icon is-done">${renderIcon('check', 'cx-icon cx-icon-xs')}</span>`;
+          else if (isSkipped) statusIcon = `<span class="runner-item-status-icon is-skipped">${renderIcon('x', 'cx-icon cx-icon-xs')}</span>`;
+          else if (isSelected) statusIcon = `<span class="runner-item-status-icon is-current"><span class="pulse-dot"></span></span>`;
+          else statusIcon = `<span class="runner-item-status-icon mono">${idx + 1}</span>`;
+
+          return `
+            <div class="runner-drawer-item ${isSelected ? 'is-selected' : ''} ${isDone ? 'is-done' : ''} ${isSkipped ? 'is-skipped' : ''}"
+                 onclick="selectExerciseToExecute('${rawShort}', ${idx}); closeMobileExerciseListDrawer();">
+              ${statusIcon}
+              <div class="runner-drawer-item-info">
+                <span class="runner-drawer-item-name">${item.exercise_name}</span>
+                <span class="runner-drawer-item-meta mono">${setsText}</span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ─── Center Column: Phase Workspace & Focused Runner ────────────────────────
+
+function renderWorkoutPhaseWorkspace(session, activePhase) {
+  const rawShort = isWarmupPhase(activePhase) ? 'warmup' : (isCooldownPhase(activePhase) ? 'cooldown' : 'main');
+
   let activeCardRunnerHtml = '';
-  if (activePhase === 'warmup') {
+  let currentItem = null;
+
+  if (rawShort === 'warmup') {
     const list = getWarmupExercises(session);
+    const idx = session.warmupIndex != null && session.warmupIndex < list.length ? session.warmupIndex : (session.warmup_idx || 0);
+    currentItem = list[idx] || null;
     if (list.length === 0) {
       activeCardRunnerHtml = `
-        <div class="card" style="padding: 28px 24px; text-align: center; background: rgba(22, 23, 36, 0.5); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 14px; margin-bottom: 20px;">
-          <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(124, 92, 252, 0.1); color: #a29bfe; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-            ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
-          </div>
-          <h3 style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Warm-up unavailable</h3>
-          <p style="font-size: 13px; color: #8a8d9f; max-width: 400px; margin: 0 auto 16px; line-height: 1.4;">No warm-up exercises are configured for this workout. The main workout can still continue.</p>
-          <button class="btn btn-secondary" type="button" onclick="setWorkoutPhase('main')" style="font-size: 13px; padding: 8px 18px;">
-            Proceed to Main Workout →
-          </button>
+        <div class="card runner-empty-card">
+          <div class="runner-empty-icon">${renderIcon('alertCircle', 'cx-icon cx-icon-md')}</div>
+          <h3 style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Warm-up unavailable</h3>
+          <p style="font-size: 13px; color: #8a8d9f; margin-bottom: 14px;">No warm-up exercises are configured for this workout.</p>
+          <button class="btn btn-secondary" type="button" onclick="setWorkoutPhase('main')">Proceed to Main Workout →</button>
         </div>
       `;
+    } else if (session.warmupStatus === 'IDLE' || session.phaseState === 'IDLE' || session.status === 'ready') {
+      activeCardRunnerHtml = renderWarmupOverviewView(session);
     } else if (session.warmupStatus === 'COMPLETED' || session.warmup_status === 'completed' || list.every(w => w.completed || w.skipped)) {
       activeCardRunnerHtml = renderWarmupCompleteView(session);
     } else {
       activeCardRunnerHtml = renderWarmupCardView(session);
     }
-  } else if (activePhase === 'cooldown') {
+  } else if (rawShort === 'cooldown') {
     const list = getCooldownExercises(session);
+    const idx = session.cooldownIndex != null && session.cooldownIndex < list.length ? session.cooldownIndex : (session.cooldown_idx || 0);
+    currentItem = list[idx] || null;
     if (list.length === 0) {
       activeCardRunnerHtml = `
-        <div class="card" style="padding: 28px 24px; text-align: center; background: rgba(22, 23, 36, 0.5); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 14px; margin-bottom: 20px;">
-          <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(124, 92, 252, 0.1); color: #a29bfe; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-            ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
-          </div>
-          <h3 style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Cool-down unavailable</h3>
-          <p style="font-size: 13px; color: #8a8d9f; max-width: 400px; margin: 0 auto 16px; line-height: 1.4;">No cool-down stretches are configured for this workout.</p>
-          <button class="btn btn-primary" type="button" onclick="requestFinishWorkout()" style="font-size: 13px; padding: 8px 18px;">
-            Finish Workout
-          </button>
+        <div class="card runner-empty-card">
+          <div class="runner-empty-icon">${renderIcon('alertCircle', 'cx-icon cx-icon-md')}</div>
+          <h3 style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Cool-down unavailable</h3>
+          <p style="font-size: 13px; color: #8a8d9f; margin-bottom: 14px;">No cool-down stretches are configured for this workout.</p>
+          <button class="btn btn-primary" type="button" onclick="requestFinishWorkout()">Finish Workout</button>
         </div>
       `;
     } else {
@@ -6136,845 +6738,78 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
     }
   } else {
     const list = getMainWorkoutExercises(session);
+    const exIdx = session.activeExerciseIndex != null && session.activeExerciseIndex < list.length
+      ? session.activeExerciseIndex
+      : (_selectedWorkoutExIdx != null && _selectedWorkoutExIdx < list.length ? _selectedWorkoutExIdx : 0);
+    currentItem = list[exIdx] || null;
+    const isResting = session.mainWorkoutSubState === 'RESTING' || _workoutRestState.active || (session.restTimer && session.restTimer.isRunning);
     if (list.length > 0 && list.every(ex => ex.sets && ex.sets.every(s => s.completed || s.skipped))) {
       activeCardRunnerHtml = renderMainWorkoutCompleteView(session);
+    } else if (isResting) {
+      activeCardRunnerHtml = renderWorkoutRestView(session);
     } else {
       activeCardRunnerHtml = renderMainWorkoutCardView(session);
     }
   }
 
-  // 3. Exercise items list rendering
-  let exercisesStackHtml = '';
-
-  if (activePhase === 'warmup') {
-    const list = getWarmupExercises(session);
-    if (list.length === 0) {
-      exercisesStackHtml = `
-        <div class="card" style="padding: 28px 24px; text-align: center; background: rgba(22, 23, 36, 0.5); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 14px; margin-bottom: 20px;">
-          <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(124, 92, 252, 0.1); color: #a29bfe; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-            ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
-          </div>
-          <h3 style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Warm-up unavailable</h3>
-          <p style="font-size: 13px; color: #8a8d9f; max-width: 400px; margin: 0 auto 16px; line-height: 1.4;">No warm-up exercises are configured for this workout. The main workout can still continue.</p>
-          <button class="btn btn-secondary" type="button" onclick="setWorkoutPhase('main')" style="font-size: 13px; padding: 8px 18px;">
-            Proceed to Main Workout →
-          </button>
-        </div>
-      `;
-    } else {
-      exercisesStackHtml = list.map((item, idx) => {
-        const isCurrent = session.warmup_idx === idx;
-        const isCompleted = !!item.completed;
-        const isSkipped = !!item.skipped;
-        const isDone = isCompleted || isSkipped;
-        const isHold = item.exercise_type === 'duration';
-        const pt = session.phaseTimer || {};
-        const isRunning = isCurrent && pt.isRunning;
-        const targetVal = isHold ? (item.duration_sec || 30) : (item.reps || 10);
-        const displayVal = isRunning ? (pt.remaining != null ? pt.remaining : targetVal) : targetVal;
-
-        return `
-          <div class="runner-exercise-item-card ${isCurrent ? 'is-selected' : ''} ${isCompleted ? 'is-completed' : (isSkipped ? 'is-skipped' : '')}" id="warmup-card-${idx}">
-            <div class="runner-runner-ex-card-left" onclick="selectExerciseToExecute('warmup', ${idx})" style="cursor:pointer;">
-              <div class="runner-ex-thumb-box">
-                ${renderExerciseThumbnailSvg(item)}
-              </div>
-              <div class="runner-ex-text-group">
-                <span class="runner-ex-name-label">${item.exercise_name}</span>
-                <span class="runner-ex-sub-label">${item.duration_text || (isHold ? `${targetVal} sec` : `${targetVal} reps`)}</span>
-              </div>
-            </div>
-
-            <div class="runner-ex-card-right">
-              <span class="runner-ex-duration-tag">
-                ${renderIcon('timer', 'cx-icon cx-icon-xs')}
-                <span>${item.est_duration || '1 min'}</span>
-              </span>
-
-              <button class="runner-ex-action-btn ${isRunning ? 'is-active-btn' : (isCompleted ? 'is-done-btn' : (isSkipped ? 'is-skipped-btn' : ''))}" type="button" onclick="selectExerciseToExecute('warmup', ${idx})">
-                ${isRunning ? (pt.isRunning ? 'Pause' : 'Resume') : (isCompleted ? '✓ Completed' : (isSkipped ? '⏭ Skipped' : 'Start'))}
-              </button>
-
-              <button class="runner-ex-checkbox-btn ${isCompleted ? 'is-checked' : (isSkipped ? 'is-skipped' : '')}" type="button" onclick="toggleWarmupItemComplete(${idx})" title="${isCompleted ? 'Mark uncompleted' : (isSkipped ? 'Skipped - click to complete' : 'Mark completed')}">
-                ${isCompleted ? renderIcon('check', 'cx-icon cx-icon-xs') : (isSkipped ? renderIcon('skipForward', 'cx-icon cx-icon-xs') : '')}
-              </button>
-            </div>
-          </div>
-
-          ${isCurrent ? `
-            <div class="runner-prep-stage" style="margin: -2px 0 14px; border-radius: 0 0 14px 14px; border-top: none;">
-              <div class="runner-prep-timer-card">
-                <div class="runner-radial-timer-container">
-                  <svg class="runner-radial-ring-svg" width="140" height="140" viewBox="0 0 160 160">
-                    <circle class="runner-radial-track" cx="80" cy="80" r="70" />
-                    <circle class="runner-radial-progress warmup" id="runner-radial-progress-circle" cx="80" cy="80" r="70" stroke-dasharray="440" stroke-dashoffset="${(440 * (1 - (isHold && pt.duration > 0 ? (displayVal / pt.duration) : 1))).toFixed(1)}" transform="rotate(-90 80 80)" />
-                  </svg>
-                  <div class="runner-radial-timer-inner">
-                    <div class="runner-prep-digits mono ${isRunning ? 'is-pulse' : ''}" id="runner-phase-timer-digits">
-                      ${displayVal} <span class="runner-digits-unit-label">${isHold ? 'SEC' : 'REPS'}</span>
-                    </div>
-                    <span class="runner-prep-digits-unit">${isHold ? 'Countdown Timer' : 'Target Count'}</span>
-                  </div>
-                </div>
-
-                <div class="runner-prep-timer-controls">
-                  <button class="runner-prep-timer-btn" type="button" onclick="adjustPhaseTimer(-5)">-5s</button>
-                  ${isHold ? `
-                    <button class="runner-prep-timer-btn" id="runner-phase-timer-toggle-btn" type="button" style="color:var(--text); border-color:var(--accent);" onclick="togglePhaseTimer()">
-                      ${renderIcon(isRunning ? 'pause' : 'play', 'cx-icon cx-icon-xs cx-icon-inline')} ${isRunning ? 'Pause' : 'Start'}
-                    </button>
-                  ` : ''}
-                  <button class="runner-prep-timer-btn" type="button" onclick="adjustPhaseTimer(5)">+5s</button>
-                </div>
-              </div>
-
-              ${renderAutoAdvanceHtml()}
-
-              <button class="runner-prep-primary-btn" type="button" onclick="advanceWarmupMovement()">
-                ${renderIcon('check', 'cx-icon cx-icon-inline cx-icon-md')} ${idx >= list.length - 1 ? 'Complete Warm-up & Enter Main Workout' : 'Complete Movement & Next'}
-              </button>
-            </div>
-          ` : ''}
-        `;
-      }).join('');
-    }
-  } else if (activePhase === 'cooldown') {
-    const list = getCooldownExercises(session);
-    if (list.length === 0) {
-      exercisesStackHtml = `
-        <div class="card" style="padding: 28px 24px; text-align: center; background: rgba(22, 23, 36, 0.5); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 14px; margin-bottom: 20px;">
-          <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(124, 92, 252, 0.1); color: #a29bfe; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-            ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
-          </div>
-          <h3 style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Cool-down unavailable</h3>
-          <p style="font-size: 13px; color: #8a8d9f; max-width: 400px; margin: 0 auto 16px; line-height: 1.4;">No cool-down stretches are configured for this workout.</p>
-          <button class="btn btn-primary" type="button" onclick="requestFinishWorkout()" style="font-size: 13px; padding: 8px 18px;">
-            Finish Workout
-          </button>
-        </div>
-      `;
-    } else {
-      exercisesStackHtml = list.map((item, idx) => {
-        const isCurrent = session.cooldown_idx === idx;
-        const isCompleted = !!item.completed;
-        const isSkipped = !!item.skipped;
-        const isDone = isCompleted || isSkipped;
-        const isHold = item.exercise_type === 'duration';
-        const pt = session.phaseTimer || {};
-        const isRunning = isCurrent && pt.isRunning;
-        const targetVal = isHold ? (item.duration_sec || 30) : (item.reps || 10);
-        const displayVal = isRunning ? (pt.remaining != null ? pt.remaining : targetVal) : targetVal;
-
-        return `
-          <div class="runner-exercise-item-card ${isCurrent ? 'is-selected' : ''} ${isCompleted ? 'is-completed' : (isSkipped ? 'is-skipped' : '')}" id="cooldown-card-${idx}">
-            <div class="runner-runner-ex-card-left" onclick="selectExerciseToExecute('cooldown', ${idx})" style="cursor:pointer;">
-              <div class="runner-ex-thumb-box">
-                ${renderExerciseThumbnailSvg(item)}
-              </div>
-              <div class="runner-ex-text-group">
-                <span class="runner-ex-name-label">${item.exercise_name}</span>
-                <span class="runner-ex-sub-label">${item.duration_text || (isHold ? `${targetVal} sec` : `${targetVal} reps`)}</span>
-              </div>
-            </div>
-
-            <div class="runner-ex-card-right">
-              <span class="runner-ex-duration-tag">
-                ${renderIcon('timer', 'cx-icon cx-icon-xs')}
-                <span>${item.est_duration || '1 min'}</span>
-              </span>
-
-              <button class="runner-ex-action-btn ${isRunning ? 'is-active-btn' : (isCompleted ? 'is-done-btn' : (isSkipped ? 'is-skipped-btn' : ''))}" type="button" onclick="selectExerciseToExecute('cooldown', ${idx})">
-                ${isRunning ? (pt.isRunning ? 'Pause' : 'Resume') : (isCompleted ? '✓ Completed' : (isSkipped ? '⏭ Skipped' : 'Start'))}
-              </button>
-
-              <button class="runner-ex-checkbox-btn ${isCompleted ? 'is-checked' : (isSkipped ? 'is-skipped' : '')}" type="button" onclick="toggleCooldownItemComplete(${idx})" title="${isCompleted ? 'Mark uncompleted' : (isSkipped ? 'Skipped - click to complete' : 'Mark completed')}">
-                ${isCompleted ? renderIcon('check', 'cx-icon cx-icon-xs') : (isSkipped ? renderIcon('skipForward', 'cx-icon cx-icon-xs') : '')}
-              </button>
-            </div>
-          </div>
-
-          ${isCurrent ? `
-            <div class="runner-prep-stage" style="margin: -2px 0 14px; border-radius: 0 0 14px 14px; border-top: none;">
-              <div class="runner-prep-timer-card">
-                <div class="runner-radial-timer-container">
-                  <svg class="runner-radial-ring-svg" width="140" height="140" viewBox="0 0 160 160">
-                    <circle class="runner-radial-track" cx="80" cy="80" r="70" />
-                    <circle class="runner-radial-progress cooldown" id="runner-radial-progress-circle" cx="80" cy="80" r="70" stroke-dasharray="440" stroke-dashoffset="${(440 * (1 - (isHold && pt.duration > 0 ? (displayVal / pt.duration) : 1))).toFixed(1)}" transform="rotate(-90 80 80)" />
-                  </svg>
-                  <div class="runner-radial-timer-inner">
-                    <div class="runner-prep-digits mono ${isRunning ? 'is-pulse' : ''}" id="runner-phase-timer-digits">
-                      ${displayVal} <span class="runner-digits-unit-label">SEC</span>
-                    </div>
-                    <span class="runner-prep-digits-unit">Stretch Hold Countdown</span>
-                  </div>
-                </div>
-
-                <div class="runner-prep-timer-controls">
-                  <button class="runner-prep-timer-btn" type="button" onclick="adjustPhaseTimer(-5)">-5s</button>
-                  <button class="runner-prep-timer-btn" id="runner-phase-timer-toggle-btn" type="button" style="color:var(--text); border-color:var(--accent);" onclick="togglePhaseTimer()">
-                    ${renderIcon(isRunning ? 'pause' : 'play', 'cx-icon cx-icon-xs cx-icon-inline')} ${isRunning ? 'Pause' : 'Start'}
-                  </button>
-                  <button class="runner-prep-timer-btn" type="button" onclick="adjustPhaseTimer(5)">+5s</button>
-                </div>
-              </div>
-
-              ${renderAutoAdvanceHtml()}
-
-              <button class="runner-prep-primary-btn" type="button" onclick="advanceCooldownStretch()">
-                ${renderIcon('check', 'cx-icon cx-icon-inline cx-icon-md')} ${idx >= list.length - 1 ? 'Finish Workout Session' : 'Next Stretch'}
-              </button>
-            </div>
-          ` : ''}
-        `;
-      }).join('');
-    }
-  } else {
-    // Main Workout Phase
-    const list = getMainWorkoutExercises(session);
-    if (list.length === 0) {
-      exercisesStackHtml = `
-        <div class="card" style="padding: 28px 24px; text-align: center; background: rgba(22, 23, 36, 0.5); border: 1px dashed rgba(239, 68, 68, 0.2); border-radius: 14px; margin-bottom: 20px;">
-          <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(239, 68, 68, 0.1); color: #f87171; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-            ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
-          </div>
-          <h3 style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">No Exercises Configured</h3>
-          <p style="font-size: 13px; color: #8a8d9f; max-width: 400px; margin: 0 auto 16px; line-height: 1.4;">No main exercises could be loaded for this workout session.</p>
-          <button class="btn btn-secondary" type="button" onclick="openDiscardWorkoutModal()" style="font-size: 13px; padding: 8px 18px;">
-            Return to Dashboard
-          </button>
-        </div>
-      `;
-    } else {
-      let activeExIdx = session.activeExerciseIndex != null ? session.activeExerciseIndex : (_selectedWorkoutExIdx != null ? _selectedWorkoutExIdx : 0);
-      if (activeExIdx < 0 || activeExIdx >= list.length) activeExIdx = 0;
-
-      exercisesStackHtml = list.map((ex, exIdx) => {
-        const isCurrent = exIdx === activeExIdx;
-        const totalSets = ex.sets ? ex.sets.length : 0;
-        const doneCount = ex.sets ? ex.sets.filter(s => s.completed).length : 0;
-        const skippedCount = ex.sets ? ex.sets.filter(s => s.skipped).length : 0;
-        const isAllCompleted = totalSets > 0 && doneCount === totalSets;
-        const isAllSkipped = totalSets > 0 && skippedCount === totalSets;
-        const isFullyResolved = totalSets > 0 && (doneCount + skippedCount) === totalSets;
-        const isPartiallyCompleted = isFullyResolved && doneCount > 0 && !isAllCompleted;
-        const isHold = ex.exercise_type === 'duration';
-
-        return `
-          <div class="runner-exercise-item-card ${isCurrent ? 'is-selected' : ''} ${isAllCompleted ? 'is-completed' : (isAllSkipped ? 'is-skipped' : (isPartiallyCompleted ? 'is-resolved' : ''))}" id="main-card-${exIdx}">
-            <div class="runner-runner-ex-card-left" onclick="selectExerciseToExecute('main', ${exIdx})" style="cursor:pointer;">
-              <div class="runner-ex-thumb-box">
-                ${renderExerciseThumbnailSvg(ex)}
-              </div>
-              <div class="runner-ex-text-group">
-                <span class="runner-ex-name-label">${ex.exercise_name}</span>
-                <span class="runner-ex-sub-label">${totalSets} sets × ${ex.sets[0]?.target_val || 10}${isHold ? 's hold' : ' reps'} · ${ex.rest_sec || 90}s rest</span>
-              </div>
-            </div>
-
-            <div class="runner-ex-card-right">
-              <span class="runner-ex-duration-tag">
-                <span class="mono">${doneCount}/${totalSets} sets${skippedCount > 0 ? ` (${skippedCount} skp)` : ''}</span>
-              </span>
-
-              <button class="runner-ex-action-btn ${isCurrent ? 'is-active-btn' : ''}" type="button" onclick="selectExerciseToExecute('main', ${exIdx})">
-                ${isCurrent ? 'Active' : (isFullyResolved ? 'Review' : 'Start')}
-              </button>
-
-              <button class="runner-ex-checkbox-btn ${isAllCompleted ? 'is-checked' : (isAllSkipped ? 'is-skipped' : (isPartiallyCompleted ? 'is-partial' : ''))}" type="button" onclick="toggleMainExerciseComplete(${exIdx})" title="${isFullyResolved ? 'Mark uncompleted' : 'Mark all sets completed'}">
-                ${isAllCompleted ? renderIcon('check', 'cx-icon cx-icon-xs') : (isAllSkipped ? renderIcon('skipForward', 'cx-icon cx-icon-xs') : (isPartiallyCompleted ? renderIcon('check', 'cx-icon cx-icon-xs') : ''))}
-              </button>
-            </div>
-          </div>
-
-          ${isCurrent ? `
-            <div class="card" style="margin: -2px 0 16px; border-radius: 0 0 14px 14px; border-top: none; background: rgba(22, 23, 36, 0.7); padding: 18px 20px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                <div>
-                  <span style="font-size:12px; font-weight:700; color:#cbd5e1; text-transform:uppercase; letter-spacing:0.05em;">Exercise ${exIdx + 1} of ${list.length}</span>
-                  <span style="font-size:11px; color:#8a8d9f; margin-left:8px;">SETS & PROGRESSION</span>
-                </div>
-                <span class="runner-pattern-badge">${(ex.notes || (isHold ? 'Isometric Hold' : 'Bodyweight')).toUpperCase()}</span>
-              </div>
-
-              <div style="display:flex; flex-direction:column; gap:8px;">
-                ${ex.sets.map((s, sIdx) => {
-                  const sCompleted = s.completed;
-                  const sSkipped = s.skipped;
-                  const isThisHold = isHold && _workoutHoldState.exIdx === exIdx && _workoutHoldState.setIdx === sIdx;
-                  const currentActual = s.actual_val !== null && s.actual_val !== undefined ? s.actual_val : s.target_val;
-
-                  return `
-                    <div style="display:flex; flex-direction:column; gap:8px; background:rgba(255,255,255,0.03); border:1px solid ${sCompleted ? 'rgba(16,185,129,0.3)' : (sSkipped ? 'rgba(234,179,8,0.3)' : 'rgba(255,255,255,0.06)')}; border-radius:10px; padding:10px 14px;">
-                      <div style="display:flex; align-items:center; justify-content:space-between;">
-                        <div style="display:flex; align-items:center; gap:12px;">
-                          <span class="mono" style="font-weight:700; font-size:13px; color:${sCompleted ? '#10b981' : (sSkipped ? '#eab308' : '#a29bfe')};">SET ${s.set_num}${sSkipped ? ' (SKIPPED)' : ''}</span>
-                          <span style="font-size:12px; color:#8a8d9f;">Target: <strong>${s.target_val}${isHold ? 's' : ' reps'}</strong></span>
-                          ${s.weight_kg ? `<span class="runner-weight-pill mono">+${s.weight_kg}kg</span>` : ''}
-                          ${s.rpe ? `<span class="mono" style="font-size:11px; color:#a29bfe;">RPE ${s.rpe}</span>` : ''}
-                        </div>
-
-                        <div style="display:flex; align-items:center; gap:12px;">
-                          ${!isHold ? `
-                            <div style="display:flex; align-items:center; gap:6px;">
-                              <button class="btn btn-secondary" style="padding:2px 8px; font-size:12px;" onclick="adjustWorkoutSetActual(${exIdx}, ${sIdx}, -1)">-</button>
-                              <span class="mono" style="font-weight:700; font-size:13px; min-width:24px; text-align:center;">${currentActual}</span>
-                              <button class="btn btn-secondary" style="padding:2px 8px; font-size:12px;" onclick="adjustWorkoutSetActual(${exIdx}, ${sIdx}, 1)">+</button>
-                            </div>
-                          ` : `
-                            <button class="btn ${isThisHold ? 'btn-danger' : 'btn-secondary'}" style="padding:4px 10px; font-size:12px;" onclick="${isThisHold ? 'stopWorkoutHold(true)' : `startWorkoutHold(${exIdx}, ${sIdx})`}">
-                              ${renderIcon(isThisHold ? 'pause' : 'play', 'cx-icon cx-icon-xs cx-icon-inline')} ${isThisHold ? `${_workoutHoldState.elapsed}s Stop` : 'Hold'}
-                            </button>
-                          `}
-
-                          <button class="runner-ex-checkbox-btn ${sCompleted ? 'is-checked' : (sSkipped ? 'is-skipped' : '')}" style="width:26px; height:26px; min-width:26px;" onclick="toggleWorkoutSet(${exIdx}, ${sIdx})" title="${sCompleted ? 'Mark uncompleted' : (sSkipped ? 'Skipped - click to complete' : 'Toggle set complete')}">
-                            ${sCompleted ? renderIcon('check', 'cx-icon cx-icon-xs') : (sSkipped ? renderIcon('skipForward', 'cx-icon cx-icon-xs') : '')}
-                          </button>
-                        </div>
-                      </div>
-
-                      <details style="margin-top:2px;">
-                        <summary style="font-size:11px; color:#8a8d9f; cursor:pointer; list-style:none; display:flex; align-items:center; gap:4px;">
-                          <span>+ Set details (weight, RPE)</span>
-                        </summary>
-                        <div style="display:flex; gap:10px; margin-top:8px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.05);">
-                          <div style="flex:1;">
-                            <label style="font-size:10.5px; color:#8a8d9f; display:block; margin-bottom:3px;">Weight (+kg)</label>
-                            <input type="number" min="0" step="0.5" placeholder="0 kg" value="${s.weight_kg || ''}" onchange="updateWorkoutSetWeight(${exIdx}, ${sIdx}, this.value)" class="form-input mono" style="padding:4px 8px; font-size:12px; height:28px;">
-                          </div>
-                          <div style="flex:1;">
-                            <label style="font-size:10.5px; color:#8a8d9f; display:block; margin-bottom:3px;">RPE (Effort)</label>
-                            <select onchange="updateWorkoutSetRPE(${exIdx}, ${sIdx}, this.value)" class="form-input form-select mono" style="padding:4px 8px; font-size:12px; height:28px;">
-                              <option value="">RPE</option>
-                              <option value="6" ${s.rpe == 6 ? 'selected' : ''}>RPE 6</option>
-                              <option value="7" ${s.rpe == 7 ? 'selected' : ''}>RPE 7</option>
-                              <option value="8" ${s.rpe == 8 ? 'selected' : ''}>RPE 8</option>
-                              <option value="9" ${s.rpe == 9 ? 'selected' : ''}>RPE 9</option>
-                              <option value="10" ${s.rpe == 10 ? 'selected' : ''}>RPE 10</option>
-                            </select>
-                          </div>
-                        </div>
-                      </details>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-
-              <!-- Form Cue Strip -->
-              <div style="margin-top:14px; padding:10px 14px; border-radius:8px; background:rgba(124,92,252,0.06); border:1px solid rgba(124,92,252,0.18); display:flex; align-items:center; gap:10px;">
-                <span style="color:#a29bfe;">${renderIcon('lightbulb', 'cx-icon cx-icon-xs')}</span>
-                <span style="font-size:12px; color:#cbd5e1;"><strong>Form Focus:</strong> ${getExerciseContextualTip(ex)}</span>
-              </div>
-            </div>
-          ` : ''}
-        `;
-      }).join('');
-    }
-  }
-
-  // Educational benefits footer
-  let benefitTitle = 'Why Warm-Up?';
-  let benefitDesc = 'Elevates core temperature, lubricates joints, activates the nervous system, and prevents injury.';
-  let benefitAvatarSvg = renderPhaseWireframeSvg('warmup');
-  let benefitPills = [
-    { icon: renderIcon('shieldCheck', 'cx-icon cx-icon-xs'), label: 'Joint Mobility' },
-    { icon: renderIcon('zap', 'cx-icon cx-icon-xs'), label: 'CNS Activation' },
-    { icon: renderIcon('award', 'cx-icon cx-icon-xs'), label: 'Better Range' }
-  ];
-
-  if (activePhase === 'main') {
-    benefitTitle = 'Main Workout Focus';
-    benefitDesc = 'Follow target reps and rest intervals for progressive overload. Log every completed set accurately.';
-    benefitAvatarSvg = renderPhaseWireframeSvg('main');
-    benefitPills = [
-      { icon: renderIcon('target', 'cx-icon cx-icon-xs'), label: 'SETS & PROGRESSION' },
-      { icon: renderIcon('trendingUp', 'cx-icon cx-icon-xs'), label: 'Progressive Overload' },
-      { icon: renderIcon('activity', 'cx-icon cx-icon-xs'), label: 'Volume Tracking' }
-    ];
-  } else if (activePhase === 'cooldown') {
-    benefitTitle = 'Why Cool Down?';
-    benefitDesc = 'Brings heart rate back to resting levels, prevents blood pooling, restores muscle length, and kickstarts recovery.';
-    benefitAvatarSvg = renderPhaseWireframeSvg('cooldown');
-    benefitPills = [
-      { icon: renderIcon('heart', 'cx-icon cx-icon-xs'), label: 'Lower Heart Rate' },
-      { icon: renderIcon('sparkles', 'cx-icon cx-icon-xs'), label: 'Faster Recovery' },
-      { icon: renderIcon('layers', 'cx-icon cx-icon-xs'), label: 'Flexibility Gain' }
-    ];
-  }
-
-  if (activePhase === 'warmup') {
-    let list = getWarmupExercises(session);
-    // ── AUTO-REPAIR: if the session's warmup array is empty, inject defaults ──
-    // This guards against stale sessions that were stored before the default
-    // warm-up generators were introduced, and against any other edge case where
-    // getWarmupExercises() returns an empty list despite the phase being warmup.
-    if (!session.warmup) {
-      const routineName = session.routine || session.workout_name || '';
-      const defaultWarmup = getDefaultWarmupForRoutine(routineName);
-      if (defaultWarmup.length > 0) {
-        session.warmup = defaultWarmup.map((le, idx) => ({
-          id: le.id || (idx + 1),
-          exercise_id: null,
-          exercise_name: le.exercise_name || 'Warm-up Movement',
-          exercise_type: le.exercise_type || 'duration',
-          phase: 'warm_up',
-          target_val: le.target_val || le.duration_sec || le.reps || 30,
-          actual_val: le.exercise_type === 'reps' ? (le.reps || le.target_val || 10) : 0,
-          duration_sec: le.duration_sec || null,
-          reps: le.reps || null,
-          duration_text: le.duration_text || '',
-          est_duration: le.est_duration || '1 min',
-          rest_sec: le.rest_sec || 10,
-          notes: le.notes || '',
-          completed: false,
-          completed_at: null,
-          skipped: false,
-          skipped_at: null,
-          client_uuid: newUUID()
-        }));
-        if (!session.warmup_status || session.warmup_status === 'none') {
-          session.warmup_status = 'ready';
-        }
-        if (session.warmupStatus === 'SKIPPED' || !session.warmupStatus) {
-          session.warmupStatus = 'IDLE';
-        }
-        saveActiveSession(session);
-        list = getWarmupExercises(session);
-      }
-    }
-    // ── END AUTO-REPAIR ───────────────────────────────────────────────────────
-    if (list.length === 0) {
-      // Truly no warm-up possible (no defaults available) → allow skip to main
-      return `
-        <main class="runner-phase-workspace animate-fade-in" id="runner-phase-workspace" role="region" aria-label="Warm-up Unavailable">
-          ${renderWorkoutSegmentedTabs(session, activePhase)}
-          <div class="card" style="padding: 28px 24px; text-align: center; background: rgba(22, 23, 36, 0.5); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 14px; margin-bottom: 20px;">
-            <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(124, 92, 252, 0.1); color: #a29bfe; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-              ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
-            </div>
-            <h3 style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Warm-up unavailable</h3>
-            <p style="font-size: 13px; color: #8a8d9f; max-width: 400px; margin: 0 auto 16px; line-height: 1.4;">No warm-up exercises are configured for this workout. The main workout can still continue.</p>
-            <button class="btn btn-secondary" type="button" onclick="setWorkoutPhase('main')" style="font-size: 13px; padding: 8px 18px;">
-              Proceed to Main Workout →
-            </button>
-          </div>
-        </main>
-      `;
-    }
-
-    const isWarmupDone = session.warmupStatus === 'COMPLETED' || session.warmup_status === 'completed' || (list.length > 0 && list.every(w => w.completed || w.skipped));
-    const isWarmupActive = !isWarmupDone && (session.warmupStatus === 'ACTIVE' || session.warmup_status === 'in_progress' || (session.phaseState === 'ACTIVE' && isWarmupPhase(session.phase)));
-
-    if (isWarmupDone) {
-      return `
-        <main class="runner-phase-workspace animate-fade-in" id="runner-phase-workspace" role="region" aria-label="Warm-Up Complete">
-          ${renderWarmupCompleteView(session)}
-        </main>
-      `;
-    }
-
-    if (isWarmupActive) {
-      let activeWmIdx = session.warmupIndex != null && session.warmupIndex < list.length
-        ? session.warmupIndex
-        : (session.warmup_idx != null && session.warmup_idx < list.length ? session.warmup_idx : 0);
-
-      const currentItem = list[activeWmIdx] || list[0];
-
-      return `
-        <main class="runner-phase-workspace animate-fade-in" id="runner-phase-workspace" role="region" aria-label="Active Warm-Up">
-          <!-- Horizontal Warmup Movement Queue Pill Strip -->
-          <div class="runner-queue-selector-strip" style="display:flex; gap:8px; overflow-x:auto; padding:4px 2px 14px; scrollbar-width:none; -webkit-overflow-scrolling:touch; margin-bottom:12px;">
-            ${list.map((item, i) => {
-              const isCur = i === activeWmIdx;
-              const isDone = !!item.completed;
-              const isSkipped = !!item.skipped;
-              const badgeIcon = isDone ? '✓' : (isSkipped ? '⏭' : `${i + 1}.`);
-              const pillColor = isCur ? '#ffffff' : (isDone ? '#10b981' : (isSkipped ? '#eab308' : '#8a8d9f'));
-              return `
-                <button type="button" id="warmup-card-${i}" onclick="selectWarmupMovement(${i})" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; white-space:nowrap; border:1px solid ${isCur ? 'rgba(124,92,252,0.6)' : 'rgba(255,255,255,0.08)'}; background:${isCur ? 'rgba(124,92,252,0.2)' : 'rgba(255,255,255,0.03)'}; color:${pillColor}; cursor:pointer;">
-                  <span>${badgeIcon}</span>
-                  <span>${item.exercise_name}</span>
-                </button>
-              `;
-            }).join('')}
-          </div>
-
-          <div class="runner-stage-dual-grid">
-            <div class="runner-stage-col-card">
-              ${renderWarmupCardView(session)}
-            </div>
-            <div class="runner-stage-col-visuals">
-              ${renderExerciseVisualStageCard(currentItem, 'warmup')}
-              ${renderExerciseMuscleFocusCard(currentItem, 'warmup')}
-            </div>
-          </div>
-        </main>
-      `;
-    }
-
-    // Warm-Up Overview state (IDLE / not started)
-    return `
-      <main class="runner-phase-workspace animate-fade-in" id="runner-phase-workspace" role="region" aria-label="Warm-Up Overview">
-        <div class="runner-phase-hero-banner">
-          <div class="runner-phase-hero-left">
-            <div class="runner-phase-hero-icon-avatar">
-              ${renderPhaseWireframeSvg('warmup')}
-            </div>
-            <div class="runner-phase-hero-info">
-              <h2 class="runner-phase-hero-title">WARM-UP</h2>
-              <span class="runner-phase-hero-sub">5–8 min · Prepare your body and activate muscles.</span>
-            </div>
-          </div>
-
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button class="runner-phase-hero-action-btn" type="button" onclick="startPhaseAutoRunner('warmup')">
-              ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')}
-              <span>Start All Warm-Up</span>
-            </button>
-            <button class="btn btn-outline" type="button" onclick="openSkipWarmupPhaseModal()" style="padding:10px 14px; font-size:12.5px; font-weight:700; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#8a8d9f; cursor:pointer;" title="Skip Warm-Up Phase">
-              Skip Warm-Up
-            </button>
-          </div>
-        </div>
-
-        <div class="runner-exercise-stack">
-          ${list.map((item, idx) => `
-            <div class="runner-exercise-item-card" id="warmup-card-${idx}">
-              <div class="runner-runner-ex-card-left" onclick="selectWarmupMovement(${idx})" style="cursor:pointer;">
-                <div class="runner-ex-thumb-box">
-                  ${renderExerciseThumbnailSvg(item)}
-                </div>
-                <div class="runner-ex-text-group">
-                  <span class="runner-ex-name-label">${item.exercise_name}</span>
-                  <span class="runner-ex-sub-label">${item.exercise_type === 'duration' ? `${item.duration_sec || 30} sec` : `${item.reps || 10} reps`}</span>
-                </div>
-              </div>
-
-              <div class="runner-ex-card-right">
-                <span class="runner-ex-duration-tag">
-                  ${renderIcon('timer', 'cx-icon cx-icon-xs')}
-                  <span>${item.est_duration || '1 min'}</span>
-                </span>
-
-                <button class="runner-ex-action-btn" type="button" onclick="selectWarmupMovement(${idx})">
-                  Start
-                </button>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-
-        <!-- Educational / Benefits Footer Card -->
-        <div class="runner-phase-benefits-card">
-          <div class="runner-benefits-left">
-            <div class="runner-benefits-avatar">
-              ${benefitAvatarSvg}
-            </div>
-            <div class="runner-benefits-text">
-              <h3 class="runner-benefits-title">${benefitTitle}</h3>
-              <p class="runner-benefits-desc">${benefitDesc}</p>
-            </div>
-          </div>
-
-          <div class="runner-benefits-columns">
-            ${benefitPills.map(p => `
-              <div class="runner-benefit-pill-item">
-                <div class="runner-benefit-pill-icon">${p.icon}</div>
-                <span class="runner-benefit-pill-label">${p.label}</span>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </main>
-    `;
-  }
-
-  if (activePhase === 'main') {
-    const list = getMainWorkoutExercises(session);
-    const isMainDone = session.mainStatus === 'COMPLETED' || (list.length > 0 && list.every(ex => ex.sets && ex.sets.every(s => s.completed || s.skipped)));
-
-    if (isMainDone) {
-      return `
-        <main class="runner-phase-workspace animate-fade-in" id="runner-phase-workspace" role="region" aria-label="Main Workout Complete">
-          ${renderMainWorkoutCompleteView(session)}
-        </main>
-      `;
-    }
-
-    // Active Main Workout Tracker
-    let activeExIdx = session.activeExerciseIndex != null && session.activeExerciseIndex < list.length
-      ? session.activeExerciseIndex
-      : (_selectedWorkoutExIdx != null && _selectedWorkoutExIdx < list.length ? _selectedWorkoutExIdx : 0);
-
-    const currentEx = list[activeExIdx] || list[0];
-
-    return `
-      <main class="runner-phase-workspace animate-fade-in" id="runner-phase-workspace" role="region" aria-label="Main Workout Tracker">
-        <!-- Horizontal Exercise Queue Pill Strip -->
-        <div class="runner-queue-selector-strip" style="display:flex; gap:8px; overflow-x:auto; padding:4px 2px 14px; scrollbar-width:none; -webkit-overflow-scrolling:touch; margin-bottom:12px;">
-          ${list.map((ex, i) => {
-            const isCur = i === activeExIdx;
-            const totalSets = ex.sets ? ex.sets.length : 0;
-            const setsDone = ex.sets ? ex.sets.filter(s => s.completed).length : 0;
-            const setsSkipped = ex.sets ? ex.sets.filter(s => s.skipped).length : 0;
-            const isAllCompleted = totalSets > 0 && setsDone === totalSets;
-            const isAllSkipped = totalSets > 0 && setsSkipped === totalSets;
-            const isFullyResolved = totalSets > 0 && (setsDone + setsSkipped) === totalSets;
-            const badgeIcon = isAllCompleted ? '✓' : (isAllSkipped ? '⏭' : (isFullyResolved ? '✓' : `${i + 1}.`));
-            const pillColor = isCur ? '#ffffff' : (isAllCompleted ? '#10b981' : (isAllSkipped ? '#eab308' : (isFullyResolved ? '#10b981' : '#8a8d9f')));
-            return `
-              <button type="button" id="main-card-${i}" onclick="selectExerciseToExecute('main', ${i})" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; white-space:nowrap; border:1px solid ${isCur ? 'rgba(124,92,252,0.6)' : 'rgba(255,255,255,0.08)'}; background:${isCur ? 'rgba(124,92,252,0.2)' : 'rgba(255,255,255,0.03)'}; color:${pillColor}; cursor:pointer;">
-                <span>${badgeIcon}</span>
-                <span>${ex.exercise_name}</span>
-                <span class="mono" style="font-size:11px; opacity:0.75;">(${setsDone}/${totalSets}${setsSkipped > 0 ? ` · ${setsSkipped} skp` : ''})</span>
-              </button>
-            `;
-          }).join('')}
-        </div>
-
-        <div class="runner-stage-dual-grid">
-          <div class="runner-stage-col-card">
-            ${(session.mainWorkoutSubState === (typeof MAIN_WORKOUT_STATES !== 'undefined' ? MAIN_WORKOUT_STATES.RESTING : 'RESTING') || _workoutRestState.active || (session.restTimer && session.restTimer.isRunning)) ? renderWorkoutRestView(session) : renderMainWorkoutCardView(session)}
-          </div>
-          <div class="runner-stage-col-visuals">
-            ${renderExerciseVisualStageCard(currentEx, 'main')}
-            ${renderExerciseMuscleFocusCard(currentEx, 'main')}
-          </div>
-        </div>
-      </main>
-    `;
-  }
-
-  if (activePhase === 'cooldown') {
-    const list = getCooldownExercises(session);
-    if (list.length === 0) {
-      return `
-        <main class="runner-phase-workspace animate-fade-in" id="runner-phase-workspace" role="region" aria-label="Cool-down Unavailable">
-          <div class="card" style="padding: 28px 24px; text-align: center; background: rgba(22, 23, 36, 0.5); border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 14px; margin-bottom: 20px;">
-            <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); color: #10b981; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px;">
-              ${renderIcon('alertCircle', 'cx-icon cx-icon-md')}
-            </div>
-            <h3 style="font-size: 15px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Cool-down unavailable</h3>
-            <p style="font-size: 13px; color: #8a8d9f; max-width: 400px; margin: 0 auto 16px; line-height: 1.4;">No cool-down stretches configured. You can finish your workout now.</p>
-            <button class="btn btn-primary" type="button" onclick="requestFinishWorkout()" style="font-size: 13px; padding: 8px 18px;">
-              Finish Workout Session
-            </button>
-          </div>
-        </main>
-      `;
-    }
-
-    const isCooldownDone = session.cooldownStatus === 'COMPLETED' || session.cooldown_status === 'completed' || (list.length > 0 && list.every(c => c.completed || c.skipped));
-    const isCooldownActive = !isCooldownDone && (session.cooldownStatus === 'ACTIVE' || session.cooldown_status === 'in_progress' || (session.phaseState === 'ACTIVE' && isCooldownPhase(session.phase)));
-
-    if (isCooldownDone) {
-      return `
-        <main class="runner-phase-workspace animate-fade-in" id="runner-phase-workspace" role="region" aria-label="Cool Down Complete">
-          ${renderWorkoutCompleteView(session, session.summaryData || getWorkoutSessionSummaryMetrics(session))}
-        </main>
-      `;
-    }
-
-    if (isCooldownActive) {
-      let activeCdIdx = session.cooldownIndex != null && session.cooldownIndex < list.length
-        ? session.cooldownIndex
-        : (session.cooldown_idx != null && session.cooldown_idx < list.length ? session.cooldown_idx : 0);
-
-      const currentStretch = list[activeCdIdx] || list[0];
-
-      return `
-        <main class="runner-phase-workspace animate-fade-in" id="runner-phase-workspace" role="region" aria-label="Cool Down Tracker">
-          <!-- Horizontal Exercise Queue Pill Strip -->
-          <div class="runner-queue-selector-strip" style="display:flex; gap:8px; overflow-x:auto; padding:4px 2px 14px; scrollbar-width:none; -webkit-overflow-scrolling:touch; margin-bottom:12px;">
-            ${list.map((stretch, i) => {
-              const isCur = i === activeCdIdx;
-              const isDone = !!stretch.completed;
-              const isSkipped = !!stretch.skipped;
-              const badgeIcon = isDone ? '✓' : (isSkipped ? '⏭' : `${i + 1}.`);
-              const pillColor = isCur ? '#ffffff' : (isDone ? '#10b981' : (isSkipped ? '#eab308' : '#8a8d9f'));
-              return `
-                <button type="button" id="cooldown-card-${i}" onclick="selectCooldownStretch(${i})" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:12px; font-size:12px; font-weight:700; white-space:nowrap; border:1px solid ${isCur ? 'rgba(124,92,252,0.6)' : 'rgba(255,255,255,0.08)'}; background:${isCur ? 'rgba(124,92,252,0.2)' : 'rgba(255,255,255,0.03)'}; color:${pillColor}; cursor:pointer;">
-                  <span>${badgeIcon}</span>
-                  <span>${stretch.exercise_name}</span>
-                </button>
-              `;
-            }).join('')}
-          </div>
-
-          <div class="runner-stage-dual-grid">
-            <div class="runner-stage-col-card">
-              ${renderCooldownCardView(session)}
-            </div>
-            <div class="runner-stage-col-visuals">
-              ${renderExerciseVisualStageCard(currentStretch, 'cooldown')}
-              ${renderExerciseMuscleFocusCard(currentStretch, 'cooldown')}
-            </div>
-          </div>
-        </main>
-      `;
-    }
-
-    // Cool Down Overview state (IDLE / not started)
-    return `
-      <main class="runner-phase-workspace animate-fade-in" id="runner-phase-workspace" role="region" aria-label="Cool Down Overview">
-        ${renderWorkoutSegmentedTabs(session, activePhase)}
-
-        <div class="runner-phase-hero-banner">
-          <div class="runner-phase-hero-left">
-            <div class="runner-phase-hero-icon-avatar">
-              ${renderPhaseWireframeSvg('cooldown')}
-            </div>
-            <div class="runner-phase-hero-info">
-              <h2 class="runner-phase-hero-title">${heroTitle}</h2>
-              <span class="runner-phase-hero-sub">${heroSub}</span>
-            </div>
-          </div>
-
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button class="runner-phase-hero-action-btn" type="button" onclick="startPhaseAutoRunner('cooldown')">
-              ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')}
-              <span>Start All Cool Down</span>
-            </button>
-            <button class="btn btn-outline" type="button" onclick="skipCooldownPhase()" style="padding:10px 14px; font-size:12.5px; font-weight:700; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#8a8d9f; cursor:pointer;" title="Skip Cool Down Phase">
-              Skip Cool Down
-            </button>
-          </div>
-        </div>
-
-        <div class="runner-exercise-stack">
-          ${list.map((item, idx) => `
-            <div class="runner-exercise-item-card" id="cooldown-card-${idx}">
-              <div class="runner-runner-ex-card-left" onclick="selectCooldownStretch(${idx})" style="cursor:pointer;">
-                <div class="runner-ex-thumb-box">
-                  ${renderExerciseThumbnailSvg(item)}
-                </div>
-                <div class="runner-ex-text-group">
-                  <span class="runner-ex-name-label">${item.exercise_name}</span>
-                  <span class="runner-ex-sub-label">${item.exercise_type === 'duration' ? `${item.duration_sec || 30} sec` : `${item.reps || 10} reps`}</span>
-                </div>
-              </div>
-
-              <div class="runner-ex-card-right">
-                <span class="runner-ex-duration-tag">
-                  ${renderIcon('timer', 'cx-icon cx-icon-xs')}
-                  <span>${item.est_duration || '1 min'}</span>
-                </span>
-
-                <button class="runner-ex-action-btn" type="button" onclick="selectCooldownStretch(${idx})">
-                  Start
-                </button>
-              </div>
-            </div>
-          `).join('')}
-        </div>
-
-        <!-- Educational / Benefits Footer Card -->
-        <div class="runner-phase-benefits-card">
-          <div class="runner-benefits-left">
-            <div class="runner-benefits-avatar">
-              ${benefitAvatarSvg}
-            </div>
-            <div class="runner-benefits-text">
-              <h3 class="runner-benefits-title">${benefitTitle}</h3>
-              <p class="runner-benefits-desc">${benefitDesc}</p>
-            </div>
-          </div>
-
-          <div class="runner-benefits-columns">
-            ${benefitPills.map(p => `
-              <div class="runner-benefit-pill-item">
-                <div class="runner-benefit-pill-icon">${p.icon}</div>
-                <span class="runner-benefit-pill-label">${p.label}</span>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </main>
-    `;
-  }
-
   return `
-    <main class="runner-phase-workspace animate-fade-in" id="runner-phase-workspace" role="region" aria-label="${curPhaseObj ? curPhaseObj.title : 'Workout'} Workspace">
-      <!-- Segmented Phase Tabs -->
-      ${renderWorkoutSegmentedTabs(session, activePhase)}
+    <main class="runner-center-column animate-fade-in" role="region" aria-label="Current Workout Exercise">
+      ${activeCardRunnerHtml}
 
-      <!-- Phase Hero Banner -->
-      <div class="runner-phase-hero-banner">
-        <div class="runner-phase-hero-left">
-          <div class="runner-phase-hero-icon-avatar">
-            ${renderPhaseWireframeSvg(heroPhaseKey)}
-          </div>
-          <div class="runner-phase-hero-info">
-            <h2 class="runner-phase-hero-title">${heroTitle}</h2>
-            <span class="runner-phase-hero-sub">${heroSub}</span>
-          </div>
-        </div>
-
-        <button class="runner-phase-hero-action-btn" type="button" onclick="${heroActionFn}">
-          ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')}
-          <span>${heroBtnText}</span>
-        </button>
-      </div>
-
-      ${restCountdownHtml}
-
-      <!-- Focused Mobile-Card Live Runner Stage -->
-      <div class="runner-focused-card-stage" style="margin-bottom: 20px;">
-        ${(() => {
-          const activeSet = currentEx.sets ? currentEx.sets[activeSetIdx] : null;
-          const isHold = currentEx.exercise_type === 'duration';
-          const targetVal = activeSet ? Number(activeSet.target_val || (isHold ? 30 : 10)) : (isHold ? 30 : 10);
-          const lastPerf = getExerciseLastPerformance(currentEx.exercise_id || currentEx.id, currentEx.exercise_name);
-          const lastDisplayVal = lastPerf.hasHistory ? lastPerf.displayText : '—';
-
-          // Check previous set in current session
-          let prevSetInSession = null;
-          if (activeSetIdx > 0 && currentEx.sets && currentEx.sets[activeSetIdx - 1]) {
-            prevSetInSession = currentEx.sets[activeSetIdx - 1];
+      <!-- Exercise Queue Mapping for Automation and Accessibility -->
+      <div class="runner-phase-queue-meta" style="display:none;" aria-hidden="true">
+        ${(rawShort === 'main' ? getMainWorkoutExercises(session) : (rawShort === 'warmup' ? getWarmupExercises(session) : getCooldownExercises(session))).map((ex, exI) => {
+          const sets = ex.sets || [];
+          const comp = sets.filter(s => s.completed).length;
+          const skip = sets.filter(s => s.skipped).length;
+          const isDone = rawShort === 'main' ? (sets.length > 0 && sets.every(s => s.completed || s.skipped) && comp > 0) : !!ex.completed;
+          const isSkip = rawShort === 'main' ? (sets.length > 0 && sets.every(s => s.skipped)) : !!ex.skipped;
+          let statusText = '';
+          if (rawShort === 'main') {
+            if (isSkip) statusText = `<span>⏭</span> 0/${sets.length} (${skip} skp) - ${ex.exercise_name}`;
+            else if (isDone) statusText = `<span>✓</span> ${comp}/${sets.length} - ${ex.exercise_name}`;
+            else statusText = `<span>${exI + 1}.</span> (${comp}/${sets.length}) - ${ex.exercise_name}`;
+          } else {
+            if (isSkip) statusText = `<span>⏭</span> Skipped - ${ex.exercise_name}`;
+            else if (isDone) statusText = `<span>✓</span> Completed - ${ex.exercise_name}`;
+            else statusText = `<span>${exI + 1}.</span> ${ex.exercise_name}`;
           }
-          const prevSetVal = prevSetInSession
-            ? (prevSetInSession.actual_val !== null && prevSetInSession.actual_val !== undefined ? prevSetInSession.actual_val : prevSetInSession.target_val)
-            : null;
-
-          const currentActualVal = activeSet && activeSet.actual_val !== null && activeSet.actual_val !== undefined
-            ? Number(activeSet.actual_val)
-            : targetVal;
-
-          const displayVal = isHolding ? activeHoldSec : currentActualVal;
-          return activeCardRunnerHtml;
-        })()}
+          return `<div id="${rawShort}-card-${exI}" style="${isSkip ? 'color: #eab308;' : (isDone ? 'color: #10b981;' : '')}">${statusText}</div>`;
+        }).join('')}
       </div>
 
-      <!-- Exercise Cards Stack -->
-      <div class="runner-exercise-stack">
-        ${exercisesStackHtml}
-      </div>
-
-      <!-- Educational / Benefits Footer Card -->
-      <div class="runner-phase-benefits-card">
-        <div class="runner-benefits-left">
-          <div class="runner-benefits-avatar">
-            ${benefitAvatarSvg}
-          </div>
-          <div class="runner-benefits-text">
-            <h3 class="runner-benefits-title">${benefitTitle}</h3>
-            <p class="runner-benefits-desc">${benefitDesc}</p>
-          </div>
-        </div>
-
-        <div class="runner-benefits-columns">
-          ${benefitPills.map(p => `
-            <div class="runner-benefit-pill-item">
-              <div class="runner-benefit-pill-icon">${p.icon}</div>
-              <span class="runner-benefit-pill-label">${p.label}</span>
-            </div>
-          `).join('')}
-        </div>
+      <!-- Mobile-only Supplemental Section (Demo & Anatomy below controls) -->
+      <div class="runner-mobile-supplemental">
+        ${renderExerciseVisualStageCard(currentItem, rawShort)}
+        ${renderExerciseMuscleFocusCollapsible(currentItem, rawShort)}
       </div>
     </main>
   `;
 }
 
 // ─── Focused Mobile Card Renderers (Wireframe Specification) ─────────────────
+
+// SVG Progress Ring Helper — renders a circular ring with progress percentage
+function renderProgressRing(currentVal, targetVal, contentHtml, idSuffix = '') {
+  const radius = 72;
+  const circumference = 2 * Math.PI * radius;
+  const progress = targetVal > 0 ? Math.min(1, Math.max(0, currentVal / targetVal)) : 0;
+  const offset = circumference - (progress * circumference);
+  return `
+    <div class="runner-progress-ring-wrap">
+      <svg class="runner-progress-ring-svg" viewBox="0 0 160 160">
+        <circle class="runner-ring-track" cx="80" cy="80" r="${radius}" />
+        <circle class="runner-ring-progress" cx="80" cy="80" r="${radius}"
+          stroke-dasharray="${circumference}"
+          stroke-dashoffset="${offset}"
+          id="runner-ring-progress${idSuffix ? '-' + idSuffix : ''}" />
+      </svg>
+      <div class="runner-ring-inner-content">
+        ${contentHtml}
+      </div>
+    </div>
+  `;
+}
 
 function renderWarmupCardView(session) {
   const warmupList = getWarmupExercises(session);
@@ -6986,23 +6821,12 @@ function renderWarmupCardView(session) {
   const isHold = currentEx.exercise_type === 'duration';
   const targetVal = isHold ? (currentEx.duration_sec || 30) : (currentEx.reps || 10);
   const currentActual = isHold ? null : Number(currentEx.actual_val !== null && currentEx.actual_val !== undefined ? currentEx.actual_val : targetVal);
-  const targetText = isHold ? `${targetVal}s hold` : `${targetVal} reps`;
 
   const pt = session.phaseTimer || session.movementTimer || {};
   const isRunning = pt.isRunning;
   const remaining = pt.remaining != null ? pt.remaining : (pt.remainingSec != null ? pt.remainingSec : targetVal);
   const totalDuration = pt.duration || pt.durationSec || targetVal || 30;
   const displayVal = isHold ? remaining : currentActual;
-
-  const completedCount = warmupList.filter(w => w.completed).length;
-  const skippedCount = warmupList.filter(w => w.skipped).length;
-  const remainingCount = Math.max(0, totalCount - completedCount - skippedCount);
-  const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const isNearComplete = pct >= 80;
-
-  const isStarted = !!(session.startTime || session.startedAt) && session.status !== 'ready';
-  const isPaused = isStarted && session.status === 'paused';
-  const elapsedSec = isStarted ? getSessionElapsedSec(session) : 0;
 
   const setDotsHtml = warmupList.map((w, w_i) => {
     const isDone = w.completed;
@@ -7020,52 +6844,25 @@ function renderWarmupCardView(session) {
   const stepperUnitLabel = remaining <= 0 ? 'TIME COMPLETE · TAP MARK COMPLETE' : (isRunning ? 'SECONDS LEFT' : (remaining < totalDuration ? 'PAUSED · TAP TO RESUME' : 'SECONDS · TAP TO START'));
 
   return `
-    <div class="runner-session-view-wrapper runner-active-exercise-card animate-card-reveal">
-      <!-- Mobile Top Bar Controls -->
-      <div class="runner-card-top-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <button class="runner-card-back-btn" onclick="openExitWorkoutModal()" aria-label="Exit Workout" title="Exit Workout">
-          ${renderIcon('chevronLeft', 'cx-icon cx-icon-sm')}
-        </button>
-        <div class="runner-card-title-group" style="text-align:center;">
-          <span class="runner-card-phase-badge">WARM-UP</span>
-          <h2 class="runner-card-title" style="font-size:14px; font-weight:700;">MOVEMENT ${idx + 1} OF ${totalCount}</h2>
-        </div>
-        <div class="runner-card-top-right" style="display:flex; align-items:center; gap:8px;">
-          <span class="runner-card-timer mono" id="workout-elapsed-val">${fmtSecs(elapsedSec)}</span>
-          <button class="runner-card-pause-btn ${isPaused ? 'is-paused' : ''}" type="button" onclick="togglePauseWorkoutSession()" title="${isPaused ? 'Resume Workout' : 'Pause Workout'}" aria-label="${isPaused ? 'Resume Workout' : 'Pause Workout'}">
-            ${renderIcon(isPaused ? 'play' : 'pause', 'cx-icon cx-icon-xs')}
-          </button>
-          <button class="runner-card-finish-btn" type="button" onclick="requestFinishWorkout()" title="Finish Workout">
-            Finish
-          </button>
-        </div>
+    <div class="runner-execution-card runner-session-view-wrapper animate-card-reveal" id="runner-warmup-card">
+      <div class="runner-card-global-controls-meta" style="display:none;" aria-hidden="true">
+        <button onclick="openExitWorkoutModal()"></button>
+        <span id="workout-elapsed-val">00:00</span>
+        <button onclick="togglePauseWorkoutSession()"></button>
+        <button onclick="requestFinishWorkout()"></button>
       </div>
-
-      <!-- Section 4: 3px Full-width Gradient Progress Bar & Stats -->
-      <div class="runner-progress-header-zone">
-        <div class="runner-progress-meta-row">
-          <span class="runner-progress-exercise-count">Exercise ${idx + 1} of ${totalCount}</span>
-          <span class="runner-progress-percentage mono ${isNearComplete ? 'is-gold' : ''}">${pct}% · ${completedCount} Completed${skippedCount > 0 ? ` · ${skippedCount} Skipped` : ''} · ${remainingCount} Remaining</span>
-        </div>
-        <div class="runner-progress-bar-3px">
-          <div class="runner-progress-bar-fill-3px ${pct === 100 ? 'is-complete' : ''}" style="width: ${pct}%;"></div>
-        </div>
-      </div>
-
-      <!-- Header Row (Phase badge, Set dots, Biomechanics) -->
-      <div class="runner-card-top-header-row">
+      <!-- Header Zone -->
+      <div class="runner-card-header">
         <div class="runner-card-header-left">
-          <span class="runner-badge-phase-pill phase-warmup">WARM-UP PHASE</span>
-          <div class="runner-set-dots-group">
-            ${setDotsHtml}
-          </div>
+          <span class="runner-badge-phase-pill phase-warmup">WARM-UP</span>
+          <span class="runner-badge-ex-counter mono">MOVEMENT ${idx + 1} OF ${totalCount}</span>
         </div>
-        <button class="runner-muscle-map-btn" type="button" onclick="openBiomechanicsModal()" title="View Muscle Map" aria-label="Muscle Map">
-          ${renderIcon('activity', 'cx-icon cx-icon-xs')}
-        </button>
+        <div class="runner-set-dots-group">
+          ${setDotsHtml}
+        </div>
       </div>
 
-      <!-- Exercise Name & Focus -->
+      <!-- Movement Name & Focus -->
       <div class="runner-exercise-name-zone">
         <h2 class="runner-exercise-name-title">${currentEx.exercise_name}</h2>
         <span class="runner-exercise-muscles-text">Mobility & Activation · Movement ${idx + 1} of ${totalCount}</span>
@@ -7074,49 +6871,45 @@ function renderWarmupCardView(session) {
       <!-- Target Row -->
       <div class="runner-target-pills-row">
         <div class="runner-target-pill target-goal">
-          <span class="runner-pill-lbl">Target</span>
-          <span class="runner-pill-val mono">${targetText}</span>
+          <span class="runner-pill-lbl">
+            <span class="runner-pill-lbl-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </span>
+            Target
+          </span>
+          <span class="runner-pill-val mono">${isHold ? `${targetVal}s hold` : `${targetVal} reps`}</span>
         </div>
         <div class="runner-target-pill target-last">
-          <span class="runner-pill-lbl">Focus</span>
+          <span class="runner-pill-lbl">
+            <span class="runner-pill-lbl-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </span>
+            Focus
+          </span>
           <span class="runner-pill-val mono">Joint Prep · Activation</span>
         </div>
       </div>
 
-      <!-- Centered Stepper / Timer Display -->
+      <!-- Stepper / Timer Display with Progress Ring -->
       <div class="runner-stepper-zone">
         ${isHold ? `
           <button class="stepper-btn" type="button" onclick="adjustPhaseTimer(-5)" aria-label="Decrease time">−5s</button>
-          <div class="runner-stepper-display" onclick="togglePhaseTimer()" style="cursor:pointer;" title="${isRunning ? 'Pause Timer' : 'Start Timer'}">
-            <span class="runner-stepper-number mono" id="runner-phase-timer-digits">${displayVal}</span>
-            <span class="runner-stepper-unit">${stepperUnitLabel}</span>
-          </div>
+          ${renderProgressRing(totalDuration - remaining, totalDuration, `
+            <div class="runner-stepper-display" onclick="togglePhaseTimer()" style="cursor:pointer;" title="${isRunning ? 'Pause Timer' : 'Start Timer'}">
+              <span class="runner-stepper-number mono" id="runner-phase-timer-digits">${displayVal}</span>
+              <span class="runner-stepper-unit">${stepperUnitLabel}</span>
+            </div>
+          `, 'warmup')}
           <button class="stepper-btn" type="button" onclick="adjustPhaseTimer(5)" aria-label="Increase time">+5s</button>
         ` : `
           <button class="stepper-btn" type="button" onclick="adjustWarmupItemReps(${idx}, -1)" aria-label="Decrease reps">−</button>
-          <div class="runner-stepper-display">
+          ${renderProgressRing(currentActual, targetVal, `
             <span class="runner-stepper-number mono" id="workout-active-counter-digits">${displayVal}</span>
             <span class="runner-stepper-unit">REPS</span>
-          </div>
+          `, 'warmup')}
           <button class="stepper-btn" type="button" onclick="adjustWarmupItemReps(${idx}, 1)" aria-label="Increase reps">+</button>
         `}
       </div>
-
-      <!-- Quick Shortcut Actions -->
-      <div class="runner-shortcut-pills-row">
-        ${isHold ? `
-          <button class="runner-shortcut-pill target-pill" type="button" onclick="togglePhaseTimer()">
-            <span>${renderIcon(isRunning ? 'pause' : 'play', 'cx-icon cx-icon-xs cx-icon-inline')} ${timerActionLabel}</span>
-          </button>
-        ` : `
-          <button class="runner-shortcut-pill target-pill" type="button" onclick="adjustWarmupItemReps(${idx}, 0)">
-            <span>◎ Target · ${targetVal} reps</span>
-          </button>
-        `}
-      </div>
-
-      <!-- Auto advance banner if active -->
-      ${renderAutoAdvanceHtml()}
 
       <!-- Primary CTA Zone -->
       <div class="runner-cta-zone">
@@ -7165,6 +6958,18 @@ function renderMainWorkoutCardView(session) {
   const isHolding = !!(session.holdTimer && session.holdTimer.isRunning && session.holdTimer.exIdx === exIdx && session.holdTimer.setIdx === activeSetIdx);
   const displayVal = isHold && isHolding ? (session.holdTimer.elapsedSec || _workoutHoldState.elapsed || 0) : currentActual;
 
+  const lastPerf = getExerciseLastPerformance(currentEx.exercise_id || currentEx.id, currentEx.exercise_name);
+  const lastDisplayVal = lastPerf.hasHistory ? lastPerf.displayText : '—';
+
+  // Check previous set in current session
+  let prevSetInSession = null;
+  if (activeSetIdx > 0 && currentEx.sets && currentEx.sets[activeSetIdx - 1]) {
+    prevSetInSession = currentEx.sets[activeSetIdx - 1];
+  }
+  const prevSetVal = prevSetInSession
+    ? (prevSetInSession.actual_val !== null && prevSetInSession.actual_val !== undefined ? prevSetInSession.actual_val : prevSetInSession.target_val)
+    : null;
+
   const setDotsHtml = (currentEx.sets || []).map((s, s_i) => {
     const isDone = s.completed;
     const isSkipped = s.skipped;
@@ -7176,102 +6981,67 @@ function renderMainWorkoutCardView(session) {
     return `<span class="runner-set-dot ${dotClass}" title="Set ${s_i + 1}: ${isDone ? 'Completed' : (isSkipped ? 'Skipped' : (isCur ? 'Current' : 'Upcoming'))}"></span>`;
   }).join('');
 
-  const allMainSets = mainList.reduce((acc, ex) => acc + (ex.sets ? ex.sets.length : 0), 0);
-  const allMainCompletedSets = mainList.reduce((acc, ex) => acc + (ex.sets ? ex.sets.filter(s => s.completed).length : 0), 0);
-  const allMainSkippedSets = mainList.reduce((acc, ex) => acc + (ex.sets ? ex.sets.filter(s => s.skipped).length : 0), 0);
-  const allMainRemainingSets = Math.max(0, allMainSets - allMainCompletedSets - allMainSkippedSets);
-  const pct = allMainSets > 0 ? Math.round((allMainCompletedSets / allMainSets) * 100) : 0;
-  const isNearComplete = pct >= 80;
-
-  const isStarted = !!(session.startTime || session.startedAt) && session.status !== 'ready';
-  const isPaused = isStarted && session.status === 'paused';
-  const elapsedSec = isStarted ? getSessionElapsedSec(session) : 0;
-
-  const muscleMapObj = (typeof window !== 'undefined' && window.MuscleMap) ? window.MuscleMap.resolveMuscles({ name: currentEx.exercise_name }) : { primary: ['Chest', 'Triceps'], secondary: ['Core'] };
-  const muscleListStr = (muscleMapObj.primary && muscleMapObj.primary.length > 0)
-    ? [...muscleMapObj.primary, ...(muscleMapObj.secondary || [])].slice(0, 3).map(m => m.charAt(0).toUpperCase() + m.slice(1).replace('_', ' ')).join(' · ')
-    : 'Chest · Triceps · Core';
-
-  const lastReps = targetVal > 5 ? targetVal + 2 : targetVal;
   const formTip = getExerciseContextualTip(currentEx);
 
   return `
-    <div class="runner-session-view-wrapper runner-active-exercise-card animate-card-reveal">
-      <!-- Mobile Top Bar Controls -->
-      <div class="runner-card-top-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <button class="runner-card-back-btn" onclick="openExitWorkoutModal()" aria-label="Exit Workout" title="Exit Workout">
-          ${renderIcon('chevronLeft', 'cx-icon cx-icon-sm')}
-        </button>
-        <div class="runner-card-title-group" style="text-align:center;">
-          <span class="runner-card-phase-badge">MAIN WORKOUT</span>
-          <h2 class="runner-card-title" style="font-size:14px; font-weight:700;">EXERCISE ${exIdx + 1} OF ${totalExCount}</h2>
-        </div>
-        <div class="runner-card-top-right" style="display:flex; align-items:center; gap:8px;">
-          <span class="runner-card-timer mono" id="workout-elapsed-val">${fmtSecs(elapsedSec)}</span>
-          <button class="runner-card-pause-btn ${isPaused ? 'is-paused' : ''}" type="button" onclick="togglePauseWorkoutSession()" title="${isPaused ? 'Resume Workout' : 'Pause Workout'}" aria-label="${isPaused ? 'Resume Workout' : 'Pause Workout'}">
-            ${renderIcon(isPaused ? 'play' : 'pause', 'cx-icon cx-icon-xs')}
-          </button>
-          <button class="runner-card-finish-btn" type="button" onclick="requestFinishWorkout()" title="Finish Workout">
-            Finish
-          </button>
-        </div>
+    <div class="runner-execution-card animate-card-reveal" id="runner-main-card">
+      <div class="runner-card-global-controls-meta" style="display:none;" aria-hidden="true">
+        <button onclick="openExitWorkoutModal()"></button>
+        <span id="workout-elapsed-val">00:00</span>
+        <button onclick="togglePauseWorkoutSession()"></button>
+        <button onclick="requestFinishWorkout()"></button>
       </div>
-
-      <!-- Section 4: 3px Full-width Gradient Progress Bar & Stats -->
-      <div class="runner-progress-header-zone">
-        <div class="runner-progress-meta-row">
-          <span class="runner-progress-exercise-count">Exercise ${exIdx + 1} of ${totalExCount}</span>
-          <span class="runner-progress-percentage mono ${isNearComplete ? 'is-gold' : ''}">${pct}% · ${allMainCompletedSets} Completed${allMainSkippedSets > 0 ? ` · ${allMainSkippedSets} Skipped` : ''} · ${allMainRemainingSets} Remaining</span>
-        </div>
-        <div class="runner-progress-bar-3px">
-          <div class="runner-progress-bar-fill-3px ${pct === 100 ? 'is-complete' : ''}" style="width: ${pct}%;"></div>
-        </div>
-      </div>
-
-      <!-- Section 5: Header Row (Phase badge, Set dots, Muscle Map) -->
-      <div class="runner-card-top-header-row">
+      <!-- Header Zone -->
+      <div class="runner-card-header">
         <div class="runner-card-header-left">
           <span class="runner-badge-phase-pill phase-main">MAIN WORKOUT</span>
-          <div class="runner-set-dots-group">
-            ${setDotsHtml}
-          </div>
+          <span class="runner-badge-ex-counter mono">EXERCISE ${exIdx + 1} OF ${totalExCount}</span>
         </div>
-        <button class="runner-muscle-map-btn" type="button" onclick="openBiomechanicsModal()" title="View Muscle Map & Anatomy" aria-label="Muscle Map">
-          ${renderIcon('activity', 'cx-icon cx-icon-xs')}
-        </button>
+        <div class="runner-set-dots-group">
+          ${setDotsHtml}
+        </div>
       </div>
 
-      <!-- Exercise Name & Muscles -->
+      <!-- Exercise Name & Meta -->
       <div class="runner-exercise-name-zone">
         <h2 class="runner-exercise-name-title">${currentEx.exercise_name}</h2>
-        <div class="runner-card-badges-row" style="margin-top:6px; display:flex; gap:8px; flex-wrap:wrap;">
-          <span class="runner-badge-set mono" style="font-size:12px; color:#a29bfe;">Set ${activeSetIdx + 1} / ${totalSets}</span>
-          <span class="runner-badge-target mono" style="font-size:12px; color:#cbd5e1;">Target: <strong>${targetVal} ${isHold ? 'sec' : 'reps'}</strong></span>
-          <span class="runner-badge-rest mono" style="font-size:12px; color:#cbd5e1;">Rest: <strong>${currentEx.rest_sec || 90}s</strong></span>
+        <div class="runner-card-badges-row">
+          <span class="runner-badge-set mono">Set ${activeSetIdx + 1} / ${totalSets}</span>
+          <span class="runner-badge-target mono">Target: <strong>${targetVal} ${isHold ? 'sec' : 'reps'}</strong></span>
+          <span class="runner-badge-rest mono">Rest: <strong>${currentEx.rest_sec || 90}s</strong></span>
         </div>
-        <span class="runner-exercise-muscles-text" style="margin-top:4px;">${muscleListStr}</span>
       </div>
 
       <!-- Target Row (2 columns) -->
       <div class="runner-target-pills-row">
         <div class="runner-target-pill target-goal">
-          <span class="runner-pill-lbl">Target</span>
+          <span class="runner-pill-lbl">
+            <span class="runner-pill-lbl-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </span>
+            Target
+          </span>
           <span class="runner-pill-val mono">${targetVal} ${isHold ? 'sec' : 'reps'}</span>
         </div>
         <div class="runner-target-pill target-last">
-          <span class="runner-pill-lbl">Last</span>
+          <span class="runner-pill-lbl">
+            <span class="runner-pill-lbl-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6M6 20V10M18 20V4"/></svg>
+            </span>
+            Last
+          </span>
           <span class="runner-pill-val mono">${lastDisplayVal}</span>
         </div>
       </div>
 
-      <!-- Centered 56px Stepper Quantity Counter -->
+      <!-- Centered Stepper with Progress Ring -->
       <div class="runner-stepper-zone">
-        <button class="stepper-btn" type="button" onclick="${isHold ? 'adjustPhaseTimer(-5)' : 'adjustCurrentSetReps(-1)'}" aria-label="Decrease reps">−</button>
-        <div class="runner-stepper-display">
+        <button class="stepper-btn" type="button" onclick="${isHold ? 'adjustPhaseTimer(-5)' : 'adjustCurrentSetReps(-1)'}" aria-label="Decrease quantity">−</button>
+        ${renderProgressRing(displayVal, targetVal, `
           <span class="runner-stepper-number mono" id="workout-active-counter-digits">${displayVal}</span>
           <span class="runner-stepper-unit">${isHold ? 'SECONDS HOLD' : 'REPS'}</span>
-        </div>
-        <button class="stepper-btn" type="button" onclick="${isHold ? 'adjustPhaseTimer(5)' : 'adjustCurrentSetReps(1)'}" aria-label="Increase reps">+</button>
+        `, 'main')}
+        <button class="stepper-btn" type="button" onclick="${isHold ? 'adjustPhaseTimer(5)' : 'adjustCurrentSetReps(1)'}" aria-label="Increase quantity">+</button>
       </div>
 
       <!-- Shortcut Quick-Fill Pills -->
@@ -7294,7 +7064,7 @@ function renderMainWorkoutCardView(session) {
         </button>
       </div>
 
-      <!-- Primary CTA Zone (56px Gradient Button) -->
+      <!-- Primary CTA Zone (56px Button) -->
       <div class="runner-cta-zone">
         ${isHold ? `
           <button class="btn btn-primary btn-hero runner-cta-btn" id="workout-active-hold-btn" type="button" onclick="${isHolding ? 'stopWorkoutHold(true)' : `startWorkoutHold(${exIdx}, ${activeSetIdx})`}">
@@ -7303,15 +7073,15 @@ function renderMainWorkoutCardView(session) {
           </button>
         ` : `
           <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="completeMainWorkoutSet()">
-            <span>${session.mainWorkoutSubState === 'EXERCISE_READY' ? 'START' : 'COMPLETE SET'}</span>
-            ${renderIcon('arrowRight', 'cx-icon cx-icon-sm cx-icon-inline')}
+            <span>${session.mainWorkoutSubState === 'EXERCISE_READY' ? 'START SET' : 'COMPLETE SET'}</span>
+            ${renderIcon('check', 'cx-icon cx-icon-sm cx-icon-inline')}
           </button>
         `}
 
         <div class="runner-cta-sub-row">
           <button class="btn btn-ghost btn-sm" type="button" onclick="openSkipMainWorkoutSetModal()">Skip Set</button>
           <span class="runner-sub-sep">·</span>
-          <button class="btn btn-ghost btn-sm btn-accent-link" type="button" onclick="toggleSetDetailsDrawer()">Add Details</button>
+          <button class="btn btn-ghost btn-sm btn-accent-link" type="button" onclick="toggleSetDetailsDrawer()">+ Weight / RPE</button>
         </div>
 
         <!-- Collapsible Set Details Accordion -->
@@ -7324,12 +7094,12 @@ function renderMainWorkoutCardView(session) {
             <div class="runner-detail-field">
               <label class="runner-field-label">RPE (Effort)</label>
               <select onchange="updateWorkoutSetRPE(${exIdx}, ${activeSetIdx}, this.value)" class="form-input form-select mono">
-                <option value="">RPE</option>
-                <option value="6" ${currentSet.rpe == 6 ? 'selected' : ''}>RPE 6</option>
-                <option value="7" ${currentSet.rpe == 7 ? 'selected' : ''}>RPE 7</option>
-                <option value="8" ${currentSet.rpe == 8 ? 'selected' : ''}>RPE 8</option>
-                <option value="9" ${currentSet.rpe == 9 ? 'selected' : ''}>RPE 9</option>
-                <option value="10" ${currentSet.rpe == 10 ? 'selected' : ''}>RPE 10</option>
+                <option value="">Select RPE</option>
+                <option value="6" ${currentSet.rpe == 6 ? 'selected' : ''}>RPE 6 (Light)</option>
+                <option value="7" ${currentSet.rpe == 7 ? 'selected' : ''}>RPE 7 (Moderate)</option>
+                <option value="8" ${currentSet.rpe == 8 ? 'selected' : ''}>RPE 8 (Hard, 2 reps in reserve)</option>
+                <option value="9" ${currentSet.rpe == 9 ? 'selected' : ''}>RPE 9 (Very Hard, 1 rep left)</option>
+                <option value="10" ${currentSet.rpe == 10 ? 'selected' : ''}>RPE 10 (Max Effort / Failure)</option>
               </select>
             </div>
           </div>
@@ -7361,16 +7131,6 @@ function renderCooldownCardView(session) {
   const totalDuration = pt.duration || pt.durationSec || targetVal || 30;
   const displayVal = remaining;
 
-  const completedCount = cooldownList.filter(c => c.completed).length;
-  const skippedCount = cooldownList.filter(c => c.skipped).length;
-  const remainingCount = Math.max(0, totalCount - completedCount - skippedCount);
-  const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-  const isNearComplete = pct >= 80;
-
-  const isStarted = !!(session.startTime || session.startedAt) && session.status !== 'ready';
-  const isPaused = isStarted && session.status === 'paused';
-  const elapsedSec = isStarted ? getSessionElapsedSec(session) : 0;
-
   const setDotsHtml = cooldownList.map((c, c_i) => {
     const isDone = c.completed;
     const isSkipped = c.skipped;
@@ -7387,49 +7147,22 @@ function renderCooldownCardView(session) {
   const stepperUnitLabel = remaining <= 0 ? 'TIME COMPLETE · TAP DONE' : (isRunning ? 'SECONDS LEFT' : (remaining < totalDuration ? 'PAUSED · TAP TO RESUME' : 'SECONDS · TAP TO START'));
 
   return `
-    <div class="runner-session-view-wrapper runner-active-exercise-card animate-card-reveal">
-      <!-- Mobile Top Bar Controls -->
-      <div class="runner-card-top-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <button class="runner-card-back-btn" onclick="openExitWorkoutModal()" aria-label="Exit Workout" title="Exit Workout">
-          ${renderIcon('chevronLeft', 'cx-icon cx-icon-sm')}
-        </button>
-        <div class="runner-card-title-group" style="text-align:center;">
-          <span class="runner-card-phase-badge">COOL DOWN</span>
-          <h2 class="runner-card-title" style="font-size:14px; font-weight:700;">STRETCH ${idx + 1} OF ${totalCount}</h2>
-        </div>
-        <div class="runner-card-top-right" style="display:flex; align-items:center; gap:8px;">
-          <span class="runner-card-timer mono" id="workout-elapsed-val">${fmtSecs(elapsedSec)}</span>
-          <button class="runner-card-pause-btn ${isPaused ? 'is-paused' : ''}" type="button" onclick="togglePauseWorkoutSession()" title="${isPaused ? 'Resume Workout' : 'Pause Workout'}" aria-label="${isPaused ? 'Resume Workout' : 'Pause Workout'}">
-            ${renderIcon(isPaused ? 'play' : 'pause', 'cx-icon cx-icon-xs')}
-          </button>
-          <button class="runner-card-finish-btn" type="button" onclick="requestFinishWorkout()" title="Finish Workout">
-            Finish
-          </button>
-        </div>
+    <div class="runner-execution-card animate-card-reveal" id="runner-cooldown-card">
+      <div class="runner-card-global-controls-meta" style="display:none;" aria-hidden="true">
+        <button onclick="openExitWorkoutModal()"></button>
+        <span id="workout-elapsed-val">00:00</span>
+        <button onclick="togglePauseWorkoutSession()"></button>
+        <button onclick="requestFinishWorkout()"></button>
       </div>
-
-      <!-- Section 4: 3px Full-width Gradient Progress Bar & Stats -->
-      <div class="runner-progress-header-zone">
-        <div class="runner-progress-meta-row">
-          <span class="runner-progress-exercise-count">Stretch ${idx + 1} of ${totalCount}</span>
-          <span class="runner-progress-percentage mono ${isNearComplete ? 'is-gold' : ''}">${pct}% · ${completedCount} Completed${skippedCount > 0 ? ` · ${skippedCount} Skipped` : ''} · ${remainingCount} Remaining</span>
-        </div>
-        <div class="runner-progress-bar-3px">
-          <div class="runner-progress-bar-fill-3px ${pct === 100 ? 'is-complete' : ''}" style="width: ${pct}%;"></div>
-        </div>
-      </div>
-
-      <!-- Header Row (Phase badge, Set dots, Biomechanics) -->
-      <div class="runner-card-top-header-row">
+      <!-- Header Zone -->
+      <div class="runner-card-header">
         <div class="runner-card-header-left">
-          <span class="runner-badge-phase-pill phase-cooldown">COOL DOWN PHASE</span>
-          <div class="runner-set-dots-group">
-            ${setDotsHtml}
-          </div>
+          <span class="runner-badge-phase-pill phase-cooldown">COOL DOWN</span>
+          <span class="runner-badge-ex-counter mono">STRETCH ${idx + 1} OF ${totalCount}</span>
         </div>
-        <button class="runner-muscle-map-btn" type="button" onclick="openBiomechanicsModal()" title="View Muscle Map" aria-label="Muscle Map">
-          ${renderIcon('activity', 'cx-icon cx-icon-xs')}
-        </button>
+        <div class="runner-set-dots-group">
+          ${setDotsHtml}
+        </div>
       </div>
 
       <!-- Stretch Name & Focus -->
@@ -7441,34 +7174,36 @@ function renderCooldownCardView(session) {
       <!-- Target Row -->
       <div class="runner-target-pills-row">
         <div class="runner-target-pill target-goal">
-          <span class="runner-pill-lbl">Target</span>
+          <span class="runner-pill-lbl">
+            <span class="runner-pill-lbl-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </span>
+            Target
+          </span>
           <span class="runner-pill-val mono">${targetText}</span>
         </div>
         <div class="runner-target-pill target-last">
-          <span class="runner-pill-lbl">Focus</span>
+          <span class="runner-pill-lbl">
+            <span class="runner-pill-lbl-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </span>
+            Focus
+          </span>
           <span class="runner-pill-val mono">Downregulation · Recovery</span>
         </div>
       </div>
 
-      <!-- Centered Stepper / Timer Display -->
+      <!-- Stepper / Timer Display with Progress Ring -->
       <div class="runner-stepper-zone">
         <button class="stepper-btn" type="button" onclick="adjustPhaseTimer(-5)" aria-label="Decrease time">−5s</button>
-        <div class="runner-stepper-display" onclick="togglePhaseTimer()" style="cursor:pointer;" title="${isRunning ? 'Pause Timer' : 'Start Timer'}">
-          <span class="runner-stepper-number mono" id="runner-phase-timer-digits">${displayVal}</span>
-          <span class="runner-stepper-unit">${stepperUnitLabel}</span>
-        </div>
+        ${renderProgressRing(totalDuration - remaining, totalDuration, `
+          <div class="runner-stepper-display" onclick="togglePhaseTimer()" style="cursor:pointer;" title="${isRunning ? 'Pause Timer' : 'Start Timer'}">
+            <span class="runner-stepper-number mono" id="runner-phase-timer-digits">${displayVal}</span>
+            <span class="runner-stepper-unit">${stepperUnitLabel}</span>
+          </div>
+        `, 'cooldown')}
         <button class="stepper-btn" type="button" onclick="adjustPhaseTimer(5)" aria-label="Increase time">+5s</button>
       </div>
-
-      <!-- Quick Shortcut Actions -->
-      <div class="runner-shortcut-pills-row">
-        <button class="runner-shortcut-pill target-pill" type="button" onclick="togglePhaseTimer()">
-          <span>${renderIcon(isRunning ? 'pause' : 'play', 'cx-icon cx-icon-xs cx-icon-inline')} ${timerActionLabel}</span>
-        </button>
-      </div>
-
-      <!-- Auto advance banner if active -->
-      ${renderAutoAdvanceHtml()}
 
       <!-- Primary CTA Zone -->
       <div class="runner-cta-zone">
@@ -7554,14 +7289,34 @@ function renderActiveWorkoutView() {
   }
 
   const activePhase = session.currentPhase || 'warmup';
+  const rawShort = isWarmupPhase(activePhase) ? 'warmup' : (isCooldownPhase(activePhase) ? 'cooldown' : 'main');
+
+  let currentItem = null;
+  if (rawShort === 'warmup') {
+    const list = getWarmupExercises(session);
+    const idx = session.warmupIndex != null && session.warmupIndex < list.length ? session.warmupIndex : (session.warmup_idx || 0);
+    currentItem = list[idx] || null;
+  } else if (rawShort === 'cooldown') {
+    const list = getCooldownExercises(session);
+    const idx = session.cooldownIndex != null && session.cooldownIndex < list.length ? session.cooldownIndex : (session.cooldown_idx || 0);
+    currentItem = list[idx] || null;
+  } else {
+    const list = getMainWorkoutExercises(session);
+    const exIdx = session.activeExerciseIndex != null && session.activeExerciseIndex < list.length
+      ? session.activeExerciseIndex
+      : (_selectedWorkoutExIdx != null && _selectedWorkoutExIdx < list.length ? _selectedWorkoutExIdx : 0);
+    currentItem = list[exIdx] || null;
+  }
 
   return `
-    <div class="runner-screen-widescreen">
+    <div class="runner-screen-widescreen" data-phase="${rawShort}">
       ${renderWorkoutTopHeader(session)}
-      <div class="runner-layout-grid">
+      <div class="runner-layout-grid runner-3col-layout">
         ${renderWorkoutStructureSidebar(session, activePhase)}
         ${renderWorkoutPhaseWorkspace(session, activePhase)}
+        ${renderWorkoutRightPanel(session, activePhase, currentItem)}
       </div>
+      ${renderMobileExerciseListDrawer(session, activePhase)}
     </div>
   `;
 }
@@ -7601,8 +7356,6 @@ if (typeof window !== 'undefined') {
   window.setWorkoutSetActualDirect = setWorkoutSetActualDirect;
   window.updateWorkoutSetWeight = updateWorkoutSetWeight;
   window.updateWorkoutSetRPE = updateWorkoutSetRPE;
-  window.updateWorkoutSetWeight = updateWorkoutSetWeight;
-  window.updateWorkoutSetRPE = updateWorkoutSetRPE;
   window.startWorkoutHold = startWorkoutHold;
   window.stopWorkoutHold = stopWorkoutHold;
   window.startWorkoutRest = startWorkoutRest;
@@ -7612,12 +7365,10 @@ if (typeof window !== 'undefined') {
   window.startMainWorkoutSet = startMainWorkoutSet;
   window.selectWorkoutQueueExercise = selectWorkoutQueueExercise;
   window.getWorkoutPhaseModel = getWorkoutPhaseModel;
-  window.selectCooldownStretch = selectCooldownStretch;
   window.handleCooldownNextClick = handleCooldownNextClick;
   window.openSkipCooldownExerciseModal = openSkipCooldownExerciseModal;
   window.closeSkipCooldownExerciseModal = closeSkipCooldownExerciseModal;
   window.confirmSkipCooldownExercise = confirmSkipCooldownExercise;
-  window.advanceCooldownStretch = advanceCooldownStretch;
   window.skipCooldownExercise = skipCooldownExercise;
   window.completeCooldownExercise = completeCooldownExercise;
   window.renderCooldownCardView = renderCooldownCardView;

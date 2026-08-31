@@ -247,5 +247,7 @@ if (!emptyCooldownHtml.includes('Cool-down unavailable')) {
 }
 
 console.log('ALL WORKOUT SCREEN REDESIGN LOGICAL TESTS PASSED SUCCESSFULLY! ✅');
+if (typeof context !== 'undefined' && context.cleanupAllWorkoutTimers) context.cleanupAllWorkoutTimers();
+process.exit(0);
 
 

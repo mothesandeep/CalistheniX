@@ -141,3 +141,5 @@ assert.strictEqual(modelAfterWarmup.mainWorkout.completedSets, 0, 'Main workout 
 console.log('  ✓ Completing Warm-Up does not pollute or advance Main Workout sets');
 
 console.log('\n=== ALL PHASE SEPARATION & DATA INTEGRITY TESTS PASSED! ===');
+if (typeof sandbox !== 'undefined' && sandbox.cleanupAllWorkoutTimers) sandbox.cleanupAllWorkoutTimers();
+process.exit(0);

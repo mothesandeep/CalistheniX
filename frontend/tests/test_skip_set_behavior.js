@@ -286,3 +286,5 @@ console.log('  ✓ 5. Passed: Skipped status is accurately preserved and display
 console.log('\n=============================================================');
 console.log('🎉 ALL SKIP SET BEHAVIOR TESTS VERIFIED & PASSED 100%!');
 console.log('=============================================================');
+if (typeof sandbox !== 'undefined' && sandbox.cleanupAllWorkoutTimers) sandbox.cleanupAllWorkoutTimers();
+process.exit(0);

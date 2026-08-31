@@ -104,6 +104,16 @@ function getActiveSession() {
   try {
     const raw = localStorage.getItem(LS_ACTIVE_SESSION);
     const parsed = raw ? JSON.parse(raw) : null;
+    if (parsed) {
+      if (typeof normalizeSessionExerciseLists === 'function') {
+        normalizeSessionExerciseLists(parsed);
+      } else {
+        if (!parsed.warmup && parsed.warmup_exercises) parsed.warmup = parsed.warmup_exercises;
+        if (!parsed.warmup_exercises && parsed.warmup) parsed.warmup_exercises = parsed.warmup;
+        if (!parsed.cooldown && parsed.cooldown_exercises) parsed.cooldown = parsed.cooldown_exercises;
+        if (!parsed.cooldown_exercises && parsed.cooldown) parsed.cooldown_exercises = parsed.cooldown;
+      }
+    }
     if (typeof state !== 'undefined') {
       state.activeSession = parsed;
     }

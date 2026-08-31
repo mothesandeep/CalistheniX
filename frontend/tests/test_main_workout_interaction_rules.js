@@ -291,3 +291,5 @@ console.log('  ✓ Rule 7 PASSED: Next exercise unlocks only when current exerci
 console.log('\n=============================================================');
 console.log('🎉 ALL 7 MAIN WORKOUT INTERACTION RULES VERIFIED & PASSED 100%!');
 console.log('=============================================================');
+if (typeof sandbox !== 'undefined' && sandbox.cleanupAllWorkoutTimers) sandbox.cleanupAllWorkoutTimers();
+process.exit(0);

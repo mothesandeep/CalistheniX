@@ -264,7 +264,7 @@ async function runAllTests() {
   console.log('\n--- Suite 3: Global Pause Freezes All 5 Timers ---');
 
   await runTest('Pause freezes session, exercise, rest, warmup, and cooldown timers simultaneously', async (ctx) => {
-    const now = 1756500000000;
+    const now = Date.now();
     const session = {
       id: 'pause-test-1',
       routine: 'PULL B',

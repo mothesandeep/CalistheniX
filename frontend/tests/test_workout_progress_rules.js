@@ -315,3 +315,5 @@ console.log('  ✓ Rule 7 PASSED: Authoritative session state is identical acros
 console.log('\n=============================================================');
 console.log('🎉 ALL 7 WORKOUT PROGRESS LOGIC RULES VERIFIED & PASSED 100%!');
 console.log('=============================================================');
+if (typeof ctx !== 'undefined' && ctx.cleanupAllWorkoutTimers) ctx.cleanupAllWorkoutTimers();
+process.exit(0);

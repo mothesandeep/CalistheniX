@@ -305,3 +305,5 @@ console.log('  ✓ 6. Passed: Next exercise index and set 0 are accurately posit
 console.log('\n=============================================================');
 console.log('🎉 ALL REST TIMER BEHAVIOR TESTS VERIFIED & PASSED 100%!');
 console.log('=============================================================');
+if (typeof sandbox !== 'undefined' && sandbox.cleanupAllWorkoutTimers) sandbox.cleanupAllWorkoutTimers();
+process.exit(0);

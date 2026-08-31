@@ -91,6 +91,9 @@ function switchView(view) {
   state.editingId = null;
   stopTimer();
   stopRest();
+  if (typeof cleanupAllWorkoutTimers === 'function') {
+    cleanupAllWorkoutTimers();
+  }
   if (_chartInstance) {
     _chartInstance.destroy();
     _chartInstance = null;
@@ -113,6 +116,9 @@ function switchView(view) {
 async function goBack() {
   stopRest();
   stopTimer();
+  if (typeof cleanupAllWorkoutTimers === 'function') {
+    cleanupAllWorkoutTimers();
+  }
   if (_chartInstance) {
     _chartInstance.destroy();
     _chartInstance = null;
