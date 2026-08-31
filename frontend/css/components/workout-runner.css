@@ -5025,10 +5025,12 @@
 }
 
 .runner-exercise-name-title {
-  font-size: 26px;
+  font-family: var(--font-heading);
+  font-size: 28px;
   font-weight: 800;
   color: #ffffff;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
   margin: 0;
 }
 
@@ -5041,11 +5043,12 @@
 
 .runner-badge-set {
   font-size: 12px;
+  font-weight: 700;
   color: var(--phase-accent, #FF5D5D);
   background: var(--phase-accent-dim, rgba(255, 93, 93, 0.1));
   border: 1px solid var(--phase-accent-border, rgba(255, 93, 93, 0.25));
   border-radius: 6px;
-  padding: 2px 8px;
+  padding: 3px 10px;
 }
 
 .runner-badge-target, .runner-badge-rest {
@@ -5061,8 +5064,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 8px 20px;
+  gap: 20px;
+  padding: 12px 20px;
 }
 
 .runner-stepper-display {
@@ -5118,10 +5121,10 @@
 
 .runner-stepper-number {
   font-family: var(--mono);
-  font-size: 56px;
+  font-size: 58px;
   font-weight: 900;
   line-height: 1;
-  color: var(--cx-text, #F2F2F0);
+  color: #ffffff;
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
@@ -5130,35 +5133,37 @@
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
-  color: #8a8d9f;
-  margin-top: 4px;
+  color: var(--cx-text-secondary, #8A8A93);
+  margin-top: 6px;
   text-transform: uppercase;
+  text-align: center;
 }
 
 .stepper-btn {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  font-size: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 22px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--cx-text, #F2F2F0);
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .stepper-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.2);
-  transform: scale(1.04);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  transform: scale(1.06);
 }
 
 .stepper-btn:active {
-  transform: scale(0.96);
+  transform: scale(0.94);
 }
 
 .runner-cta-zone {
@@ -5169,7 +5174,7 @@
 
 .runner-cta-btn {
   height: 56px;
-  font-size: 16px;
+  font-size: 15.5px;
   font-weight: 800;
   letter-spacing: 0.04em;
   border-radius: 14px;
@@ -5177,14 +5182,63 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  box-shadow: 0 6px 20px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  background: var(--phase-accent);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 6px 22px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.runner-cta-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 26px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.45);
+  filter: brightness(1.08);
+}
+
+.runner-cta-btn:active {
+  transform: translateY(1px);
+  filter: brightness(0.95);
 }
 
 .runner-cta-sub-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.runner-cta-sub-row .btn-ghost {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cx-text-secondary, #8A8A93);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.runner-cta-sub-row .btn-ghost:hover {
+  color: var(--cx-text, #F2F2F0);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.runner-cta-sub-row .btn-accent-link {
+  color: var(--phase-accent);
+}
+
+.runner-cta-sub-row .btn-accent-link:hover {
+  color: #ffffff;
+  background: rgba(var(--phase-accent-rgb), 0.1);
+}
+
+.runner-sub-sep {
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  user-select: none;
 }
 
 /* Right Panel & Collapsible Anatomy */
