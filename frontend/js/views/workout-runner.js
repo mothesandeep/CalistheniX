@@ -489,14 +489,14 @@ function getAuthoritativeSessionState(session) {
   let currentPhase = 'main';
   if (isTerminalSession) {
     currentPhase = 'completed';
-  } else if (!isWarmupDone && warmupTotal > 0) {
+  } else if (!isWarmupDone && warmupTotal > 0 && currentPhaseRaw !== 'main' && currentPhaseRaw !== 'cooldown') {
     currentPhase = 'warmup';
   } else if (currentPhaseRaw === 'cooldown') {
-    currentPhase = isMainDone ? 'cooldown' : 'main';
+    currentPhase = (isMainDone || !isWarmupDone && warmupTotal > 0) ? (isMainDone ? 'cooldown' : 'warmup') : 'cooldown';
   } else if (currentPhaseRaw === 'warmup') {
     currentPhase = 'warmup';
   } else {
-    currentPhase = 'main';
+    currentPhase = (!isWarmupDone && warmupTotal > 0 && session.mainStatus !== 'ACTIVE' && session.currentPhase !== 'main') ? 'warmup' : 'main';
   }
 
   const warmupRemaining = Math.max(0, warmupTotal - warmupCompleted - warmupSkipped);
@@ -6031,6 +6031,316 @@ function startPhaseAutoRunner(phase) {
   render();
 }
 
+// ─── Bidirectional Exercise Navigation Engine (All 3 Phases) ────────────────
+
+function getActiveExercisePhaseInfo(session) {
+  if (!session) return { phase: null, currentExIndex: 0, totalExInPhase: 0, warmupList: [], mainList: [], cooldownList: [] };
+  const rawShort = isWarmupPhase(session.phase || session.currentPhase) ? 'warmup' : (isCooldownPhase(session.phase || session.currentPhase) ? 'cooldown' : 'main');
+  const warmupList = getWarmupExercises(session);
+  const mainList = getMainWorkoutExercises(session);
+  const cooldownList = getCooldownExercises(session);
+
+  let currentExIndex = 0;
+  let totalExInPhase = 0;
+
+  if (rawShort === 'warmup') {
+    currentExIndex = session.warmupIndex != null && session.warmupIndex < warmupList.length ? session.warmupIndex : (session.warmup_idx || 0);
+    totalExInPhase = warmupList.length;
+  } else if (rawShort === 'cooldown') {
+    currentExIndex = session.cooldownIndex != null && session.cooldownIndex < cooldownList.length ? session.cooldownIndex : (session.cooldown_idx || 0);
+    totalExInPhase = cooldownList.length;
+  } else {
+    currentExIndex = session.activeExerciseIndex != null && session.activeExerciseIndex < mainList.length ? session.activeExerciseIndex : (_selectedWorkoutExIdx || 0);
+    totalExInPhase = mainList.length;
+  }
+
+  return {
+    phase: rawShort,
+    currentExIndex,
+    totalExInPhase,
+    warmupList,
+    mainList,
+    cooldownList
+  };
+}
+
+function canNavigateToPreviousExercise(session) {
+  if (!session) return false;
+  const { phase, currentExIndex, warmupList, mainList } = getActiveExercisePhaseInfo(session);
+  if (phase === 'warmup') {
+    return currentExIndex > 0;
+  }
+  if (phase === 'main') {
+    if (currentExIndex > 0) return true;
+    return warmupList.length > 0;
+  }
+  if (phase === 'cooldown') {
+    if (currentExIndex > 0) return true;
+    return mainList.length > 0 || warmupList.length > 0;
+  }
+  return false;
+}
+
+function canNavigateToNextExercise(session) {
+  if (!session) return false;
+  const { phase, currentExIndex, warmupList, mainList, cooldownList } = getActiveExercisePhaseInfo(session);
+  if (phase === 'warmup') {
+    if (currentExIndex < warmupList.length - 1) return true;
+    return mainList.length > 0 || cooldownList.length > 0;
+  }
+  if (phase === 'main') {
+    return true;
+  }
+  if (phase === 'cooldown') {
+    return true;
+  }
+  return false;
+}
+
+function navigateToPreviousExercise() {
+  let session = getActiveSession();
+  if (!session) return;
+  cancelAutoAdvance(false);
+  stopWorkoutRest();
+  ensureSessionStarted(session);
+  session = getActiveSession();
+
+  const isPaused = session.phaseState === 'PAUSED' || session.status === 'paused';
+  if (isPaused) {
+    session.status = 'in_progress';
+    session.phaseState = 'ACTIVE';
+    session.pausedAt = null;
+    startWorkoutDurationTimer();
+  }
+
+  const { phase, currentExIndex, warmupList, mainList, cooldownList } = getActiveExercisePhaseInfo(session);
+
+  if (phase === 'warmup') {
+    if (currentExIndex > 0) {
+      const targetIdx = currentExIndex - 1;
+      session.warmupIndex = targetIdx;
+      session.warmup_idx = targetIdx;
+      const cur = warmupList[targetIdx];
+      const dur = cur?.duration_sec || 30;
+      session.movementTimer = { isRunning: false, durationSec: dur, remainingSec: dur, startedAt: null, pausedAt: null };
+      session.phaseTimer = { isRunning: false, duration: dur, remaining: dur, startedAt: null, pausedMs: 0 };
+    }
+  } else if (phase === 'main') {
+    if (currentExIndex > 0) {
+      const targetIdx = currentExIndex - 1;
+      session.activeExerciseIndex = targetIdx;
+      session.currentExerciseIndex = targetIdx;
+      _selectedWorkoutExIdx = targetIdx;
+      const curEx = mainList[targetIdx];
+      const firstUnresolvedSet = curEx && curEx.sets ? curEx.sets.findIndex(s => !s.completed && !s.skipped) : 0;
+      session.activeSetIndex = firstUnresolvedSet !== -1 ? firstUnresolvedSet : (curEx?.sets?.length ? curEx.sets.length - 1 : 0);
+      session.mainWorkoutSubState = 'SET_ACTIVE';
+      if (curEx) {
+        const cat = (typeof state !== 'undefined' && state.exercises) ? state.exercises.find(e => e.id === curEx.exercise_id || e.name === curEx.exercise_name) : null;
+        const pattern = cat?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(curEx.exercise_name) : 'push');
+        setCurrentMovementPattern(pattern, curEx.exercise_id, curEx.exercise_name);
+      }
+    } else {
+      // First exercise in Train phase -> navigate to last exercise of Warm-Up if warmup exists
+      if (warmupList.length > 0) {
+        const lastWarmupIdx = warmupList.length - 1;
+        session.currentPhase = 'warmup';
+        session.phase = 'WARMUP';
+        session.phaseState = 'ACTIVE';
+        session.warmupStatus = 'ACTIVE';
+        session.warmup_status = 'in_progress';
+        session.warmupIndex = lastWarmupIdx;
+        session.warmup_idx = lastWarmupIdx;
+        const cur = warmupList[lastWarmupIdx];
+        const dur = cur?.duration_sec || 30;
+        session.movementTimer = { isRunning: false, durationSec: dur, remainingSec: dur, startedAt: null, pausedAt: null };
+        session.phaseTimer = { isRunning: false, duration: dur, remaining: dur, startedAt: null, pausedMs: 0 };
+      }
+    }
+  } else if (phase === 'cooldown') {
+    if (currentExIndex > 0) {
+      const targetIdx = currentExIndex - 1;
+      session.cooldownIndex = targetIdx;
+      session.cooldown_idx = targetIdx;
+      const cur = cooldownList[targetIdx];
+      const dur = cur?.duration_sec || 30;
+      session.movementTimer = { isRunning: false, durationSec: dur, remainingSec: dur, startedAt: null, pausedAt: null };
+      session.phaseTimer = { isRunning: false, duration: dur, remaining: dur, startedAt: null, pausedMs: 0 };
+    } else {
+      // First stretch in Cool Down phase -> navigate to last exercise of Train phase (or Warm-up)
+      if (mainList.length > 0) {
+        const lastMainIdx = mainList.length - 1;
+        session.currentPhase = 'main';
+        session.phase = 'MAIN_WORKOUT';
+        session.phaseState = 'ACTIVE';
+        session.mainStatus = 'ACTIVE';
+        session.mainWorkoutSubState = 'SET_ACTIVE';
+        session.activeExerciseIndex = lastMainIdx;
+        session.currentExerciseIndex = lastMainIdx;
+        _selectedWorkoutExIdx = lastMainIdx;
+        const curEx = mainList[lastMainIdx];
+        const firstUnresolvedSet = curEx && curEx.sets ? curEx.sets.findIndex(s => !s.completed && !s.skipped) : 0;
+        session.activeSetIndex = firstUnresolvedSet !== -1 ? firstUnresolvedSet : (curEx?.sets?.length ? curEx.sets.length - 1 : 0);
+        if (curEx) {
+          const cat = (typeof state !== 'undefined' && state.exercises) ? state.exercises.find(e => e.id === curEx.exercise_id || e.name === curEx.exercise_name) : null;
+          const pattern = cat?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(curEx.exercise_name) : 'push');
+          setCurrentMovementPattern(pattern, curEx.exercise_id, curEx.exercise_name);
+        }
+      } else if (warmupList.length > 0) {
+        const lastWarmupIdx = warmupList.length - 1;
+        session.currentPhase = 'warmup';
+        session.phase = 'WARMUP';
+        session.phaseState = 'ACTIVE';
+        session.warmupStatus = 'ACTIVE';
+        session.warmup_status = 'in_progress';
+        session.warmupIndex = lastWarmupIdx;
+        session.warmup_idx = lastWarmupIdx;
+        const cur = warmupList[lastWarmupIdx];
+        const dur = cur?.duration_sec || 30;
+        session.movementTimer = { isRunning: false, durationSec: dur, remainingSec: dur, startedAt: null, pausedAt: null };
+        session.phaseTimer = { isRunning: false, duration: dur, remaining: dur, startedAt: null, pausedMs: 0 };
+      }
+    }
+  }
+
+  syncAuthoritativeSessionState(session);
+  saveActiveSession(session);
+  render();
+}
+
+function navigateToNextExercise() {
+  let session = getActiveSession();
+  if (!session) return;
+  cancelAutoAdvance(false);
+  stopWorkoutRest();
+  ensureSessionStarted(session);
+  session = getActiveSession();
+
+  const isPaused = session.phaseState === 'PAUSED' || session.status === 'paused';
+  if (isPaused) {
+    session.status = 'in_progress';
+    session.phaseState = 'ACTIVE';
+    session.pausedAt = null;
+    startWorkoutDurationTimer();
+  }
+
+  const { phase, currentExIndex, warmupList, mainList, cooldownList } = getActiveExercisePhaseInfo(session);
+
+  if (phase === 'warmup') {
+    if (currentExIndex < warmupList.length - 1) {
+      const targetIdx = currentExIndex + 1;
+      session.warmupIndex = targetIdx;
+      session.warmup_idx = targetIdx;
+      const cur = warmupList[targetIdx];
+      const dur = cur?.duration_sec || 30;
+      session.movementTimer = { isRunning: false, durationSec: dur, remainingSec: dur, startedAt: null, pausedAt: null };
+      session.phaseTimer = { isRunning: false, duration: dur, remaining: dur, startedAt: null, pausedMs: 0 };
+    } else {
+      // Last warm-up movement -> next should enter the first Train exercise
+      if (mainList.length > 0) {
+        const now = Date.now();
+        session.main_started_at = session.main_started_at || now;
+        session.currentPhase = 'main';
+        session.phase = 'MAIN_WORKOUT';
+        session.phaseState = 'ACTIVE';
+        session.mainStatus = 'ACTIVE';
+        session.mainWorkoutSubState = 'SET_ACTIVE';
+        session.activeExerciseIndex = 0;
+        session.currentExerciseIndex = 0;
+        _selectedWorkoutExIdx = 0;
+        const curEx = mainList[0];
+        const firstUnresolvedSet = curEx && curEx.sets ? curEx.sets.findIndex(s => !s.completed && !s.skipped) : 0;
+        session.activeSetIndex = firstUnresolvedSet !== -1 ? firstUnresolvedSet : 0;
+        if (curEx) {
+          const cat = (typeof state !== 'undefined' && state.exercises) ? state.exercises.find(e => e.id === curEx.exercise_id || e.name === curEx.exercise_name) : null;
+          const pattern = cat?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(curEx.exercise_name) : 'push');
+          setCurrentMovementPattern(pattern, curEx.exercise_id, curEx.exercise_name);
+        }
+      } else if (cooldownList.length > 0) {
+        const now = Date.now();
+        session.cooldown_started_at = session.cooldown_started_at || now;
+        session.currentPhase = 'cooldown';
+        session.phase = 'COOLDOWN';
+        session.phaseState = 'ACTIVE';
+        session.cooldownStatus = 'ACTIVE';
+        session.cooldown_status = 'in_progress';
+        session.cooldownIndex = 0;
+        session.cooldown_idx = 0;
+        const cur = cooldownList[0];
+        const dur = cur?.duration_sec || 30;
+        session.movementTimer = { isRunning: false, durationSec: dur, remainingSec: dur, startedAt: null, pausedAt: null };
+        session.phaseTimer = { isRunning: false, duration: dur, remaining: dur, startedAt: null, pausedMs: 0 };
+      } else {
+        finishWorkoutSession();
+        return;
+      }
+    }
+  } else if (phase === 'main') {
+    if (currentExIndex < mainList.length - 1) {
+      const targetIdx = currentExIndex + 1;
+      session.activeExerciseIndex = targetIdx;
+      session.currentExerciseIndex = targetIdx;
+      _selectedWorkoutExIdx = targetIdx;
+      const curEx = mainList[targetIdx];
+      const firstUnresolvedSet = curEx && curEx.sets ? curEx.sets.findIndex(s => !s.completed && !s.skipped) : 0;
+      session.activeSetIndex = firstUnresolvedSet !== -1 ? firstUnresolvedSet : (curEx?.sets?.length ? curEx.sets.length - 1 : 0);
+      session.mainWorkoutSubState = 'SET_ACTIVE';
+      if (curEx) {
+        const cat = (typeof state !== 'undefined' && state.exercises) ? state.exercises.find(e => e.id === curEx.exercise_id || e.name === curEx.exercise_name) : null;
+        const pattern = cat?.movement_pattern || ((typeof window !== 'undefined' && window.ExerciseAnimation) ? window.ExerciseAnimation.getPatternKey(curEx.exercise_name) : 'push');
+        setCurrentMovementPattern(pattern, curEx.exercise_id, curEx.exercise_name);
+      }
+    } else {
+      // Last train exercise -> enter first Cool Down exercise (or complete if no cooldown)
+      if (cooldownList.length > 0) {
+        const now = Date.now();
+        session.cooldown_started_at = session.cooldown_started_at || now;
+        session.currentPhase = 'cooldown';
+        session.phase = 'COOLDOWN';
+        session.phaseState = 'ACTIVE';
+        session.cooldownStatus = 'ACTIVE';
+        session.cooldown_status = 'in_progress';
+        session.cooldownIndex = 0;
+        session.cooldown_idx = 0;
+        const cur = cooldownList[0];
+        const dur = cur?.duration_sec || 30;
+        session.movementTimer = { isRunning: false, durationSec: dur, remainingSec: dur, startedAt: null, pausedAt: null };
+        session.phaseTimer = { isRunning: false, duration: dur, remaining: dur, startedAt: null, pausedMs: 0 };
+      } else {
+        finishWorkoutSession();
+        return;
+      }
+    }
+  } else if (phase === 'cooldown') {
+    if (currentExIndex < cooldownList.length - 1) {
+      const targetIdx = currentExIndex + 1;
+      session.cooldownIndex = targetIdx;
+      session.cooldown_idx = targetIdx;
+      const cur = cooldownList[targetIdx];
+      const dur = cur?.duration_sec || 30;
+      session.movementTimer = { isRunning: false, durationSec: dur, remainingSec: dur, startedAt: null, pausedAt: null };
+      session.phaseTimer = { isRunning: false, duration: dur, remaining: dur, startedAt: null, pausedMs: 0 };
+    } else {
+      // Last cool-down movement should correctly lead to workout/session completion
+      const now = Date.now();
+      session.cooldownStatus = 'COMPLETED';
+      session.cooldown_status = 'completed';
+      session.cooldown_completed_at = new Date(now).toISOString();
+      if (session.cooldown_started_at) {
+        session.cooldown_duration_sec = Math.max(0, Math.round((now - session.cooldown_started_at) / 1000));
+      }
+      syncAuthoritativeSessionState(session);
+      saveActiveSession(session);
+      finishWorkoutSession();
+      return;
+    }
+  }
+
+  syncAuthoritativeSessionState(session);
+  saveActiveSession(session);
+  render();
+}
+
 function selectExerciseToExecute(phase, idx) {
   const session = getActiveSession();
   if (!session) return;
@@ -6811,6 +7121,8 @@ function renderWarmupCardView(session) {
   }).join('');
 
   const isMovementResolved = !!(currentEx.completed || currentEx.skipped);
+  const canGoPrev = canNavigateToPreviousExercise(session);
+  const canGoNext = canNavigateToNextExercise(session);
   const timerActionLabel = isRunning ? 'Pause Timer' : (remaining <= 0 ? 'Restart Timer' : (remaining < totalDuration ? 'Resume Timer' : 'Start Timer'));
   const stepperUnitLabel = remaining <= 0 ? 'TIME COMPLETE · TAP MARK COMPLETE' : (isRunning ? 'SECONDS LEFT' : (remaining < totalDuration ? 'PAUSED · TAP TO RESUME' : 'SECONDS · TAP TO START'));
 
@@ -6879,10 +7191,17 @@ function renderWarmupCardView(session) {
           ${renderIcon('check', 'cx-icon cx-icon-sm cx-icon-inline')}
         </button>
 
+        <div class="runner-exercise-nav-row">
+          <button class="runner-nav-btn runner-nav-prev" type="button" onclick="navigateToPreviousExercise()" ${!canGoPrev ? 'disabled' : ''} aria-label="Previous Exercise">
+            ← Previous Exercise
+          </button>
+          <button class="runner-nav-btn runner-nav-next" type="button" onclick="navigateToNextExercise()" ${!canGoNext ? 'disabled' : ''} aria-label="Next Exercise">
+            Next Exercise →
+          </button>
+        </div>
+
         <div class="runner-cta-sub-row">
           <button class="btn btn-ghost btn-sm" type="button" onclick="openSkipWarmupExerciseModal()">Skip Movement</button>
-          <span class="runner-sub-sep">·</span>
-          <button class="btn btn-ghost btn-sm ${isMovementResolved ? 'btn-accent-link' : ''}" type="button" onclick="handleWarmupNextClick()" style="${isMovementResolved ? '' : 'opacity:0.6;'}" title="${isMovementResolved ? 'Proceed to Next Movement' : 'Complete or skip this movement first'}">Next Movement →</button>
         </div>
       </div>
     </div>
@@ -6921,6 +7240,8 @@ function renderMainWorkoutCardView(session) {
 
   const lastPerf = getExerciseLastPerformance(currentEx.exercise_id || currentEx.id, currentEx.exercise_name);
   const lastDisplayVal = lastPerf.hasHistory ? lastPerf.displayText : '—';
+  const canGoPrev = canNavigateToPreviousExercise(session);
+  const canGoNext = canNavigateToNextExercise(session);
 
   // Check previous set in current session
   let prevSetInSession = null;
@@ -7029,6 +7350,15 @@ function renderMainWorkoutCardView(session) {
           </button>
         `}
 
+        <div class="runner-exercise-nav-row">
+          <button class="runner-nav-btn runner-nav-prev" type="button" onclick="navigateToPreviousExercise()" ${!canGoPrev ? 'disabled' : ''} aria-label="Previous Exercise">
+            ← Previous Exercise
+          </button>
+          <button class="runner-nav-btn runner-nav-next" type="button" onclick="navigateToNextExercise()" ${!canGoNext ? 'disabled' : ''} aria-label="Next Exercise">
+            Next Exercise →
+          </button>
+        </div>
+
         <div class="runner-cta-sub-row">
           <button class="btn btn-ghost btn-sm" type="button" onclick="openSkipMainWorkoutSetModal()">Skip Set</button>
           <span class="runner-sub-sep">·</span>
@@ -7094,6 +7424,8 @@ function renderCooldownCardView(session) {
   }).join('');
 
   const isStretchResolved = !!(currentStretch.completed || currentStretch.skipped);
+  const canGoPrev = canNavigateToPreviousExercise(session);
+  const canGoNext = canNavigateToNextExercise(session);
   const timerActionLabel = isRunning ? 'Pause Timer' : (remaining <= 0 ? 'Restart Timer' : (remaining < totalDuration ? 'Resume Timer' : 'Start Timer'));
   const stepperUnitLabel = remaining <= 0 ? 'TIME COMPLETE · TAP DONE' : (isRunning ? 'SECONDS LEFT' : (remaining < totalDuration ? 'PAUSED · TAP TO RESUME' : 'SECONDS · TAP TO START'));
 
@@ -7153,10 +7485,17 @@ function renderCooldownCardView(session) {
           ${renderIcon('check', 'cx-icon cx-icon-sm cx-icon-inline')}
         </button>
 
+        <div class="runner-exercise-nav-row">
+          <button class="runner-nav-btn runner-nav-prev" type="button" onclick="navigateToPreviousExercise()" ${!canGoPrev ? 'disabled' : ''} aria-label="Previous Exercise">
+            ← Previous Exercise
+          </button>
+          <button class="runner-nav-btn runner-nav-next" type="button" onclick="navigateToNextExercise()" ${!canGoNext ? 'disabled' : ''} aria-label="Next Exercise">
+            Next Exercise →
+          </button>
+        </div>
+
         <div class="runner-cta-sub-row">
           <button class="btn btn-ghost btn-sm" type="button" onclick="openSkipCooldownExerciseModal()">Skip Stretch</button>
-          <span class="runner-sub-sep">·</span>
-          <button class="btn btn-ghost btn-sm ${isStretchResolved ? 'btn-accent-link' : ''}" type="button" onclick="handleCooldownNextClick()" style="${isStretchResolved ? '' : 'opacity:0.6;'}" title="${isStretchResolved ? 'Proceed to Next Stretch' : 'Complete or skip this stretch first'}">Next Stretch →</button>
         </div>
       </div>
     </div>
@@ -7364,4 +7703,8 @@ if (typeof window !== 'undefined') {
   window.closeSkipWarmupPhaseModal = closeSkipWarmupPhaseModal;
   window.confirmSkipWarmupPhase = confirmSkipWarmupPhase;
   window.renderWorkoutSegmentedTabs = renderWorkoutSegmentedTabs;
+  window.canNavigateToPreviousExercise = canNavigateToPreviousExercise;
+  window.canNavigateToNextExercise = canNavigateToNextExercise;
+  window.navigateToPreviousExercise = navigateToPreviousExercise;
+  window.navigateToNextExercise = navigateToNextExercise;
 }
