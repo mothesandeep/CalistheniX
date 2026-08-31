@@ -7002,17 +7002,15 @@ function renderMainWorkoutCardView(session) {
         </div>
       </div>
 
-      <!-- Exercise Name & Meta -->
+      <!-- Exercise Name & Set Indicator -->
       <div class="runner-exercise-name-zone">
-        <h2 class="runner-exercise-name-title">${currentEx.exercise_name}</h2>
-        <div class="runner-card-badges-row">
-          <span class="runner-badge-set mono">Set ${activeSetIdx + 1} / ${totalSets}</span>
-          <span class="runner-badge-target mono">Target: <strong>${targetVal} ${isHold ? 'sec' : 'reps'}</strong></span>
-          <span class="runner-badge-rest mono">Rest: <strong>${currentEx.rest_sec || 90}s</strong></span>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <h2 class="runner-exercise-name-title">${currentEx.exercise_name}</h2>
+          <span class="runner-badge-set mono">Set ${activeSetIdx + 1} of ${totalSets}</span>
         </div>
       </div>
 
-      <!-- Target Row (2 columns) -->
+      <!-- Clean Key Metrics Bar (Target / Last / Rest) -->
       <div class="runner-target-pills-row">
         <div class="runner-target-pill target-goal">
           <span class="runner-pill-lbl">
@@ -7031,6 +7029,15 @@ function renderMainWorkoutCardView(session) {
             Last
           </span>
           <span class="runner-pill-val mono">${lastDisplayVal}</span>
+        </div>
+        <div class="runner-target-pill target-rest">
+          <span class="runner-pill-lbl">
+            <span class="runner-pill-lbl-icon">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </span>
+            Rest
+          </span>
+          <span class="runner-pill-val mono">${currentEx.rest_sec || 90}s</span>
         </div>
       </div>
 
