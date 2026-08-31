@@ -247,9 +247,9 @@
 .runner-set-badge {
   font-size: 11px;
   font-weight: 800;
-  color: var(--accent-light, #a78bfa);
-  background: rgba(124, 92, 252, 0.12);
-  border: 1px solid rgba(124, 92, 252, 0.25);
+  color: var(--phase-accent, #FF5D5D);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
   padding: 2px 8px;
   border-radius: var(--radius-full);
   text-transform: uppercase;
@@ -283,8 +283,8 @@
 
 .runner-set-pip.current {
   width: 22px;
-  background: var(--accent, #7c5cfc);
-  box-shadow: 0 0 10px rgba(124, 92, 252, 0.55);
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 10px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.45);
 }
 
 .runner-set-pip.upcoming {
@@ -297,9 +297,9 @@
   align-self: flex-start;
   font-size: 11px;
   font-weight: 800;
-  color: var(--accent-light, #a78bfa);
-  background: rgba(124, 92, 252, 0.12);
-  border: 1px solid rgba(124, 92, 252, 0.25);
+  color: var(--phase-accent, #FF5D5D);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
   padding: 2px 8px;
   border-radius: var(--radius-full);
   text-transform: uppercase;
@@ -343,8 +343,8 @@
 }
 
 .runner-stage-art:hover {
-  border-color: rgba(124, 92, 252, 0.35);
-  background: rgba(124, 92, 252, 0.06);
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.06);
   transform: scale(1.04);
 }
 
@@ -494,9 +494,9 @@
   margin-top: 5px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent-light, #a78bfa);
-  background: rgba(124, 92, 252, 0.12);
-  border: 1px solid rgba(124, 92, 252, 0.25);
+  color: var(--phase-accent, #FF5D5D);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
   padding: 2px 8px;
   border-radius: var(--radius-full);
   letter-spacing: 0.04em;
@@ -536,8 +536,8 @@
 }
 
 .runner-quick-fill-chip:hover:not(:disabled) {
-  background: rgba(124, 92, 252, 0.14);
-  border-color: rgba(124, 92, 252, 0.38);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.14);
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.38);
   color: #ffffff;
   transform: translateY(-1px);
 }
@@ -547,10 +547,10 @@
 }
 
 .runner-quick-fill-chip.active {
-  background: rgba(124, 92, 252, 0.18);
-  border-color: rgba(124, 92, 252, 0.45);
-  color: var(--accent-light, #a78bfa);
-  box-shadow: 0 0 12px rgba(124, 92, 252, 0.22);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.18);
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.45);
+  color: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 12px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.22);
 }
 
 .runner-quick-fill-chip:disabled {
@@ -599,11 +599,11 @@
   font-weight: 800;
   letter-spacing: 0.04em;
   color: #ffffff;
-  background: var(--accent);
+  background: var(--phase-accent, #FF5D5D);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius);
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(124, 92, 252, 0.3);
+  box-shadow: 0 4px 14px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.3);
   transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1), background 160ms ease, box-shadow 160ms ease;
   display: flex;
   align-items: center;
@@ -614,8 +614,9 @@
 }
 
 .runner-complete-action-btn:hover:not(:disabled) {
-  background: var(--accent-hover);
-  box-shadow: 0 6px 20px rgba(124, 92, 252, 0.45);
+  background: var(--phase-accent, #FF5D5D);
+  filter: brightness(1.12);
+  box-shadow: 0 6px 20px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.45);
   transform: translateY(-1px);
 }
 
@@ -865,19 +866,19 @@
 
 /* 2. CURRENT: strongest row, subtle active indicator, clearly connected to active card */
 .runner-seq-row.current {
-  background: rgba(124, 92, 252, 0.08);
-  border: 1px solid rgba(124, 92, 252, 0.28);
-  border-left: 3px solid var(--accent);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.08);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.28);
+  border-left: 3px solid var(--phase-accent, #FF5D5D);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .runner-seq-row.current:hover {
-  background: rgba(124, 92, 252, 0.12);
-  border-color: rgba(124, 92, 252, 0.38);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12);
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.38);
 }
 
 .runner-seq-row.current .runner-seq-icon {
-  color: var(--accent-light, #a78bfa);
+  color: var(--phase-accent, #FF5D5D);
   font-size: 13px;
 }
 
@@ -940,7 +941,7 @@
 .runner-coach-tip-icon {
   flex-shrink: 0;
   margin-top: 2px;
-  color: var(--accent-light, #a78bfa);
+  color: var(--phase-accent, #FF5D5D);
   display: flex;
   align-items: center;
 }
@@ -1156,8 +1157,8 @@
 }
 
 .cx-exercise-animation.cx-anim-card-badge {
-  background: rgba(124, 92, 252, 0.06);
-  border: 1px solid rgba(124, 92, 252, 0.18);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.06);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.18);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 12px rgba(0, 0, 0, 0.3);
   padding: 6px;
   border-radius: var(--radius);
@@ -1219,7 +1220,7 @@
 .card:hover .cx-exercise-animation .cx-anim-svg,
 .workout-exercise-item:hover .cx-exercise-animation .cx-anim-svg,
 .runner-stage-card:hover .cx-exercise-animation .cx-anim-svg {
-  filter: drop-shadow(0 4px 16px rgba(124, 92, 252, 0.55));
+  filter: drop-shadow(0 4px 16px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.55));
 }
 
 /* ── Paused Workout State Synchronisation ─────────────────────────────────── */
@@ -1230,7 +1231,7 @@
 
 .cx-anim-paused .cx-anim-svg {
   opacity: 0.55;
-  filter: grayscale(0.35) drop-shadow(0 2px 4px rgba(124, 92, 252, 0.15));
+  filter: grayscale(0.35) drop-shadow(0 2px 4px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.15));
   transition: opacity 200ms ease, filter 200ms ease;
 }
 
@@ -1320,7 +1321,7 @@
   transform: translateX(-50%);
   width: 240px;
   height: 240px;
-  background: radial-gradient(circle, rgba(124, 92, 252, 0.18) 0%, rgba(124, 92, 252, 0) 70%);
+  background: radial-gradient(circle, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.18) 0%, rgba(var(--phase-accent-rgb, 255, 93, 93), 0) 70%);
   pointer-events: none;
   border-radius: 50%;
 }
@@ -1347,8 +1348,8 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--accent, #7c5cfc);
-  box-shadow: 0 0 8px var(--accent, #7c5cfc);
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 8px var(--phase-accent, #FF5D5D);
   animation: runnerLiveDotPulse 1.8s infinite ease-in-out;
 }
 
@@ -1369,9 +1370,9 @@
   font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--radius-badge, 5px);
-  background: rgba(124, 92, 252, 0.14);
-  border: 1px solid rgba(124, 92, 252, 0.32);
-  color: var(--accent-light, #a78bfa);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.14);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.32);
+  color: var(--phase-accent, #FF5D5D);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -1431,15 +1432,15 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  background: rgba(124, 92, 252, 0.08);
-  border: 1px solid rgba(124, 92, 252, 0.18);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.08);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.18);
   border-radius: var(--radius-sm, 10px);
   padding: 10px 14px;
   margin-top: 0;
 }
 
 .runner-sticky-cue-icon {
-  color: var(--accent-light, #a78bfa);
+  color: var(--phase-accent, #FF5D5D);
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -1470,10 +1471,10 @@
 }
 
 .runner-upnext-card:hover {
-  background: rgba(124, 92, 252, 0.06);
-  border-color: rgba(124, 92, 252, 0.35);
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
   transform: translateY(-2px);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6), 0 0 20px rgba(124, 92, 252, 0.15);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6), 0 0 20px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.15);
 }
 
 .runner-upnext-card::before {
@@ -1520,9 +1521,9 @@
   font-weight: 700;
   padding: 2px 7px;
   border-radius: 4px;
-  background: rgba(124, 92, 252, 0.12);
-  border: 1px solid rgba(124, 92, 252, 0.25);
-  color: var(--accent-light, #a78bfa);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
+  color: var(--phase-accent, #FF5D5D);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -1544,7 +1545,7 @@
   height: 52px;
   min-width: 60px;
   border-radius: var(--radius-sm, 10px);
-  background: radial-gradient(circle at 50% 50%, rgba(124, 92, 252, 0.12) 0%, rgba(0, 0, 0, 0.5) 80%);
+  background: radial-gradient(circle at 50% 50%, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12) 0%, rgba(0, 0, 0, 0.5) 80%);
   border: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
@@ -1646,7 +1647,7 @@
 .cx-muscle-figure-card {
   width: 100%;
   height: 180px;
-  background: radial-gradient(circle at center, rgba(124, 92, 252, 0.08) 0%, rgba(15, 17, 26, 0.6) 80%);
+  background: radial-gradient(circle at center, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.08) 0%, rgba(15, 17, 26, 0.6) 80%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm, 10px);
   padding: 8px;
@@ -1694,42 +1695,42 @@
   stroke: #485270;
 }
 
-/* Primary Target Muscle (Vibrant Neon Violet/Purple Glow) */
+/* Primary Target Muscle (Coral-Red Glow) */
 .cx-muscle-part.is-primary,
 .cx-muscle-part.active,
 .muscle.is-primary,
 .muscle.active,
 [data-active="primary"] {
-  fill: #8b5cf6 !important;
-  stroke: #c4b5fd !important;
+  fill: #FF5D5D !important;
+  stroke: #ff8585 !important;
   stroke-width: 1.4px;
-  filter: drop-shadow(0 0 7px rgba(139, 92, 246, 0.85));
+  filter: drop-shadow(0 0 7px rgba(255, 93, 93, 0.85));
 }
 
 .cx-muscle-part.is-primary:hover,
 .cx-muscle-part.active:hover,
 .muscle.is-primary:hover,
 .muscle.active:hover {
-  fill: #a78bfa !important;
-  stroke: #ddd6fe !important;
-  filter: drop-shadow(0 0 11px rgba(167, 139, 250, 1));
+  fill: #ff7575 !important;
+  stroke: #ffa8a8 !important;
+  filter: drop-shadow(0 0 11px rgba(255, 117, 117, 1));
 }
 
 /* Secondary Target Muscle (Warm Amber/Gold Glow) */
 .cx-muscle-part.is-secondary,
 .muscle.is-secondary,
 [data-active="secondary"] {
-  fill: #f59e0b !important;
-  stroke: #fde68a !important;
+  fill: #FF8A3D !important;
+  stroke: #ffb076 !important;
   stroke-width: 1.2px;
-  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.75));
+  filter: drop-shadow(0 0 5px rgba(255, 138, 61, 0.75));
 }
 
 .cx-muscle-part.is-secondary:hover,
 .muscle.is-secondary:hover {
-  fill: #fbbf24 !important;
-  stroke: #fef08a !important;
-  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.95));
+  fill: #ffa05e !important;
+  stroke: #ffcca6 !important;
+  filter: drop-shadow(0 0 8px rgba(255, 160, 94, 0.95));
 }
 
 /* Non-muscular joint/head parts */
@@ -1773,13 +1774,13 @@
 }
 
 .cx-muscle-legend-dot.primary {
-  background: #8b5cf6;
-  box-shadow: 0 0 6px rgba(139, 92, 246, 0.9);
+  background: #FF5D5D;
+  box-shadow: 0 0 6px rgba(255, 93, 93, 0.9);
 }
 
 .cx-muscle-legend-dot.secondary {
-  background: #f59e0b;
-  box-shadow: 0 0 6px rgba(245, 158, 11, 0.85);
+  background: #FF8A3D;
+  box-shadow: 0 0 6px rgba(255, 138, 61, 0.85);
 }
 
 .cx-muscle-legend-label strong {
@@ -1825,9 +1826,9 @@
 
 .runner-stage-tab-btn.is-active {
   color: #ffffff;
-  background: rgba(124, 92, 252, 0.22);
-  border: 1px solid rgba(124, 92, 252, 0.4);
-  box-shadow: 0 2px 8px rgba(124, 92, 252, 0.25);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.22);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.4);
+  box-shadow: 0 2px 8px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
 }
 
 /* ── Interactive Muscle Explorer Guide Modal Styles ── */
@@ -1876,8 +1877,8 @@
 
 .bio-guide-view-btn.active {
   color: #fff;
-  background: var(--accent, #8b5cf6);
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 10px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.4);
 }
 
 .bio-chips-wrapper {
@@ -1910,16 +1911,16 @@
 
 .bio-muscle-chip:hover {
   color: #fff;
-  border-color: rgba(139, 92, 246, 0.5);
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.5);
   background: #252b3d;
   transform: translateY(-1px);
 }
 
 .bio-muscle-chip.active {
   color: #fff;
-  background: rgba(139, 92, 246, 0.25);
-  border-color: var(--accent, #8b5cf6);
-  box-shadow: 0 0 10px rgba(139, 92, 246, 0.45);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
+  border-color: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 10px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.45);
   font-weight: 700;
 }
 
@@ -1932,8 +1933,8 @@
 }
 
 .bio-muscle-chip.active .bio-chip-dot {
-  background: var(--accent, #8b5cf6);
-  box-shadow: 0 0 6px var(--accent, #8b5cf6);
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 6px var(--phase-accent, #FF5D5D);
 }
 
 .bio-guide-main-grid {
@@ -1995,9 +1996,9 @@
 }
 
 .bio-detail-badge {
-  background: rgba(139, 92, 246, 0.15);
-  border: 1px solid rgba(139, 92, 246, 0.3);
-  color: var(--accent, #8b5cf6);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.15);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.3);
+  color: var(--phase-accent, #FF5D5D);
   font-size: 10.5px;
   font-weight: 700;
   padding: 3px 8px;
@@ -2133,9 +2134,9 @@
 }
 
 .bio-ex-role.primary {
-  background: rgba(139, 92, 246, 0.2);
-  color: #c4b5fd;
-  border: 1px solid rgba(139, 92, 246, 0.4);
+  background: rgba(255, 93, 93, 0.15);
+  color: #ff8585;
+  border: 1px solid rgba(255, 93, 93, 0.4);
 }
 
 .bio-ex-role.secondary {
@@ -2260,10 +2261,9 @@
 .runner-session-card {
   width: 100%;
   max-width: 100%;
-  background: #11121d;
-  background: linear-gradient(180deg, rgba(20, 21, 35, 0.98) 0%, rgba(13, 14, 24, 0.99) 100%);
-  border: 1px solid rgba(139, 92, 246, 0.28);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 50px rgba(124, 92, 252, 0.1);
+  background: var(--cx-surface, #151519);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
   border-radius: 24px;
   padding: 24px 28px 26px;
   display: flex;
@@ -2271,8 +2271,6 @@
   gap: 16px;
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
 }
 
 .runner-session-card::before {
@@ -2283,7 +2281,7 @@
   transform: translateX(-50%);
   width: 400px;
   height: 180px;
-  background: radial-gradient(circle, rgba(124, 92, 252, 0.22) 0%, rgba(124, 92, 252, 0) 70%);
+  background: radial-gradient(circle, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12) 0%, rgba(var(--phase-accent-rgb, 255, 93, 93), 0) 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -2329,7 +2327,7 @@
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #a29bfe;
+  color: var(--phase-accent, #FF5D5D);
 }
 
 .runner-card-title {
@@ -2363,9 +2361,9 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: rgba(124, 92, 252, 0.18);
-  border: 1px solid rgba(124, 92, 252, 0.35);
-  color: #a29bfe;
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.14);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  color: var(--phase-accent, #FF5D5D);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2373,7 +2371,7 @@
   transition: all 0.2s ease;
 }
 .runner-card-pause-btn:hover {
-  background: rgba(124, 92, 252, 0.35);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.28);
   color: #ffffff;
   transform: scale(1.05);
 }
@@ -2428,7 +2426,7 @@
 
 .runner-card-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7c5cfc 0%, #a29bfe 100%);
+  background: var(--phase-accent, #FF5D5D);
   border-radius: 99px;
   transition: width 0.3s ease;
 }
@@ -2476,7 +2474,7 @@
 }
 
 .runner-flow-step.is-highlight .runner-flow-val {
-  color: #c4b5fd;
+  color: var(--phase-accent, #FF5D5D);
 }
 
 .runner-flow-step.is-target .runner-flow-val {
@@ -2484,7 +2482,7 @@
 }
 
 .runner-flow-step.is-actual .runner-flow-val {
-  color: #a78bfa;
+  color: var(--phase-accent, #FF5D5D);
 }
 
 .runner-flow-step.is-rest .runner-flow-val {
@@ -2520,7 +2518,7 @@
 .runner-card-ex-sub {
   font-size: 13px;
   font-weight: 700;
-  color: #a29bfe;
+  color: var(--phase-accent, #FF5D5D);
   letter-spacing: 0.03em;
 }
 
@@ -2536,9 +2534,9 @@
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  background: rgba(124, 92, 252, 0.2);
-  color: #c4b5fd;
-  border: 1px solid rgba(124, 92, 252, 0.35);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.15);
+  color: var(--phase-accent, #FF5D5D);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
   padding: 4px 10px;
   border-radius: 8px;
 }
@@ -2634,11 +2632,11 @@
 
 .runner-dial-progress {
   fill: none;
-  stroke: #8b5cf6;
+  stroke: var(--phase-accent, #FF5D5D);
   stroke-width: 8;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.25s ease;
-  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.6));
+  filter: drop-shadow(0 0 8px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.6));
 }
 
 .runner-dial-center-content {
@@ -2755,17 +2753,19 @@
 .runner-card-btn-done {
   flex: 1;
   height: 54px;
-  background: linear-gradient(135deg, #7c5cfc 0%, #6366f1 100%);
+  background: var(--phase-accent, #FF5D5D);
   color: #ffffff;
-  box-shadow: 0 8px 26px rgba(124, 92, 252, 0.45);
+  box-shadow: 0 6px 22px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
 }
 .runner-card-btn-done:hover {
-  background: linear-gradient(135deg, #8b6dfd 0%, #7073f3 100%);
-  box-shadow: 0 10px 32px rgba(124, 92, 252, 0.65);
+  background: var(--phase-accent, #FF5D5D);
+  filter: brightness(1.12);
+  box-shadow: 0 8px 26px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.45);
   transform: translateY(-2px);
 }
 .runner-card-btn-done:active {
   transform: translateY(0);
+  filter: brightness(0.92);
 }
 
 .runner-card-btn-next {
@@ -2814,9 +2814,9 @@
 .runner-complete-modal-card {
   width: 100%;
   max-width: 460px;
-  background: #131422;
-  border: 1px solid rgba(139, 92, 246, 0.35);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 50px rgba(124, 92, 252, 0.25);
+  background: var(--cx-surface, #151519);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
   border-radius: 24px;
   padding: 28px 24px;
   display: flex;
@@ -2972,20 +2972,24 @@
 
 .runner-complete-btn-primary {
   flex: 1.1;
-  background: linear-gradient(135deg, #7c5cfc 0%, #6366f1 100%);
-  color: #ffffff;
+  background: var(--cx-success, #3ECF8E);
+  color: #0A0A0D;
   padding: 12px;
   border-radius: 12px;
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 13.5px;
+  font-weight: 800;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(124, 92, 252, 0.4);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(62, 207, 142, 0.35);
+  transition: all 0.18s ease;
 }
 .runner-complete-btn-primary:hover {
-  background: linear-gradient(135deg, #8b6dfd 0%, #7073f3 100%);
-  box-shadow: 0 6px 20px rgba(124, 92, 252, 0.55);
+  background: var(--cx-success, #3ECF8E);
+  filter: brightness(1.12);
+  box-shadow: 0 6px 20px rgba(62, 207, 142, 0.45);
+}
+.runner-complete-btn-primary:active {
+  filter: brightness(0.92);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -3299,11 +3303,10 @@
 
 /* ── Section 4 & 5: Hero Active Exercise Card ─────────────────────────────── */
 .runner-active-exercise-card {
-  background: linear-gradient(135deg, #0e0e14 0%, #11101a 100%);
-  border: 1px solid rgba(124, 92, 252, 0.2);
+  background: var(--cx-surface, #151519);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
   border-radius: 20px;
   padding: 24px;
-  box-shadow: var(--shadow-accent);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -3354,12 +3357,12 @@
 
 .runner-progress-bar-fill-3px {
   height: 100%;
-  background: linear-gradient(90deg, #7c5cfc, #a78bfa);
+  background: var(--phase-accent, #FF5D5D);
   border-radius: 999px;
   transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 .runner-progress-bar-fill-3px.is-complete {
-  background: var(--success);
+  background: var(--cx-success, #3ECF8E);
 }
 
 /* Card Header Row */
@@ -3387,19 +3390,19 @@
   color: var(--text-muted);
 }
 .runner-badge-phase-pill.phase-main {
-  background: rgba(124, 92, 252, 0.12);
-  border-color: rgba(124, 92, 252, 0.3);
-  color: var(--accent-light);
+  background: rgba(255, 93, 93, 0.12);
+  border-color: rgba(255, 93, 93, 0.3);
+  color: #FF5D5D;
 }
 .runner-badge-phase-pill.phase-warmup {
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.3);
-  color: #fbbf24;
+  background: rgba(255, 138, 61, 0.12);
+  border-color: rgba(255, 138, 61, 0.3);
+  color: #FF8A3D;
 }
 .runner-badge-phase-pill.phase-rest {
-  background: rgba(20, 184, 166, 0.12);
-  border-color: rgba(20, 184, 166, 0.3);
-  color: #2dd4bf;
+  background: rgba(53, 216, 176, 0.12);
+  border-color: rgba(53, 216, 176, 0.3);
+  color: #35D8B0;
 }
 
 .runner-set-dots-group {
@@ -3637,8 +3640,8 @@
 }
 
 .runner-coaching-tip-row {
-  background: rgba(124, 92, 252, 0.06);
-  border: 1px solid rgba(124, 92, 252, 0.16);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.06);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.16);
   border-radius: var(--radius-card);
   padding: 10px 14px;
   display: flex;
@@ -3961,8 +3964,8 @@
 
 /* ── Right Column: Exercise Visual Motion Card ─────────────────────────────── */
 .runner-visual-motion-card {
-  background: linear-gradient(135deg, #0e0e14 0%, #12111d 100%);
-  border: 1px solid rgba(124, 92, 252, 0.18);
+  background: var(--cx-surface, #151519);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
   border-radius: 20px;
   padding: 18px 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
@@ -3989,8 +3992,8 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px var(--accent);
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 8px var(--phase-accent, #FF5D5D);
   animation: cxGlowBreathe 2s ease-in-out infinite alternate;
 }
 
@@ -4005,9 +4008,9 @@
 .runner-visual-badge-category {
   font-size: 11px;
   font-weight: 700;
-  color: var(--accent-light);
-  background: rgba(124, 92, 252, 0.1);
-  border: 1px solid rgba(124, 92, 252, 0.25);
+  color: var(--phase-accent, #FF5D5D);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.1);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
   padding: 3px 8px;
   border-radius: var(--radius-badge);
 }
@@ -4016,7 +4019,7 @@
 .runner-motion-graphic-stage {
   width: 100%;
   height: 160px;
-  background: radial-gradient(circle at center, rgba(124, 92, 252, 0.12) 0%, rgba(9, 9, 11, 0.6) 75%);
+  background: radial-gradient(circle at center, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.1) 0%, rgba(9, 9, 11, 0.6) 75%);
   border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 14px;
   display: flex;
@@ -4033,7 +4036,7 @@
   transform: translate(-50%, -50%);
   width: 120px;
   height: 120px;
-  background: radial-gradient(circle, rgba(124, 92, 252, 0.25) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -4043,7 +4046,7 @@
   left: 0;
   right: 0;
   height: 14px;
-  background: linear-gradient(180deg, transparent 0%, rgba(124, 92, 252, 0.08) 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.08) 100%);
   pointer-events: none;
 }
 
@@ -4102,13 +4105,13 @@
 
 .runner-tip-lead {
   font-weight: 700;
-  color: var(--accent-light);
+  color: var(--phase-accent, #FF5D5D);
 }
 
 /* ── Right Column: Muscle Engagement Anatomy Card ─────────────────────────── */
 .runner-muscle-anatomy-card {
-  background: linear-gradient(135deg, #0e0e14 0%, #12111d 100%);
-  border: 1px solid rgba(124, 92, 252, 0.18);
+  background: var(--cx-surface, #151519);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
   border-radius: 20px;
   padding: 18px 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
@@ -4153,8 +4156,8 @@
 }
 
 .runner-anatomy-figure-box.is-dominant {
-  background: rgba(124, 92, 252, 0.06);
-  border: 1px solid rgba(124, 92, 252, 0.2);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.06);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.2);
 }
 
 .runner-anatomy-figure-lbl {
@@ -4165,7 +4168,7 @@
 }
 
 .runner-anatomy-figure-box.is-dominant .runner-anatomy-figure-lbl {
-  color: var(--accent-light);
+  color: var(--phase-accent, #FF5D5D);
 }
 
 .runner-anatomy-svg-wrap {
@@ -4219,8 +4222,8 @@
 }
 
 .runner-muscle-pill.primary-pill {
-  background: rgba(124, 92, 252, 0.12);
-  border-color: rgba(124, 92, 252, 0.35);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12);
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
   color: #ffffff;
 }
 
@@ -4237,8 +4240,8 @@
 }
 
 .runner-pill-dot.primary-dot {
-  background: var(--accent);
-  box-shadow: 0 0 6px var(--accent);
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 6px var(--phase-accent, #FF5D5D);
 }
 
 .runner-pill-dot.secondary-dot {
@@ -4349,7 +4352,7 @@
 }
 
 .runner-ex-checkbox-btn:hover {
-  border-color: #a29bfe;
+  border-color: var(--phase-accent, #FF5D5D);
   transform: scale(1.05);
 }
 
@@ -4460,7 +4463,7 @@
   font-weight: 800;
   letter-spacing: 0.03em;
   border-radius: var(--radius-md);
-  box-shadow: 0 6px 18px rgba(124, 92, 252, 0.35);
+  box-shadow: 0 6px 18px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
   text-transform: none;
   border: none;
 }
@@ -4576,16 +4579,16 @@
   border-radius: 99px;
 }
 .runner-card-progress-fill {
-  background: linear-gradient(90deg, var(--accent) 0%, #a78bfa 100%);
-  box-shadow: 0 0 8px rgba(124, 92, 252, 0.4);
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 8px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.4);
 }
 .runner-progress-bar-3px { height: 3px; background: rgba(255, 255, 255, 0.07); }
-.runner-progress-bar-fill-3px { box-shadow: 0 0 6px rgba(124, 92, 252, 0.35); }
-.runner-progress-bar-fill-3px.is-complete { background: var(--success); box-shadow: 0 0 6px rgba(16, 185, 129, 0.4); }
+.runner-progress-bar-fill-3px { box-shadow: 0 0 6px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35); }
+.runner-progress-bar-fill-3px.is-complete { background: var(--cx-success, #3ECF8E); box-shadow: 0 0 6px rgba(62, 207, 142, 0.4); }
 .runner-rest-depleting-track { height: 5px; background: rgba(255, 255, 255, 0.07); }
-.runner-rest-depleting-fill { background: var(--accent); transition: width 1s linear; }
+.runner-rest-depleting-fill { background: var(--phase-accent, #FF5D5D); transition: width 1s linear; }
 .runner-rest-depleting-fill.is-warning { background: var(--danger); box-shadow: 0 0 8px rgba(244, 63, 94, 0.5); }
-.runner-progress-percentage { font-size: 11.5px; font-weight: 700; color: var(--accent-light); }
+.runner-progress-percentage { font-size: 11.5px; font-weight: 700; color: var(--phase-accent, #FF5D5D); }
 .runner-progress-percentage.is-gold { color: #fbbf24; }
 .runner-progress-exercise-count { font-size: 11px; font-weight: 600; color: var(--text-dim); }
 
@@ -4645,14 +4648,12 @@
 .runner-target-pill.target-last .runner-pill-lbl { color: var(--cx-text-secondary, #8A8A93); }
 .runner-target-pill.target-last .runner-pill-val { color: var(--cx-success, #3ECF8E); font-family: var(--mono); font-size: 12.5px; }
 
-.runner-shortcut-pill.history-pill { background: rgba(16, 185, 129, 0.06); border-color: rgba(16, 185, 129, 0.2); color: #34d399; }
-.runner-shortcut-pill.history-pill:hover { background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35); color: #6ee7b7; }
-.runner-shortcut-pill.target-pill { background: rgba(124, 92, 252, 0.06); border-color: rgba(124, 92, 252, 0.2); color: var(--accent-light); }
-.runner-shortcut-pill.target-pill:hover { background: rgba(124, 92, 252, 0.12); border-color: rgba(124, 92, 252, 0.35); color: #c4b5fd; }
+.runner-shortcut-pill.target-pill { background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.06); border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.2); color: var(--phase-accent, #FF5D5D); }
+.runner-shortcut-pill.target-pill:hover { background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12); border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35); color: #ffffff; filter: brightness(1.1); }
 
-.runner-badge-phase-pill.phase-warmup { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.28); color: #fbbf24; }
-.runner-badge-phase-pill.phase-main { background: rgba(124, 92, 252, 0.1); border-color: rgba(124, 92, 252, 0.28); color: var(--accent-light); }
-.runner-badge-phase-pill.phase-cooldown, .runner-badge-phase-pill.phase-rest { background: rgba(20, 184, 166, 0.1); border-color: rgba(20, 184, 166, 0.28); color: #2dd4bf; }
+.runner-badge-phase-pill.phase-warmup { background: rgba(255, 138, 61, 0.1); border-color: rgba(255, 138, 61, 0.28); color: #FF8A3D; }
+.runner-badge-phase-pill.phase-main { background: rgba(255, 93, 93, 0.1); border-color: rgba(255, 93, 93, 0.28); color: #FF5D5D; }
+.runner-badge-phase-pill.phase-cooldown, .runner-badge-phase-pill.phase-rest { background: rgba(53, 216, 176, 0.1); border-color: rgba(53, 216, 176, 0.28); color: #35D8B0; }
 
 /* ─── 11. LOCKED / DISABLED STATE ────────────────────────────────────────── */
 
@@ -5137,7 +5138,8 @@
   gap: 10px;
 }
 
-.runner-cta-btn {
+.runner-cta-btn,
+button.runner-cta-btn {
   height: 56px;
   font-size: 15.5px;
   font-weight: 800;
@@ -5147,23 +5149,83 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: var(--phase-accent);
-  color: #ffffff;
-  border: none;
-  box-shadow: 0 6px 22px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 6px 22px rgba(var(--phase-accent-rgb, 255, 138, 61), 0.35) !important;
   cursor: pointer;
   transition: all 0.18s ease;
 }
 
-.runner-cta-btn:hover {
+.runner-cta-btn:hover,
+button.runner-cta-btn:hover {
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
   transform: translateY(-1px);
-  box-shadow: 0 8px 26px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.45);
-  filter: brightness(1.08);
+  box-shadow: 0 8px 26px rgba(var(--phase-accent-rgb, 255, 138, 61), 0.45) !important;
+  filter: brightness(1.12);
 }
 
-.runner-cta-btn:active {
+.runner-cta-btn:active,
+button.runner-cta-btn:active {
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
   transform: translateY(1px);
-  filter: brightness(0.95);
+  filter: brightness(0.92);
+}
+
+.runner-cta-btn:focus,
+.runner-cta-btn:focus-visible,
+button.runner-cta-btn:focus,
+button.runner-cta-btn:focus-visible {
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  outline: 2px solid var(--phase-accent, #FF8A3D);
+  outline-offset: 2px;
+}
+
+.runner-transition-cta-btn,
+button.runner-transition-cta-btn {
+  height: 52px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 6px 20px rgba(var(--phase-accent-rgb, 255, 138, 61), 0.35) !important;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.18s ease;
+}
+
+.runner-transition-cta-btn:hover,
+button.runner-transition-cta-btn:hover {
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(var(--phase-accent-rgb, 255, 138, 61), 0.45) !important;
+  filter: brightness(1.12);
+}
+
+.runner-transition-cta-btn:active,
+button.runner-transition-cta-btn:active {
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  transform: translateY(1px);
+  filter: brightness(0.92);
 }
 
 .runner-cta-sub-row {

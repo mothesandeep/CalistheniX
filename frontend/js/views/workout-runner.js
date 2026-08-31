@@ -2730,7 +2730,7 @@ function renderWarmupOverviewView(session) {
             </div>
           `).join('')}
         </div>
-        <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="startPhaseAutoRunner('warmup')">
+        <button class="runner-cta-btn" type="button" onclick="startPhaseAutoRunner('warmup')">
           <span>Start All Warm-Up</span>
           ${renderIcon('arrowRight', 'cx-icon cx-icon-sm cx-icon-inline')}
         </button>
@@ -2788,7 +2788,7 @@ function renderWarmupCompleteView(session) {
           </div>
         </div>
 
-        <button class="btn btn-primary btn-hero runner-transition-cta-btn" type="button" onclick="startMainWorkoutFromWarmup()">
+        <button class="runner-transition-cta-btn" type="button" onclick="startMainWorkoutFromWarmup()">
           <span>Start Main Workout</span>
           ${renderIcon('arrowRight', 'cx-icon cx-icon-sm cx-icon-inline')}
         </button>
@@ -2856,7 +2856,7 @@ function renderMainWorkoutCompleteView(session) {
           </div>
         </div>
 
-        <button class="btn btn-primary btn-hero runner-transition-cta-btn" type="button" onclick="startCoolDownFromMain()">
+        <button class="runner-transition-cta-btn" type="button" onclick="startCoolDownFromMain()">
           <span>Start Cool Down</span>
           ${renderIcon('arrowRight', 'cx-icon cx-icon-sm cx-icon-inline')}
         </button>
@@ -4180,7 +4180,7 @@ function renderWorkoutRestView(session) {
         </div>
       ` : `
         <div class="runner-cta-zone">
-          <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="startMainWorkoutSet()" aria-label="Start Set" title="Start Set">
+          <button class="runner-cta-btn" type="button" onclick="startMainWorkoutSet()" aria-label="Start Set" title="Start Set">
             <span>START NEXT SET</span>
             ${renderIcon('check', 'cx-icon cx-icon-sm cx-icon-inline')}
           </button>
@@ -6702,7 +6702,7 @@ function renderWorkoutPhaseWorkspace(session, activePhase) {
           <div class="runner-empty-icon">${renderIcon('alertCircle', 'cx-icon cx-icon-md')}</div>
           <h3 style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Cool-down unavailable</h3>
           <p style="font-size: 13px; color: #8a8d9f; margin-bottom: 14px;">No cool-down stretches are configured for this workout.</p>
-          <button class="btn btn-primary" type="button" onclick="requestFinishWorkout()">Finish Workout</button>
+          <button class="runner-cta-btn" style="height:44px; font-size:14px; width:auto; padding:0 24px; margin:0 auto;" type="button" onclick="requestFinishWorkout()">Finish Workout</button>
         </div>
       `;
     } else {
@@ -6874,7 +6874,7 @@ function renderWarmupCardView(session) {
 
       <!-- Primary Action & Secondary Controls -->
       <div class="runner-cta-zone">
-        <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="advanceWarmupMovement()">
+        <button class="runner-cta-btn" type="button" onclick="advanceWarmupMovement()">
           <span>MARK COMPLETE</span>
           ${renderIcon('check', 'cx-icon cx-icon-sm cx-icon-inline')}
         </button>
@@ -7018,12 +7018,12 @@ function renderMainWorkoutCardView(session) {
       <!-- 5. Primary Action (56px Strongest Action) & Secondary Actions -->
       <div class="runner-cta-zone">
         ${isHold ? `
-          <button class="btn btn-primary btn-hero runner-cta-btn" id="workout-active-hold-btn" type="button" onclick="${isHolding ? 'stopWorkoutHold(true)' : `startWorkoutHold(${exIdx}, ${activeSetIdx})`}">
+          <button class="runner-cta-btn" id="workout-active-hold-btn" type="button" onclick="${isHolding ? 'stopWorkoutHold(true)' : `startWorkoutHold(${exIdx}, ${activeSetIdx})`}">
             ${renderIcon(isHolding ? 'pause' : 'play', 'cx-icon cx-icon-sm cx-icon-inline')}
             <span>${isHolding ? `STOP HOLD (${displayVal}s)` : `START HOLD (${targetVal}s)`}</span>
           </button>
         ` : `
-          <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="completeMainWorkoutSet()">
+          <button class="runner-cta-btn" type="button" onclick="completeMainWorkoutSet()">
             <span>${session.mainWorkoutSubState === 'EXERCISE_READY' ? 'START SET' : 'COMPLETE SET'}</span>
             ${renderIcon('check', 'cx-icon cx-icon-sm cx-icon-inline')}
           </button>
@@ -7148,7 +7148,7 @@ function renderCooldownCardView(session) {
 
       <!-- Primary Action & Secondary Controls -->
       <div class="runner-cta-zone">
-        <button class="btn btn-primary btn-hero runner-cta-btn" type="button" onclick="advanceCooldownStretch()">
+        <button class="runner-cta-btn" type="button" onclick="advanceCooldownStretch()">
           <span>DONE</span>
           ${renderIcon('check', 'cx-icon cx-icon-sm cx-icon-inline')}
         </button>
@@ -7182,7 +7182,7 @@ function renderActiveWorkoutView() {
             ${todayWorkout ? `Today's scheduled workout is <strong>${todayWorkout.name}</strong> (${todayWorkout.total_sets || 15} sets).` : 'Start a training session from your weekly split.'}
           </p>
           <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
-            <button class="btn btn-primary" style="padding:10px 24px; font-size:14px;" onclick="startWorkoutFromResolved()">
+            <button class="runner-cta-btn" style="padding:10px 24px; font-size:14px; width:auto; height:auto;" onclick="startWorkoutFromResolved()">
               ${renderIcon('zap', 'cx-icon cx-icon-inline')} Start Today's Workout ${renderIcon('arrowRight', 'cx-icon cx-icon-sm')}
             </button>
             <button class="btn btn-secondary" style="padding:10px 20px; font-size:14px;" onclick="switchView('split')">
@@ -7218,7 +7218,7 @@ function renderActiveWorkoutView() {
             ${todayWorkout ? `Today's scheduled workout is <strong>${todayWorkout.name}</strong> (${todayWorkout.total_sets || 15} sets).` : 'Start a training session from your weekly split.'}
           </p>
           <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
-            <button class="btn btn-primary" style="padding:10px 24px; font-size:14px;" onclick="startWorkoutFromResolved()">
+            <button class="runner-cta-btn" style="padding:10px 24px; font-size:14px; width:auto; height:auto;" onclick="startWorkoutFromResolved()">
               ${renderIcon('zap', 'cx-icon cx-icon-inline')} Start Today's Workout ${renderIcon('arrowRight', 'cx-icon cx-icon-sm')}
             </button>
             <button class="btn btn-secondary" style="padding:10px 20px; font-size:14px;" onclick="switchView('split')">
