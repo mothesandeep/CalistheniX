@@ -40,8 +40,8 @@
 }
 
 @keyframes pulse-accent {
-  0%, 100% { border-color: rgba(124, 106, 247, 0.4); }
-  50% { border-color: rgba(124, 106, 247, 0.85); box-shadow: 0 0 8px rgba(124, 106, 247, 0.3); }
+  0%, 100% { border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35); }
+  50% { border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.7); box-shadow: 0 0 6px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.2); }
 }
 
 @keyframes pulse-hold {
