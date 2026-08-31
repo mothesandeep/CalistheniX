@@ -26,8 +26,11 @@
 /* ── Desktop Sidebar (Section 2 Spec) ─────────────────────────────────────── */
 .desktop-sidebar {
   width: 216px;
-  background: #090910;
+  background: var(--liquid-surface-overlay, rgba(10, 10, 15, 0.88));
+  backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-lg, 16px));
   border-right: 1px solid rgba(255, 255, 255, 0.055);
+  box-shadow: 4px 0 24px -6px rgba(0, 0, 0, 0.5), inset -1px 0 0 0 rgba(255, 255, 255, 0.02);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -226,9 +229,11 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 18px;
-  background: rgba(9, 9, 16, 0.9);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--border);
+  background: var(--liquid-surface-overlay, rgba(9, 9, 16, 0.9));
+  backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  border-bottom: var(--liquid-border);
+  box-shadow: var(--liquid-shadow-md), var(--liquid-highlight-top);
 }
 
 @media (max-width: 1023px) {

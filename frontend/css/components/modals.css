@@ -24,8 +24,10 @@
 }
 
 .modal-card {
-  background: #0d0d16;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--liquid-surface-overlay, #0d0d16);
+  backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  border: var(--liquid-border-highlight);
   border-radius: var(--radius-lg);
   max-width: 820px;
   width: 95%;
@@ -33,7 +35,7 @@
   display: flex;
   flex-direction: column;
   padding: 24px 28px;
-  box-shadow: 0 25px 65px rgba(0, 0, 0, 0.88);
+  box-shadow: var(--liquid-shadow-overlay), var(--liquid-highlight-top-elevated);
   position: relative;
   z-index: 10000;
   animation: modalPopIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
