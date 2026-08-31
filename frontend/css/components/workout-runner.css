@@ -4738,36 +4738,34 @@
 
 .runner-rail-sidebar {
   background: var(--cx-surface, #151519);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 18px;
-  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
   position: sticky;
-  top: 84px;
-  max-height: calc(100vh - 104px);
+  top: 80px;
+  max-height: calc(100vh - 100px);
   overflow-y: auto;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-
 .runner-rail-progress-box {
-  background: var(--cx-surface, #151519);
-  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
-  border-radius: 12px;
-  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  padding: 0 2px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .runner-rail-progress-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11px;
+  font-size: 10.5px;
 }
 
 .runner-rail-progress-label {
@@ -4789,7 +4787,7 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  height: 5px;
+  height: 4px;
   width: 100%;
 }
 
@@ -4797,18 +4795,16 @@
   flex: 1;
   height: 100%;
   border-radius: 99px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.06);
   transition: all 0.25s ease;
 }
 
 .runner-rail-progress-segment.is-completed {
   background: var(--cx-success, #3ECF8E);
-  box-shadow: 0 0 6px rgba(62, 207, 142, 0.4);
 }
 
 .runner-rail-progress-segment.is-active {
   background: var(--phase-accent);
-  box-shadow: 0 0 8px rgba(var(--phase-accent-rgb), 0.6);
 }
 
 .runner-rail-progress-segment.is-skipped {
@@ -4826,7 +4822,7 @@
   justify-content: space-between;
   font-size: 10.5px;
   font-weight: 800;
-  color: #8a8d9f;
+  color: var(--cx-text-secondary, #8A8A93);
   letter-spacing: 0.06em;
   padding: 0 4px;
 }
@@ -4841,69 +4837,70 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 12px;
-  border-radius: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
   background: transparent;
   border: 1px solid transparent;
   border-left: 3px solid transparent;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.runner-rail-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-}
-
-.runner-rail-item.is-selected {
-  background: rgba(var(--phase-accent-rgb), 0.09);
-  border-color: rgba(var(--phase-accent-rgb), 0.25);
-  border-left: 3px solid var(--phase-accent);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-
-.runner-rail-item.is-done {
+  transition: all 0.15s ease;
   opacity: 0.85;
 }
 
+.runner-rail-item:hover:not(.is-selected) {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+  opacity: 1;
+}
+
+.runner-rail-item.is-selected {
+  background: rgba(var(--phase-accent-rgb), 0.08);
+  border-color: rgba(var(--phase-accent-rgb), 0.2);
+  border-left: 3px solid var(--phase-accent);
+  opacity: 1;
+}
+
+.runner-rail-item.is-done {
+  opacity: 0.55;
+}
+
 .runner-rail-item.is-skipped {
-  opacity: 0.8;
+  opacity: 0.45;
 }
 
 .runner-item-status-icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   color: var(--cx-text-secondary, #8A8A93);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   flex-shrink: 0;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .runner-item-status-icon.is-done {
-  background: rgba(62, 207, 142, 0.15);
-  border-color: rgba(62, 207, 142, 0.35);
+  background: rgba(62, 207, 142, 0.12);
+  border-color: rgba(62, 207, 142, 0.25);
   color: var(--cx-success, #3ECF8E);
 }
 
 .runner-item-status-icon.is-skipped {
-  background: rgba(201, 138, 61, 0.15);
-  border-color: rgba(201, 138, 61, 0.35);
+  background: rgba(201, 138, 61, 0.12);
+  border-color: rgba(201, 138, 61, 0.25);
   color: var(--cx-skipped, #C98A3D);
 }
 
 .runner-item-status-icon.is-current {
-  background: rgba(var(--phase-accent-rgb), 0.2);
-  border-color: rgba(var(--phase-accent-rgb), 0.45);
+  background: rgba(var(--phase-accent-rgb), 0.15);
+  border-color: rgba(var(--phase-accent-rgb), 0.35);
   color: var(--phase-accent);
-  box-shadow: 0 0 10px rgba(var(--phase-accent-rgb), 0.3);
 }
 
 .runner-rail-item-text {

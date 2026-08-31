@@ -6319,8 +6319,9 @@ function renderWorkoutStructureSidebar(session, activePhase) {
   const model = getWorkoutPhaseModel(session);
   if (!model) return '';
 
-  const { phases, overall } = model;
+  const { overall } = model;
   const rawShort = isWarmupPhase(activePhase) ? 'warmup' : (isCooldownPhase(activePhase) ? 'cooldown' : 'main');
+  const phaseTitle = rawShort === 'warmup' ? 'Warm-Up' : (rawShort === 'cooldown' ? 'Cool Down' : 'Train');
 
   let currentPhaseItems = [];
   let currentActiveIndex = 0;
@@ -6338,11 +6339,11 @@ function renderWorkoutStructureSidebar(session, activePhase) {
   }
 
   return `
-    <aside class="runner-rail-sidebar" aria-label="Workout Progress and Exercise Queue">
-      <!-- Overall Compact Segmented Progress Bar -->
+    <aside class="runner-rail-sidebar" aria-label="Movement Queue and Progress">
+      <!-- 1. Compact Progress Summary -->
       <div class="runner-rail-progress-box">
         <div class="runner-rail-progress-header">
-          <span class="runner-rail-progress-label">SESSION PROGRESS</span>
+          <span class="runner-rail-progress-label">PROGRESS</span>
           <span class="runner-rail-progress-val mono">${overall.completedSets} / ${overall.totalSets} sets · ${overall.progressPct}%</span>
         </div>
         <div class="runner-rail-progress-bar">
@@ -6377,18 +6378,18 @@ function renderWorkoutStructureSidebar(session, activePhase) {
             }).join('');
           })()}
         </div>
-        <div class="runner-rail-progress-chips mono" style="display:flex; justify-content:space-between; font-size:10.5px; margin-top:6px; color:var(--cx-text-secondary, #8A8A93);">
+        <div class="runner-rail-progress-chips mono" style="display:flex; justify-content:space-between; font-size:10px; margin-top:4px; color:var(--cx-text-secondary, #8A8A93);">
           <span style="color:var(--cx-success, #3ECF8E);">${overall.completedSets} Completed</span>
           <span style="color:var(--cx-skipped, #C98A3D);">${overall.skippedSets} Skipped</span>
           <span>${Math.max(0, overall.totalSets - overall.completedSets - overall.skippedSets)} Remaining</span>
         </div>
       </div>
 
-      <!-- Current Phase Exercise Checklist -->
+      <!-- 2. Current Phase Label & 3. Movement List -->
       <div class="runner-rail-queue-container">
         <div class="runner-rail-queue-title">
-          <span>${rawShort === 'warmup' ? 'WARM-UP MOVEMENTS' : (rawShort === 'cooldown' ? 'COOL-DOWN STRETCHES' : 'MAIN EXERCISES')}</span>
-          <span class="mono">${currentPhaseItems.length} items</span>
+          <span>${phaseTitle.toUpperCase()} MOVEMENTS</span>
+          <span class="mono">${currentPhaseItems.length}</span>
         </div>
 
         <div class="runner-rail-exercise-list">
@@ -6402,7 +6403,7 @@ function renderWorkoutStructureSidebar(session, activePhase) {
             if (rawShort === 'warmup' || rawShort === 'cooldown') {
               isDone = !!item.completed;
               isSkipped = !!item.skipped;
-              setsText = isHold ? `${item.duration_sec || 30}s hold` : `${item.reps || 10} reps`;
+              setsText = isHold ? `${item.duration_sec || 30}s` : `${item.reps || 10} reps`;
             } else {
               const sets = item.sets || [];
               const completedCount = sets.filter(s => s.completed).length;
