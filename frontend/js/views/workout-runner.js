@@ -3662,10 +3662,14 @@ function stopWorkoutHold(saveAndComplete = true) {
 
     const currentEx = session.exercises[exIdx];
     const isExDone = currentEx.sets.every(s => s.completed || s.skipped);
-    currentEx.completed = isExDone;
-    if (isExDone) {
+    const hasCompletedSets = currentEx.sets.some(s => s.completed);
+    currentEx.completed = isExDone && hasCompletedSets;
+    currentEx.skipped = isExDone && !hasCompletedSets;
+    if (currentEx.completed) {
       currentEx.completed_at = new Date().toISOString();
       cueExerciseComplete();
+    } else if (isExDone && currentEx.skipped) {
+      currentEx.skipped_at = new Date().toISOString();
     } else {
       cueSetComplete();
     }
