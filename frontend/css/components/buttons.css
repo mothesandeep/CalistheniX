@@ -31,21 +31,23 @@
 
 /* ── Primary Button (Complete Set, Start Workout, CTA) ────────────────────── */
 .btn-primary {
-  background: linear-gradient(135deg, #7c5cfc 0%, #6947eb 100%);
+  background: var(--phase-train, #FF5D5D);
   color: #ffffff;
   font-weight: 700;
   letter-spacing: 0.01em;
-  box-shadow: 0 4px 16px rgba(124, 92, 252, 0.25);
+  box-shadow: 0 4px 16px rgba(255, 93, 93, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .btn-primary:hover {
-  background: linear-gradient(135deg, #8b5cf6 0%, #7c5cfc 100%);
-  box-shadow: 0 6px 22px rgba(124, 92, 252, 0.35);
+  background: var(--phase-train, #FF5D5D);
+  filter: brightness(1.12);
+  box-shadow: 0 6px 22px rgba(255, 93, 93, 0.4);
   transform: translateY(-1px);
 }
 .btn-primary:active {
   transform: scale(0.98);
-  box-shadow: 0 2px 8px rgba(124, 92, 252, 0.2);
+  filter: brightness(0.94);
+  box-shadow: 0 2px 8px rgba(255, 93, 93, 0.25);
 }
 
 .btn-hero {
@@ -174,8 +176,8 @@
   white-space: nowrap;
 }
 .badge-reps { background: rgba(255, 255, 255, 0.06); color: #e4e4e7; }
-.badge-hold { background: rgba(124, 92, 252, 0.12); color: #c4b5fd; border: 1px solid rgba(124, 92, 252, 0.25); }
-.badge-accent { background: rgba(124, 92, 252, 0.12); color: #c4b5fd; border: 1px solid rgba(124, 92, 252, 0.25); }
+.badge-hold { background: rgba(255, 93, 93, 0.12); color: #ff8585; border: 1px solid rgba(255, 93, 93, 0.25); }
+.badge-accent { background: rgba(255, 93, 93, 0.12); color: #ff8585; border: 1px solid rgba(255, 93, 93, 0.25); }
 .badge-success { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.25); }
 .badge-warning { background: rgba(249, 115, 22, 0.12); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.25); }
 

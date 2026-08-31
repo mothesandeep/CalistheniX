@@ -79,7 +79,7 @@ body::before {
 .cx-icon-accent { color: var(--accent); }
 .cx-icon-success { color: var(--success); }
 .cx-icon-danger { color: var(--danger); }
-.cx-icon-gold { color: #c4b5fd; }
+.cx-icon-gold { color: #f59e0b; }
 .cx-icon-fire { color: #f97316; }
 .cx-icon-cyan { color: #06b6d4; }
 .cx-icon-muted { color: var(--text-muted); }
@@ -234,8 +234,8 @@ h3, .type-h3 {
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 92, 252, 0.2); }
-  50%      { box-shadow: 0 0 16px 2px rgba(124, 92, 252, 0.35); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 93, 93, 0.2); }
+  50%      { box-shadow: 0 0 16px 2px rgba(255, 93, 93, 0.35); }
 }
 
 @keyframes scaleIn {

@@ -24,33 +24,40 @@
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  color: var(--text-muted);
+  color: var(--text-dim);
   font-size: 10px;
   font-weight: 500;
   gap: 3px;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  transition: color var(--transition), transform var(--transition);
-  min-width: 54px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  transition: all 140ms ease;
+  min-width: 56px;
 }
 .bottom-nav-icon {
-  font-size: 17px;
+  font-size: 18px;
   line-height: 1;
+  transition: transform 140ms ease, color 140ms ease, filter 140ms ease;
 }
-.bottom-nav-item:hover, .bottom-nav-item.active {
-  color: var(--accent);
+.bottom-nav-item:hover {
+  color: #ffffff;
+}
+.bottom-nav-item.active {
+  color: #ffffff;
+  font-weight: 700;
 }
 .bottom-nav-item.active .bottom-nav-icon {
+  color: var(--phase-train, #FF5D5D);
   transform: scale(1.1);
+  filter: drop-shadow(0 0 6px rgba(255, 93, 93, 0.6));
 }
 .bottom-nav-workout {
   position: relative;
 }
-.bottom-nav-workout.active {
-  color: #22c55e;
+.bottom-nav-workout.active .bottom-nav-icon {
+  color: var(--phase-train, #FF5D5D);
 }
 
-@media (max-width: 680px) {
+@media (max-width: 1023px) {
   .desktop-nav { display: none; }
   .app-bottom-nav { display: flex; }
   .app-main { padding-bottom: 90px; }

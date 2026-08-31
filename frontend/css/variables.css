@@ -16,19 +16,19 @@
   --border-subtle:   rgba(255, 255, 255, 0.04);
   --border-light:    rgba(255, 255, 255, 0.12);
   --border-focus:    rgba(255, 255, 255, 0.28);
-  --border-accent:   rgba(124, 92, 252, 0.25);
+  --border-accent:   rgba(255, 93, 93, 0.25);
 
   --text:            #f8fafc;
   --text-muted:      #8b8b9e;
   --text-dim:        #5a5a70;
 
-  --accent:          #7c5cfc;
-  --accent-light:    #8b5cf6;
-  --accent-hover:    #6947eb;
-  --accent-dim:      rgba(124, 92, 252, 0.08);
-  --accent-surface:  rgba(124, 92, 252, 0.06);
-  --accent-ring:     rgba(124, 92, 252, 0.2);
-  --accent-glow:     0 0 20px rgba(124, 92, 252, 0.18);
+  --accent:          #FF5D5D;
+  --accent-light:    #ff7575;
+  --accent-hover:    #e54b4b;
+  --accent-dim:      rgba(255, 93, 93, 0.08);
+  --accent-surface:  rgba(255, 93, 93, 0.06);
+  --accent-ring:     rgba(255, 93, 93, 0.2);
+  --accent-glow:     0 0 20px rgba(255, 93, 93, 0.18);
 
   --success:         #10b981;
   --success-dim:     rgba(16, 185, 129, 0.15);
@@ -120,7 +120,7 @@
   --shadow-md:       0 8px 24px rgba(0, 0, 0, 0.55);
   --shadow-lg:       0 16px 44px rgba(0, 0, 0, 0.8);
   --shadow-glass:    0 8px 24px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --shadow-accent:   0 0 0 1px rgba(124, 92, 252, 0.15), 0 8px 32px rgba(124, 92, 252, 0.08);
+  --shadow-accent:   0 0 0 1px rgba(255, 93, 93, 0.15), 0 8px 32px rgba(255, 93, 93, 0.08);
 
   /* ── 1.4 Liquid Morphism Foundation Tokens ─────────────────────────────── */
   /* Translucent Dark Surfaces */
