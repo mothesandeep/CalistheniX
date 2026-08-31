@@ -4705,20 +4705,23 @@
 .runner-rest-next-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
 .runner-rest-adjust-row { gap: 8px; margin-top: 6px; }
 
-/* ─── 14. RESPONSIVE TWEAKS ───────────────────────────────────────────────── */
-
 @media (max-width: 640px) {
-  .runner-session-card { padding: 16px 16px 20px; gap: 12px; border-radius: 18px; }
-  .runner-active-exercise-card { padding: 16px 16px 14px; gap: 12px; margin-bottom: 12px; }
-  .runner-exercise-name-title { font-size: 22px; }
+  .runner-sticky-header { padding: 10px 14px; gap: 8px; margin-bottom: 16px; }
+  .runner-header-title { font-size: 15px; }
+  .runner-header-end-btn { padding: 6px 10px; font-size: 11.5px; }
+  .runner-execution-card { padding: 20px 16px 18px; border-radius: 16px; gap: 14px; }
+  .runner-exercise-name-title { font-size: 24px; }
   .runner-card-ex-name { font-size: 20px; }
-  .runner-stepper-number { font-size: 46px; }
-  .runner-rest-hero-digits { font-size: 54px; }
+  .runner-stepper-number { font-size: 48px; }
+  .runner-stepper-zone { padding: 8px 10px; gap: 14px; }
+  .stepper-btn { width: 44px; height: 44px; font-size: 20px; }
+  .runner-cta-btn { height: 52px; font-size: 14.5px; border-radius: 12px; }
+  .runner-rest-hero-digits { font-size: 52px; }
   .runner-complete-modal-card { padding: 20px 18px; gap: 12px; }
   .runner-complete-title { font-size: 19px; }
   .runner-phase-transition-card { padding: 24px 20px; }
-  .runner-target-pill { padding: 8px 10px; }
-  .runner-shortcut-pill { font-size: 11.5px; padding: 7px 12px; }
+  .runner-target-pill { padding: 8px 12px; }
+  .runner-shortcut-pill { font-size: 11px; padding: 6px 10px; }
 }
 
 /* ─── 15. USABILITY-FIRST 3-PANEL & MOBILE DRAWER REDESIGN ────────────────── */
@@ -5251,8 +5254,8 @@
 }
 
 .runner-anatomy-accordion {
-  background: rgba(18, 18, 26, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--cx-surface, #151519);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 14px;
   padding: 0;
   overflow: hidden;
@@ -5303,19 +5306,25 @@
   gap: 6px;
   padding: 6px 12px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--cx-text, #F2F2F0);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+.runner-header-drawer-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .runner-drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 1000;
   opacity: 0;
   pointer-events: none;
@@ -5332,10 +5341,10 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: #141522;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--cx-surface, #151519);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px 20px 0 0;
-  padding: 12px 16px 32px;
+  padding: 14px 18px 36px;
   z-index: 1001;
   max-height: 80vh;
   display: flex;
@@ -5422,14 +5431,20 @@
   gap: 12px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.runner-drawer-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 
 .runner-drawer-item.is-selected {
-  background: rgba(124, 92, 252, 0.15);
-  border-color: rgba(124, 92, 252, 0.4);
+  background: var(--phase-accent-dim, rgba(255, 93, 93, 0.12));
+  border-color: var(--phase-accent-border, rgba(255, 93, 93, 0.35));
 }
 
 .runner-drawer-item-info {
