@@ -181,8 +181,147 @@ const EXERCISE_COACHING_TIPS = {
   }
 };
 
+// ─── Body Weight & Check-In State Management ───────────────────────────────
+const DEFAULT_WEIGHT_HISTORY = [
+  { date: '2026-07-01', weight: 82.4 },
+  { date: '2026-07-05', weight: 82.1 },
+  { date: '2026-07-10', weight: 81.8 },
+  { date: '2026-07-16', weight: 81.5 },
+  { date: '2026-07-23', weight: 80.7 },
+  { date: '2026-07-29', weight: 80.4 },
+  { date: '2026-08-04', weight: 80.1 },
+  { date: '2026-08-10', weight: 79.8 },
+  { date: '2026-08-16', weight: 79.5 },
+  { date: '2026-08-23', weight: 79.1 },
+  { date: '2026-08-27', weight: 78.4 },
+  { date: '2026-08-31', weight: 78.3 }
+];
+
+function getWeightHistory() {
+  if (typeof state !== 'undefined' && state.weightHistory && Array.isArray(state.weightHistory) && state.weightHistory.length > 0) {
+    return state.weightHistory;
+  }
+  if (typeof localStorage !== 'undefined') {
+    const raw = localStorage.getItem('cx_weight_history');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          if (typeof state !== 'undefined') state.weightHistory = parsed;
+          return parsed;
+        }
+      } catch (e) {}
+    }
+  }
+  // Initialize with canonical seed history if first time
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('cx_weight_history', JSON.stringify(DEFAULT_WEIGHT_HISTORY));
+  }
+  if (typeof state !== 'undefined') state.weightHistory = [...DEFAULT_WEIGHT_HISTORY];
+  return state.weightHistory || DEFAULT_WEIGHT_HISTORY;
+}
+
+function getTargetWeight() {
+  if (typeof state !== 'undefined' && state.targetWeight != null) return Number(state.targetWeight);
+  if (typeof localStorage !== 'undefined') {
+    const raw = localStorage.getItem('cx_target_weight');
+    if (raw && !isNaN(Number(raw))) return Number(raw);
+  }
+  return 77.0;
+}
+
+function setTargetWeight(targetKg) {
+  const val = Number(targetKg);
+  if (isNaN(val) || val <= 0) return;
+  if (typeof state !== 'undefined') state.targetWeight = val;
+  if (typeof localStorage !== 'undefined') localStorage.setItem('cx_target_weight', String(val));
+}
+
+function saveBodyWeight(weightKg, dateStr = null) {
+  const val = Math.round(Number(weightKg) * 10) / 10;
+  if (isNaN(val) || val <= 0) return null;
+
+  const history = getWeightHistory().slice();
+  const date = (dateStr || (typeof todayISO === 'function' ? todayISO() : new Date().toISOString().substring(0, 10))).substring(0, 10);
+
+  // Check if entry for this date already exists — update it if so
+  const existingIdx = history.findIndex(h => (h.date || '').substring(0, 10) === date);
+  if (existingIdx >= 0) {
+    history[existingIdx] = { ...history[existingIdx], weight: val, date };
+  } else {
+    history.push({ date, weight: val });
+  }
+
+  // Sort chronologically ascending
+  history.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  if (typeof state !== 'undefined') {
+    state.weightHistory = history;
+    state.latestWeight = val;
+  }
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('cx_weight_history', JSON.stringify(history));
+    localStorage.setItem('cx_latest_weight', String(val));
+  }
+
+  // Trigger reactive UI refresh if on home view without page reload
+  if (typeof state !== 'undefined' && (state.view === 'home' || state.view === 'dashboard')) {
+    const mobileView = document.querySelector('.home-mobile-view');
+    if (mobileView && typeof renderHomeView === 'function') {
+      const container = document.getElementById('view-home') || document.getElementById('app-root');
+      if (container) {
+        renderHomeView(container);
+      }
+    }
+  }
+
+  return val;
+}
+
+function deleteBodyWeight(dateStr) {
+  if (!dateStr) return;
+  const targetDate = dateStr.substring(0, 10);
+  const history = getWeightHistory().slice();
+  const filtered = history.filter(h => (h.date || '').substring(0, 10) !== targetDate);
+  if (typeof state !== 'undefined') {
+    state.weightHistory = filtered;
+    if (filtered.length > 0) {
+      state.latestWeight = filtered[filtered.length - 1].weight;
+    }
+  }
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('cx_weight_history', JSON.stringify(filtered));
+    if (filtered.length > 0) {
+      localStorage.setItem('cx_latest_weight', String(filtered[filtered.length - 1].weight));
+    }
+  }
+  // Refresh UI
+  if (typeof render === 'function') {
+    render();
+  }
+  // Refresh checkin modal recent list if open
+  if (typeof renderQuickCheckInRecentList === 'function') {
+    renderQuickCheckInRecentList();
+  }
+}
+
+function formatWeightPointDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr.length === 10 ? `${dateStr}T12:00:00` : dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const daysShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${daysShort[d.getDay()]} ${d.getDate()} ${monthsShort[d.getMonth()]}`;
+}
+
 if (typeof window !== 'undefined') {
   window.state = state;
   window.setCurrentMovementPattern = setCurrentMovementPattern;
   window.EXERCISE_COACHING_TIPS = EXERCISE_COACHING_TIPS;
+  window.getWeightHistory = getWeightHistory;
+  window.getTargetWeight = getTargetWeight;
+  window.setTargetWeight = setTargetWeight;
+  window.saveBodyWeight = saveBodyWeight;
+  window.deleteBodyWeight = deleteBodyWeight;
+  window.formatWeightPointDate = formatWeightPointDate;
 }

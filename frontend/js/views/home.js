@@ -17,6 +17,260 @@ function renderStreakSparklineSvg(streak) {
     </svg>`;
 }
 
+function renderBodyWeightSparklineSvg(history, targetKg = 77) {
+  if (!history || !Array.isArray(history) || history.length === 0) {
+    return '';
+  }
+
+  const width = 360;
+  const height = 135;
+  const padLeft = 38;
+  const padRight = 18;
+  const padTop = 14;
+  const padBottom = 24;
+  const plotWidth = width - padLeft - padRight;
+  const plotHeight = height - padTop - padBottom;
+
+  const weights = history.map(h => Number(h.weight));
+  const dataMin = Math.min(...weights, targetKg);
+  const dataMax = Math.max(...weights, targetKg);
+  const minY = Math.min(76.5, Math.floor(dataMin - 0.5));
+  const maxY = Math.max(83.5, Math.ceil(dataMax + 0.5));
+  const kgRange = Math.max(1, maxY - minY);
+
+  const coords = history.map((item, idx) => {
+    const x = padLeft + (history.length === 1 ? plotWidth / 2 : (idx / (history.length - 1)) * plotWidth);
+    const norm = (Number(item.weight) - minY) / kgRange;
+    const y = padTop + (1 - norm) * plotHeight;
+    return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, ...item };
+  });
+
+  // Store for global pointer / touch / drag handlers
+  if (typeof window !== 'undefined') {
+    window._weightGraphCoords = coords;
+  }
+
+  // Calculate smooth cubic spline path
+  let lineD = '';
+  if (coords.length === 1) {
+    lineD = `M ${coords[0].x - 10} ${coords[0].y} L ${coords[0].x + 10} ${coords[0].y}`;
+  } else {
+    lineD = `M ${coords[0].x.toFixed(1)} ${coords[0].y.toFixed(1)}`;
+    for (let i = 0; i < coords.length - 1; i++) {
+      const p0 = coords[i === 0 ? 0 : i - 1];
+      const p1 = coords[i];
+      const p2 = coords[i + 1];
+      const p3 = coords[i + 2] || p2;
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      lineD += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+    }
+  }
+
+  const firstCoord = coords[0];
+  const lastCoord = coords[coords.length - 1];
+  const areaD = `${lineD} L ${lastCoord.x.toFixed(1)} ${(height - padBottom).toFixed(1)} L ${firstCoord.x.toFixed(1)} ${(height - padBottom).toFixed(1)} Z`;
+
+  // Horizontal Grid Lines (82.5, 80, 77.5)
+  const gridValues = [82.5, 80.0, 77.5];
+  const gridLinesHtml = gridValues.map(gVal => {
+    const norm = (gVal - minY) / kgRange;
+    const y = padTop + (1 - norm) * plotHeight;
+    return `
+      <line x1="${padLeft}" y1="${y.toFixed(1)}" x2="${width - padRight}" y2="${y.toFixed(1)}" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" stroke-dasharray="2,3" />
+      <text x="${padLeft - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" fill="#717182" font-size="9" font-family="var(--sans)" font-weight="600">${gVal % 1 === 0 ? gVal : gVal.toFixed(1)}</text>
+    `;
+  }).join('');
+
+  // Vertical Subtle Grid Lines
+  const vGridCols = [0.28, 0.50, 0.72];
+  const vGridLinesHtml = vGridCols.map(pct => {
+    const x = padLeft + plotWidth * pct;
+    return `<line x1="${x.toFixed(1)}" y1="${padTop}" x2="${x.toFixed(1)}" y2="${height - padBottom}" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1" stroke-dasharray="2,3" />`;
+  }).join('');
+
+  // Target dashed line Y
+  const targetNorm = (targetKg - minY) / kgRange;
+  const targetY = Math.round((padTop + (1 - targetNorm) * plotHeight) * 10) / 10;
+
+  // Small dots along curve
+  const curveDotsHtml = coords.map((c, i) => {
+    if (i === coords.length - 1) return '';
+    return `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="2" fill="#FFB800" opacity="0.85" />`;
+  }).join('');
+
+  // Interactive point hit areas
+  const hitAreasHtml = coords.map((c, i) => {
+    return `
+      <circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="14" fill="transparent" class="weight-graph-hitarea" 
+        data-date="${c.date}" data-weight="${c.weight}"
+        onclick="selectWeightPointByIndex(${i})"
+        onmouseenter="selectWeightPointByIndex(${i})" />
+    `;
+  }).join('');
+
+  return `
+    <div class="home-mobile-chart-wrap home-mobile-weight-chart-wrap" 
+      style="position:relative; touch-action:pan-y;"
+      onpointermove="handleWeightGraphPointer(event)"
+      onpointerdown="handleWeightGraphPointer(event)"
+      onpointerleave="handleWeightGraphPointerLeave()"
+      ontouchmove="handleWeightGraphPointer(event)"
+      ontouchstart="handleWeightGraphPointer(event)"
+      ontouchend="handleWeightGraphPointerLeave()">
+      <svg class="home-mobile-metric-svg home-mobile-weight-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="weightAreaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#FFB800" stop-opacity="0.30" />
+            <stop offset="50%" stop-color="#FFB800" stop-opacity="0.10" />
+            <stop offset="100%" stop-color="#FFB800" stop-opacity="0.0" />
+          </linearGradient>
+        </defs>
+
+        <!-- Horizontal & Vertical Grid Lines -->
+        ${vGridLinesHtml}
+        ${gridLinesHtml}
+
+        <!-- Dashed Target Weight Line -->
+        <line x1="${padLeft}" y1="${targetY.toFixed(1)}" x2="${width - padRight}" y2="${targetY.toFixed(1)}" stroke="#FFB800" stroke-width="2" stroke-dasharray="6,4" />
+        <text x="${width - padRight}" y="${(targetY - 5).toFixed(1)}" text-anchor="end" fill="#FFB800" font-size="10.5" font-family="var(--font-heading, var(--sans))" font-weight="800">${targetKg}</text>
+
+        <!-- Area Gradient Fill -->
+        <path d="${areaD}" fill="url(#weightAreaGrad)" />
+
+        <!-- Smooth Curve Line -->
+        <path d="${lineD}" fill="none" stroke="#FFB800" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+        <!-- Curve Inner Dots -->
+        ${curveDotsHtml}
+
+        <!-- Interactive Guide Line (Shown on drag/hover) -->
+        <line id="weight-interactive-vline" x1="0" y1="${padTop}" x2="0" y2="${height - padBottom}" stroke="rgba(255, 255, 255, 0.32)" stroke-width="1.2" stroke-dasharray="3,3" style="display:none;" />
+
+        <!-- Interactive Highlight Dot -->
+        <circle id="weight-interactive-dot" cx="0" cy="0" r="5.5" fill="#141418" stroke="#FFB800" stroke-width="3" style="display:none;" />
+
+        <!-- Highlighted Latest Point -->
+        <circle id="weight-latest-dot" cx="${lastCoord.x.toFixed(1)}" cy="${lastCoord.y.toFixed(1)}" r="5" fill="#FFB800" stroke="#141418" stroke-width="2" class="weight-graph-latest-dot" />
+
+        <!-- Hit areas for direct point clicks -->
+        ${hitAreasHtml}
+
+        <!-- X-Axis Month Labels -->
+        <text x="${(padLeft + plotWidth * 0.28).toFixed(1)}" y="${height - 6}" text-anchor="middle" fill="#717182" font-size="10.5" font-family="var(--sans)" font-weight="600">Jul</text>
+        <text x="${(padLeft + plotWidth * 0.72).toFixed(1)}" y="${height - 6}" text-anchor="middle" fill="#717182" font-size="10.5" font-family="var(--sans)" font-weight="600">Aug</text>
+      </svg>
+
+      <!-- Floating Interactive Tooltip -->
+      <div id="weight-tooltip" class="weight-tooltip" style="display:none;" aria-live="polite"></div>
+    </div>
+  `;
+}
+
+function handleWeightGraphPointer(evt) {
+  const coords = window._weightGraphCoords;
+  if (!coords || coords.length === 0) return;
+  const container = document.querySelector('.home-mobile-weight-chart-wrap');
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  const clientX = evt.touches && evt.touches[0] ? evt.touches[0].clientX : evt.clientX;
+  if (clientX == null) return;
+  const relX = clientX - rect.left;
+  const svgX = (relX / rect.width) * 360;
+
+  // Find closest coordinate
+  let closest = coords[0];
+  let minDist = Math.abs(coords[0].x - svgX);
+  for (let i = 1; i < coords.length; i++) {
+    const dist = Math.abs(coords[i].x - svgX);
+    if (dist < minDist) {
+      minDist = dist;
+      closest = coords[i];
+    }
+  }
+
+  updateWeightGraphHighlight(closest, rect);
+}
+
+function selectWeightPointByIndex(idx) {
+  const coords = window._weightGraphCoords;
+  if (!coords || !coords[idx]) return;
+  const container = document.querySelector('.home-mobile-weight-chart-wrap');
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  updateWeightGraphHighlight(coords[idx], rect);
+}
+
+function updateWeightGraphHighlight(point, rect) {
+  const vline = document.getElementById('weight-interactive-vline');
+  const dot = document.getElementById('weight-interactive-dot');
+  const latestDot = document.getElementById('weight-latest-dot');
+  const tooltip = document.getElementById('weight-tooltip');
+  const coords = window._weightGraphCoords || [];
+  const isLatest = coords.length > 0 && coords[coords.length - 1] === point;
+
+  if (vline) {
+    vline.setAttribute('x1', point.x);
+    vline.setAttribute('x2', point.x);
+    vline.style.display = 'block';
+  }
+  if (dot) {
+    dot.setAttribute('cx', point.x);
+    dot.setAttribute('cy', point.y);
+    dot.style.display = 'block';
+  }
+  if (latestDot) {
+    latestDot.style.opacity = isLatest ? '1' : '0.4';
+  }
+
+  if (tooltip) {
+    const formatted = typeof formatWeightPointDate === 'function' ? formatWeightPointDate(point.date) : point.date;
+    tooltip.innerHTML = `${formatted} · <strong>${Number(point.weight).toFixed(1)} kg</strong>`;
+    tooltip.style.display = 'block';
+    const tipPixelX = (point.x / 360) * rect.width;
+    tooltip.style.left = `${Math.max(65, Math.min(rect.width - 65, tipPixelX))}px`;
+    const tipPixelY = (point.y / 135) * rect.height;
+    tooltip.style.top = `${Math.max(0, tipPixelY - 36)}px`;
+  }
+}
+
+function handleWeightGraphPointerLeave() {
+  setTimeout(() => {
+    const vline = document.getElementById('weight-interactive-vline');
+    const dot = document.getElementById('weight-interactive-dot');
+    const latestDot = document.getElementById('weight-latest-dot');
+    const tooltip = document.getElementById('weight-tooltip');
+    if (vline) vline.style.display = 'none';
+    if (dot) dot.style.display = 'none';
+    if (latestDot) latestDot.style.opacity = '1';
+    if (tooltip) tooltip.style.display = 'none';
+  }, 1800);
+}
+
+function showWeightTooltip(evt, dateStr, weight) {
+  const coords = window._weightGraphCoords;
+  if (coords) {
+    const found = coords.find(c => (c.date || '').substring(0, 10) === (dateStr || '').substring(0, 10));
+    if (found) {
+      const container = document.querySelector('.home-mobile-weight-chart-wrap');
+      if (container) {
+        updateWeightGraphHighlight(found, container.getBoundingClientRect());
+        return;
+      }
+    }
+  }
+}
+
+function hideWeightTooltip() {
+  handleWeightGraphPointerLeave();
+}
+
+function renderWeeklyVolumeSparklineSvg(weekSets, goalSets) {
+  return renderBodyWeightSparklineSvg(typeof getWeightHistory === 'function' ? getWeightHistory() : [], 77);
+}
+
 function updateGlobalStreakDisplays(streakDays) {
   const streak = streakDays != null ? Number(streakDays) : 0;
   const sidebarStreakEl = document.getElementById('sidebar-streak-val');
@@ -135,24 +389,58 @@ function renderHomeView() {
     sidebarStreakEl.innerHTML = `${renderIcon('flame', 'cx-icon cx-icon-fire cx-icon-sm')} <span>${summary.streak_days || 0} day streak</span>`;
   }
 
-  // 1. Weekly Schedule & Overview Calculation
+  // 1. Weekly Schedule & Interactive Navigator Calculation
+  state.homeWeekOffset = state.homeWeekOffset || 0;
+  const now = new Date();
+  const todayDow = (now.getDay() + 6) % 7; // 0=Monday .. 6=Sunday
+
+  // Compute Monday & Sunday of the active navigated week
+  const weekMonday = new Date(now);
+  weekMonday.setDate(now.getDate() - todayDow + (state.homeWeekOffset * 7));
+  weekMonday.setHours(0, 0, 0, 0);
+
+  const weekSunday = new Date(weekMonday);
+  weekSunday.setDate(weekMonday.getDate() + 6);
+  weekSunday.setHours(23, 59, 59, 999);
+
+  const monthNamesShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const startMonth = monthNamesShort[weekMonday.getMonth()];
+  const endMonth = monthNamesShort[weekSunday.getMonth()];
+  const startDay = weekMonday.getDate();
+  const endDay = weekSunday.getDate();
+
+  const weekLabel = (startMonth === endMonth)
+    ? `${startMonth} ${startDay}–${endDay}`
+    : `${startMonth} ${startDay} – ${endMonth} ${endDay}`;
+
+  const isCurrentNavWeek = (state.homeWeekOffset === 0);
+
   const currentSplit = state.selectedSplitDetail || state.activeSplit || state.splits[0];
   const schedule = currentSplit?.schedule || [];
   const plannedWorkoutsCount = schedule.filter(d => d.day_type === 'workout').length || 4;
   const weekSessionsDone = summary.week_sessions || 0;
-  const weeklyPct = Math.min(100, Math.round((weekSessionsDone / Math.max(1, plannedWorkoutsCount)) * 100));
 
-  const todayDow = (new Date().getDay() + 6) % 7; // 0=Monday .. 6=Sunday
+  let completedCountInNavWeek = 0;
+  if (state.homeWeekOffset < 0) {
+    completedCountInNavWeek = plannedWorkoutsCount;
+  } else if (state.homeWeekOffset === 0) {
+    completedCountInNavWeek = weekSessionsDone;
+  } else {
+    completedCountInNavWeek = 0;
+  }
+  const navWeeklyPct = Math.min(100, Math.round((completedCountInNavWeek / Math.max(1, plannedWorkoutsCount)) * 100));
+
   const dayLetters = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const dayNamesShort = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
   // Calculate muscle targets for today's workout
   _currentWorkoutMuscles = getWorkoutMuscleTargets(resolved?.workout);
 
   const weekCirclesHtml = dayLetters.map((letter, idx) => {
-    const isToday = idx === todayDow;
-    const isPast = idx < todayDow;
+    const isToday = isCurrentNavWeek && (idx === todayDow);
+    const isPast = (state.homeWeekOffset < 0) || (isCurrentNavWeek && idx < todayDow);
     const isWorkoutDay = schedule[idx]?.day_type === 'workout';
-    const isDone = isPast && isWorkoutDay && weekSessionsDone > 0;
+    const isDone = isPast && isWorkoutDay && (state.homeWeekOffset < 0 || weekSessionsDone > 0);
 
     let circleClass = 'home-week-circle future';
     let content = letter;
@@ -391,12 +679,16 @@ function renderHomeView() {
       <div class="home-weekly-card" onclick="switchView('split')" style="cursor:pointer;" title="Click to view weekly training schedule">
         <div>
           <div class="home-weekly-head">
-            <span class="home-weekly-tag">Weekly Progress</span>
-            <span class="home-weekly-pct">${weeklyPct}%</span>
+            <span class="home-weekly-tag">Weekly Progress · ${weekLabel}</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button class="home-week-nav-arrow-desktop" onclick="event.stopPropagation(); shiftHomeWeek(-1)" title="Previous week">‹</button>
+              <button class="home-week-nav-arrow-desktop" onclick="event.stopPropagation(); shiftHomeWeek(1)" title="Next week">›</button>
+              <span class="home-weekly-pct">${navWeeklyPct}%</span>
+            </div>
           </div>
-          <div class="home-weekly-title">${weekSessionsDone} of ${plannedWorkoutsCount} workouts done</div>
+          <div class="home-weekly-title">${completedCountInNavWeek} of ${plannedWorkoutsCount} workouts done</div>
           <div class="home-weekly-bar-bg">
-            <div class="home-weekly-bar-fill" style="width: ${weeklyPct}%;"></div>
+            <div class="home-weekly-bar-fill" style="width: ${navWeeklyPct}%;"></div>
           </div>
         </div>
         <div class="home-week-circles">
@@ -719,44 +1011,678 @@ function renderHomeView() {
       </div>
     </div>`;
 
+  // ─── Mobile Simplified Home View (< 1024px) ──────────────────────────
+  const selectedDayIndex = (state.selectedHomeDayIndex !== undefined && state.selectedHomeDayIndex !== null)
+    ? state.selectedHomeDayIndex
+    : (isCurrentNavWeek ? todayDow : 0);
+
+  // Selected day details & completion tracking
+  const selectedScheduleItem = schedule[selectedDayIndex];
+  const isSelectedWorkout = selectedScheduleItem?.day_type === 'workout' && selectedScheduleItem?.workout_id;
+  const isSelectedToday = (isCurrentNavWeek && selectedDayIndex === todayDow);
+
+  const selectedDayDate = new Date(weekMonday);
+  selectedDayDate.setDate(weekMonday.getDate() + selectedDayIndex);
+  const selectedDayIsoStr = `${selectedDayDate.getFullYear()}-${String(selectedDayDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDayDate.getDate()).padStart(2, '0')}`;
+
+  let selectedDayCompletedSession = null;
+  if (state.workoutSessions && state.workoutSessions.length > 0) {
+    selectedDayCompletedSession = state.workoutSessions.find(s => {
+      const sDate = (s.completed_at || s.started_at || s.created_at || '').substring(0, 10);
+      return sDate === selectedDayIsoStr && (s.status === 'completed' || s.completed_sets > 0);
+    });
+  }
+  if (!selectedDayCompletedSession && state.dashboardActivity && state.dashboardActivity.length > 0) {
+    const act = state.dashboardActivity.find(a => {
+      const aDate = (a.date || a.session_date || a.created_at || '').substring(0, 10);
+      return aDate === selectedDayIsoStr;
+    });
+    if (act) selectedDayCompletedSession = act;
+  }
+
+  const isSelectedDayDone = !!selectedDayCompletedSession || (state.homeWeekOffset < 0 && isSelectedWorkout);
+
+  // 1. Mobile Header (Reference: openGym branding + Tuesday 1 September date + circular Settings gear)
+  const FULL_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const FULL_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const headerDateStr = `${FULL_DAYS[now.getDay()]} ${now.getDate()} ${FULL_MONTHS[now.getMonth()]}`;
+
+  const mobileHeaderHtml = `
+    <div class="home-mobile-header">
+      <div class="home-mobile-brand-group">
+        <div class="home-mobile-brand-title">
+          <span class="app-logo">Calisthen<span class="logo-x">i</span><span class="logo-x-accent">X</span></span>
+        </div>
+        <div class="home-mobile-date-sub">${headerDateStr}</div>
+        <span class="sr-only" style="display:none;">Good ${greeting.toLowerCase()} Sandeep</span>
+      </div>
+      <button class="home-mobile-gear-btn home-mobile-settings-btn" onclick="openSettingsModal()" title="Settings & Preferences" aria-label="Settings">
+        <span class="sr-only" style="display:none;">Settings</span>
+        <svg class="cx-icon cx-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+  `;
+
+  const DAY_NAMES_MON = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const DAY_CODES_2 = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+
+  // Card 1 — 7 Day Columns
+  const mobileWeekDaysHtml = DAY_CODES_2.map((code, idx) => {
+    const dayDate = new Date(weekMonday);
+    dayDate.setDate(weekMonday.getDate() + idx);
+    const dateNum = dayDate.getDate();
+    const dayIsoStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
+
+    const isToday = isCurrentNavWeek && (idx === todayDow);
+    const isPast = (state.homeWeekOffset < 0) || (isCurrentNavWeek && idx < todayDow);
+    const isFuture = (state.homeWeekOffset > 0) || (isCurrentNavWeek && idx > todayDow);
+    const isWorkoutDay = schedule[idx]?.day_type === 'workout' && schedule[idx]?.workout_id;
+    const isSelected = (idx === selectedDayIndex);
+
+    let isDone = false;
+    if (state.workoutSessions && state.workoutSessions.length > 0) {
+      isDone = state.workoutSessions.some(s => {
+        const sDate = (s.completed_at || s.started_at || s.created_at || '').substring(0, 10);
+        return sDate === dayIsoStr && (s.status === 'completed' || s.completed_sets > 0);
+      });
+    }
+    if (!isDone && state.dashboardActivity && state.dashboardActivity.length > 0) {
+      isDone = state.dashboardActivity.some(a => {
+        const aDate = (a.date || a.session_date || a.created_at || '').substring(0, 10);
+        return aDate === dayIsoStr;
+      });
+    }
+    if (!isDone && state.homeWeekOffset < 0 && isWorkoutDay) {
+      isDone = true;
+    }
+
+    let dotClass = '';
+    let stateSymbol = '○';
+    if (isDone) {
+      dotClass = 'dot-done';
+      stateSymbol = '✓';
+    } else if (isToday) {
+      dotClass = 'dot-today';
+      stateSymbol = '●';
+    } else if (isWorkoutDay && isFuture) {
+      dotClass = 'dot-future';
+      stateSymbol = '○';
+    } else if (isWorkoutDay) {
+      dotClass = 'dot-workout';
+      stateSymbol = '○';
+    } else {
+      dotClass = 'dot-rest';
+      stateSymbol = '—';
+    }
+
+    return `
+      <div class="home-mobile-day-col ${isSelected ? 'is-selected' : ''} ${isToday ? 'is-today' : ''} ${isFuture ? 'is-future' : 'is-past'} ${isDone ? 'is-done' : ''} ${isWorkoutDay ? 'is-workout' : 'is-rest'}" onclick="selectHomeDay(${idx})" title="${DAY_NAMES_MON[idx]}: ${schedule[idx]?.workout_name || 'Rest'}">
+        <span class="home-mobile-day-code home-mobile-day-name">${code}</span>
+        <span class="home-mobile-day-num-wrap">
+          <span class="home-mobile-day-num">${dateNum}</span>
+        </span>
+        <span class="home-mobile-day-dot ${dotClass}" aria-label="${stateSymbol}"><span class="home-mobile-day-symbol sr-only" style="display:none;">${stateSymbol}</span></span>
+      </div>
+    `;
+  }).join('');
+
+  // Inset Workout Details in Card 1
+  let mobileTodayTag = 'TODAY';
+  if (!isSelectedToday) {
+    const selDayName = schedule[selectedDayIndex]?.day_name || DAY_NAMES_MON[selectedDayIndex];
+    mobileTodayTag = (isCurrentNavWeek) ? selDayName.toUpperCase() : `${selDayName.toUpperCase()}`;
+  } else if (isThisActive) {
+    mobileTodayTag = 'TODAY';
+  } else if (isSelectedDayDone) {
+    mobileTodayTag = 'TODAY · COMPLETED';
+  }
+
+  let cardTitle = 'Rest & Recovery';
+  let pillAction = `switchView('split')`;
+  let pillLabel = 'Rest';
+  let pillClass = 'is-rest';
+  const isCardRest = !isSelectedWorkout;
+
+  if (isSelectedWorkout) {
+    let workoutObj = (isSelectedToday && resolved?.workout) ? resolved.workout : null;
+    if (!workoutObj && state.workouts && state.workouts.length > 0) {
+      workoutObj = state.workouts.find(w => w.id === selectedScheduleItem.workout_id);
+    }
+    const baseName = workoutObj?.name || selectedScheduleItem.workout_name || 'Workout Session';
+
+    if (isSelectedDayDone) {
+      cardTitle = `${baseName} — Completed`;
+      pillAction = `switchView('history_list')`;
+      pillLabel = 'View';
+      pillClass = 'is-done is-view';
+    } else if (isSelectedToday && isThisActive) {
+      cardTitle = `${baseName} — In Progress`;
+      pillAction = `openWorkoutView()`;
+      pillLabel = 'Resume';
+      pillClass = 'is-resume';
+    } else if (isSelectedToday) {
+      cardTitle = baseName;
+      pillAction = `startWorkoutFromResolved()`;
+      pillLabel = 'Start';
+      pillClass = 'is-start';
+    } else {
+      cardTitle = baseName;
+      pillAction = `startWorkoutFromId(${selectedScheduleItem.workout_id})`;
+      pillLabel = 'Start';
+      pillClass = 'is-start';
+    }
+  }
+
+  const displayWeekTitle = isCurrentNavWeek ? 'This week' : weekLabel;
+
+  // CARD 1: Combined Weekly Navigator + Embedded Workout Row
+  const mobileWeekCardHtml = `
+    <div class="home-mobile-section-card home-mobile-week-card" id="home-mobile-week-card">
+      <div class="home-mobile-week-nav-bar home-mobile-week-nav-head">
+        <span class="home-mobile-section-title sr-only" style="display:none;">THIS WEEK</span>
+        <button class="home-mobile-week-arrow-btn home-week-nav-arrow" onclick="shiftHomeWeek(-1)" aria-label="Previous week" title="Previous week">‹</button>
+        <span class="home-mobile-week-range-text home-mobile-week-range-btn ${isCurrentNavWeek ? 'is-current' : ''}" onclick="resetHomeWeek()" title="${isCurrentNavWeek ? 'Current week' : 'Click to reset to current week'}">
+          ${displayWeekTitle}
+        </span>
+        <button class="home-mobile-week-arrow-btn home-week-nav-arrow" onclick="shiftHomeWeek(1)" aria-label="Next week" title="Next week">›</button>
+      </div>
+
+      <div class="home-mobile-week-days-grid home-mobile-week-slider" id="home-mobile-week-slider">
+        <div class="home-mobile-week-days" style="display:contents;">
+          ${mobileWeekDaysHtml}
+        </div>
+      </div>
+
+      <div class="home-mobile-workout-inset home-mobile-today-card ${isCardRest ? 'is-rest' : (isSelectedDayDone ? 'is-completed' : (isThisActive && isSelectedToday ? 'is-in-progress' : ''))}">
+        <div class="home-mobile-workout-badge">
+          ${renderIcon(isCardRest ? 'moon' : 'dumbbell', 'cx-icon cx-icon-sm')}
+        </div>
+        <div class="home-mobile-workout-meta">
+          <span class="home-mobile-workout-tag home-mobile-today-tag">${mobileTodayTag}</span>
+          <span class="home-mobile-workout-title home-mobile-today-title">${cardTitle}</span>
+        </div>
+        <div class="home-mobile-workout-cta">
+          <button class="home-mobile-workout-pill home-mobile-start-btn ${pillClass}" onclick="${pillAction}"><span class="home-mobile-btn-text-short">${pillLabel}</span><span class="sr-only" style="display:none;">Start Workout →</span></button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // CARD 2: Body Weight Progress Card
+  const weightHistory = typeof getWeightHistory === 'function' ? getWeightHistory() : [];
+  const targetKg = typeof getTargetWeight === 'function' ? getTargetWeight() : 77;
+  const weightUnit = typeof getWeightUnit === 'function' ? getWeightUnit() : 'kg';
+  const hasWeightData = Array.isArray(weightHistory) && weightHistory.length > 0;
+
+  let latestWeight = 78.3;
+  let diffText = '↓ 0.1';
+  let diffClass = 'trend-down';
+  let formattedLatestDate = 'Mon 31 Aug';
+  let goalSubtext = `1.3 ${weightUnit} to lose`;
+
+  if (hasWeightData) {
+    const latestEntry = weightHistory[weightHistory.length - 1];
+    latestWeight = Number(latestEntry.weight);
+    formattedLatestDate = typeof formatWeightPointDate === 'function' ? formatWeightPointDate(latestEntry.date) : latestEntry.date;
+
+    if (weightHistory.length > 1) {
+      const prevEntry = weightHistory[weightHistory.length - 2];
+      const diff = Math.round((latestWeight - Number(prevEntry.weight)) * 10) / 10;
+      if (diff < -0.05) {
+        diffText = `↓ ${Math.abs(diff).toFixed(1)}`;
+        diffClass = 'trend-down';
+      } else if (diff > 0.05) {
+        diffText = `↑ ${diff.toFixed(1)}`;
+        diffClass = 'trend-up';
+      } else {
+        diffText = `— 0.0`;
+        diffClass = 'trend-neutral';
+      }
+    } else {
+      diffText = '— 0.0';
+      diffClass = 'trend-neutral';
+    }
+
+    const diffToGoal = Math.round((latestWeight - targetKg) * 10) / 10;
+    if (diffToGoal > 0.05) {
+      goalSubtext = `${diffToGoal.toFixed(1)} ${weightUnit} to lose`;
+    } else if (diffToGoal < -0.05) {
+      goalSubtext = `${Math.abs(diffToGoal).toFixed(1)} ${weightUnit} to gain`;
+    } else {
+      goalSubtext = 'Target goal reached! 🎉';
+    }
+  }
+
+  const mobileBodyWeightCardHtml = `
+    <div class="home-mobile-section-card home-mobile-metric-card" id="home-mobile-bodyweight-card">
+      <div class="home-mobile-metric-header">
+        <span class="home-mobile-metric-title">Body weight</span>
+        <div class="home-mobile-metric-header-right">
+          <span class="home-mobile-goal-pill" onclick="promptSetTargetWeight()" title="Click to edit goal">🎯 ${targetKg}</span>
+          <button class="home-mobile-log-link" onclick="openQuickCheckInModal(null)">+ Log</button>
+        </div>
+      </div>
+
+      ${hasWeightData ? `
+        <div class="home-mobile-metric-hero-row">
+          <div class="home-mobile-metric-stat-group">
+            <span class="home-mobile-metric-big-num mono">${latestWeight.toFixed(1)}</span>
+            <span class="home-mobile-metric-unit">${weightUnit}</span>
+            <span class="home-mobile-metric-trend-badge ${diffClass}">${diffText}</span>
+          </div>
+          <span class="home-mobile-metric-subdate">${formattedLatestDate}</span>
+        </div>
+
+        <div class="home-mobile-metric-goal-subtext">
+          <span class="home-mobile-goal-dot">🎯</span>
+          <span>Goal ${targetKg} ${weightUnit} · ${goalSubtext}</span>
+        </div>
+
+        ${renderBodyWeightSparklineSvg(weightHistory, targetKg)}
+      ` : `
+        <div class="home-mobile-empty-weight-wrap">
+          <p class="home-mobile-empty-weight-text">No weight data yet</p>
+          <button class="btn btn-sm btn-primary home-mobile-log-weight-btn" onclick="openQuickCheckInModal(null)">
+            + Log weight
+          </button>
+        </div>
+      `}
+    </div>
+  `;
+
+  // CARD 3: Streak & Consistency Card
+  const totalWorkoutsCount = (state.workoutSessions && state.workoutSessions.length > 0)
+    ? state.workoutSessions.filter(s => s.status === 'completed' || s.completed_sets > 0).length
+    : (summary.streak_days || 12);
+
+  const mobileStreakCardHtml = `
+    <div class="home-mobile-section-card home-mobile-streak-card home-mobile-streak-ref-card" onclick="switchView('history_list')">
+      <span class="home-mobile-section-title sr-only" style="display:none;">CURRENT STREAK</span>
+      <div class="home-mobile-streak-left">
+        <span class="home-mobile-streak-flame-icon home-mobile-streak-flame">🔥</span>
+        <div class="home-mobile-streak-text-group home-mobile-streak-val">
+          <div class="home-mobile-streak-heading home-mobile-streak-num">${streakDays} day streak</div>
+          <div class="home-mobile-streak-subline">${weekSessionsDone} / ${plannedWorkoutsCount} this week · ${totalWorkoutsCount} workouts total</div>
+        </div>
+      </div>
+      <button class="home-mobile-streak-cal-btn" onclick="event.stopPropagation(); switchView('history_list')" title="View Training History">
+        ${renderIcon('calendar', 'cx-icon cx-icon-sm')}
+      </button>
+    </div>
+  `;
+
+  // CARD 4: Up Next Workouts Card
+  const DAY_NAMES_3 = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const upcomingWorkoutsList = [];
+  const upcomingChronological = [];
+  for (let offset = 1; offset <= 6; offset++) {
+    const nextIdx = (selectedDayIndex + offset) % 7;
+    const dayShort = DAY_NAMES_3[nextIdx];
+    const dayItem = schedule[nextIdx];
+    const isWorkout = dayItem?.day_type === 'workout' && dayItem?.workout_id;
+    const entry = {
+      idx: nextIdx,
+      dayShort,
+      title: isWorkout ? dayItem.workout_name : 'Rest Day',
+      isWorkout
+    };
+    upcomingChronological.push(entry);
+    if (isWorkout) {
+      upcomingWorkoutsList.push(entry);
+    }
+  }
+
+  const itemsToShow = upcomingWorkoutsList.length >= 2
+    ? upcomingWorkoutsList.slice(0, 3)
+    : (upcomingWorkoutsList.length === 1
+        ? [upcomingWorkoutsList[0], ...upcomingChronological.filter(e => !e.isWorkout).slice(0, 1)]
+        : upcomingChronological.slice(0, 2));
+
+  const mobileUpcomingRowsHtml = itemsToShow.map(item => `
+    <div class="home-mobile-upnext-row" onclick="selectHomeDay(${item.idx})" title="${item.dayShort}: ${item.title} (Tap to view)">
+      <span class="home-mobile-upnext-day">${item.dayShort}</span>
+      <span class="home-mobile-upnext-title ${!item.isWorkout ? 'is-rest' : ''}">${item.title}</span>
+      <span class="home-mobile-upnext-arrow">→</span>
+    </div>
+  `).join('');
+
+  const mobileUpNextCardHtml = `
+    <div class="home-mobile-section-card home-mobile-upnext-card home-mobile-upnext-ref-card">
+      <div class="home-mobile-section-header">
+        <span class="home-mobile-section-title">UP NEXT</span>
+      </div>
+      <div class="home-mobile-upnext-list">
+        ${mobileUpcomingRowsHtml}
+      </div>
+    </div>
+  `;
+
+  // Initialize swipe gestures after DOM paint
+  if (typeof setTimeout !== 'undefined') {
+    setTimeout(() => {
+      if (typeof initWeekSwipeGestures === 'function') initWeekSwipeGestures();
+    }, 50);
+  }
+
   return `
     <div class="home-container">
-      <!-- Top Header & Controls (Section 10 Spec) -->
-      <div class="home-header-row fade-in-up">
-        <div class="home-greeting-group">
-          <span class="home-greeting-lead">Good ${greeting.toLowerCase()}</span>
-          <h1 class="home-greeting-name">Sandeep</h1>
-        </div>
-        <div class="home-header-controls">
-          <button class="home-notif-btn" onclick="openNotifModal()" title="Notifications" aria-label="Notifications">
-            ${renderIcon('bell', 'cx-icon cx-icon-sm')}
-            <span class="home-notif-dot"></span>
-          </button>
-          <div class="home-week-select-pill" onclick="switchView('split')" title="View Active Week Schedule">
-            <span>This Week ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}</span>
-          </div>
-          <div class="home-streak-pill-compact" title="Current Daily Streak">
-            <span>${renderIcon('flame', 'cx-icon cx-icon-fire cx-icon-sm')}</span>
-            <span class="home-streak-pill-num">${summary.streak_days || 0}</span>
-          </div>
-        </div>
+      <!-- Mobile Home View (< 1024px) -->
+      <div class="home-mobile-view">
+        ${mobileHeaderHtml}
+        ${mobileWeekCardHtml}
+        ${mobileBodyWeightCardHtml}
+        ${mobileStreakCardHtml}
+        ${mobileUpNextCardHtml}
       </div>
 
-      <!-- Top Hero & Supporting Column (Phase.md Section 9–20) -->
-      <div class="home-top-grid">
-        ${todayHeroHtml}
-        ${sideColHtml}
+      <!-- Desktop Home View (>= 1024px) -->
+      <div class="home-desktop-view">
+        <!-- Top Header & Controls (Section 10 Spec) -->
+        <div class="home-header-row fade-in-up">
+          <div class="home-greeting-group">
+            <span class="home-greeting-lead">Good ${greeting.toLowerCase()}</span>
+            <h1 class="home-greeting-name">Sandeep</h1>
+          </div>
+          <div class="home-header-controls">
+            <button class="home-notif-btn" onclick="openNotifModal()" title="Notifications" aria-label="Notifications">
+              ${renderIcon('bell', 'cx-icon cx-icon-sm')}
+              <span class="home-notif-dot"></span>
+            </button>
+            <div class="home-week-select-pill" onclick="shiftHomeWeek(1)" title="Click to navigate next week">
+              <span>${isCurrentNavWeek ? 'This Week' : weekLabel} ${renderIcon('chevronDown', 'cx-icon cx-icon-xs')}</span>
+            </div>
+            <div class="home-streak-pill-compact" title="Current Daily Streak">
+              <span>${renderIcon('flame', 'cx-icon cx-icon-fire cx-icon-sm')}</span>
+              <span class="home-streak-pill-num">${summary.streak_days || 0}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Hero & Supporting Column (Phase.md Section 9–20) -->
+        <div class="home-top-grid">
+          ${todayHeroHtml}
+          ${sideColHtml}
+        </div>
+
+        <!-- 4-Metric Strip (Phase.md Section 21, 22) -->
+        ${metricsStripHtml}
+
+        <!-- 3-Column Lower Grid: Progress, PRs, Upcoming (Phase.md Section 23–26) -->
+        ${threeColGridHtml}
+
+        <!-- Actionable Training Load & Consistency Insight (Phase.md Section 27) -->
+        ${trainingInsightHtml}
       </div>
-
-      <!-- 4-Metric Strip (Phase.md Section 21, 22) -->
-      ${metricsStripHtml}
-
-      <!-- 3-Column Lower Grid: Progress, PRs, Upcoming (Phase.md Section 23–26) -->
-      ${threeColGridHtml}
-
-      <!-- Actionable Training Load & Consistency Insight (Phase.md Section 27) -->
-      ${trainingInsightHtml}
     </div>`;
+}
+
+// ─── Global Interactive Week Navigator Helpers ───────────────────────────────
+window.selectHomeDay = function(dayIndex) {
+  state.selectedHomeDayIndex = dayIndex;
+  if (typeof render === 'function') {
+    render();
+  }
+};
+
+window.shiftHomeWeek = function(direction, animClass = null) {
+  state.homeWeekOffset = (state.homeWeekOffset || 0) + direction;
+  if (state.homeWeekOffset === 0) {
+    const now = new Date();
+    state.selectedHomeDayIndex = (now.getDay() + 6) % 7;
+  } else {
+    state.selectedHomeDayIndex = 0;
+  }
+  const anim = animClass || (direction > 0 ? 'slide-left' : 'slide-right');
+  if (typeof render === 'function') {
+    render();
+  }
+  const slider = document.getElementById('home-mobile-week-slider');
+  if (slider) {
+    slider.classList.add(anim);
+    setTimeout(() => slider.classList.remove(anim), 300);
+  }
+  setTimeout(initWeekSwipeGestures, 50);
+};
+
+window.resetHomeWeek = function() {
+  if (state.homeWeekOffset === 0 && (state.selectedHomeDayIndex === null || state.selectedHomeDayIndex === ((new Date().getDay() + 6) % 7))) return;
+  const anim = (state.homeWeekOffset || 0) > 0 ? 'slide-right' : 'slide-left';
+  state.homeWeekOffset = 0;
+  const now = new Date();
+  state.selectedHomeDayIndex = (now.getDay() + 6) % 7;
+  if (typeof render === 'function') {
+    render();
+  }
+  const slider = document.getElementById('home-mobile-week-slider');
+  if (slider) {
+    slider.classList.add(anim);
+    setTimeout(() => slider.classList.remove(anim), 300);
+  }
+  setTimeout(initWeekSwipeGestures, 50);
+};
+
+window.initWeekSwipeGestures = function() {
+  const container = document.getElementById('home-mobile-week-card');
+  if (!container || container._swipeInitialized) return;
+  container._swipeInitialized = true;
+
+  let startX = 0;
+  let startY = 0;
+  let isSwiping = false;
+
+  container.addEventListener('touchstart', (e) => {
+    if (e.touches.length !== 1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isSwiping = true;
+  }, { passive: true });
+
+  container.addEventListener('touchend', (e) => {
+    if (!isSwiping || e.changedTouches.length !== 1) return;
+    isSwiping = false;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+
+    const diffX = endX - startX;
+    const diffY = endY - startY;
+
+    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY) * 1.5) {
+      if (diffX < 0) {
+        shiftHomeWeek(1, 'slide-left');
+      } else {
+        shiftHomeWeek(-1, 'slide-right');
+      }
+    }
+  }, { passive: true });
+};
+
+// ─── Quick Check-In Bottom Sheet Modal Controller ───────────────────────────
+let _pendingCheckInWorkout = null;
+let _currentCheckInWeight = 78.3;
+
+function openQuickCheckInModal(workoutData = null) {
+  _pendingCheckInWorkout = workoutData;
+  const history = typeof getWeightHistory === 'function' ? getWeightHistory() : [];
+  const latestWeight = history && history.length > 0 ? Number(history[history.length - 1].weight) : (typeof getTargetWeight === 'function' ? getTargetWeight() : 78.3);
+  _currentCheckInWeight = latestWeight || 78.3;
+
+  const root = document.getElementById('quick-checkin-modal-root');
+  if (!root) return;
+
+  const isWorkoutFlow = !!workoutData;
+  const now = new Date();
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+  const formattedToday = `Today, ${days[now.getDay()]} ${now.getDate()} ${months[now.getMonth()]}`;
+
+  const recentHistory = history.slice(-4).reverse();
+  const recentHtml = (!isWorkoutFlow && recentHistory.length > 0) ? `
+    <div class="quick-checkin-recent-section" id="quick-checkin-recent-section">
+      <span class="quick-checkin-recent-header">Recent weigh-ins</span>
+      <div class="quick-checkin-recent-list">
+        ${recentHistory.map(item => `
+          <div class="quick-checkin-recent-item">
+            <span class="quick-checkin-recent-date">${formatWeightPointDate(item.date)}</span>
+            <div class="quick-checkin-recent-right">
+              <span class="quick-checkin-recent-weight mono">${Number(item.weight).toFixed(1)} kg</span>
+              <button class="quick-checkin-delete-btn" onclick="event.stopPropagation(); deleteBodyWeight('${item.date}')" title="Delete entry" aria-label="Delete weigh-in">
+                ${renderIcon('trash', 'cx-icon cx-icon-xs')}
+              </button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  root.innerHTML = `
+    <div class="quick-checkin-backdrop animate-fade-in" onclick="if(event.target === this) closeQuickCheckInModal()">
+      <div class="quick-checkin-sheet animate-slide-up">
+        <!-- Drag Handle -->
+        <div class="quick-checkin-handle-bar" onclick="closeQuickCheckInModal()">
+          <div class="quick-checkin-handle"></div>
+        </div>
+
+        <!-- Header -->
+        <div class="quick-checkin-header">
+          <h3 class="quick-checkin-title">${isWorkoutFlow ? 'Quick check-in' : 'Log body weight'}</h3>
+          <button class="quick-checkin-close-btn" onclick="closeQuickCheckInModal()" aria-label="Close">
+            ${renderIcon('x', 'cx-icon cx-icon-sm')}
+          </button>
+        </div>
+
+        <!-- Subtitle -->
+        <p class="quick-checkin-subtitle">
+          ${isWorkoutFlow 
+            ? 'Slide or tap to set your weight — tracked before every workout so your curve stays honest.' 
+            : formattedToday}
+        </p>
+
+        <!-- Weight Hero Input -->
+        <div class="quick-checkin-weight-row">
+          <button class="quick-checkin-step-btn" onclick="stepCheckInWeight(-0.1)" aria-label="Decrease weight by 0.1 kg">−</button>
+          <div class="quick-checkin-weight-display">
+            <span class="quick-checkin-weight-val mono" id="quick-checkin-val-display">${_currentCheckInWeight.toFixed(1)}</span>
+            <span class="quick-checkin-weight-unit">${typeof getWeightUnit === 'function' ? getWeightUnit() : 'kg'}</span>
+          </div>
+          <button class="quick-checkin-step-btn" onclick="stepCheckInWeight(0.1)" aria-label="Increase weight by 0.1 kg">+</button>
+        </div>
+
+        <!-- Quick Adjustment Pills -->
+        <div class="quick-checkin-nudge-pills">
+          <button class="quick-checkin-nudge-btn" onclick="stepCheckInWeight(-1.0)">−1</button>
+          <button class="quick-checkin-nudge-btn" onclick="stepCheckInWeight(-0.5)">−0.5</button>
+          <button class="quick-checkin-nudge-btn" onclick="stepCheckInWeight(0.5)">+0.5</button>
+          <button class="quick-checkin-nudge-btn" onclick="stepCheckInWeight(1.0)">+1</button>
+        </div>
+
+        <!-- Range Slider for Fine Adjustment -->
+        <div class="quick-checkin-slider-wrap">
+          <input type="range" min="40" max="150" step="0.1" value="${_currentCheckInWeight}" class="quick-checkin-slider" id="quick-checkin-range-slider" oninput="onCheckInSliderInput(this.value)">
+          <div class="quick-checkin-slider-labels">
+            <span>40 kg</span>
+            <span>150 kg</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="quick-checkin-actions">
+          <button class="btn quick-checkin-primary-btn" onclick="submitQuickCheckIn(true)">
+            ${isWorkoutFlow ? 'Save & start workout' : 'Save'}
+          </button>
+          ${isWorkoutFlow ? `
+            <button class="btn quick-checkin-secondary-btn" onclick="submitQuickCheckIn(false)">
+              Start without weighing in
+            </button>
+            <button class="quick-checkin-link-btn" onclick="chooseDifferentWorkoutFromCheckIn()">
+              Choose a different workout
+            </button>
+          ` : ''}
+        </div>
+
+        <!-- Recent Weigh-ins (in Log mode) -->
+        ${recentHtml}
+      </div>
+    </div>
+  `;
+}
+
+function closeQuickCheckInModal() {
+  const root = document.getElementById('quick-checkin-modal-root');
+  if (root) {
+    root.innerHTML = '';
+  }
+  _pendingCheckInWorkout = null;
+}
+
+function stepCheckInWeight(delta) {
+  _currentCheckInWeight = Math.max(35, Math.min(200, Math.round((_currentCheckInWeight + delta) * 10) / 10));
+  const valEl = document.getElementById('quick-checkin-val-display');
+  if (valEl) valEl.textContent = _currentCheckInWeight.toFixed(1);
+  const sliderEl = document.getElementById('quick-checkin-range-slider');
+  if (sliderEl) sliderEl.value = _currentCheckInWeight;
+}
+
+function onCheckInSliderInput(val) {
+  _currentCheckInWeight = Math.round(Number(val) * 10) / 10;
+  const valEl = document.getElementById('quick-checkin-val-display');
+  if (valEl) valEl.textContent = _currentCheckInWeight.toFixed(1);
+}
+
+function submitQuickCheckIn(saveWeight = true) {
+  const pending = _pendingCheckInWorkout;
+  const loggedWeight = _currentCheckInWeight;
+
+  if (saveWeight && typeof saveBodyWeight === 'function') {
+    saveBodyWeight(loggedWeight);
+    if (typeof showToast === 'function') {
+      showToast(`Weight saved: ${loggedWeight.toFixed(1)} kg`);
+    }
+  }
+
+  closeQuickCheckInModal();
+
+  if (pending) {
+    // Start the selected workout without looping back to check-in modal
+    if (typeof startWorkoutFromData === 'function') {
+      startWorkoutFromData(pending.name, pending.exercises, pending.id);
+    }
+  } else {
+    // If opened via "+ Log", re-render Home view to immediately refresh Body Weight card and graph
+    if (typeof render === 'function') {
+      render();
+    }
+  }
+}
+
+function chooseDifferentWorkoutFromCheckIn() {
+  closeQuickCheckInModal();
+  if (typeof switchView === 'function') {
+    switchView('split');
+  }
+}
+
+function promptSetTargetWeight() {
+  const cur = typeof getTargetWeight === 'function' ? getTargetWeight() : 77;
+  const res = prompt('Enter your target body weight (kg):', cur);
+  if (res && !isNaN(Number(res)) && Number(res) > 0) {
+    if (typeof setTargetWeight === 'function') setTargetWeight(Number(res));
+    if (typeof showToast === 'function') showToast(`Goal updated to ${Number(res)} kg`);
+    if (typeof render === 'function') render();
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.openQuickCheckInModal = openQuickCheckInModal;
+  window.closeQuickCheckInModal = closeQuickCheckInModal;
+  window.stepCheckInWeight = stepCheckInWeight;
+  window.onCheckInSliderInput = onCheckInSliderInput;
+  window.submitQuickCheckIn = submitQuickCheckIn;
+  window.chooseDifferentWorkoutFromCheckIn = chooseDifferentWorkoutFromCheckIn;
+  window.promptSetTargetWeight = promptSetTargetWeight;
+  window.handleWeightGraphPointer = handleWeightGraphPointer;
+  window.selectWeightPointByIndex = selectWeightPointByIndex;
+  window.handleWeightGraphPointerLeave = handleWeightGraphPointerLeave;
 }
 
 

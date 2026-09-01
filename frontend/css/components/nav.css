@@ -1,65 +1,235 @@
-/* ── Mobile Bottom Navigation ─────────────────────────────────────────────── */
+/* ── Mobile Floating Glass Bottom Navigation (Apple/iOS-Inspired) ────────── */
 .app-bottom-nav {
   display: none;
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: var(--liquid-surface-overlay, rgba(13, 13, 17, 0.88));
-  backdrop-filter: blur(var(--liquid-blur-lg, 16px));
-  -webkit-backdrop-filter: blur(var(--liquid-blur-lg, 16px));
-  border-top: var(--liquid-border);
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4), var(--liquid-highlight-top);
-  z-index: 150;
+  left: 50%;
+  bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 8px));
+  transform: translateX(-50%);
+  width: min(calc(100% - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)), 390px);
+  height: 56px;
+  background: rgba(16, 16, 22, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 9999px;
+  box-shadow:
+    0 12px 36px -4px rgba(0, 0, 0, 0.75),
+    0 4px 12px -2px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  z-index: 900;
   justify-content: space-around;
   align-items: center;
-  padding: 0 8px;
-  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding: 3px 5px;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto;
+}
+
+/* ── Sliding Active Background Pill Indicator (iOS Physics) ─────────────── */
+.bottom-nav-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 9999px;
+  pointer-events: none !important;
+  z-index: 1;
+  opacity: 0;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.10);
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1.15),
+    width 260ms cubic-bezier(0.22, 1, 0.36, 1.15),
+    height 260ms cubic-bezier(0.22, 1, 0.36, 1.15),
+    background 220ms ease,
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    opacity 180ms ease;
+  will-change: transform, width, height;
+}
+
+/* Workout Active Morph State on Sliding Pill */
+.bottom-nav-indicator.indicator-workout {
+  background: rgba(255, 93, 93, 0.12);
+  border: 1px solid rgba(255, 93, 93, 0.28);
+  box-shadow:
+    0 2px 8px -1px rgba(255, 93, 93, 0.25),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
 }
 
 .bottom-nav-item {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  color: var(--text-dim);
+  color: var(--text-dim, #71717a);
   font-size: 10px;
   font-weight: 500;
-  gap: 3px;
-  padding: 6px 12px;
-  border-radius: 12px;
-  transition: all 140ms ease;
-  min-width: 56px;
+  letter-spacing: 0.01em;
+  gap: 2.5px;
+  padding: 4px 2px;
+  border-radius: 9999px;
+  min-width: 48px;
+  flex: 1;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 120ms ease;
+  cursor: pointer;
+  pointer-events: auto;
 }
+
 .bottom-nav-icon {
-  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 20px;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text-dim, #71717a);
+  opacity: 0.75;
+  transform: translateY(0) scale(1);
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1.15),
+    opacity 200ms ease,
+    color 200ms ease,
+    filter 200ms ease;
+  will-change: transform, opacity;
+}
+
+.bottom-nav-icon svg,
+.bottom-nav-icon .cx-icon {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2;
+  transition: stroke 200ms ease, fill 200ms ease;
+}
+
+.bottom-nav-label {
   line-height: 1;
-  transition: transform 140ms ease, color 140ms ease, filter 140ms ease;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-dim, #71717a);
+  opacity: 0.85;
+  transform: translateY(0);
+  white-space: nowrap;
+  transition:
+    color 200ms ease,
+    opacity 200ms ease,
+    font-weight 200ms ease,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1.15);
 }
-.bottom-nav-item:hover {
-  color: #ffffff;
+
+.bottom-nav-item:hover .bottom-nav-icon,
+.bottom-nav-item:hover .bottom-nav-label {
+  opacity: 0.95;
+  color: #e2e8f0;
 }
+
+.bottom-nav-item:active {
+  transform: scale(0.94);
+}
+
+/* ── Standard Active Tab (Home, Split, History, Progress) ───────────────── */
 .bottom-nav-item.active {
   color: #ffffff;
-  font-weight: 700;
 }
+
+.bottom-nav-item.active .bottom-nav-label {
+  font-weight: 600;
+  color: #ffffff;
+  opacity: 1;
+  transform: translateY(-0.5px);
+}
+
 .bottom-nav-item.active .bottom-nav-icon {
   color: var(--phase-train, #FF5D5D);
-  transform: scale(1.1);
-  filter: drop-shadow(0 0 6px rgba(255, 93, 93, 0.6));
+  opacity: 1;
+  transform: translateY(-1px) scale(1.05);
+  filter: drop-shadow(0 1px 4px rgba(255, 93, 93, 0.35));
 }
+
+/* ── Primary Action: Workout Center Tab ─────────────────────────────────── */
 .bottom-nav-workout {
   position: relative;
 }
-.bottom-nav-workout.active .bottom-nav-icon {
-  color: var(--phase-train, #FF5D5D);
+
+.bottom-nav-workout .bottom-nav-icon {
+  width: 28px;
+  height: 20px;
 }
 
+.bottom-nav-workout.active .bottom-nav-icon {
+  color: var(--phase-train, #FF5D5D);
+  opacity: 1;
+  transform: translateY(-1px) scale(1.08);
+  filter: drop-shadow(0 1px 5px rgba(255, 93, 93, 0.45));
+}
+
+.bottom-nav-workout.active .bottom-nav-icon svg,
+.bottom-nav-workout.active .bottom-nav-icon .cx-icon {
+  stroke: var(--phase-train, #FF5D5D);
+  fill: rgba(255, 93, 93, 0.22);
+}
+
+.bottom-nav-workout.active .bottom-nav-label {
+  color: #ffffff;
+  font-weight: 600;
+  opacity: 1;
+  transform: translateY(-0.5px);
+}
+
+/* ── Responsive Tiers (< 1024px) ────────────────────────────────────────── */
 @media (max-width: 1023px) {
   .desktop-nav { display: none; }
   .app-bottom-nav { display: flex; }
-  .app-main { padding-bottom: 90px; }
+  .app-main { padding-bottom: max(96px, calc(80px + env(safe-area-inset-bottom, 0px))); }
 }
+
+/* Small Phones (<= 374px, e.g. iPhone SE, compact Androids) */
+@media (max-width: 374px) {
+  .app-bottom-nav {
+    width: calc(100% - 16px);
+    height: 52px;
+    padding: 2px 4px;
+    bottom: max(12px, calc(env(safe-area-inset-bottom, 0px) + 6px));
+  }
+  .bottom-nav-item {
+    min-width: 44px;
+    padding: 3px 2px;
+    gap: 2px;
+  }
+  .bottom-nav-icon {
+    width: 24px;
+    height: 18px;
+  }
+  .bottom-nav-icon svg,
+  .bottom-nav-icon .cx-icon {
+    width: 15px;
+    height: 15px;
+  }
+  .bottom-nav-workout .bottom-nav-icon {
+    width: 26px;
+    height: 18px;
+  }
+  .bottom-nav-label {
+    font-size: 9.5px;
+    letter-spacing: -0.02em;
+  }
+}
+
+/* Large Phones / Tablets in mobile layout (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app-bottom-nav {
+    width: min(calc(100% - 32px), 410px);
+    max-width: 410px;
+  }
+}
+
 

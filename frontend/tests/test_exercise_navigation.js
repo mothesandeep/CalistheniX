@@ -382,3 +382,4 @@ if (typeof createTestSandbox().cleanupAllWorkoutTimers === 'function') {
   createTestSandbox().cleanupAllWorkoutTimers();
 }
 process.exit(0);
+

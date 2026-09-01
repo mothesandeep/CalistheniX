@@ -11,7 +11,7 @@ Contains:
 # ── Seed version tag ──────────────────────────────────────────────────────────
 # Increment this whenever _SEED or DEFAULT_WORKOUT_PHASES changes so that
 # reseed_data() knows to re-run.
-SEED_VERSION = 'aesthetic-physique-ppl-v1'
+SEED_VERSION = 'aesthetic-physique-5day-split-v2'
 
 # ── Warmup & Cooldown Exercise Catalog ───────────────────────────────────────
 # Each tuple: (name, type, default_value, movement_pattern, description_notes)
@@ -65,6 +65,7 @@ WARMUP_COOLDOWN_EXERCISES = [
     ('Lat Stretch',                  'duration', 60, 'stretch_lat',         'Cool-down: 30 sec each side latissimus dorsi stretch'),
     ('Cross-Body Shoulder Stretch',  'duration', 60, 'stretch_shoulder',    'Cool-down: 30 sec each side posterior deltoid stretch'),
     ('Shoulder Cross-body Stretch',  'duration', 60, 'stretch_shoulder',    'Cool-down: 30 sec each side cross-body deltoid stretch'),
+    ('Rear Delt Stretch',            'duration', 60, 'stretch_shoulder',    'Cool-down: 30 sec each side rear delt / arm across chest stretch'),
     ('Shoulder Stretch',             'duration', 60, 'stretch_shoulder',    'Cool-down: Overhead and posterior shoulder stretch'),
     ('Wrist/Forearm Stretch',        'duration', 30, 'stretch_wrist',       'Cool-down: Wall-supported wrist and forearm elongation'),
     ('Wrist Stretch',                'duration', 40, 'stretch_wrist',       'Cool-down: 20 sec each direction wrist flexor/extensor stretch'),
@@ -81,6 +82,7 @@ WARMUP_COOLDOWN_EXERCISES = [
     ('Hamstring Stretch',            'duration', 60, 'stretch_hamstring',   'Cool-down: 30 sec each side seated or standing hamstring fold'),
     ('Pigeon Pose',                  'duration', 60, 'stretch_glute',       'Cool-down: 30 sec each side deep gluteus medius opening'),
     ('Glute Stretch / Pigeon Pose',  'duration', 60, 'stretch_glute',       'Cool-down: 30 sec each side glute stretch'),
+    ('Pigeon Pose / Glute Stretch',  'duration', 60, 'stretch_glute',       'Cool-down: 30 sec each side glute stretch'),
     ('Standing Calf Stretch',        'duration', 60, 'stretch_calf',        'Cool-down: 30 sec each side wall-assisted calf stretch'),
     ('Calf Stretch',                 'duration', 60, 'stretch_calf',        'Cool-down: 30 sec each side calf stretch'),
     ('Butterfly Stretch',            'duration', 30, 'stretch_hip',         'Cool-down: Seated groin and adductor static stretch'),
@@ -129,6 +131,16 @@ SEED = [
         ('Wall Angels',         'reps',     3,   12, None,  45, 'Posture correction drill (12 reps)'),
         ('L-sit Hang',          'duration', 3, None, 20,  45,   'Daily core slot (or tucked knees, 15-20 sec)'),
     ]),
+    ('Legs (Combined)', [
+        ('Pistol Squat Progression',     'reps',     3,  8, None, 90, 'Assisted/box — bottleneck exercise, priority (6-8/leg)'),
+        ('Bulgarian Split Squats',        'reps',     3, 12, None, 75, 'Chair support — quad + glute (12/leg)'),
+        ('Walking Lunges',                'reps',     3, 16, None, 75, '8 reps per leg (16 total)'),
+        ('Jump Squats',                   'reps',     3, 15, None, 75, 'Explosive / power element (15 reps)'),
+        ('Single-leg Glute Bridge Hold',  'duration', 3, None, 20, 45, 'Isometric variation (20 sec/leg)'),
+        ('Calf Raises',                   'reps',     4, 20, None, 45, 'Slow tempo (20 reps)'),
+        ('Hanging Leg Raises',            'reps',     3, 12, None, 60, 'Straight leg, loft slab — core carryover from leg work (10-12 reps)'),
+        ('Side Plank',                    'duration', 3, None, 30, 30, 'Daily core slot — obliques (30 sec/side)'),
+    ]),
     ('Legs A', [
         ('Bulgarian Split Squats',    'reps',     3, 12, None, 75, 'Chair support — quad + glute (12/leg)'),
         ('Walking Lunges',            'reps',     3, 16, None, 75, '8 reps per leg (16 total)'),
@@ -175,9 +187,9 @@ DEFAULT_WORKOUT_PHASES = {
         ],
         'cooldown': [
             ('Doorway Chest Stretch',       'duration', 60, 'Cool-down: 30 sec each side wall stretch'),
-            ('Cross-Body Shoulder Stretch', 'duration', 60, 'Cool-down: 30 sec each side deltoid stretch'),
+            ('Shoulder Cross-body Stretch', 'duration', 60, 'Cool-down: 30 sec each side deltoid stretch'),
             ('Overhead Triceps Stretch',    'duration', 60, 'Cool-down: 30 sec each side triceps stretch'),
-            ('Reverse Wrist Stretch',       'duration', 40, 'Cool-down: 20 sec each direction wrist relief'),
+            ('Wrist Stretch',               'duration', 40, 'Cool-down: 20 sec each direction wrist stretch'),
             ("Child's Pose",               'duration', 45, 'Cool-down: 45 sec spinal decompression'),
         ]
     },
@@ -190,11 +202,11 @@ DEFAULT_WORKOUT_PHASES = {
             ('Dead Hang (Activation)', 'duration', 20, 'Warm-up: 15-20 sec light activation hang'),
         ],
         'cooldown': [
-            ('Passive Dead Hang',      'duration', 30, 'Cool-down: 20-30 sec light spine decompression'),
-            ('Lat Stretch',            'duration', 60, 'Cool-down: 30 sec each side latissimus stretch'),
-            ('Biceps & Forearm Stretch', 'duration', 60, 'Cool-down: 30 sec each side palm up against wall'),
-            ('Upper Back Stretch',     'duration', 45, 'Cool-down: 45 sec reach forward, round back'),
-            ('Deep Breathing',         'duration', 60, 'Cool-down: 1 min diaphragmatic recovery'),
+            ('Passive Hang',             'duration', 30, 'Cool-down: 20-30 sec light spine decompression'),
+            ('Lat Stretch',              'duration', 60, 'Cool-down: 30 sec each side latissimus stretch'),
+            ('Biceps Stretch',           'duration', 60, 'Cool-down: 30 sec each side biceps static stretch'),
+            ('Upper Back Stretch',       'duration', 45, 'Cool-down: 45 sec reach forward, round back'),
+            ('Deep Breathing',           'duration', 60, 'Cool-down: 1 min diaphragmatic recovery'),
         ]
     },
     'Pull B': {
@@ -206,11 +218,29 @@ DEFAULT_WORKOUT_PHASES = {
             ('Dead Hang (Activation)',   'duration', 20, 'Warm-up: 15-20 sec light activation hang'),
         ],
         'cooldown': [
-            ('Passive Dead Hang',           'duration', 30, 'Cool-down: 20-30 sec passive relaxing decompression'),
+            ('Passive Hang',                'duration', 30, 'Cool-down: 20-30 sec passive relaxing decompression'),
             ('Lat Stretch',                 'duration', 60, 'Cool-down: 30 sec each side side-reach stretch'),
-            ('Cross-Body Shoulder Stretch', 'duration', 60, 'Cool-down: 30 sec each side rear delt stretch'),
+            ('Rear Delt Stretch',           'duration', 60, 'Cool-down: 30 sec each side rear delt / arm across chest stretch'),
             ('Upper Back Stretch',          'duration', 45, 'Cool-down: 45 sec reach forward, round back'),
             ('Neck Stretch',                'duration', 40, 'Cool-down: 20 sec each side gentle neck tilt'),
+        ]
+    },
+    'Legs (Combined)': {
+        'warmup': [
+            ('Leg Swings',                 'duration', 40, 'Warm-up: 10 each direction/leg dynamic hip swings'),
+            ('Hip Circles',                'duration', 30, 'Warm-up: 10 each direction hip circles'),
+            ('Bodyweight Squats',          'reps',     15, 'Warm-up: 15 reps slow, controlled no load'),
+            ('Ankle Rotations',            'duration', 30, 'Warm-up: 10 each direction/ankle circular rotations'),
+            ('Walking High Knees',         'duration', 30, 'Warm-up: 30 sec dynamic knee raises'),
+            ('Glute Bridges (Activation)', 'reps',     10, 'Warm-up: 10 reps glute activation'),
+        ],
+        'cooldown': [
+            ('Quad Stretch',               'duration', 60, 'Cool-down: 30 sec each side standing heel to glute'),
+            ('Hamstring Stretch',          'duration', 60, 'Cool-down: 30 sec each side forward fold'),
+            ('Calf Stretch',               'duration', 60, 'Cool-down: 30 sec each side against wall'),
+            ('Hip Flexor Stretch',         'duration', 60, 'Cool-down: 30 sec each side lunge position'),
+            ('Pigeon Pose / Glute Stretch','duration', 60, 'Cool-down: 30 sec each side glute stretch'),
+            ('Lower Back Stretch',         'duration', 30, 'Cool-down: 30 sec knees to chest lower back release'),
         ]
     },
     'Legs A': {

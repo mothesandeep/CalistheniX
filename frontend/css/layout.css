@@ -264,11 +264,52 @@
   box-shadow: var(--liquid-shadow-md), var(--liquid-highlight-top);
 }
 
+/* ── Mobile App Shell Architecture (< 1024px) ────────────────────────────── */
 @media (max-width: 1023px) {
   .desktop-sidebar { display: none !important; }
-  .mobile-header { display: flex !important; }
-  .app-main { padding: 16px 16px 96px; }
-  .app-bottom-nav { display: flex !important; }
+  .mobile-header { display: none !important; }
+
+  /* Mobile App Shell Root */
+  .app-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    height: 100dvh;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    background: var(--bg);
+  }
+
+  .app-content-wrap {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  /* Independently Scrollable Page Content Container */
+  .app-main {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding: 14px 16px max(96px, calc(80px + env(safe-area-inset-bottom, 0px)));
+    box-sizing: border-box;
+  }
+
+  /* Persistent Floating Bottom Navigation Shell Layer */
+  .app-bottom-nav {
+    display: flex !important;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -305,7 +346,7 @@
     font-size: 12px;
   }
   .app-main {
-    padding: 16px 12px 90px;
+    padding: 14px 12px max(96px, calc(80px + env(safe-area-inset-bottom, 0px)));
   }
   .progression-banner .btn {
     width: 100%;

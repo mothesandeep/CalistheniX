@@ -1,4 +1,4 @@
-const CACHE_NAME = 'calisthenix-v7';
+const CACHE_NAME = 'calisthenix-v25';
 const STATIC_ASSETS = [
   './',
   './index.html',

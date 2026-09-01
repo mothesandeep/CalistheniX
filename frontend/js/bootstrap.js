@@ -52,6 +52,9 @@ async function loadTodayLogs() {
 
 async function init() {
   setupAudioUnlock();
+  if (typeof initThemeAndAccent === 'function') {
+    initThemeAndAccent();
+  }
 
   // Restore in-progress active workout session from crash recovery
   const savedActive = getActiveSession();
@@ -80,6 +83,9 @@ async function init() {
     await loadTodayResolved();
     await loadSplits();
     await loadWorkouts();
+    if (typeof loadWorkoutSessions === 'function') {
+      await loadWorkoutSessions();
+    }
     render();
   } catch (e) {
     console.warn('Initial data load error:', e);
@@ -88,6 +94,9 @@ async function init() {
   startSyncLoop();
   loadDashboardSummary().then(render);
   loadTodayLogs().then(render);
+  if (typeof loadWorkoutSessions === 'function') {
+    loadWorkoutSessions().then(render);
+  }
 }
 
 if (document.readyState === 'loading') {

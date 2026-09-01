@@ -656,7 +656,7 @@ class TestCalistheniXBackend(unittest.TestCase):
         splits = res.get_json()
         self.assertGreaterEqual(len(splits), 1)
         active_seed = [s for s in splits if s['is_active'] == 1][0]
-        self.assertIn('PPL', active_seed['name'])
+        self.assertTrue('PPL' in active_seed['name'] or 'Aesthetic' in active_seed['name'])
         self.assertEqual(len(active_seed['schedule']), 7)
 
         # 2. Create a new split

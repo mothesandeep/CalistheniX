@@ -2,104 +2,909 @@
  * CalistheniX — Settings, Backup Data, Calendar & Biomechanics Modal
  */
 
-function openSettingsModal() {
-  const root = document.getElementById('settings-modal-root');
-  if (!root) return;
-  const muted = isMuted();
-  const audioCuesEnabled = isAudioCuesEnabled();
-  const autoAdvanceEnabled = isAutoAdvanceEnabled();
+// ─── Settings State & Persistence Helpers ────────────────────────────────────
+const SETTINGS_DEFAULTS = {
+  weight_unit: 'kg',
+  default_rest_sec: 90,
+  rest_pause_sec: 15,
+  keep_screen_awake: true,
+  flash_screen: false,
+  effort_mode: 'RIR', // 'Off' | 'RIR' | 'RPE'
+  theme: 'dark', // 'dark' | 'light' | 'system'
+  accent_color: '#FF5D5D',
+  body_diagram_model: 'male', // 'male' | 'female'
+  language: 'en',
+  equipment: ['pullup_bar', 'dip_bars', 'rings', 'parallettes', 'resistance_bands', 'floor']
+};
 
-  root.innerHTML = `
-    <div class="settings-modal-backdrop" onclick="if(event.target === this) closeSettingsModal()">
-      <div class="settings-modal" style="max-width:540px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
-          <h2 style="font-size:18px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px;">
-            ${renderIcon('settings', 'cx-icon cx-icon-inline')} Settings & Preferences
-          </h2>
-          <button class="nav-btn-icon" onclick="closeSettingsModal()">${renderIcon('x', 'cx-icon')}</button>
+const LANGUAGES = {
+  en: 'English',
+  es: 'Español',
+  fr: 'Français',
+  de: 'Deutsch',
+  it: 'Italiano',
+  ja: '日本語'
+};
+
+const EQUIPMENT_CATALOG = [
+  { id: 'pullup_bar', name: 'Pull-up Bar', desc: 'Doorway, wall or ceiling mounted pull-up bar' },
+  { id: 'rings', name: 'Gymnastic Rings', desc: 'Wooden or composite rings with adjustable straps' },
+  { id: 'dip_bars', name: 'Dip Station / Parallel Bars', desc: 'Parallel bars for dips and leg raises' },
+  { id: 'parallettes', name: 'Low Parallettes', desc: 'Floor push-up and L-sit training bars' },
+  { id: 'resistance_bands', name: 'Resistance Bands', desc: 'Loop and pull-up assist bands' },
+  { id: 'weight_vest', name: 'Weight Vest / Dip Belt', desc: 'External loading for progressive overload' },
+  { id: 'ab_wheel', name: 'Ab Wheel / Roller', desc: 'Core extension rollout wheel' },
+  { id: 'floor', name: 'Floor & Wall Only', desc: 'Zero equipment bodyweight foundation' }
+];
+
+const ACCENT_SWATCHES = [
+  { hex: '#10B981', name: 'Emerald Green' },
+  { hex: '#3B82F6', name: 'Electric Blue' },
+  { hex: '#FF8A3D', name: 'Warmup Amber' },
+  { hex: '#A855F7', name: 'Cyber Purple' },
+  { hex: '#EC4899', name: 'Neon Pink' },
+  { hex: '#FF5D5D', name: 'Train Coral' },
+  { hex: '#35D8B0', name: 'Recover Teal' },
+  { hex: '#FFB800', name: 'Electric Yellow' }
+];
+
+function hexToRgb(hex) {
+  const clean = (hex || '').replace('#', '');
+  if (clean.length === 3) {
+    return {
+      r: parseInt(clean[0] + clean[0], 16),
+      g: parseInt(clean[1] + clean[1], 16),
+      b: parseInt(clean[2] + clean[2], 16)
+    };
+  }
+  if (clean.length === 6) {
+    return {
+      r: parseInt(clean.substring(0, 2), 16),
+      g: parseInt(clean.substring(2, 4), 16),
+      b: parseInt(clean.substring(4, 6), 16)
+    };
+  }
+  return null;
+}
+
+function initThemeAndAccent() {
+  if (typeof localStorage === 'undefined' || typeof document === 'undefined') return;
+  const savedAccent = localStorage.getItem('cx_accent_color') || '#FF5D5D';
+  document.documentElement.style.setProperty('--accent', savedAccent);
+  document.documentElement.style.setProperty('--phase-train', savedAccent);
+  document.documentElement.style.setProperty('--phase-accent', savedAccent);
+  const rgb = hexToRgb(savedAccent);
+  if (rgb) {
+    document.documentElement.style.setProperty('--phase-accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+    document.documentElement.style.setProperty('--phase-train-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+  }
+  const savedTheme = localStorage.getItem('cx_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+}
+initThemeAndAccent();
+
+function getWeightUnit() {
+  if (typeof localStorage === 'undefined') return 'kg';
+  return localStorage.getItem('cx_weight_unit') || 'kg';
+}
+
+function setWeightUnit(unit) {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem('cx_weight_unit', unit);
+  if (typeof state !== 'undefined') state.weightUnit = unit;
+  if (document.getElementById('settings-mobile-screen') || document.querySelector('.settings-modal-backdrop')) {
+    openSettingsModal();
+  }
+}
+
+function getDefaultRestSec() {
+  if (typeof localStorage === 'undefined') return 90;
+  const v = parseInt(localStorage.getItem('cx_default_rest_sec'), 10);
+  return !isNaN(v) && v > 0 ? v : 90;
+}
+
+function setDefaultRestSec(sec) {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem('cx_default_rest_sec', String(sec));
+  closeSettingsSheet();
+  if (document.getElementById('settings-mobile-screen') || document.querySelector('.settings-modal-backdrop')) {
+    openSettingsModal();
+  }
+}
+
+function getRestPauseSec() {
+  if (typeof localStorage === 'undefined') return 15;
+  const v = parseInt(localStorage.getItem('cx_rest_pause_sec'), 10);
+  return !isNaN(v) && v > 0 ? v : 15;
+}
+
+function setRestPauseSec(sec) {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem('cx_rest_pause_sec', String(sec));
+  closeSettingsSheet();
+  if (document.getElementById('settings-mobile-screen') || document.querySelector('.settings-modal-backdrop')) {
+    openSettingsModal();
+  }
+}
+
+function isKeepScreenAwake() {
+  if (typeof localStorage === 'undefined') return true;
+  return localStorage.getItem('cx_keep_screen_awake') !== '0';
+}
+
+function toggleKeepScreenAwake() {
+  if (typeof localStorage === 'undefined') return;
+  const current = isKeepScreenAwake();
+  localStorage.setItem('cx_keep_screen_awake', current ? '0' : '1');
+}
+
+function isSoundsEnabled() {
+  return !isMuted();
+}
+
+function toggleSounds() {
+  toggleMute();
+}
+
+function isFlashScreenEnabled() {
+  if (typeof localStorage === 'undefined') return false;
+  return localStorage.getItem('cx_flash_screen') === '1';
+}
+
+function toggleFlashScreen() {
+  if (typeof localStorage === 'undefined') return;
+  const current = isFlashScreenEnabled();
+  localStorage.setItem('cx_flash_screen', current ? '0' : '1');
+}
+
+function getEffortMode() {
+  if (typeof localStorage === 'undefined') return 'RIR';
+  return localStorage.getItem('cx_effort_mode') || 'RIR';
+}
+
+function setEffortMode(mode) {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem('cx_effort_mode', mode);
+  if (typeof state !== 'undefined') state.effortMode = mode;
+  if (document.getElementById('settings-mobile-screen') || document.querySelector('.settings-modal-backdrop')) {
+    openSettingsModal();
+  }
+}
+
+function getAppTheme() {
+  if (typeof localStorage === 'undefined') return 'dark';
+  return localStorage.getItem('cx_theme') || 'dark';
+}
+
+function setAppTheme(theme) {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem('cx_theme', theme);
+  document.documentElement.setAttribute('data-theme', theme);
+  if (document.getElementById('settings-mobile-screen') || document.querySelector('.settings-modal-backdrop')) {
+    openSettingsModal();
+  }
+}
+
+function getAccentColor() {
+  if (typeof localStorage === 'undefined') return '#FF5D5D';
+  return localStorage.getItem('cx_accent_color') || '#FF5D5D';
+}
+
+function setAccentColor(colorHex) {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem('cx_accent_color', colorHex);
+  document.documentElement.style.setProperty('--accent', colorHex);
+  document.documentElement.style.setProperty('--phase-train', colorHex);
+  document.documentElement.style.setProperty('--phase-accent', colorHex);
+  const rgb = hexToRgb(colorHex);
+  if (rgb) {
+    document.documentElement.style.setProperty('--phase-accent-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+    document.documentElement.style.setProperty('--phase-train-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
+  }
+  if (document.getElementById('settings-mobile-screen') || document.querySelector('.settings-modal-backdrop')) {
+    openSettingsModal();
+  }
+}
+
+function getBodyDiagramModel() {
+  if (typeof localStorage === 'undefined') return 'male';
+  return localStorage.getItem('cx_body_diagram_model') || 'male';
+}
+
+function setBodyDiagramModel(model) {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem('cx_body_diagram_model', model);
+  if (document.getElementById('settings-mobile-screen') || document.querySelector('.settings-modal-backdrop')) {
+    openSettingsModal();
+  }
+}
+
+function getEquipmentProfile() {
+  if (typeof localStorage === 'undefined') return SETTINGS_DEFAULTS.equipment;
+  const raw = localStorage.getItem('cx_equipment_profile');
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {}
+  }
+  return SETTINGS_DEFAULTS.equipment;
+}
+
+function toggleEquipmentItem(id) {
+  if (typeof localStorage === 'undefined') return;
+  const current = getEquipmentProfile();
+  let updated;
+  if (current.includes(id)) {
+    updated = current.filter(item => item !== id);
+  } else {
+    updated = [...current, id];
+  }
+  localStorage.setItem('cx_equipment_profile', JSON.stringify(updated));
+  renderEquipmentSheet();
+}
+
+function getAppLanguage() {
+  if (typeof localStorage === 'undefined') return 'en';
+  return localStorage.getItem('cx_language') || 'en';
+}
+
+function setAppLanguage(lang) {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem('cx_language', lang);
+  closeSettingsSheet();
+  if (document.getElementById('settings-mobile-screen') || document.querySelector('.settings-modal-backdrop')) {
+    openSettingsModal();
+  }
+}
+
+const CANONICAL_DEFAULT_WEIGHT_HISTORY = [
+  { date: '2026-07-01', weight: 82.4 },
+  { date: '2026-07-05', weight: 82.1 },
+  { date: '2026-07-10', weight: 81.8 },
+  { date: '2026-07-16', weight: 81.5 },
+  { date: '2026-07-23', weight: 80.7 },
+  { date: '2026-07-29', weight: 80.4 },
+  { date: '2026-08-04', weight: 80.1 },
+  { date: '2026-08-10', weight: 79.8 },
+  { date: '2026-08-16', weight: 79.5 },
+  { date: '2026-08-23', weight: 79.1 },
+  { date: '2026-08-27', weight: 78.4 },
+  { date: '2026-08-31', weight: 78.3 }
+];
+
+async function resetDemoData() {
+  const defaultHistory = (typeof DEFAULT_WEIGHT_HISTORY !== 'undefined') ? DEFAULT_WEIGHT_HISTORY : CANONICAL_DEFAULT_WEIGHT_HISTORY;
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('cx_weight_history', JSON.stringify(defaultHistory));
+    localStorage.setItem('cx_target_weight', '77');
+    if (typeof state !== 'undefined') {
+      state.weightHistory = [...defaultHistory];
+      state.targetWeight = 77.0;
+    }
+  }
+  if (typeof showToast === 'function') {
+    showToast('Demo data reset to initial defaults');
+  }
+  if (typeof loadDashboardSummary === 'function') {
+    await loadDashboardSummary();
+  }
+  if (document.getElementById('settings-mobile-screen') || document.querySelector('.settings-modal-backdrop')) {
+    openSettingsModal();
+  }
+}
+
+function confirmResetEverything() {
+  let sheetRoot = document.getElementById('settings-sheet-root');
+  if (!sheetRoot) {
+    sheetRoot = document.createElement('div');
+    sheetRoot.id = 'settings-sheet-root';
+    document.body.appendChild(sheetRoot);
+  }
+
+  sheetRoot.innerHTML = `
+    <div class="settings-sheet-backdrop" onclick="if(event.target === this) closeSettingsSheet()">
+      <div class="settings-sheet" style="max-width:440px;">
+        <div class="settings-sheet-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="color:#FF5D5D;">${renderIcon('alert', 'cx-icon cx-icon-inline')}</span>
+            <h3 class="settings-sheet-title" style="color:#FF5D5D;">Reset Everything</h3>
+          </div>
+          <button class="nav-btn-icon" onclick="closeSettingsSheet()">${renderIcon('x', 'cx-icon cx-icon-xs')}</button>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <!-- 1. Audio Cues Toggle -->
-          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:14px 16px; border-radius:var(--radius); border:1px solid var(--border);">
-            <div style="max-width:320px;">
-              <strong style="color:var(--text); font-size:14px; display:flex; align-items:center; gap:6px;">
-                ${renderIcon('volume', 'cx-icon cx-icon-xs cx-icon-inline')} Audio Cues & Beeps
-              </strong>
-              <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">
-                Beeps at 3, 2, 1s remaining and distinct completion chime on timer completion.
-              </div>
-            </div>
-            <div style="display:flex; gap:6px; align-items:center;">
-              <button class="btn btn-sm btn-secondary" onclick="cueTimerComplete()" title="Test completion chime" style="padding:4px 8px; font-size:11px;">
-                ${renderIcon('play', 'cx-icon cx-icon-xs cx-icon-inline')} Test
-              </button>
-              <button class="btn btn-sm ${audioCuesEnabled ? 'btn-primary' : 'btn-secondary'}" onclick="toggleAudioCues(); openSettingsModal();">
-                ${audioCuesEnabled ? 'Enabled' : 'Disabled'}
-              </button>
+        <p style="font-size:13px; color:var(--text-muted); line-height:1.5; margin:0;">
+          This will permanently wipe all local workout logs, custom routine splits, body weight history, and active sessions on this browser.
+        </p>
+
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+          <button class="btn btn-danger" style="width:100%; justify-content:center; padding:12px; font-weight:700;" onclick="executeResetEverything()">
+            ${renderIcon('trash', 'cx-icon cx-icon-xs cx-icon-inline')} Yes, Reset Everything
+          </button>
+          <button class="btn btn-secondary" style="width:100%; justify-content:center; padding:11px;" onclick="closeSettingsSheet()">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function executeResetEverything() {
+  closeSettingsSheet();
+  if (typeof localStorage !== 'undefined') {
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('cx_') || k.startsWith('calisthenix_'))) {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    
+    if (typeof state !== 'undefined') {
+      state.weightHistory = [...DEFAULT_WEIGHT_HISTORY];
+      state.targetWeight = 77.0;
+      state.todayLogs = {};
+      state.activeSession = null;
+    }
+  }
+
+  closeSettingsModal();
+  if (typeof showToast === 'function') {
+    showToast('All local data and preferences reset');
+  }
+  if (typeof loadDashboardSummary === 'function') {
+    await loadDashboardSummary();
+  }
+  if (typeof loadExercises === 'function') {
+    await loadExercises();
+  }
+  if (typeof switchView === 'function') {
+    switchView('home');
+  } else if (typeof render === 'function') {
+    render();
+  }
+}
+
+function closeSettingsSheet() {
+  const sheetRoot = document.getElementById('settings-sheet-root');
+  if (sheetRoot) sheetRoot.innerHTML = '';
+}
+
+function openRestPickerModal(type = 'main') {
+  let sheetRoot = document.getElementById('settings-sheet-root');
+  if (!sheetRoot) {
+    sheetRoot = document.createElement('div');
+    sheetRoot.id = 'settings-sheet-root';
+    document.body.appendChild(sheetRoot);
+  }
+
+  const isMain = type === 'main';
+  const currentVal = isMain ? getDefaultRestSec() : getRestPauseSec();
+  const options = isMain 
+    ? [30, 45, 60, 90, 120, 150, 180, 240, 300]
+    : [10, 15, 20, 25, 30, 45];
+
+  const title = isMain ? 'Rest Timer Duration' : 'Rest-Pause Rest Duration';
+
+  const optionsHtml = options.map(sec => {
+    const isAct = sec === currentVal;
+    return `
+      <div class="settings-sheet-option ${isAct ? 'active' : ''}" onclick="${isMain ? `setDefaultRestSec(${sec})` : `setRestPauseSec(${sec})`}">
+        <span>${sec} seconds</span>
+        ${isAct ? `<span style="color:var(--accent); font-weight:700;">${renderIcon('check', 'cx-icon cx-icon-xs')}</span>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  sheetRoot.innerHTML = `
+    <div class="settings-sheet-backdrop" onclick="if(event.target === this) closeSettingsSheet()">
+      <div class="settings-sheet">
+        <div class="settings-sheet-header">
+          <h3 class="settings-sheet-title">${title}</h3>
+          <button class="nav-btn-icon" onclick="closeSettingsSheet()">${renderIcon('x', 'cx-icon cx-icon-xs')}</button>
+        </div>
+        <div class="settings-sheet-options">
+          ${optionsHtml}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openLanguageModal() {
+  let sheetRoot = document.getElementById('settings-sheet-root');
+  if (!sheetRoot) {
+    sheetRoot = document.createElement('div');
+    sheetRoot.id = 'settings-sheet-root';
+    document.body.appendChild(sheetRoot);
+  }
+
+  const currentLang = getAppLanguage();
+  const optionsHtml = Object.entries(LANGUAGES).map(([code, name]) => {
+    const isAct = code === currentLang;
+    return `
+      <div class="settings-sheet-option ${isAct ? 'active' : ''}" onclick="setAppLanguage('${code}')">
+        <span>${name}</span>
+        ${isAct ? `<span style="color:var(--accent); font-weight:700;">${renderIcon('check', 'cx-icon cx-icon-xs')}</span>` : ''}
+      </div>
+    `;
+  }).join('');
+
+  sheetRoot.innerHTML = `
+    <div class="settings-sheet-backdrop" onclick="if(event.target === this) closeSettingsSheet()">
+      <div class="settings-sheet">
+        <div class="settings-sheet-header">
+          <h3 class="settings-sheet-title">Select Language</h3>
+          <button class="nav-btn-icon" onclick="closeSettingsSheet()">${renderIcon('x', 'cx-icon cx-icon-xs')}</button>
+        </div>
+        <div class="settings-sheet-options">
+          ${optionsHtml}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openEquipmentModal() {
+  let sheetRoot = document.getElementById('settings-sheet-root');
+  if (!sheetRoot) {
+    sheetRoot = document.createElement('div');
+    sheetRoot.id = 'settings-sheet-root';
+    document.body.appendChild(sheetRoot);
+  }
+  renderEquipmentSheet();
+}
+
+function renderEquipmentSheet() {
+  const sheetRoot = document.getElementById('settings-sheet-root');
+  if (!sheetRoot) return;
+
+  const currentProfile = getEquipmentProfile();
+  const itemsHtml = EQUIPMENT_CATALOG.map(item => {
+    const hasItem = currentProfile.includes(item.id);
+    return `
+      <div class="settings-sheet-option ${hasItem ? 'active' : ''}" onclick="toggleEquipmentItem('${item.id}')">
+        <div>
+          <div style="font-weight:600;">${item.name}</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">${item.desc}</div>
+        </div>
+        <span style="color:${hasItem ? 'var(--accent)' : 'var(--text-dim)'};">
+          ${hasItem ? renderIcon('check', 'cx-icon cx-icon-sm') : '<span style="display:inline-block; width:16px; height:16px; border:1px solid rgba(255,255,255,0.2); border-radius:4px;"></span>'}
+        </span>
+      </div>
+    `;
+  }).join('');
+
+  sheetRoot.innerHTML = `
+    <div class="settings-sheet-backdrop" onclick="if(event.target === this) closeSettingsSheet()">
+      <div class="settings-sheet">
+        <div class="settings-sheet-header">
+          <div>
+            <h3 class="settings-sheet-title">Manage Equipment Profile</h3>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Select the equipment available in your training space</div>
+          </div>
+          <button class="nav-btn-icon" onclick="closeSettingsSheet()">${renderIcon('x', 'cx-icon cx-icon-xs')}</button>
+        </div>
+        <div class="settings-sheet-options">
+          ${itemsHtml}
+        </div>
+        <button class="btn btn-primary" style="width:100%; justify-content:center; margin-top:6px;" onclick="closeSettingsSheet()">
+          Done
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ─── Desktop vs Mobile View Dispatchers ──────────────────────────────────────
+// ─── Shared Grouped Settings Content Generator ──────────────────────────────
+function renderSettingsGroupedSections() {
+  const weightUnit = getWeightUnit();
+  const defRest = getDefaultRestSec();
+  const restPause = getRestPauseSec();
+  const keepAwake = isKeepScreenAwake();
+  const sounds = isSoundsEnabled();
+  const flashScreen = isFlashScreenEnabled();
+  const effortMode = getEffortMode();
+  const theme = getAppTheme();
+  const accent = getAccentColor();
+  const bodyModel = getBodyDiagramModel();
+  const langName = LANGUAGES[getAppLanguage()] || 'English';
+
+  const swatchesHtml = ACCENT_SWATCHES.map(s => {
+    const isAct = accent.toLowerCase() === s.hex.toLowerCase();
+    return `<div class="settings-swatch ${isAct ? 'active' : ''}" style="background:${s.hex};" onclick="setAccentColor('${s.hex}')" title="${s.name}"></div>`;
+  }).join('');
+
+  return `
+    <!-- 1. DEMO / DATA Section -->
+    <section class="settings-group">
+      <div class="settings-group-label">Demo</div>
+      <div class="settings-card">
+        <!-- Demo status -->
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-gold">${renderIcon('sparkles')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">You're in the demo</span>
+              <span class="settings-row-subtitle">Example data, stored only in this browser — change anything you like.</span>
             </div>
           </div>
+        </div>
 
-          <!-- 2. Auto-Advance for Timed Movements Toggle -->
-          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:14px 16px; border-radius:var(--radius); border:1px solid var(--border);">
-            <div style="max-width:330px;">
-              <strong style="color:var(--text); font-size:14px; display:flex; align-items:center; gap:6px;">
-                ${renderIcon('zap', 'cx-icon cx-icon-xs cx-icon-inline')} Auto-Advance Timed Holds
-              </strong>
-              <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">
-                Auto-advances to next movement when timer hits 0 after a 3s grace period (with Undo).
-              </div>
+        <!-- Reset demo data -->
+        <div class="settings-row is-clickable" onclick="resetDemoData()">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-blue">${renderIcon('refresh')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Reset demo data</span>
             </div>
-            <button class="btn btn-sm ${autoAdvanceEnabled ? 'btn-primary' : 'btn-secondary'}" onclick="toggleAutoAdvance(); openSettingsModal();">
-              ${autoAdvanceEnabled ? 'Enabled' : 'Disabled'}
-            </button>
           </div>
-
-          <!-- 3. Master Mute Toggle -->
-          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:14px 16px; border-radius:var(--radius); border:1px solid var(--border);">
-            <div>
-              <strong style="color:var(--text); font-size:14px; display:flex; align-items:center; gap:6px;">
-                ${renderIcon('volumeMute', 'cx-icon cx-icon-xs cx-icon-inline')} Master Sound & Vibration
-              </strong>
-              <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">Global sound and haptic vibration mute switch.</div>
-            </div>
-            <button class="btn btn-sm ${muted ? 'btn-secondary' : 'btn-primary'}" onclick="toggleMute(); openSettingsModal();">
-              ${muted ? `${renderIcon('volumeMute', 'cx-icon cx-icon-inline')} Muted` : `${renderIcon('volume', 'cx-icon cx-icon-inline')} Unmuted`}
-            </button>
+          <div class="settings-row-right">
+            <span class="settings-chevron">${renderIcon('chevronRight', 'cx-icon cx-icon-xs')}</span>
           </div>
+        </div>
 
-          <!-- 4. Backup Export -->
-          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:14px 16px; border-radius:var(--radius); border:1px solid var(--border);">
-            <div>
-              <strong style="color:var(--text); font-size:14px;">Backup Export</strong>
-              <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">Save complete JSON bundle (v2.1) of splits, workouts & logs</div>
+        <!-- Import backup -->
+        <label class="settings-row is-clickable" style="margin:0; cursor:pointer;">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-blue">${renderIcon('upload')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Import backup</span>
             </div>
-            <button class="btn btn-sm btn-secondary" onclick="exportData()">${renderIcon('download', 'cx-icon cx-icon-inline')} Export JSON</button>
           </div>
+          <div class="settings-row-right">
+            <span class="settings-chevron">${renderIcon('chevronRight', 'cx-icon cx-icon-xs')}</span>
+          </div>
+          <input type="file" accept=".json" style="display:none;" onchange="importData(this); openSettingsModal();">
+        </label>
 
-          <!-- 5. Restore Backup -->
-          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--surface-2); padding:14px 16px; border-radius:var(--radius); border:1px solid var(--border);">
-            <div>
-              <strong style="color:var(--text); font-size:14px;">Restore Backup</strong>
-              <div style="font-size:12px; color:var(--text-muted); margin-top:3px;">Merge or restore from an existing JSON backup</div>
+        <!-- Export backup -->
+        <div class="settings-row is-clickable" onclick="exportData()">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-blue">${renderIcon('download')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Export backup (JSON)</span>
             </div>
-            <label class="btn btn-sm btn-secondary" style="cursor:pointer; margin:0;">
-              ${renderIcon('upload', 'cx-icon cx-icon-inline')} Import
-              <input type="file" accept=".json" style="display:none;" onchange="importData(this); closeSettingsModal();">
+          </div>
+          <div class="settings-row-right">
+            <span class="settings-chevron">${renderIcon('chevronRight', 'cx-icon cx-icon-xs')}</span>
+          </div>
+        </div>
+
+        <!-- Reset everything -->
+        <div class="settings-row is-clickable" onclick="confirmResetEverything()">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-red">${renderIcon('trash')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title is-danger">Reset everything</span>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <span class="settings-chevron">${renderIcon('chevronRight', 'cx-icon cx-icon-xs')}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. GENERAL Section -->
+    <section class="settings-group">
+      <div class="settings-group-label">General</div>
+      <div class="settings-card">
+        <!-- Language -->
+        <div class="settings-row is-clickable" onclick="openLanguageModal()">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-blue">${renderIcon('globe')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Language</span>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <span class="settings-value-label">${langName}</span>
+            <span class="settings-chevron">${renderIcon('chevronRight', 'cx-icon cx-icon-xs')}</span>
+          </div>
+        </div>
+
+        <!-- Weight unit -->
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-teal">${renderIcon('scale')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Weight unit</span>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <div class="cx-segmented">
+              <button class="cx-seg-btn ${weightUnit === 'kg' ? 'active' : ''}" onclick="setWeightUnit('kg')">kg</button>
+              <button class="cx-seg-btn ${weightUnit === 'lb' ? 'active' : ''}" onclick="setWeightUnit('lb')">lb</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-group-caption">
+        Note: switching units only changes the label — logged numbers are not converted.
+      </div>
+    </section>
+
+    <!-- 3. WORKOUT Section -->
+    <section class="settings-group">
+      <div class="settings-group-label">During a workout</div>
+      <div class="settings-card">
+        <!-- Rest timer -->
+        <div class="settings-row is-clickable" onclick="openRestPickerModal('main')">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-amber">${renderIcon('timer')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Rest timer</span>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <span class="settings-value-label">${defRest}s</span>
+            <span class="settings-chevron">${renderIcon('chevronRight', 'cx-icon cx-icon-xs')}</span>
+          </div>
+        </div>
+
+        <!-- Rest-pause rest -->
+        <div class="settings-row is-clickable" onclick="openRestPickerModal('rest_pause')">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-gold">${renderIcon('zap')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Rest-pause rest</span>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <span class="settings-value-label">${restPause}s</span>
+            <span class="settings-chevron">${renderIcon('chevronRight', 'cx-icon cx-icon-xs')}</span>
+          </div>
+        </div>
+
+        <!-- Keep screen awake -->
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-gold">${renderIcon('sun')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Keep screen awake</span>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <label class="cx-switch">
+              <input type="checkbox" ${keepAwake ? 'checked' : ''} onchange="toggleKeepScreenAwake()">
+              <span class="cx-switch-slider"></span>
             </label>
           </div>
         </div>
 
-        <div style="display:flex; justify-content:flex-end; margin-top:16px;">
-          <button class="btn btn-primary" onclick="closeSettingsModal()">Done</button>
+        <!-- Sounds -->
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-pink">${renderIcon('bell')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Sounds</span>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <label class="cx-switch">
+              <input type="checkbox" ${sounds ? 'checked' : ''} onchange="toggleSounds()">
+              <span class="cx-switch-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Flash screen when timer ends -->
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-gold">${renderIcon('sun')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Flash screen when timer ends</span>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <label class="cx-switch">
+              <input type="checkbox" ${flashScreen ? 'checked' : ''} onchange="toggleFlashScreen()">
+              <span class="cx-switch-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Effort per set -->
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-purple">${renderIcon('target')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Effort per set</span>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <div class="cx-segmented">
+              <button class="cx-seg-btn ${effortMode === 'Off' ? 'active' : ''}" onclick="setEffortMode('Off')">Off</button>
+              <button class="cx-seg-btn ${effortMode === 'RIR' ? 'active' : ''}" onclick="setEffortMode('RIR')">RIR</button>
+              <button class="cx-seg-btn ${effortMode === 'RPE' ? 'active' : ''}" onclick="setEffortMode('RPE')">RPE</button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>`;
+      <div class="settings-group-caption">
+        The screen stays on while a workout is running, so you don't have to unlock your device between sets.
+      </div>
+    </section>
+
+    <!-- 4. EQUIPMENT Section -->
+    <section class="settings-group">
+      <div class="settings-group-label">Equipment</div>
+      <div class="settings-card">
+        <div class="settings-row is-clickable" onclick="openEquipmentModal()">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-gold">${renderIcon('plus')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Add equipment profile</span>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <span class="settings-chevron">${renderIcon('chevronRight', 'cx-icon cx-icon-xs')}</span>
+          </div>
+        </div>
+      </div>
+      <div class="settings-group-caption">
+        Filters the exercise library and picker, and flags routine exercises that need something you don't have in the active profile.
+      </div>
+    </section>
+
+    <!-- 5. APPEARANCE Section -->
+    <section class="settings-group">
+      <div class="settings-group-label">Appearance</div>
+      <div class="settings-card">
+        <!-- Theme -->
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-purple">${renderIcon('moon')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Theme</span>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <div class="cx-segmented">
+              <button class="cx-seg-btn ${theme === 'dark' ? 'active' : ''}" onclick="setAppTheme('dark')">
+                ${renderIcon('moon', 'cx-icon cx-icon-xs')} Dark
+              </button>
+              <button class="cx-seg-btn ${theme === 'light' ? 'active' : ''}" onclick="setAppTheme('light')">
+                ${renderIcon('sun', 'cx-icon cx-icon-xs')} Light
+              </button>
+              <button class="cx-seg-btn ${theme === 'system' ? 'active' : ''}" onclick="setAppTheme('system')">
+                ${renderIcon('settings', 'cx-icon cx-icon-xs')} System
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Body diagram -->
+        <div class="settings-row">
+          <div class="settings-row-left">
+            <div class="settings-icon-box box-teal">${renderIcon('user')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">Body diagram</span>
+            </div>
+          </div>
+          <div class="settings-row-right">
+            <div class="cx-segmented">
+              <button class="cx-seg-btn ${bodyModel === 'male' ? 'active' : ''}" onclick="setBodyDiagramModel('male')">Male</button>
+              <button class="cx-seg-btn ${bodyModel === 'female' ? 'active' : ''}" onclick="setBodyDiagramModel('female')">Female</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accent color -->
+        <div style="padding: 10px 14px 4px;">
+          <span class="settings-row-title">Accent color</span>
+        </div>
+        <div class="settings-swatches-grid">
+          ${swatchesHtml}
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Tip & About Section -->
+    <section class="settings-group">
+      <div class="settings-group-label">Tip</div>
+      <div class="settings-card">
+        <div class="settings-row">
+          <div class="settings-row-left" style="align-items:flex-start;">
+            <div class="settings-icon-box box-gold" style="margin-top:2px;">${renderIcon('lightbulb')}</div>
+            <div class="settings-row-text">
+              <span class="settings-row-title">In Safari: Share → Add to Home Screen</span>
+              <span class="settings-row-subtitle">to install CalistheniX as a standalone app. Guest data stays on this device — export a backup now and then!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+// ─── Desktop vs Mobile View Dispatchers ──────────────────────────────────────
+function renderDesktopSettingsModal() {
+  const sectionsHtml = renderSettingsGroupedSections();
+
+  return `
+    <div class="settings-modal-backdrop" onclick="if(event.target === this) closeSettingsModal()">
+      <div class="settings-modal" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.06);">
+          <div>
+            <h2 style="font-size:20px; font-weight:800; color:var(--text, #ffffff); display:flex; align-items:center; gap:8px; margin:0; letter-spacing:-0.02em;">
+              ${renderIcon('settings', 'cx-icon cx-icon-inline')} Settings & Preferences
+            </h2>
+            <div style="font-size:12.5px; color:var(--text-muted, #8b8b9e); margin-top:3px;">
+              Manage your local training preferences, rest timers, audio cues, and display theme.
+            </div>
+          </div>
+          <button class="nav-btn-icon" onclick="closeSettingsModal()" title="Close" style="cursor:pointer;">
+            ${renderIcon('x', 'cx-icon')}
+          </button>
+        </div>
+
+        <!-- Scrollable Grouped Sections Body -->
+        <div style="display:flex; flex-direction:column; gap:16px; margin:4px 0;">
+          ${sectionsHtml}
+        </div>
+
+        <!-- Footer Actions -->
+        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:14px; border-top:1px solid rgba(255,255,255,0.06); margin-top:4px;">
+          <div style="font-size:11.5px; color:var(--text-dim, #5a5a70);">
+            <strong>CalistheniX v2.4.0</strong> · 100% Local-First
+          </div>
+          <button class="btn btn-primary" onclick="closeSettingsModal()" style="padding:8px 22px; font-weight:600;">
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderMobileSettingsView() {
+  const sectionsHtml = renderSettingsGroupedSections();
+
+  return `
+    <div class="settings-modal-backdrop" id="settings-mobile-screen">
+      <div class="settings-mobile-container">
+        <!-- Header -->
+        <header class="settings-mobile-header">
+          <button class="settings-back-btn" onclick="closeSettingsModal()" title="Back" aria-label="Back">
+            ${renderIcon('chevronLeft', 'cx-icon cx-icon-sm')}
+          </button>
+          <h1 class="settings-mobile-title">Settings</h1>
+        </header>
+
+        <!-- Grouped Sections -->
+        ${sectionsHtml}
+
+        <!-- App Footer Metadata -->
+        <footer class="settings-app-footer">
+          <div><strong>CalistheniX v2.4.0</strong> · Free & Local-First</div>
+          <div>All training history & biomechanics are stored 100% locally on this device.</div>
+        </footer>
+      </div>
+    </div>
+  `;
+}
+
+function openSettingsModal() {
+  const root = document.getElementById('settings-modal-root');
+  if (!root) return;
+
+  if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+    root.innerHTML = renderDesktopSettingsModal();
+  } else {
+    root.innerHTML = renderMobileSettingsView();
+  }
 }
 
 function closeSettingsModal() {
   const root = document.getElementById('settings-modal-root');
   if (root) root.innerHTML = '';
+  closeSettingsSheet();
 }
 
 // ─── Muscle Focus Engine & Body Visualization (Phase.md Section 20) ───────────
@@ -843,5 +1648,42 @@ async function handleCreateCustomExercise(event) {
   }
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-
+// ─── Global window exports for settings & preferences ────────────────────────
+if (typeof window !== 'undefined') {
+  window.openSettingsModal = openSettingsModal;
+  window.closeSettingsModal = closeSettingsModal;
+  window.getWeightUnit = getWeightUnit;
+  window.setWeightUnit = setWeightUnit;
+  window.getDefaultRestSec = getDefaultRestSec;
+  window.setDefaultRestSec = setDefaultRestSec;
+  window.getRestPauseSec = getRestPauseSec;
+  window.setRestPauseSec = setRestPauseSec;
+  window.isKeepScreenAwake = isKeepScreenAwake;
+  window.toggleKeepScreenAwake = toggleKeepScreenAwake;
+  window.isSoundsEnabled = isSoundsEnabled;
+  window.toggleSounds = toggleSounds;
+  window.isFlashScreenEnabled = isFlashScreenEnabled;
+  window.toggleFlashScreen = toggleFlashScreen;
+  window.getEffortMode = getEffortMode;
+  window.setEffortMode = setEffortMode;
+  window.getAppTheme = getAppTheme;
+  window.setAppTheme = setAppTheme;
+  window.getAccentColor = getAccentColor;
+  window.setAccentColor = setAccentColor;
+  window.getBodyDiagramModel = getBodyDiagramModel;
+  window.setBodyDiagramModel = setBodyDiagramModel;
+  window.getEquipmentProfile = getEquipmentProfile;
+  window.toggleEquipmentItem = toggleEquipmentItem;
+  window.getAppLanguage = getAppLanguage;
+  window.setAppLanguage = setAppLanguage;
+  window.resetDemoData = resetDemoData;
+  window.confirmResetEverything = confirmResetEverything;
+  window.executeResetEverything = executeResetEverything;
+  window.closeSettingsSheet = closeSettingsSheet;
+  window.openRestPickerModal = openRestPickerModal;
+  window.openLanguageModal = openLanguageModal;
+  window.openEquipmentModal = openEquipmentModal;
+  window.renderEquipmentSheet = renderEquipmentSheet;
+  window.exportData = exportData;
+  window.importData = importData;
+}

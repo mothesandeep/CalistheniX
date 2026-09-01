@@ -85,6 +85,9 @@ function setupAudioUnlock() {
 let _screenWakeLock = null;
 
 async function acquireScreenWakeLock() {
+  if (typeof isKeepScreenAwake === 'function' && !isKeepScreenAwake()) {
+    return;
+  }
   if (typeof navigator !== 'undefined' && 'wakeLock' in navigator && typeof navigator.wakeLock.request === 'function') {
     try {
       if (!_screenWakeLock || _screenWakeLock.released) {
@@ -111,7 +114,29 @@ async function releaseScreenWakeLock() {
 }
 
 function isScreenWakeLockActive() {
-  return !!(_screenWakeLock && !_screenWakeLock.released);
+  return !(!_screenWakeLock || _screenWakeLock.released);
+}
+
+function triggerScreenFlash() {
+  if (typeof isFlashScreenEnabled === 'function' && isFlashScreenEnabled()) {
+    if (typeof document === 'undefined') return;
+    const flashEl = document.createElement('div');
+    flashEl.className = 'cx-screen-flash-overlay';
+    flashEl.style.position = 'fixed';
+    flashEl.style.top = '0';
+    flashEl.style.left = '0';
+    flashEl.style.width = '100vw';
+    flashEl.style.height = '100vh';
+    flashEl.style.backgroundColor = 'rgba(255, 255, 255, 0.45)';
+    flashEl.style.zIndex = '999999';
+    flashEl.style.pointerEvents = 'none';
+    flashEl.style.transition = 'opacity 250ms ease-out';
+    document.body.appendChild(flashEl);
+    setTimeout(() => {
+      flashEl.style.opacity = '0';
+      setTimeout(() => { if (flashEl.parentNode) flashEl.parentNode.removeChild(flashEl); }, 280);
+    }, 120);
+  }
 }
 
 // Auto-reacquire wake lock when tab returns to foreground if workout is in progress
@@ -171,11 +196,13 @@ function cueTimerComplete() {
   setTimeout(() => beep(783.99, 100, 0.55, 'sine'), 180);
   setTimeout(() => beep(1046.50, 260, 0.65, 'sine'), 285);
   vibrate([60, 40, 100, 40, 160]);
+  triggerScreenFlash();
 }
 
 function cueRestEnd() {
   beep(880, 120, 0.55, 'sine');
   vibrate(200);
+  triggerScreenFlash();
 }
 
 function cueTick() {

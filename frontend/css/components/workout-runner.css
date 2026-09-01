@@ -5708,3 +5708,52 @@ button.runner-nav-btn:disabled {
   }
 }
 
+/* ── In-Place Smooth Exercise Transition System ───────────────────────────── */
+.runner-stage-transitioning {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.runner-slide-out-left {
+  opacity: 0 !important;
+  transform: translate3d(-20px, 0, 0) !important;
+  transition: opacity 110ms cubic-bezier(0.4, 0, 1, 1), transform 110ms cubic-bezier(0.4, 0, 1, 1) !important;
+  will-change: opacity, transform;
+}
+
+.runner-slide-out-right {
+  opacity: 0 !important;
+  transform: translate3d(20px, 0, 0) !important;
+  transition: opacity 110ms cubic-bezier(0.4, 0, 1, 1), transform 110ms cubic-bezier(0.4, 0, 1, 1) !important;
+  will-change: opacity, transform;
+}
+
+.runner-slide-in-from-right {
+  opacity: 0 !important;
+  transform: translate3d(20px, 0, 0) !important;
+}
+
+.runner-slide-in-from-left {
+  opacity: 0 !important;
+  transform: translate3d(-20px, 0, 0) !important;
+}
+
+.runner-slide-in-active {
+  opacity: 1 !important;
+  transform: translate3d(0, 0, 0) !important;
+  transition: opacity 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .runner-slide-out-left,
+  .runner-slide-out-right,
+  .runner-slide-in-from-right,
+  .runner-slide-in-from-left,
+  .runner-slide-in-active {
+    transform: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+  }
+}
+

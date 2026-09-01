@@ -945,6 +945,17 @@
   margin-top: 28px;
 }
 
+@media (max-width: 1023px) {
+  .builder-sticky-save-bar {
+    position: relative;
+    bottom: auto;
+    border-radius: 18px;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    padding: 12px 16px;
+  }
+}
+
 .btn-save-workout {
   background: var(--phase-train, #FF5D5D);
   color: #FFFFFF;
@@ -1012,3 +1023,533 @@
   flex-direction: column;
   gap: 18px;
 }
+
+/* ── 10. Split View Responsive Desktop vs Mobile Toggles ────────────────── */
+@media (min-width: 1024px) {
+  .split-mobile-view { display: none !important; }
+  .split-desktop-view { display: block !important; }
+}
+
+@media (max-width: 1023px) {
+  .split-desktop-view { display: none !important; }
+  .split-mobile-view { display: block !important; }
+}
+
+/* ── Mobile Split View (Planner + Library) ───────────────────────────────── */
+.split-mobile-view {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.split-mobile-header {
+  margin-bottom: 20px;
+}
+
+.split-mobile-title {
+  font-family: var(--font-heading, var(--sans));
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #FFFFFF;
+  margin: 0 0 4px 0;
+}
+
+.split-mobile-subtitle {
+  font-size: 13.5px;
+  color: var(--text-muted, #8A8A93);
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Section 1: Week Schedule */
+.split-mobile-section {
+  margin-bottom: 24px;
+}
+
+.split-mobile-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+
+.split-mobile-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim, #71717a);
+}
+
+.split-mobile-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.split-mobile-day-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  height: 52px;
+  padding: 0 14px;
+  background: var(--surface-2, rgba(22, 22, 30, 0.75));
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 12px;
+  cursor: pointer;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 140ms ease, border-color 140ms ease, transform 100ms ease;
+}
+
+.split-mobile-day-row:active {
+  background: rgba(255, 255, 255, 0.07);
+  transform: scale(0.99);
+}
+
+.split-mobile-day-row.is-today {
+  border-color: rgba(255, 93, 93, 0.35);
+  background: linear-gradient(180deg, rgba(255, 93, 93, 0.06) 0%, rgba(22, 22, 30, 0.85) 100%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 93, 93, 0.2), 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.split-mobile-day-row.is-rest {
+  background: var(--surface-1, rgba(14, 14, 20, 0.55));
+  border-color: rgba(255, 255, 255, 0.035);
+}
+
+.split-mobile-day-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.split-mobile-day-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.split-mobile-day-row.is-rest .split-mobile-day-name {
+  color: var(--text-muted, #8b8b9e);
+  font-weight: 500;
+}
+
+.split-mobile-today-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #FF5D5D;
+  background: rgba(255, 93, 93, 0.12);
+  border: 1px solid rgba(255, 93, 93, 0.3);
+  border-radius: 4px;
+  padding: 1px 5px;
+  line-height: 1.2;
+}
+
+.split-mobile-day-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.split-mobile-workout-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #e2e8f0;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.split-mobile-workout-name.is-rest-label {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-dim, #71717a);
+}
+
+.split-mobile-chevron {
+  display: flex;
+  align-items: center;
+  color: var(--text-dim, #71717a);
+  opacity: 0.7;
+}
+
+.split-mobile-day-row.is-rest .split-mobile-chevron {
+  opacity: 0.4;
+}
+
+/* Section 2: Saved Splits */
+.split-mobile-saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.split-mobile-saved-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--surface-2, rgba(22, 22, 30, 0.75));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  cursor: pointer;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 140ms ease, border-color 140ms ease, transform 100ms ease;
+}
+
+.split-mobile-saved-card:active {
+  background: rgba(255, 255, 255, 0.07);
+  transform: scale(0.99);
+}
+
+.split-mobile-saved-card.is-active-split {
+  border-color: rgba(255, 93, 93, 0.35);
+  background: linear-gradient(180deg, rgba(255, 93, 93, 0.06) 0%, rgba(22, 22, 30, 0.85) 100%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 93, 93, 0.2), 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.split-mobile-saved-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.split-mobile-saved-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.split-mobile-saved-desc {
+  font-size: 12px;
+  color: var(--text-muted, #8b8b9e);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.split-mobile-saved-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.split-mobile-active-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FF5D5D;
+}
+
+.split-mobile-inactive-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim, #71717a);
+  opacity: 0.7;
+}
+
+.btn-mobile-new-split {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #F2F2F0;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 5px 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all var(--transition-fast);
+}
+
+.btn-mobile-new-split:active {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(0.96);
+}
+
+/* ── 11. Native iOS Mobile Day-Schedule Bottom Sheet ─────────────────────── */
+@media (min-width: 1024px) {
+  .mobile-day-editor-sheet { display: none !important; }
+  .desktop-day-editor-modal { display: flex !important; }
+}
+
+@media (max-width: 1023px) {
+  .desktop-day-editor-modal { display: none !important; }
+  .mobile-day-editor-sheet { display: flex !important; }
+}
+
+.split-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 250;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  opacity: 1;
+  transition: opacity 220ms ease;
+  animation: splitBackdropFadeIn 220ms ease forwards;
+}
+
+.split-sheet-backdrop.is-closing {
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes splitBackdropFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.split-bottom-sheet {
+  width: 100%;
+  max-width: 520px;
+  max-height: 85vh;
+  background: rgba(18, 18, 26, 0.96);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px 24px 0 0;
+  box-shadow:
+    0 -12px 40px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
+  padding-bottom: max(24px, calc(env(safe-area-inset-bottom, 0px) + 16px));
+  box-sizing: border-box;
+  transform: translateY(0);
+  animation: splitSheetSlideUp 300ms cubic-bezier(0.22, 1, 0.36, 1.15) forwards;
+  will-change: transform;
+}
+
+.split-bottom-sheet.is-closing {
+  transform: translateY(100%);
+  transition: transform 220ms cubic-bezier(0.32, 0, 0.67, 0);
+}
+
+@keyframes splitSheetSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.split-sheet-drag-handle-wrap {
+  width: 100%;
+  padding: 10px 0 6px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: grab;
+  touch-action: none;
+}
+
+.split-sheet-drag-handle {
+  width: 36px;
+  height: 4.5px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.split-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 4px 4px 14px;
+}
+
+.split-sheet-title {
+  font-family: var(--font-heading, var(--sans));
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #FFFFFF;
+  margin: 0 0 2px 0;
+}
+
+.split-sheet-subtitle {
+  font-size: 12.5px;
+  color: var(--text-muted, #8A8A93);
+  margin: 0;
+}
+
+.split-sheet-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted, #8A8A93);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all var(--transition-fast);
+}
+
+.split-sheet-close-btn:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.split-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding: 2px 2px 8px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.split-sheet-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: var(--surface-2, rgba(26, 26, 36, 0.75));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  cursor: pointer;
+  box-sizing: border-box;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 140ms ease, border-color 140ms ease, transform 100ms ease;
+}
+
+.split-sheet-option:active {
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(0.99);
+}
+
+.split-sheet-option.is-selected {
+  border-color: rgba(255, 93, 93, 0.38);
+  background: linear-gradient(180deg, rgba(255, 93, 93, 0.08) 0%, rgba(26, 26, 36, 0.85) 100%);
+  box-shadow: inset 0 1px 0 0 rgba(255, 93, 93, 0.22), 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.split-sheet-opt-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.split-sheet-opt-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.split-sheet-opt-icon.icon-rest {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim, #71717a);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.split-sheet-opt-icon.icon-workout {
+  background: rgba(255, 93, 93, 0.1);
+  color: #FF5D5D;
+  border: 1px solid rgba(255, 93, 93, 0.2);
+}
+
+.split-sheet-opt-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.split-sheet-opt-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.split-sheet-opt-desc {
+  font-size: 12px;
+  color: var(--text-muted, #8A8A93);
+}
+
+.split-sheet-opt-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 10px;
+  flex-shrink: 0;
+}
+
+.split-sheet-check-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FF5D5D;
+}
+
+.split-sheet-arrow-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim, #71717a);
+  opacity: 0.6;
+}
+
+.split-sheet-new-workout-btn {
+  margin-top: 6px;
+  padding: 11px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  color: var(--text-muted, #8A8A93);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.split-sheet-new-workout-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+}
+
+.split-sheet-new-workout-btn:active {
+  transform: scale(0.98);
+}
+
+

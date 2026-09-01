@@ -59,6 +59,13 @@ const ICONS = {
   activity: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
   moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
   grip: '<circle cx="9" cy="5" r="1.5" fill="currentColor"/><circle cx="9" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="19" r="1.5" fill="currentColor"/><circle cx="15" cy="5" r="1.5" fill="currentColor"/><circle cx="15" cy="12" r="1.5" fill="currentColor"/><circle cx="15" cy="19" r="1.5" fill="currentColor"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+  scale: '<path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>',
+  user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  smartphone: '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
 };
 
 /**
@@ -72,21 +79,19 @@ function renderIcon(name, cls = 'cx-icon') {
 }
 
 // ─── Training routine / cycle constants ───────────────────────────────────────
-const ROUTINES = ['Push A', 'Push B', 'Pull A', 'Pull B', 'Legs A', 'Legs B'];
+const ROUTINES = ['Push A', 'Push B', 'Pull A', 'Pull B', 'Legs (Combined)', 'Legs A', 'Legs B'];
 
 /**
- * Rolling 7-day cycle (not tied to weekday).
- * Day 1: Push A | Day 2: Pull A | Day 3: Legs A
- * Day 4: Push B | Day 5: Pull B | Day 6: Legs B | Day 7: Rest
+ * 5-Day Split rolling cycle (Push A → Pull A → Legs (Combined) → Push B → Pull B → Rest → Rest).
  */
 const CYCLE = [
-  'Push A',  // day 1
-  'Pull A',  // day 2
-  'Legs A',  // day 3
-  'Push B',  // day 4
-  'Pull B',  // day 5
-  'Legs B',  // day 6
-  'Rest',    // day 7
+  'Push A',          // day 1
+  'Pull A',          // day 2
+  'Legs (Combined)', // day 3
+  'Push B',          // day 4
+  'Pull B',          // day 5
+  'Rest',            // day 6
+  'Rest',            // day 7
 ];
 
 // ─── Calendar constants ───────────────────────────────────────────────────────

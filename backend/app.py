@@ -384,17 +384,42 @@ def reseed_data(force=False):
                     )
                     order_idx += 1
 
-        # ── Default Training Split ─────────────────────────────────────────────────
+        # ── Default Training Split: 5-Day Aesthetic Physique Split (Active) ─────────
         cursor.execute(
             '''INSERT INTO training_splits (name, description, is_active)
                VALUES (?, ?, 1)''',
+            (
+                'Aesthetic Physique — 5-Day PPL Split',
+                '2x Push, 2x Pull, 1x Legs (Combined). Core 5 days/week. 2 rest days (Push A → Pull A → Legs (Combined) → Push B → Pull B → Rest → Rest)'
+            )
+        )
+        split_5day_id = cursor.lastrowid
+        schedule_5day = [
+            (0, 'workout', workout_ids.get('Push A')),
+            (1, 'workout', workout_ids.get('Pull A')),
+            (2, 'workout', workout_ids.get('Legs (Combined)')),
+            (3, 'workout', workout_ids.get('Push B')),
+            (4, 'workout', workout_ids.get('Pull B')),
+            (5, 'rest',    None),
+            (6, 'rest',    None),
+        ]
+        for day_idx, day_type, w_id in schedule_5day:
+            cursor.execute(
+                'INSERT INTO weekly_schedules (split_id, day_of_week, day_type, workout_id) VALUES (?, ?, ?, ?)',
+                (split_5day_id, day_idx, day_type, w_id)
+            )
+
+        # ── Secondary Training Split: Complete 6-Day PPL Plan ──────────────────────
+        cursor.execute(
+            '''INSERT INTO training_splits (name, description, is_active)
+               VALUES (?, ?, 0)''',
             (
                 'Aesthetic Physique — Complete PPL A/B Plan',
                 '6 days training (Push A → Pull A → Legs A → Push B → Pull B → Legs B → Rest)'
             )
         )
-        split_id = cursor.lastrowid
-        schedule_map = [
+        split_6day_id = cursor.lastrowid
+        schedule_6day = [
             (0, 'workout', workout_ids.get('Push A')),
             (1, 'workout', workout_ids.get('Pull A')),
             (2, 'workout', workout_ids.get('Legs A')),
@@ -403,10 +428,10 @@ def reseed_data(force=False):
             (5, 'workout', workout_ids.get('Legs B')),
             (6, 'rest',    None),
         ]
-        for day_idx, day_type, w_id in schedule_map:
+        for day_idx, day_type, w_id in schedule_6day:
             cursor.execute(
                 'INSERT INTO weekly_schedules (split_id, day_of_week, day_type, workout_id) VALUES (?, ?, ?, ?)',
-                (split_id, day_idx, day_type, w_id)
+                (split_6day_id, day_idx, day_type, w_id)
             )
 
         # ── Stamp seed version ────────────────────────────────────────────────────

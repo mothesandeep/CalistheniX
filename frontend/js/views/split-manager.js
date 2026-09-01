@@ -254,18 +254,20 @@ function renderSplitView() {
       </div>`;
   }).join('');
 
-  // Day editor modal
+  // Day editor modal (Desktop) & Bottom Sheet (Mobile)
   let dayEditorHtml = '';
+  let dayEditorMobileSheetHtml = '';
   if (state.editingDayIndex !== null) {
-    const editingDay = scheduleDays.find(d => d.day_of_week === state.editingDayIndex) || { day_of_week: state.editingDayIndex, day_name: DAY_NAMES[state.editingDayIndex], day_type: 'workout' };
+    const editingDay = scheduleDays.find(d => d.day_of_week === state.editingDayIndex) || { day_of_week: state.editingDayIndex, day_name: DAY_NAMES_MON[state.editingDayIndex] || DAY_NAMES[state.editingDayIndex], day_type: 'workout' };
     const workoutOpts = state.workouts.map(w => `
       <option value="${w.id}" ${w.id === editingDay.workout_id ? 'selected' : ''}>
         ${w.name} (${w.exercise_count || 0} exercises)
       </option>
     `).join('');
 
+    // Desktop Centered Modal
     dayEditorHtml = `
-      <div class="day-editor-backdrop" onclick="if(event.target === this) closeDayEditor()">
+      <div class="day-editor-backdrop desktop-day-editor-modal" onclick="if(event.target === this) closeDayEditor()">
         <div class="day-editor-modal">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <h2 style="font-size:18px; font-weight:700; color:var(--text);">${editingDay.day_name} Schedule</h2>
@@ -305,6 +307,93 @@ function renderSplitView() {
           </form>
         </div>
       </div>`;
+
+    // Mobile Native iOS Bottom Sheet
+    const isCurrentRest = editingDay.day_type === 'rest' || !editingDay.workout_id;
+    dayEditorMobileSheetHtml = `
+      <div id="split-bottom-sheet-backdrop" class="split-sheet-backdrop mobile-day-editor-sheet" onclick="if(event.target === this) closeMobileBottomSheet()">
+        <div id="split-bottom-sheet" class="split-bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-day-title">
+          <div class="split-sheet-drag-handle-wrap" id="split-sheet-drag-handle" onclick="closeMobileBottomSheet()">
+            <div class="split-sheet-drag-handle"></div>
+          </div>
+
+          <div class="split-sheet-header">
+            <div>
+              <h2 id="sheet-day-title" class="split-sheet-title">${editingDay.day_name}</h2>
+              <p class="split-sheet-subtitle">Select assigned workout or rest day</p>
+            </div>
+            <button class="split-sheet-close-btn" onclick="closeMobileBottomSheet()" aria-label="Close">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+
+          <div class="split-sheet-body">
+            <!-- Rest Day Option -->
+            <div class="split-sheet-option ${isCurrentRest ? 'is-selected' : ''}" 
+                 onclick="assignMobileScheduleDay(${currentSplit.id}, ${editingDay.day_of_week}, 'rest', null)"
+                 role="button" tabindex="0">
+              <div class="split-sheet-opt-left">
+                <div class="split-sheet-opt-icon icon-rest">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                </div>
+                <div class="split-sheet-opt-info">
+                  <span class="split-sheet-opt-name">Rest Day</span>
+                  <span class="split-sheet-opt-desc">Rest & Recovery</span>
+                </div>
+              </div>
+              <div class="split-sheet-opt-right">
+                ${isCurrentRest 
+                  ? `<span class="split-sheet-check-icon">
+                       <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#FF5D5D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                     </span>`
+                  : `<span class="split-sheet-arrow-icon">
+                       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                     </span>`
+                }
+              </div>
+            </div>
+
+            <!-- Saved Workouts Options -->
+            ${state.workouts.map(w => {
+              const isSelected = !isCurrentRest && editingDay.workout_id === w.id;
+              return `
+                <div class="split-sheet-option ${isSelected ? 'is-selected' : ''}"
+                     onclick="assignMobileScheduleDay(${currentSplit.id}, ${editingDay.day_of_week}, 'workout', ${w.id})"
+                     role="button" tabindex="0">
+                  <div class="split-sheet-opt-left">
+                    <div class="split-sheet-opt-icon icon-workout">
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16"/><path d="M18 4v16"/><path d="M2 9v6"/><path d="M22 9v6"/><path d="M6 12h12"/></svg>
+                    </div>
+                    <div class="split-sheet-opt-info">
+                      <span class="split-sheet-opt-name">${w.name}</span>
+                      <span class="split-sheet-opt-desc">${w.exercise_count || 0} exercises</span>
+                    </div>
+                  </div>
+                  <div class="split-sheet-opt-right">
+                    ${isSelected 
+                      ? `<span class="split-sheet-check-icon">
+                           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#FF5D5D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                         </span>`
+                      : `<span class="split-sheet-arrow-icon">
+                           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                         </span>`
+                    }
+                  </div>
+                </div>
+              `;
+            }).join('')}
+
+            <!-- Secondary Action: + New Workout -->
+            <button class="split-sheet-new-workout-btn" onclick="closeMobileBottomSheet(); setSplitSubTab('workouts'); openCreateWorkoutModal();">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>+ New Workout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    setTimeout(initBottomSheetTouch, 0);
   }
 
   // Create Split Modal
@@ -345,45 +434,144 @@ function renderSplitView() {
       </div>`;
   }
 
+  const DAY_NAMES_MON = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  // Mobile Week Schedule Rows (Monday -> Sunday)
+  const dayCardsMobileHtml = [0, 1, 2, 3, 4, 5, 6].map(dow => {
+    const d = scheduleDays.find(sd => sd.day_of_week === dow) || {
+      day_of_week: dow,
+      day_name: DAY_NAMES_MON[dow],
+      day_type: (dow === 5 || dow === 6) ? 'rest' : 'workout',
+      workout_name: (dow === 5 || dow === 6) ? null : 'Workout'
+    };
+    const isToday = d.day_of_week === todayDow;
+    const isWorkout = d.day_type === 'workout' && d.workout_id;
+    const workoutName = isWorkout ? (d.workout_name || 'Workout') : 'Rest & Recovery';
+
+    return `
+      <div class="split-mobile-day-row ${isToday ? 'is-today' : ''} ${!isWorkout ? 'is-rest' : ''}" onclick="openDayEditor(${d.day_of_week})">
+        <div class="split-mobile-day-left">
+          <span class="split-mobile-day-name">${d.day_name}</span>
+          ${isToday ? '<span class="split-mobile-today-badge">TODAY</span>' : ''}
+        </div>
+        <div class="split-mobile-day-right">
+          <span class="split-mobile-workout-name ${!isWorkout ? 'is-rest-label' : ''}">${workoutName}</span>
+          <span class="split-mobile-chevron">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </span>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Mobile Saved Splits Cards List
+  const savedSplitsMobileHtml = state.splits.map(s => {
+    const isSplitActive = s.is_active === 1;
+    const sDays = s.schedule || [];
+    const workoutCount = sDays.filter(d => d.day_type === 'workout' && d.workout_id).length;
+    let shortDesc = '';
+    if (s.name.includes('5-Day')) {
+      shortDesc = '5-Day PPL Split';
+    } else if (s.name.includes('6-Day') || s.name.includes('PPL')) {
+      shortDesc = '6 workouts / week';
+    } else if (workoutCount > 0) {
+      shortDesc = `${workoutCount} workouts / week`;
+    } else if (s.description) {
+      shortDesc = s.description.split('.')[0];
+    } else {
+      shortDesc = 'Custom training split';
+    }
+
+    return `
+      <div class="split-mobile-saved-card ${isSplitActive ? 'is-active-split' : ''}" onclick="selectSplit(${s.id})">
+        <div class="split-mobile-saved-info">
+          <div class="split-mobile-saved-name">${s.name}</div>
+          <div class="split-mobile-saved-desc">${shortDesc}</div>
+        </div>
+        <div class="split-mobile-saved-action">
+          ${isSplitActive 
+            ? `<span class="split-mobile-active-check" title="Active Split">
+                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#FF5D5D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+               </span>` 
+            : `<span class="split-mobile-inactive-chevron">
+                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+               </span>`
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
+
   return `
     <div class="split-screen">
-      <div class="view-header">
-        <div class="split-hub-header">
-          <div>
-            <h1 class="view-title">My Training Split</h1>
-            <p class="view-subtitle">7-Day weekly planner from Monday to Sunday.</p>
+      <!-- Mobile Split Layout (< 1024px) -->
+      <div class="split-mobile-view">
+        <div class="split-mobile-header">
+          <h1 class="split-mobile-title">My Split</h1>
+          <p class="split-mobile-subtitle">Your weekly training plan</p>
+        </div>
+
+        <div class="split-mobile-section">
+          <div class="split-mobile-section-header">
+            <span class="split-mobile-section-title">WEEK SCHEDULE</span>
           </div>
-          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-            ${!isActive ? `<button class="btn btn-secondary btn-sm" onclick="activateSplit(${currentSplit.id})">${renderIcon('star', 'cx-icon cx-icon-xs cx-icon-inline cx-gold')} Set as Active Split</button>` : `<span class="split-active-badge">${renderIcon('star', 'cx-icon cx-icon-xs cx-icon-inline')} Active Program</span>`}
-            <button class="btn-new-split" onclick="openCreateSplitModal()">${renderIcon('plus', 'cx-icon cx-icon-xs cx-icon-inline')} + New Split</button>
+          <div class="split-mobile-schedule-list">
+            ${dayCardsMobileHtml}
+          </div>
+        </div>
+
+        <div class="split-mobile-section" style="margin-top:28px;">
+          <div class="split-mobile-section-header">
+            <span class="split-mobile-section-title">SAVED SPLITS</span>
+            <button class="btn-mobile-new-split" onclick="openCreateSplitModal()">+ New Split</button>
+          </div>
+          <div class="split-mobile-saved-list">
+            ${savedSplitsMobileHtml}
           </div>
         </div>
       </div>
 
-      ${subTabsHtml}
-
-      <div class="split-tabs-bar">
-        ${splitTabsHtml}
-      </div>
-
-      <div class="schedule-grid">
-        ${dayCardsHtml}
-      </div>
-
-      <div class="card" style="margin-top:20px;">
-        <div class="card-header" style="justify-content:space-between; align-items:center;">
-          <span class="card-title">${currentSplit.name} Settings</span>
-          ${state.splits.length > 1 ? `<button class="btn btn-danger btn-sm" onclick="handleDeleteSplit(${currentSplit.id}, '${currentSplit.name}')">Delete Split</button>` : ''}
+      <!-- Desktop Split Layout (>= 1024px) -->
+      <div class="split-desktop-view">
+        <div class="view-header">
+          <div class="split-hub-header">
+            <div>
+              <h1 class="view-title">My Training Split</h1>
+              <p class="view-subtitle">7-Day weekly planner from Monday to Sunday.</p>
+            </div>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+              ${!isActive ? `<button class="btn btn-secondary btn-sm" onclick="activateSplit(${currentSplit.id})">${renderIcon('star', 'cx-icon cx-icon-xs cx-icon-inline cx-gold')} Set as Active Split</button>` : `<span class="split-active-badge">${renderIcon('star', 'cx-icon cx-icon-xs cx-icon-inline')} Active Program</span>`}
+              <button class="btn-new-split" onclick="openCreateSplitModal()">${renderIcon('plus', 'cx-icon cx-icon-xs cx-icon-inline')} + New Split</button>
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <p style="color:var(--text-muted); font-size:13px; margin:0;">
-            ${currentSplit.description || 'Custom weekly split configuration.'}
-            ${isActive ? ' Currently powering the Home screen.' : ''}
-          </p>
+
+        ${subTabsHtml}
+
+        <div class="split-tabs-bar">
+          ${splitTabsHtml}
+        </div>
+
+        <div class="schedule-grid">
+          ${dayCardsHtml}
+        </div>
+
+        <div class="card" style="margin-top:20px;">
+          <div class="card-header" style="justify-content:space-between; align-items:center;">
+            <span class="card-title">${currentSplit.name} Settings</span>
+            ${state.splits.length > 1 ? `<button class="btn btn-danger btn-sm" onclick="handleDeleteSplit(${currentSplit.id}, '${currentSplit.name}')">Delete Split</button>` : ''}
+          </div>
+          <div class="card-body">
+            <p style="color:var(--text-muted); font-size:13px; margin:0;">
+              ${currentSplit.description || 'Custom weekly split configuration.'}
+              ${isActive ? ' Currently powering the Home screen.' : ''}
+            </p>
+          </div>
         </div>
       </div>
 
       ${dayEditorHtml}
+      ${dayEditorMobileSheetHtml}
       ${createSplitModalHtml}
     </div>`;
 }
@@ -1180,6 +1368,103 @@ async function handleSaveScheduleDay(event, splitId, dayIndex) {
   } catch (e) {
     showToast(`Error updating day: ${e.message}`, true);
   }
+}
+
+async function assignMobileScheduleDay(splitId, dayIndex, dayType, workoutId = null) {
+  const sheet = document.getElementById('split-bottom-sheet');
+  const backdrop = document.getElementById('split-bottom-sheet-backdrop');
+  if (sheet) sheet.classList.add('is-closing');
+  if (backdrop) backdrop.classList.add('is-closing');
+
+  try {
+    await API.updateScheduleDay(splitId, dayIndex, {
+      day_type: dayType,
+      workout_id: workoutId
+    });
+    const DAY_NAMES_MON = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const dayName = DAY_NAMES_MON[dayIndex] || 'Day';
+    const assignedName = dayType === 'rest' 
+      ? 'Rest & Recovery' 
+      : (state.workouts.find(w => w.id === workoutId)?.name || 'Workout');
+    showToast(`${dayName} set to ${assignedName}`);
+    await loadSplitDetail(splitId);
+    await loadTodayResolved();
+    state.editingDayIndex = null;
+    render();
+  } catch (e) {
+    showToast(`Error updating schedule: ${e.message}`, true);
+    state.editingDayIndex = null;
+    render();
+  }
+}
+
+function closeMobileBottomSheet() {
+  const sheet = document.getElementById('split-bottom-sheet');
+  const backdrop = document.getElementById('split-bottom-sheet-backdrop');
+  if (sheet) sheet.classList.add('is-closing');
+  if (backdrop) backdrop.classList.add('is-closing');
+  setTimeout(() => {
+    state.editingDayIndex = null;
+    render();
+  }, 220);
+}
+
+function initBottomSheetTouch() {
+  const sheet = document.getElementById('split-bottom-sheet');
+  if (!sheet) return;
+
+  let startY = 0;
+  let currentY = 0;
+  let isDragging = false;
+
+  const handleTouchStart = (e) => {
+    const isAtTop = sheet.querySelector('.split-sheet-body')?.scrollTop === 0;
+    const isHandle = e.target.closest('.split-sheet-drag-handle-wrap') || e.target.closest('.split-sheet-header');
+    if (isAtTop || isHandle) {
+      startY = e.touches[0].clientY;
+      currentY = startY;
+      isDragging = true;
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!isDragging) return;
+    currentY = e.touches[0].clientY;
+    const deltaY = currentY - startY;
+    if (deltaY > 0) {
+      sheet.style.transform = `translateY(${deltaY}px)`;
+      sheet.style.transition = 'none';
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    const deltaY = currentY - startY;
+    if (deltaY > 65) {
+      closeMobileBottomSheet();
+    } else {
+      sheet.style.transform = '';
+      sheet.style.transition = 'transform 200ms cubic-bezier(0.22, 1, 0.36, 1.15)';
+    }
+  };
+
+  sheet.addEventListener('touchstart', handleTouchStart, { passive: true });
+  sheet.addEventListener('touchmove', handleTouchMove, { passive: true });
+  sheet.addEventListener('touchend', handleTouchEnd, { passive: true });
+}
+
+if (typeof window !== 'undefined' && !window.__splitSheetKeydownAttached) {
+  window.__splitSheetKeydownAttached = true;
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && state.editingDayIndex !== null) {
+      if (window.innerWidth < 1024) {
+        closeMobileBottomSheet();
+      } else {
+        closeDayEditor();
+      }
+    }
+  });
 }
 
 
