@@ -3484,10 +3484,10 @@
   color: var(--text-muted);
 }
 
-/* Target Row (Flexible Responsive Grid) */
+/* Target Row (2 Equal Side-by-Side Columns) */
 .runner-target-pills-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
@@ -3500,6 +3500,19 @@
   flex-direction: column;
   gap: 2px;
   transition: all 0.15s ease;
+}
+
+.runner-context-sep {
+  opacity: 0.4;
+  margin: 0 4px;
+}
+
+.runner-context-rest-badge {
+  color: var(--cx-text-secondary, #8A8A93);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .runner-target-pill.target-goal {
@@ -4713,22 +4726,307 @@
 .runner-rest-adjust-row { gap: 8px; margin-top: 6px; }
 
 @media (max-width: 640px) {
-  .runner-sticky-header { padding: 10px 14px; gap: 8px; margin-bottom: 16px; }
-  .runner-header-title { font-size: 15px; }
-  .runner-header-end-btn { padding: 6px 10px; font-size: 11.5px; }
-  .runner-execution-card { padding: 20px 16px 18px; border-radius: 16px; gap: 14px; }
-  .runner-exercise-name-title { font-size: 24px; }
-  .runner-card-ex-name { font-size: 20px; }
-  .runner-stepper-number { font-size: 48px; }
-  .runner-stepper-zone { padding: 8px 10px; gap: 14px; }
-  .stepper-btn { width: 44px; height: 44px; font-size: 20px; }
-  .runner-cta-btn { height: 52px; font-size: 14.5px; border-radius: 12px; }
-  .runner-rest-hero-digits { font-size: 52px; }
-  .runner-complete-modal-card { padding: 20px 18px; gap: 12px; }
-  .runner-complete-title { font-size: 19px; }
-  .runner-phase-transition-card { padding: 24px 20px; }
-  .runner-target-pill { padding: 8px 12px; }
-  .runner-shortcut-pill { font-size: 11px; padding: 6px 10px; }
+  .runner-sticky-header {
+    padding: 10px 16px 4px;
+    gap: 10px;
+    margin-bottom: 10px;
+    background: transparent;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .runner-header-title { font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .runner-header-subtitle { font-size: 10.5px; font-weight: 700; color: var(--phase-accent, #ff5d5d); }
+  .runner-execution-card { padding: 14px 14px 12px; border-radius: 16px; gap: 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); }
+  .runner-exercise-name-title { font-size: 19px; font-weight: 800; }
+  .runner-card-ex-name { font-size: 18px; }
+  .runner-stepper-number { font-size: 36px; font-weight: 900; }
+  .runner-stepper-zone { padding: 4px 6px; gap: 12px; }
+  .runner-progress-ring-wrap { width: 96px; height: 96px; }
+  .stepper-btn { width: 38px; height: 38px; font-size: 18px; border-radius: 12px; }
+  .runner-cta-btn { height: 46px; font-size: 14px; font-weight: 800; border-radius: 12px; }
+  .runner-nav-btn { height: 34px; font-size: 11.5px; border-radius: 10px; }
+  .runner-rest-hero-digits { font-size: 42px; }
+  .runner-complete-modal-card { padding: 18px 16px; gap: 10px; }
+  .runner-complete-title { font-size: 18px; }
+  .runner-phase-transition-card { padding: 20px 16px; }
+  .runner-target-pill { padding: 5px 8px; border-radius: 8px; }
+  .runner-shortcut-pill { font-size: 11px; padding: 4px 8px; border-radius: 8px; }
+}
+
+/* ─── Ultra Clean Modern Header System (Apple Aesthetics & Lineless) ──────── */
+.runner-clean-header {
+  width: 100%;
+  background: transparent;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  position: relative !important;
+  top: auto !important;
+  z-index: 10;
+  padding: 12px 16px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.runner-clean-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.runner-clean-circle-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #ffffff;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.runner-clean-circle-btn:active {
+  transform: scale(0.92);
+}
+
+.runner-clean-exit-btn {
+  color: #c9cbd6;
+}
+.runner-clean-exit-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.runner-clean-done-btn {
+  background: rgba(255, 93, 93, 0.14);
+  border-color: rgba(255, 93, 93, 0.25);
+  color: var(--phase-train, #FF5D5D);
+}
+.runner-clean-done-btn:hover,
+.runner-clean-done-btn:active {
+  background: rgba(255, 93, 93, 0.28);
+  box-shadow: 0 0 14px rgba(255, 93, 93, 0.35);
+}
+
+.runner-clean-center-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 0;
+  flex: 1;
+}
+
+.runner-clean-title {
+  font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif);
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.runner-clean-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8E8E93;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.runner-clean-dot-sep {
+  color: #48484A;
+  font-size: 12px;
+}
+
+/* Apple-Style Segmented Pill Control (Warm-Up, Workout, Cool-Down) */
+.runner-apple-pill-segment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(118, 118, 128, 0.18);
+  border-radius: 9999px;
+  padding: 3px;
+  gap: 2px;
+  width: 100%;
+  box-sizing: border-box;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.runner-apple-pill-btn {
+  flex: 1;
+  height: 32px;
+  border-radius: 9999px;
+  background: transparent;
+  border: none;
+  color: #8E8E93;
+  font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.runner-apple-pill-btn:active {
+  transform: scale(0.97);
+}
+
+.runner-apple-pill-btn.is-active {
+  background: #636366;
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+.runner-apple-pill-btn.is-active.phase-warmup {
+  background: rgba(255, 138, 61, 0.22);
+  color: #FFAA55;
+  box-shadow: 0 3px 10px rgba(255, 138, 61, 0.25), inset 0 0 0 1px rgba(255, 138, 61, 0.35);
+}
+
+.runner-apple-pill-btn.is-active.phase-main {
+  background: rgba(255, 93, 93, 0.22);
+  color: #FF7575;
+  box-shadow: 0 3px 10px rgba(255, 93, 93, 0.25), inset 0 0 0 1px rgba(255, 93, 93, 0.35);
+}
+
+.runner-apple-pill-btn.is-active.phase-cooldown {
+  background: rgba(53, 216, 176, 0.22);
+  color: #4DEAC3;
+  box-shadow: 0 3px 10px rgba(53, 216, 176, 0.25), inset 0 0 0 1px rgba(53, 216, 176, 0.35);
+}
+
+.runner-apple-pill-btn.is-done {
+  color: #3ecf8e;
+}
+
+/* Minimalist Clean Counter & Queue Trigger (Seamless interactive row) */
+.runner-clean-counter-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 0 2px;
+}
+
+.runner-clean-queue-trigger {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #8E8E93;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.runner-clean-queue-trigger:hover,
+.runner-clean-queue-trigger:active {
+  color: #FFFFFF;
+}
+
+.runner-clean-ex-counter {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8E8E93;
+  letter-spacing: -0.01em;
+}
+
+.runner-clean-queue-trigger:hover .runner-clean-ex-counter,
+.runner-clean-queue-trigger:active .runner-clean-ex-counter {
+  color: #FFFFFF;
+}
+
+/* Set Selector Pills Bar for Rapid Set Tracking */
+.runner-set-selector-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 6px;
+  width: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.runner-set-selector-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.runner-set-badge-pill {
+  flex: 1;
+  min-width: 58px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8a8d9f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-heading, var(--sans));
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.runner-set-badge-pill:active {
+  transform: scale(0.96);
+}
+
+.runner-set-badge-pill.is-active {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.18);
+  border-color: var(--phase-accent, #ff5d5d);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.28);
+}
+
+.runner-set-badge-pill.is-done {
+  background: rgba(62, 207, 142, 0.12);
+  border-color: rgba(62, 207, 142, 0.35);
+  color: #3ecf8e;
+}
+
+.runner-set-badge-pill.is-skipped {
+  background: rgba(201, 138, 61, 0.1);
+  border-color: rgba(201, 138, 61, 0.25);
+  color: #c98a3d;
+  opacity: 0.7;
+}
+
+.runner-set-pill-status {
+  font-size: 11px;
+  font-family: var(--mono);
 }
 
 /* ─── 15. USABILITY-FIRST 3-PANEL & MOBILE DRAWER REDESIGN ────────────────── */
@@ -4969,6 +5267,10 @@
   width: 100%;
   max-width: 680px;
   margin: 0 auto;
+  transform: none !important;
+  filter: none !important;
+  perspective: none !important;
+  contain: none !important;
 }
 
 .runner-execution-card {
@@ -4976,11 +5278,11 @@
   backdrop-filter: blur(var(--liquid-blur-md, 12px));
   -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
   border: var(--liquid-border-highlight);
-  border-radius: 22px;
-  padding: 26px 28px 22px;
+  border-radius: 18px;
+  padding: 16px 18px 14px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 10px;
   box-shadow: var(--liquid-shadow-lg), var(--liquid-highlight-top-elevated);
   position: relative;
 }
@@ -5006,48 +5308,48 @@
 
 .runner-exercise-name-title {
   font-family: var(--font-heading);
-  font-size: 30px;
+  font-size: 21px;
   font-weight: 800;
   color: #ffffff;
-  letter-spacing: -0.025em;
-  line-height: 1.15;
+  letter-spacing: -0.02em;
+  line-height: 1.18;
   margin: 0;
 }
 
 .runner-exercise-context-text {
   font-family: var(--font-heading);
-  font-size: 13px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--cx-text-secondary, #8A8A93);
-  letter-spacing: 0.04em;
-  margin-top: 4px;
+  letter-spacing: 0.03em;
+  margin-top: 2px;
 }
 
 .runner-card-badges-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 .runner-badge-set {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--phase-accent, #FF5D5D);
   background: var(--phase-accent-dim, rgba(255, 93, 93, 0.1));
   border: 1px solid var(--phase-accent-border, rgba(255, 93, 93, 0.25));
-  border-radius: 8px;
-  padding: 3px 10px;
+  border-radius: 6px;
+  padding: 2px 8px;
   box-shadow: var(--liquid-highlight-top-subtle);
 }
 
 .runner-badge-target, .runner-badge-rest {
-  font-size: 12px;
+  font-size: 11px;
   color: #cbd5e1;
   background: rgba(255, 255, 255, 0.03);
   border: var(--liquid-border-subtle);
-  border-radius: 8px;
-  padding: 2px 8px;
+  border-radius: 6px;
+  padding: 2px 7px;
   box-shadow: var(--liquid-highlight-top-subtle);
 }
 
@@ -5055,8 +5357,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
-  padding: 12px 20px;
+  gap: 14px;
+  padding: 4px 10px;
 }
 
 .runner-stepper-display {
@@ -5064,7 +5366,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 140px;
+  min-width: 100px;
   position: relative;
 }
 
@@ -5074,8 +5376,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 160px;
-  height: 160px;
+  width: 104px;
+  height: 104px;
 }
 
 .runner-progress-ring-svg {
@@ -5112,35 +5414,35 @@
 
 .runner-stepper-number {
   font-family: var(--mono);
-  font-size: 58px;
+  font-size: 38px;
   font-weight: 900;
   line-height: 1;
   color: #ffffff;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
 .runner-stepper-unit {
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 800;
   letter-spacing: 0.08em;
   color: var(--cx-text-secondary, #8A8A93);
-  margin-top: 6px;
+  margin-top: 2px;
   text-transform: uppercase;
   text-align: center;
 }
 
 .stepper-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  font-size: 22px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 19px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.04);
-  border: var(--liquid-border);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: var(--liquid-highlight-top-subtle);
   color: #ffffff;
   cursor: pointer;
@@ -5151,36 +5453,36 @@
   background: rgba(255, 255, 255, 0.09);
   border-color: rgba(255, 255, 255, 0.2);
   color: #ffffff;
-  transform: scale(1.06);
+  transform: scale(1.05);
   box-shadow: var(--liquid-shadow-sm), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
 }
 
 .stepper-btn:active {
-  transform: scale(0.94);
+  transform: scale(0.95);
 }
 
 .runner-cta-zone {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .runner-cta-btn,
 button.runner-cta-btn {
-  height: 56px;
-  font-size: 15.5px;
+  height: 46px;
+  font-size: 14.5px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  border-radius: 14px;
+  letter-spacing: 0.03em;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   background: var(--phase-accent, #FF8A3D) !important;
   background-image: none !important;
   color: #ffffff !important;
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  box-shadow: 0 6px 22px rgba(var(--phase-accent-rgb, 255, 138, 61), 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 4px 16px rgba(var(--phase-accent-rgb, 255, 138, 61), 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.25) !important;
   cursor: pointer;
   transition: all 0.18s ease;
 }
@@ -5755,5 +6057,323 @@ button.runner-nav-btn:disabled {
     transition: none !important;
     opacity: 1 !important;
   }
+}
+
+/* ─── Inline Exercise Queue (Directly Below Execution Card) ───────────────── */
+.runner-inline-queue-section {
+  width: 100%;
+  margin-top: 22px;
+  margin-bottom: 110px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 1024px) {
+  .runner-inline-queue-section {
+    margin-bottom: 40px;
+  }
+}
+
+.runner-inline-queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 2px;
+}
+
+.runner-queue-section-title {
+  font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #8E8E93;
+  text-transform: uppercase;
+}
+
+.runner-queue-section-count {
+  font-size: 11.5px;
+  color: #636366;
+  font-weight: 600;
+}
+
+.runner-inline-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.runner-queue-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.runner-queue-item-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.runner-queue-item-card:active {
+  transform: scale(0.98);
+}
+
+/* Active Highlight */
+.runner-queue-item-card.is-active {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 16px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.22);
+}
+
+/* Completed & Greyed Out (Pushed to bottom) */
+.runner-queue-item-card.is-completed {
+  opacity: 0.45;
+  background: rgba(0, 0, 0, 0.22);
+  border-color: rgba(255, 255, 255, 0.03);
+}
+
+.runner-queue-item-card.is-completed:hover {
+  opacity: 0.75;
+}
+
+.runner-queue-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.runner-queue-item-badge {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8E8E93;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading, var(--sans));
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.runner-queue-item-badge.badge-active {
+  background: var(--phase-accent, #FF5D5D);
+  border-color: var(--phase-accent, #FF5D5D);
+  color: #FFFFFF;
+  box-shadow: 0 0 10px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.4);
+}
+
+.runner-queue-item-badge.badge-done {
+  background: rgba(62, 207, 142, 0.15);
+  border-color: rgba(62, 207, 142, 0.35);
+  color: #3ecf8e;
+}
+
+.runner-queue-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.runner-queue-item-name {
+  font-family: var(--font-heading, var(--sans));
+  font-size: 14px;
+  font-weight: 700;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-queue-item-card.is-completed .runner-queue-item-name {
+  text-decoration: line-through;
+  color: #8E8E93;
+}
+
+.runner-queue-item-meta {
+  font-size: 11px;
+  color: #8E8E93;
+}
+
+.runner-queue-item-right {
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.runner-queue-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.runner-queue-tag.tag-active {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.2);
+  color: var(--phase-accent, #FF5D5D);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.runner-queue-tag.tag-done {
+  background: rgba(62, 207, 142, 0.12);
+  color: #3ecf8e;
+}
+
+.runner-queue-tag.tag-target {
+  background: rgba(255, 255, 255, 0.04);
+  color: #8E8E93;
+}
+
+/* ─── Floating Rest Card (Exact Match to User Reference Mockup) ──────────── */
+.runner-floating-rest-island {
+  position: fixed !important;
+  bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: calc(100% - 32px) !important;
+  max-width: 440px !important;
+  z-index: 9999 !important;
+  background: #17171C !important;
+  border-radius: 20px !important;
+  padding: 16px 20px 14px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 30px rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  animation: runnerSlideUpFloat 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-sizing: border-box !important;
+  pointer-events: auto !important;
+}
+
+@media (min-width: 1024px) {
+  .runner-floating-rest-island {
+    bottom: 32px !important;
+    width: 440px !important;
+  }
+}
+
+@keyframes runnerSlideUpFloat {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Top Row: Digits + Progress Bar */
+.runner-rest-card-top-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.runner-rest-timer-digits {
+  font-family: var(--mono, -apple-system, BlinkMacSystemFont, monospace);
+  font-size: 38px;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.runner-rest-timer-digits.is-complete {
+  color: var(--cx-success, #3ECF8E);
+}
+
+.runner-rest-progress-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.runner-rest-progress-fill {
+  height: 100%;
+  background: var(--phase-accent, #FF5D5D);
+  border-radius: 4px;
+  transition: width 0.4s linear;
+}
+
+/* Bottom Row: Stepper Controls + Skip Button */
+.runner-rest-card-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.runner-rest-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.runner-rest-text-btn {
+  background: none;
+  border: none;
+  color: var(--phase-accent, #FF5D5D);
+  font-family: var(--font-heading, var(--sans));
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.runner-rest-text-btn:hover {
+  opacity: 0.85;
+}
+
+.runner-rest-text-btn:active {
+  transform: scale(0.95);
+}
+
+.runner-rest-pause-btn {
+  color: #8E8E93;
+  font-size: 13.5px;
+}
+
+.runner-rest-skip-pill-btn {
+  background: var(--phase-accent, #FF5D5D);
+  color: #FFFFFF;
+  font-family: var(--font-heading, var(--sans));
+  font-size: 16px;
+  font-weight: 800;
+  padding: 10px 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.runner-rest-skip-pill-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.runner-rest-skip-pill-btn:active {
+  transform: translateY(1px);
 }
 

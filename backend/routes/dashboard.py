@@ -332,6 +332,7 @@ def get_upcoming_workouts():
 
 
 @dashboard_bp.route('/dashboard/records', methods=['GET'])
+@dashboard_bp.route('/records', methods=['GET'])
 @dashboard_bp.route('/api/recent-prs', methods=['GET'])
 def get_personal_records():
     """Return all-time Personal Records (PRs) across all exercises with dynamic relative date labels."""

@@ -532,11 +532,12 @@ function renderHomeView() {
 
     let heroStatusTag = 'TODAY\'S WORKOUT';
     if (isThisActive) {
-      if (active.status === 'paused') {
+      const isPaused = active.status === 'paused' || active.phaseState === 'PAUSED';
+      if (isPaused) {
         heroStatusTag = 'WORKOUT PAUSED';
         heroBtnHtml = `
           <button class="home-hero-btn" onclick="openWorkoutView()">
-            <span>${renderIcon('play', 'cx-icon cx-icon-inline cx-icon-sm')} Resume Workout</span>
+            <span>${renderIcon('playCircle', 'cx-icon cx-icon-inline cx-icon-sm')} Resume Workout</span>
             <span class="arrow-icon">${renderIcon('arrowRight', 'cx-icon cx-icon-sm')}</span>
           </button>`;
       } else {
@@ -1143,6 +1144,8 @@ function renderHomeView() {
   let pillClass = 'is-rest';
   const isCardRest = !isSelectedWorkout;
 
+  const isWorkoutPaused = isThisActive && (active?.status === 'paused' || active?.phaseState === 'PAUSED');
+
   if (isSelectedWorkout) {
     let workoutObj = (isSelectedToday && resolved?.workout) ? resolved.workout : null;
     if (!workoutObj && state.workouts && state.workouts.length > 0) {
@@ -1156,10 +1159,19 @@ function renderHomeView() {
       pillLabel = 'View';
       pillClass = 'is-done is-view';
     } else if (isSelectedToday && isThisActive) {
-      cardTitle = `${baseName} — In Progress`;
-      pillAction = `openWorkoutView()`;
-      pillLabel = 'Resume';
-      pillClass = 'is-resume';
+      if (isWorkoutPaused) {
+        cardTitle = `${baseName} — Paused`;
+        pillAction = `openWorkoutView()`;
+        pillLabel = 'Resume';
+        pillClass = 'is-resume is-paused';
+        mobileTodayTag = 'TODAY · PAUSED';
+      } else {
+        cardTitle = `${baseName} — In Progress`;
+        pillAction = `openWorkoutView()`;
+        pillLabel = 'Resume';
+        pillClass = 'is-resume is-active';
+        mobileTodayTag = 'TODAY · IN PROGRESS';
+      }
     } else if (isSelectedToday) {
       cardTitle = baseName;
       pillAction = `startWorkoutFromResolved()`;
@@ -1170,6 +1182,40 @@ function renderHomeView() {
       pillAction = `startWorkoutFromId(${selectedScheduleItem.workout_id})`;
       pillLabel = 'Start';
       pillClass = 'is-start';
+    }
+  }
+
+  // Determine dynamic badge icon & state classes
+  let workoutBadgeIcon = 'zap';
+  let badgeStateClass = '';
+
+  if (isCardRest) {
+    workoutBadgeIcon = 'moon';
+    badgeStateClass = 'is-rest';
+  } else if (isSelectedDayDone) {
+    workoutBadgeIcon = 'check';
+    badgeStateClass = 'is-completed';
+  } else if (isSelectedToday && isThisActive) {
+    if (isWorkoutPaused) {
+      workoutBadgeIcon = 'pauseCircle';
+      badgeStateClass = 'is-paused';
+    } else {
+      workoutBadgeIcon = 'playCircle';
+      badgeStateClass = 'is-in-progress';
+    }
+  } else {
+    // Determine movement icon from routine name
+    const lowerName = (cardTitle || selectedScheduleItem?.workout_name || '').toLowerCase();
+    if (lowerName.includes('pull')) {
+      workoutBadgeIcon = 'pullup';
+    } else if (lowerName.includes('push')) {
+      workoutBadgeIcon = 'zap';
+    } else if (lowerName.includes('leg')) {
+      workoutBadgeIcon = 'flame';
+    } else if (lowerName.includes('skill') || lowerName.includes('handstand')) {
+      workoutBadgeIcon = 'rings';
+    } else {
+      workoutBadgeIcon = 'zap';
     }
   }
 
@@ -1193,9 +1239,9 @@ function renderHomeView() {
         </div>
       </div>
 
-      <div class="home-mobile-workout-inset home-mobile-today-card ${isCardRest ? 'is-rest' : (isSelectedDayDone ? 'is-completed' : (isThisActive && isSelectedToday ? 'is-in-progress' : ''))}">
+      <div class="home-mobile-workout-inset home-mobile-today-card ${badgeStateClass}">
         <div class="home-mobile-workout-badge">
-          ${renderIcon(isCardRest ? 'moon' : 'dumbbell', 'cx-icon cx-icon-sm')}
+          ${renderIcon(workoutBadgeIcon, 'cx-icon cx-icon-sm')}
         </div>
         <div class="home-mobile-workout-meta">
           <span class="home-mobile-workout-tag home-mobile-today-tag">${mobileTodayTag}</span>
@@ -1249,7 +1295,7 @@ function renderHomeView() {
     } else if (diffToGoal < -0.05) {
       goalSubtext = `${Math.abs(diffToGoal).toFixed(1)} ${weightUnit} to gain`;
     } else {
-      goalSubtext = 'Target goal reached! 🎉';
+      goalSubtext = 'Target goal reached!';
     }
   }
 
@@ -1258,7 +1304,7 @@ function renderHomeView() {
       <div class="home-mobile-metric-header">
         <span class="home-mobile-metric-title">Body weight</span>
         <div class="home-mobile-metric-header-right">
-          <span class="home-mobile-goal-pill" onclick="promptSetTargetWeight()" title="Click to edit goal">🎯 ${targetKg}</span>
+          <span class="home-mobile-goal-pill" onclick="promptSetTargetWeight()" title="Click to edit goal">${renderIcon('target', 'cx-icon cx-icon-xs cx-icon-inline')} ${targetKg}</span>
           <button class="home-mobile-log-link" onclick="openQuickCheckInModal(null)">+ Log</button>
         </div>
       </div>
@@ -1274,7 +1320,7 @@ function renderHomeView() {
         </div>
 
         <div class="home-mobile-metric-goal-subtext">
-          <span class="home-mobile-goal-dot">🎯</span>
+          <span class="home-mobile-goal-dot">${renderIcon('target', 'cx-icon cx-icon-xs')}</span>
           <span>Goal ${targetKg} ${weightUnit} · ${goalSubtext}</span>
         </div>
 
@@ -1299,7 +1345,7 @@ function renderHomeView() {
     <div class="home-mobile-section-card home-mobile-streak-card home-mobile-streak-ref-card" onclick="switchView('history_list')">
       <span class="home-mobile-section-title sr-only" style="display:none;">CURRENT STREAK</span>
       <div class="home-mobile-streak-left">
-        <span class="home-mobile-streak-flame-icon home-mobile-streak-flame">🔥</span>
+        <span class="home-mobile-streak-flame-icon home-mobile-streak-flame">${renderIcon('flame', 'cx-icon cx-icon-sm cx-icon-flame')}</span>
         <div class="home-mobile-streak-text-group home-mobile-streak-val">
           <div class="home-mobile-streak-heading home-mobile-streak-num">${streakDays} day streak</div>
           <div class="home-mobile-streak-subline">${weekSessionsDone} / ${plannedWorkoutsCount} this week · ${totalWorkoutsCount} workouts total</div>

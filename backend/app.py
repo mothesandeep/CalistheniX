@@ -63,7 +63,7 @@ def create_app(config_class=Config):
     cors_origins = flask_app.config.get('CORS_ORIGINS', '*')
     CORS(flask_app, resources={r"/*": {"origins": cors_origins}})
 
-    # Register Route Blueprints
+    # Register Route Blueprints (both standard paths and /api prefixes)
     flask_app.register_blueprint(splits_bp)
     flask_app.register_blueprint(workouts_bp)
     flask_app.register_blueprint(exercises_bp)
@@ -71,6 +71,15 @@ def create_app(config_class=Config):
     flask_app.register_blueprint(dashboard_bp)
     flask_app.register_blueprint(backup_bp)
     flask_app.register_blueprint(legacy_bp)   # deprecated but still served
+
+    # Register API-prefixed routes for REST client compatibility
+    flask_app.register_blueprint(splits_bp, url_prefix='/api', name='api_splits')
+    flask_app.register_blueprint(workouts_bp, url_prefix='/api', name='api_workouts')
+    flask_app.register_blueprint(exercises_bp, url_prefix='/api', name='api_exercises')
+    flask_app.register_blueprint(sessions_bp, url_prefix='/api', name='api_sessions')
+    flask_app.register_blueprint(dashboard_bp, url_prefix='/api', name='api_dashboard')
+    flask_app.register_blueprint(backup_bp, url_prefix='/api', name='api_backup')
+    flask_app.register_blueprint(legacy_bp, url_prefix='/api', name='api_legacy')
 
     return flask_app
 

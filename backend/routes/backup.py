@@ -12,6 +12,7 @@ backup_bp = Blueprint('backup', __name__)
 
 
 @backup_bp.route('/export', methods=['GET'])
+@backup_bp.route('/backup', methods=['GET', 'POST'])
 def export_all_logs():
     """Full JSON dump of all workout_sessions, logs, and exercise catalogs.
     This is the backup safety net — comprehensive and versioned."""
@@ -68,6 +69,7 @@ def export_all_logs():
 
 
 @backup_bp.route('/import', methods=['POST'])
+@backup_bp.route('/restore', methods=['POST'])
 def import_logs():
     """Import and merge a JSON backup dump.
     Idempotent: uses client_uuid and session_uuid to skip already-existing entries.

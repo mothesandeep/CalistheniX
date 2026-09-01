@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>CalistheniX — Offline Mode</title>
+  <meta name="theme-color" content="#0a0a0f" />
+  <style>
+    :root {
+      --bg-canvas: #0a0a0f;
+      --bg-surface: #12121a;
+      --bg-card: #181824;
+      --border-subtle: #222233;
+      --text-primary: #f0f0f8;
+      --text-secondary: #9090aa;
+      --text-muted: #606078;
+      --accent-train: #ff5252;
+      --accent-warmup: #f59e0b;
+      --accent-cool: #2dd4bf;
+      --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-family);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .offline-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      padding: 40px 32px;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-badge span.accent {
+      color: var(--accent-train);
+    }
+
+    .offline-icon-wrap {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-warmup);
+      margin: 8px 0;
+    }
+
+    .offline-icon-wrap svg {
+      width: 40px;
+      height: 40px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    p {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .feature-points {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px;
+      width: 100%;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .feature-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-cool);
+      flex-shrink: 0;
+    }
+
+    .btn-reload {
+      width: 100%;
+      background: var(--accent-train);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    .btn-reload:hover {
+      opacity: 0.9;
+    }
+
+    .btn-reload:active {
+      transform: scale(0.98);
+    }
+
+    .status-pill {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: var(--accent-warmup);
+      background: rgba(245, 158, 11, 0.15);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-card">
+    <div class="logo-badge">
+      Calisthen<span class="accent">iX</span>
+    </div>
+
+    <div class="status-pill">Offline Fallback</div>
+
+    <div class="offline-icon-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="1" y1="1" x2="23" y2="23"></line>
+        <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+        <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+        <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+        <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+        <line x1="12" y1="20" x2="12.01" y2="20"></line>
+      </svg>
+    </div>
+
+    <h1>You are Currently Offline</h1>
+    <p>CalistheniX is engineered offline-first. All your workout blueprints, active runner timers, and training sets are cached locally on this device.</p>
+
+    <div class="feature-points">
+      <div class="feature-item">
+        <div class="feature-dot"></div>
+        <span>Local logs and sets are preserved in browser storage</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-dot"></div>
+        <span>Timers and PR celebrations operate 100% offline</span>
+      </div>
+      <div class="feature-item">
+        <div class="feature-dot"></div>
+        <span>Syncs seamlessly once your connection returns</span>
+      </div>
+    </div>
+
+    <button class="btn-reload" onclick="window.location.href='./index.html'">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+      Return to App Shell
+    </button>
+  </div>
+
+  <script>
+    window.addEventListener('online', () => {
+      window.location.href = './index.html';
+    });
+  </script>
+</body>
+</html>

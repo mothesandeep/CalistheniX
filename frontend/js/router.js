@@ -15,7 +15,8 @@ function render() {
       (v === 'history_list' && (activeView === 'history_list' || activeView === 'session_detail')) ||
       (v === 'progress' && (activeView === 'progress' || activeView === 'history')) ||
       (v === 'prs' && activeView === 'prs') ||
-      (v === 'calendar' && activeView === 'calendar');
+      (v === 'calendar' && activeView === 'calendar') ||
+      (v === 'library' && activeView === 'library');
 
     el.classList.toggle('active', !!isActive);
   });
@@ -58,6 +59,9 @@ function render() {
       break;
     case 'calendar':
       root.innerHTML = renderCalendarView();
+      break;
+    case 'library':
+      root.innerHTML = renderExerciseLibraryView();
       break;
     case 'log':
       root.innerHTML = renderLogView();
@@ -132,6 +136,10 @@ function switchView(view) {
     if (typeof loadDashboardSummary === 'function') {
       loadDashboardSummary().then(render);
     }
+  } else if (view === 'library') {
+    if (typeof loadExercises === 'function') {
+      loadExercises().then(render);
+    }
   }
 
   render();
@@ -198,7 +206,16 @@ function applyHash() {
       return;
     }
   }
-  const validViews = ['home', 'dashboard', 'workout', 'split', 'routine', 'edit', 'log', 'history', 'history_list', 'session_detail', 'progress', 'prs', 'calendar'];
+  if (hash === 'editor' || hash === 'workouts') {
+    state.view = 'split';
+    state.splitActiveSubTab = 'workouts';
+    return;
+  }
+  if (hash === 'library') {
+    state.view = 'library';
+    return;
+  }
+  const validViews = ['home', 'dashboard', 'workout', 'split', 'routine', 'edit', 'log', 'history', 'history_list', 'session_detail', 'progress', 'prs', 'calendar', 'library'];
   state.view = validViews.includes(hash) ? hash : 'home';
 }
 

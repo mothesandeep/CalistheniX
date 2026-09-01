@@ -1,7 +1,8 @@
-const CACHE_NAME = 'calisthenix-v25';
+const CACHE_NAME = 'calisthenix-v26';
 const STATIC_ASSETS = [
   './',
   './index.html',
+  './offline.html',
   './css/variables.css',
   './css/base.css',
   './css/layout.css',
@@ -18,6 +19,7 @@ const STATIC_ASSETS = [
   './css/components/progress-charts.css',
   './css/components/prs.css',
   './css/components/calendar.css',
+  './css/components/exercise-library.css',
   './css/components/settings.css',
   './js/core/constants.js',
   './js/core/utils.js',
@@ -35,6 +37,7 @@ const STATIC_ASSETS = [
   './js/views/personal-records.js',
   './js/views/calendar.js',
   './js/views/split-manager.js',
+  './js/views/exercise-library.js',
   './js/views/settings.js',
   './js/router.js',
   './js/bootstrap.js',
@@ -104,7 +107,7 @@ self.addEventListener('fetch', event => {
         return caches.match(event.request).then(cached => {
           if (cached) return cached;
           if (event.request.mode === 'navigate') {
-            return caches.match('./index.html');
+            return caches.match('./index.html').then(idx => idx || caches.match('./offline.html'));
           }
         });
       })

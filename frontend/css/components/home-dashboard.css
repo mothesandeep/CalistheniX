@@ -1642,6 +1642,37 @@
   color: #FF5D5D;
 }
 
+.home-mobile-workout-inset.is-paused {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(20, 20, 24, 0.95) 100%);
+}
+
+.home-mobile-workout-inset.is-paused .home-mobile-workout-badge {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.5);
+  color: #f59e0b;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.3);
+  animation: pulse-paused 2s infinite ease-in-out;
+}
+
+.home-mobile-workout-pill.is-paused {
+  background: #f59e0b;
+  color: #0b0c10;
+  border-color: #f59e0b;
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+}
+
+@keyframes pulse-paused {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.97);
+    opacity: 0.8;
+  }
+}
+
 .home-mobile-workout-inset.is-rest .home-mobile-workout-badge {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.08);
@@ -1935,9 +1966,18 @@
 }
 
 .home-mobile-streak-flame-icon {
-  font-size: 22px;
-  line-height: 1;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+  color: #ff5252;
+}
+
+.home-mobile-streak-flame-icon svg {
+  width: 24px;
+  height: 24px;
 }
 
 .home-mobile-streak-text-group,
