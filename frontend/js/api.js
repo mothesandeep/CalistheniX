@@ -42,6 +42,7 @@ const API_BASE = 'http://127.0.0.1:5001';
     createSplit: async (payload) => await api('POST', '/splits', payload),
     updateSplit: async (splitId, payload) => await api('PUT', `/splits/${splitId}`, payload),
     activateSplit: async (splitId) => await api('PUT', `/splits/${splitId}`, { is_active: 1 }),
+    updateSplitSchedule: async (splitId, days) => await api('PUT', `/splits/${splitId}/schedule`, { days }),
     updateScheduleDay: async (splitId, dayIndex, payload) => await api('PUT', `/splits/${splitId}/schedule/${dayIndex}`, payload),
     deleteSplit: async (splitId) => await api('DELETE', `/splits/${splitId}`),
 

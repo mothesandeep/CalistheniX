@@ -16,11 +16,19 @@ const state = {
   selectedSplitDetail:   null,     // full split object with 7-day schedule from GET /splits/<id>
   editingDayIndex:       null,     // 0..6 if a day edit modal is active
   showCreateSplitModal:  false,    // create split modal visibility
+  showEditSplitModal:    false,    // edit split modal visibility
+  editingSplitId:        null,     // split id currently being edited in modal
   workouts:              [],       // list of all reusable workouts from GET /workouts
   selectedWorkoutId:     null,     // workout id being viewed/edited in #edit
   selectedWorkoutDetail: null,     // full workout object with exercises from GET /workouts/<id>
   editSubTab:            'workouts', // 'workouts' | 'catalog'
   showCreateWorkoutModal:false,    // create workout modal visibility
+  showExercisePickerModal: false,  // exercise library picker modal visibility
+  exercisePickerPhase:   'main',   // 'warmup' | 'main' | 'cooldown'
+  exercisePickerSearch:  '',       // search term in picker
+  exercisePickerFilter:  'All',    // 'All' | 'Push' | 'Pull' | 'Legs' | 'Core' | 'Skill' | 'Isometric'
+  showAssignDaysModal:   false,    // assign routine to week days modal visibility
+  assignRoutineWorkoutId:null,     // workout id being assigned to week days
   todayResolved:         null,     // { status, day_of_week, day_name, split_name, workout, next_workout }
   // Dashboard view
   dashboardSummary: null,    // { streak_days, week_sessions, week_sets, top_movers }
