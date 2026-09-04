@@ -287,7 +287,7 @@ async function runTest() {
   const restCheck = await send('Runtime.evaluate', {
     expression: `
       (() => {
-        const restCard = document.querySelector('.runner-rest-hero-card') || document.querySelector('#runner-rest-card') || document.querySelector('.runner-rest-dedicated-card');
+        const restCard = document.querySelector('.runner-floating-rest-island') || document.querySelector('#runner-floating-rest-island') || document.querySelector('.runner-rest-hero-card') || document.querySelector('#runner-rest-card') || document.querySelector('.runner-rest-dedicated-card');
         const digits = document.querySelector('#workout-rest-timer-val')?.innerText;
         const center = document.querySelector('.runner-center-column');
         return {

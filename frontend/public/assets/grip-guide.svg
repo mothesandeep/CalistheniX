@@ -1,0 +1,224 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 840 460" width="100%" height="100%">
+  <defs>
+    <linearGradient id="gBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0e111a"/>
+      <stop offset="100%" stop-color="#141824"/>
+    </linearGradient>
+    <linearGradient id="gCardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a1f2e"/>
+      <stop offset="100%" stop-color="#121520"/>
+    </linearGradient>
+    <filter id="gShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="840" height="460" rx="14" fill="url(#gBgGrad)" stroke="#232838" stroke-width="1.5"/>
+
+  <!-- Header -->
+  <text x="30" y="38" fill="#8b5cf6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="11" font-weight="800" letter-spacing="1.5">HAND PLACEMENT &amp; BIOMECHANICS</text>
+  <text x="30" y="58" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="700">Grip Width, Joint Torque &amp; Muscle Load Distribution</text>
+
+  <!-- 4 Grip Width Panels -->
+  <g transform="translate(25, 78)">
+
+    <!-- ─── PANEL 1: Diamond / Narrow Grip ─── -->
+    <g transform="translate(0, 0)">
+      <rect width="185" height="350" rx="10" fill="url(#gCardGrad)" stroke="rgba(139, 92, 246, 0.3)" stroke-width="1.2" filter="url(#gShadow)"/>
+      
+      <!-- Badge -->
+      <rect x="14" y="14" width="70" height="20" rx="10" fill="rgba(139, 92, 246, 0.2)" stroke="#8b5cf6" stroke-width="1"/>
+      <text x="49" y="28" fill="#c4b5fd" font-family="sans-serif" font-size="9" font-weight="700" text-anchor="middle">NARROW</text>
+
+      <text x="14" y="52" fill="#ffffff" font-family="sans-serif" font-size="13" font-weight="700">Diamond Grip</text>
+      <text x="14" y="68" fill="#94a3b8" font-family="sans-serif" font-size="10">Hands Touching (0–6")</text>
+
+      <!-- Vector Visual: Diamond Handprint -->
+      <g transform="translate(42, 85)">
+        <circle cx="50" cy="40" r="38" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+        <!-- Left Hand -->
+        <path d="M 44 22 L 50 35 L 38 48 L 32 35 Z" fill="#8b5cf6" opacity="0.9"/>
+        <!-- Right Hand -->
+        <path d="M 56 22 L 50 35 L 62 48 L 68 35 Z" fill="#8b5cf6" opacity="0.9"/>
+        <!-- Center Diamond Aperture -->
+        <polygon points="50,26 55,34 50,42 45,34" fill="#06b6d4"/>
+      </g>
+
+      <!-- Target Load Meter -->
+      <g transform="translate(14, 185)">
+        <text x="0" y="0" fill="#94a3b8" font-family="sans-serif" font-size="9" font-weight="700">TARGET ACTIVATION</text>
+        
+        <text x="0" y="18" fill="#cbd5e1" font-family="sans-serif" font-size="10">Triceps Brachii</text>
+        <text x="155" y="18" fill="#8b5cf6" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">85%</text>
+        <rect x="0" y="24" width="155" height="4" rx="2" fill="#334155"/>
+        <rect x="0" y="24" width="132" height="4" rx="2" fill="#8b5cf6"/>
+
+        <text x="0" y="46" fill="#cbd5e1" font-family="sans-serif" font-size="10">Inner/Sternal Chest</text>
+        <text x="155" y="46" fill="#8b5cf6" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">70%</text>
+        <rect x="0" y="52" width="155" height="4" rx="2" fill="#334155"/>
+        <rect x="0" y="52" width="108" height="4" rx="2" fill="#8b5cf6"/>
+
+        <text x="0" y="74" fill="#cbd5e1" font-family="sans-serif" font-size="10">Elbow Joint Stress</text>
+        <text x="155" y="74" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">High</text>
+        <rect x="0" y="80" width="155" height="4" rx="2" fill="#334155"/>
+        <rect x="0" y="80" width="115" height="4" rx="2" fill="#f59e0b"/>
+      </g>
+
+      <!-- Key Tip -->
+      <g transform="translate(14, 295)">
+        <rect x="0" y="0" width="155" height="38" rx="6" fill="rgba(139, 92, 246, 0.08)" stroke="rgba(139, 92, 246, 0.2)"/>
+        <text x="8" y="15" fill="#c4b5fd" font-family="sans-serif" font-size="8.5" font-weight="700">PRO CUE</text>
+        <text x="8" y="28" fill="#e2e8f0" font-family="sans-serif" font-size="9">Flare thumbs; keep wrists straight</text>
+      </g>
+    </g>
+
+    <!-- ─── PANEL 2: Standard Shoulder-Width ─── -->
+    <g transform="translate(200, 0)">
+      <rect width="185" height="350" rx="10" fill="url(#gCardGrad)" stroke="rgba(16, 185, 129, 0.4)" stroke-width="1.2" filter="url(#gShadow)"/>
+      
+      <!-- Badge -->
+      <rect x="14" y="14" width="70" height="20" rx="10" fill="rgba(16, 185, 129, 0.2)" stroke="#10b981" stroke-width="1"/>
+      <text x="49" y="28" fill="#a7f3d0" font-family="sans-serif" font-size="9" font-weight="700" text-anchor="middle">OPTIMAL</text>
+
+      <text x="14" y="52" fill="#ffffff" font-family="sans-serif" font-size="13" font-weight="700">Shoulder-Width</text>
+      <text x="14" y="68" fill="#94a3b8" font-family="sans-serif" font-size="10">1.0x Biacromial (~18–22")</text>
+
+      <!-- Vector Visual: Shoulder Width Handprint -->
+      <g transform="translate(42, 85)">
+        <circle cx="50" cy="40" r="38" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+        <!-- Left Hand -->
+        <rect x="22" y="24" width="16" height="28" rx="4" fill="#10b981" transform="rotate(-10 30 38)"/>
+        <!-- Right Hand -->
+        <rect x="62" y="24" width="16" height="28" rx="4" fill="#10b981" transform="rotate(10 70 38)"/>
+        <!-- 45 Deg Arrow -->
+        <line x1="38" y1="38" x2="62" y2="38" stroke="#34d399" stroke-width="1.5" stroke-dasharray="2 2"/>
+      </g>
+
+      <!-- Target Load Meter -->
+      <g transform="translate(14, 185)">
+        <text x="0" y="0" fill="#94a3b8" font-family="sans-serif" font-size="9" font-weight="700">TARGET ACTIVATION</text>
+        
+        <text x="0" y="18" fill="#cbd5e1" font-family="sans-serif" font-size="10">Pectoralis Major</text>
+        <text x="155" y="18" fill="#10b981" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">88%</text>
+        <rect x="0" y="24" width="155" height="4" rx="2" fill="#334155"/>
+        <rect x="0" y="24" width="136" height="4" rx="2" fill="#10b981"/>
+
+        <text x="0" y="46" fill="#cbd5e1" font-family="sans-serif" font-size="10">Anterior Deltoids</text>
+        <text x="155" y="46" fill="#10b981" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">75%</text>
+        <rect x="0" y="52" width="155" height="4" rx="2" fill="#334155"/>
+        <rect x="0" y="52" width="116" height="4" rx="2" fill="#10b981"/>
+
+        <text x="0" y="74" fill="#cbd5e1" font-family="sans-serif" font-size="10">Joint Safety Score</text>
+        <text x="155" y="74" fill="#10b981" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">9.5/10</text>
+        <rect x="0" y="80" width="155" height="4" rx="2" fill="#334155"/>
+        <rect x="0" y="80" width="148" height="4" rx="2" fill="#10b981"/>
+      </g>
+
+      <!-- Key Tip -->
+      <g transform="translate(14, 295)">
+        <rect x="0" y="0" width="155" height="38" rx="6" fill="rgba(16, 185, 129, 0.08)" stroke="rgba(16, 185, 129, 0.25)"/>
+        <text x="8" y="15" fill="#34d399" font-family="sans-serif" font-size="8.5" font-weight="700">GOLD STANDARD</text>
+        <text x="8" y="28" fill="#e2e8f0" font-family="sans-serif" font-size="9">Maximum force output &amp; tendon longevity</text>
+      </g>
+    </g>
+
+    <!-- ─── PANEL 3: Wide Grip ─── -->
+    <g transform="translate(400, 0)">
+      <rect width="185" height="350" rx="10" fill="url(#gCardGrad)" stroke="rgba(6, 182, 212, 0.3)" stroke-width="1.2" filter="url(#gShadow)"/>
+      
+      <!-- Badge -->
+      <rect x="14" y="14" width="70" height="20" rx="10" fill="rgba(6, 182, 212, 0.2)" stroke="#06b6d4" stroke-width="1"/>
+      <text x="49" y="28" fill="#67e8f9" font-family="sans-serif" font-size="9" font-weight="700" text-anchor="middle">WIDE</text>
+
+      <text x="14" y="52" fill="#ffffff" font-family="sans-serif" font-size="13" font-weight="700">Wide Grip</text>
+      <text x="14" y="68" fill="#94a3b8" font-family="sans-serif" font-size="10">1.5x Shoulder Width (~28–34")</text>
+
+      <!-- Vector Visual: Wide Handprint -->
+      <g transform="translate(42, 85)">
+        <circle cx="50" cy="40" r="38" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+        <!-- Left Hand Wide -->
+        <rect x="10" y="24" width="15" height="26" rx="4" fill="#06b6d4" transform="rotate(-20 18 37)"/>
+        <!-- Right Hand Wide -->
+        <rect x="75" y="24" width="15" height="26" rx="4" fill="#06b6d4" transform="rotate(20 82 37)"/>
+        <!-- Wide Stretch Indicator -->
+        <line x1="28" y1="38" x2="72" y2="38" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="3 2"/>
+      </g>
+
+      <!-- Target Load Meter -->
+      <g transform="translate(14, 185)">
+        <text x="0" y="0" fill="#94a3b8" font-family="sans-serif" font-size="9" font-weight="700">TARGET ACTIVATION</text>
+        
+        <text x="0" y="18" fill="#cbd5e1" font-family="sans-serif" font-size="10">Outer Chest Stretch</text>
+        <text x="155" y="18" fill="#06b6d4" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">92%</text>
+        <rect x="0" y="24" width="155" height="4" rx="2" fill="#334155"/>
+        <rect x="0" y="24" width="142" height="4" rx="2" fill="#06b6d4"/>
+
+        <text x="0" y="46" fill="#cbd5e1" font-family="sans-serif" font-size="10">Triceps Engagement</text>
+        <text x="155" y="46" fill="#94a3b8" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">40%</text>
+        <rect x="0" y="52" width="155" height="4" rx="2" fill="#334155"/>
+        <rect x="0" y="52" width="62" height="4" rx="2" fill="#64748b"/>
+
+        <text x="0" y="74" fill="#cbd5e1" font-family="sans-serif" font-size="10">Shoulder Capsule Torque</text>
+        <text x="155" y="74" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">Moderate</text>
+        <rect x="0" y="80" width="155" height="4" rx="2" fill="#334155"/>
+        <rect x="0" y="80" width="95" height="4" rx="2" fill="#f59e0b"/>
+      </g>
+
+      <!-- Key Tip -->
+      <g transform="translate(14, 295)">
+        <rect x="0" y="0" width="155" height="38" rx="6" fill="rgba(6, 182, 212, 0.08)" stroke="rgba(6, 182, 212, 0.25)"/>
+        <text x="8" y="15" fill="#67e8f9" font-family="sans-serif" font-size="8.5" font-weight="700">ISOLATION</text>
+        <text x="8" y="28" fill="#e2e8f0" font-family="sans-serif" font-size="9">Avoid flaring elbows >60° to protect rotator cuff</text>
+      </g>
+    </g>
+
+    <!-- ─── PANEL 4: False & Ring Grip ─── -->
+    <g transform="translate(600, 0)">
+      <rect width="190" height="350" rx="10" fill="url(#gCardGrad)" stroke="rgba(245, 158, 11, 0.3)" stroke-width="1.2" filter="url(#gShadow)"/>
+      
+      <!-- Badge -->
+      <rect x="14" y="14" width="70" height="20" rx="10" fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" stroke-width="1"/>
+      <text x="49" y="28" fill="#fde68a" font-family="sans-serif" font-size="9" font-weight="700" text-anchor="middle">SKILL</text>
+
+      <text x="14" y="52" fill="#ffffff" font-family="sans-serif" font-size="13" font-weight="700">False / Neutral</text>
+      <text x="14" y="68" fill="#94a3b8" font-family="sans-serif" font-size="10">Gymnastic Rings &amp; Bars</text>
+
+      <!-- Vector Visual: Gymnastic Ring Wrap -->
+      <g transform="translate(45, 85)">
+        <circle cx="50" cy="40" r="38" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+        <!-- Ring Arc -->
+        <circle cx="50" cy="36" r="26" fill="none" stroke="#f59e0b" stroke-width="4"/>
+        <!-- Wrist Wrapped Over Ring -->
+        <path d="M 38 48 Q 50 18 62 48" fill="none" stroke="#fbbf24" stroke-width="8" stroke-linecap="round"/>
+      </g>
+
+      <!-- Target Load Meter -->
+      <g transform="translate(14, 185)">
+        <text x="0" y="0" fill="#94a3b8" font-family="sans-serif" font-size="9" font-weight="700">TARGET ACTIVATION</text>
+        
+        <text x="0" y="18" fill="#cbd5e1" font-family="sans-serif" font-size="10">Forearm / Wrist Flexors</text>
+        <text x="160" y="18" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">95%</text>
+        <rect x="0" y="24" width="160" height="4" rx="2" fill="#334155"/>
+        <rect x="0" y="24" width="152" height="4" rx="2" fill="#f59e0b"/>
+
+        <text x="0" y="46" fill="#cbd5e1" font-family="sans-serif" font-size="10">Muscle-Up Transition Leverage</text>
+        <text x="160" y="46" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">100%</text>
+        <rect x="0" y="52" width="160" height="4" rx="2" fill="#334155"/>
+        <rect x="0" y="52" width="160" height="4" rx="2" fill="#f59e0b"/>
+
+        <text x="0" y="74" fill="#cbd5e1" font-family="sans-serif" font-size="10">Scapular Lats Pull</text>
+        <text x="160" y="74" fill="#8b5cf6" font-family="sans-serif" font-size="10" font-weight="700" text-anchor="end">85%</text>
+        <rect x="0" y="80" width="160" height="4" rx="2" fill="#334155"/>
+        <rect x="0" y="80" width="136" height="4" rx="2" fill="#8b5cf6"/>
+      </g>
+
+      <!-- Key Tip -->
+      <g transform="translate(14, 295)">
+        <rect x="0" y="0" width="160" height="38" rx="6" fill="rgba(245, 158, 11, 0.08)" stroke="rgba(245, 158, 11, 0.25)"/>
+        <text x="8" y="15" fill="#fde68a" font-family="sans-serif" font-size="8.5" font-weight="700">ELITE MASTERY</text>
+        <text x="8" y="28" fill="#e2e8f0" font-family="sans-serif" font-size="9">Rests base of palm directly above ring center</text>
+      </g>
+    </g>
+  </g>
+</svg>

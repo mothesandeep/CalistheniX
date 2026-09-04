@@ -1,0 +1,143 @@
+/* ── Badges & Tags ───────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.badge-reps { background: rgba(255, 255, 255, 0.06); color: #e4e4e7; }
+
+/* ── Today's Routine view ──────────────────────────────────────────────────── */
+
+/* Superset block */
+
+/* ── Today's Routine — clickable rows ──────────────────────────────────────── */
+
+/* ── Log screen ────────────────────────────────────────────────────────────── */
+
+.log-topbar {
+  margin-bottom: 24px;
+}
+
+.btn-back {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.btn-back:hover { background: var(--surface-2); color: var(--text); border-color: rgba(255,255,255,0.15); }
+
+/* Timer (duration exercises) */
+
+.timer-display {
+  font-family: var(--mono);
+  font-size: 80px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #ffffff;
+  line-height: 1;
+  user-select: none;
+}
+
+.timer-btn {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 26px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: background var(--transition), box-shadow var(--transition), transform 100ms;
+  letter-spacing: -0.5px;
+}
+.timer-btn:hover {
+  background: var(--accent-hover);
+  box-shadow: none;
+}
+.timer-btn:active { transform: scale(0.96); }
+.timer-btn-running {
+  background: var(--danger);
+  box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.35);
+  animation: pulse-ring 1.4s ease-out infinite;
+}
+.timer-btn-running:hover { background: #f87171; }
+
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0   rgba(244, 63, 94, 0.4); }
+  70%  { box-shadow: 0 0 0 20px rgba(244, 63, 94, 0); }
+  100% { box-shadow: 0 0 0 0   rgba(244, 63, 94, 0); }
+}
+
+/* Reps form */
+
+/* RPE stepper */
+.rpe-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.rpe-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.rpe-btn:hover { background: var(--accent-dim); color: var(--text); border-color: var(--accent); }
+.rpe-btn.rpe-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* Save button */
+
+/* ── Screen 1: Today's Day ─────────────────────────────────────────────────── */
+/* ── Activity Heatmap (4 Weeks) ───────────────────────────────────────────── */
+
+/* ── Set progress indicator ─────────────────────────────────────────────────── */
+
+/* ── Rest countdown screen ───────────────────────────────────────────────────── */
+
+.rest-countdown {
+  font-size: 96px;
+  font-weight: 600;
+  letter-spacing: -4px;
+  color: var(--text);
+  line-height: 1;
+  user-select: none;
+}
+
+.rest-next {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin: 0;
+  text-align: center;
+}
+
+/* ── Today's Routine: done row ───────────────────────────────────────────────── */
+
+/* ── Dashboard: export backup action ────────────────────────────────────────── */
+

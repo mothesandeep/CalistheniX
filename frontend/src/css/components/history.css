@@ -1,0 +1,300 @@
+
+.home-header {
+  margin-bottom: 24px;
+}
+
+/* Exercise list */
+
+/* Each row is a native <button> for max tap accessibility */
+
+/* Last logged value — right-aligned, mono for tabular scanning */
+
+/* ── Screen 3: History / Chart ─────────────────────────────────────────────── */
+.history-screen {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* Stat row: current | 2-week | % change ─ the answer to "is this working" */
+
+/* ── Progression status banner ─────────────────────────────────────────────── */
+
+/* ── Metric toggle buttons ─────────────────────────────────────────────────── */
+.metric-toggle-group {
+  display: flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  margin-bottom: 16px;
+  gap: 4px;
+}
+
+.metric-toggle-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  border-radius: calc(var(--radius-sm) - 2px);
+  padding: 8px 12px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  text-align: center;
+}
+
+.metric-toggle-btn.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+
+.metric-toggle-btn:hover:not(.active) {
+  color: var(--text);
+}
+
+/* Chart container: explicit height so Chart.js can size correctly */
+.chart-wrap {
+  position: relative;
+  height: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 8px 8px;
+}
+
+.history-loading {
+  padding: 48px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+/* History → button on log screen topbar */
+.log-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+/* Right-side topbar group: History link + mute button */
+
+/* Mute toggle — emoji icon, borderless, top-right of log screen */
+.btn-mute {
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 2px;
+  opacity: 0.6;
+  transition: opacity var(--transition), transform 80ms;
+  user-select: none;
+}
+.btn-mute:hover  { opacity: 1; }
+.btn-mute:active { transform: scale(0.88); }
+
+/* ── Screen 0: Dashboard ───────────────────────────────────────────────────── */
+
+/* ── Personal Records (PRs) List ───────────────────────────────────────────── */
+.pr-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.pr-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: opacity var(--transition);
+}
+
+.pr-row:last-child {
+  border-bottom: none;
+}
+
+.pr-info {
+  display: flex;
+}
+
+/* ── Phase 4: Workout Session History Logs (Section 11 Spec) ─────────────── */
+.history-session-card {
+  background: var(--liquid-surface-1-grad, rgba(16, 16, 23, 0.78));
+  backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  border: var(--liquid-border);
+  border-radius: var(--radius-card, 16px);
+  padding: 20px 24px;
+  margin-bottom: 12px;
+  min-height: 88px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--liquid-shadow-sm), var(--liquid-highlight-top);
+}
+
+.history-session-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--liquid-surface-2-grad, rgba(22, 22, 30, 0.84));
+  box-shadow: var(--liquid-shadow-md), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+}
+
+.history-session-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.history-session-left-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.history-session-title {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-session-tag {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.history-session-right-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.history-session-date {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.history-session-arrow {
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.history-session-card:hover .history-session-arrow {
+  color: var(--accent);
+  transform: translateX(2px);
+}
+
+.history-session-stats-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+  gap: 12px;
+}
+
+.history-session-stats-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.history-session-stats-text strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.history-stats-sep {
+  color: var(--border-light);
+}
+
+.history-session-pct {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.history-session-pct.is-complete {
+  color: var(--success);
+}
+
+.history-session-progress-bar {
+  width: 100%;
+  height: 7px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.history-session-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-full);
+  transition: width var(--transition);
+}
+.history-session-progress-fill.is-complete {
+  background: var(--success);
+}
+
+.session-detail-ex-box {
+  background: var(--liquid-surface-inset, rgba(10, 10, 15, 0.6));
+  border: var(--liquid-border-subtle);
+  border-radius: var(--radius-card, 16px);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  box-shadow: var(--liquid-highlight-inset);
+}
+
+.session-detail-ex-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.session-detail-set-row {
+  display: grid;
+  grid-template-columns: 48px 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  font-size: 13px;
+  align-items: center;
+}
+
+.session-detail-set-row:last-child {
+  border-bottom: none;
+}
+
+.pr-trophy {
+  font-size: 14px;
+}
+
+.pr-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+

@@ -1,0 +1,64 @@
+/* ── Sync Status Pill ──────────────────────────────────────────────────────── */
+.sync-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-family: var(--mono);
+  transition: all var(--transition);
+  user-select: none;
+}
+.sync-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.sync-pill-synced {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+.sync-pill-synced .sync-dot {
+  background: #22c55e;
+}
+.sync-pill-syncing {
+  background: rgba(124, 106, 247, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(124, 106, 247, 0.3);
+}
+.sync-pill-syncing .sync-dot {
+  background: var(--accent);
+  animation: pulseSync 1s infinite alternate;
+}
+.sync-pill-local {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.sync-pill-local .sync-dot {
+  background: #f59e0b;
+}
+
+@keyframes pulseSync {
+  0% { opacity: 0.3; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1.2); }
+}
+
+.nav-btn-icon {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+.nav-btn-icon:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+

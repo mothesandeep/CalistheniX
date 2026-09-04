@@ -1,0 +1,1217 @@
+/* ============================================================
+   stats.css — High-Fidelity Stats & Analytics Hub View
+   Deep Charcoal Black with Phase Accents (Coral-Red, Amber, Teal)
+   ============================================================ */
+
+.stats-screen {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 12px 14px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeInStats 0.25s ease-out;
+}
+
+.stats-dashboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.stats-col-main,
+.stats-col-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+}
+
+@keyframes fadeInStats {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Top Header ─────────────────────────────────────────── */
+.stats-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  padding: 4px 2px;
+}
+
+.stats-title {
+  font-family: var(--font-heading, 'Plus Jakarta Sans', sans-serif);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.stats-subtitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted, #8b8b9e);
+  margin-top: 4px;
+}
+
+.stats-history-icon-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #181822;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted, #8b8b9e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.stats-history-icon-btn:hover {
+  background: #222230;
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: scale(1.05);
+}
+
+.stats-history-icon-btn:active {
+  transform: scale(0.96);
+}
+
+/* ─── 2x2 Metric Cards Grid ───────────────────────────────── */
+.stats-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.stats-metric-card {
+  background: #14141c;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 98px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s ease;
+}
+
+.stats-metric-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.stats-metric-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted, #8b8b9e);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stats-metric-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+  color: var(--text-muted, #8b8b9e);
+}
+
+.stats-metric-val {
+  font-family: var(--font-heading, 'Plus Jakarta Sans', sans-serif);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  line-height: 1.1;
+  margin-top: 8px;
+}
+
+.stats-metric-val.val-red { color: #ff5d5d; }
+.stats-metric-val.val-green { color: #10b981; }
+.stats-metric-val.val-amber { color: #f59e0b; }
+
+/* ─── Common Section Card Container ───────────────────────── */
+.stats-section-card {
+  background: #14141c;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-card-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stats-card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.stats-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stats-card-subtitle {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted, #8b8b9e);
+}
+
+/* ─── Time Filter Buttons & Segmented Controls ────────────── */
+.stats-pill-tabs {
+  display: flex;
+  background: #1c1c27;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.stats-pill-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted, #8b8b9e);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.stats-pill-tab:hover:not(.active) {
+  color: #ffffff;
+}
+
+.stats-pill-tab.active {
+  background: #2a2a3a;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Big Top Tabs (Muscle Balance / Fatigue / Strength) */
+.stats-segmented-bar {
+  display: flex;
+  background: #1c1c27;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 4px;
+  gap: 4px;
+  width: 100%;
+}
+
+.stats-segmented-item {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-muted, #8b8b9e);
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+}
+
+.stats-segmented-item.active {
+  background: #2b2b3b;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* ─── Activity 12-Month Heatmap ───────────────────────────── */
+.stats-heatmap-scroll-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+
+.stats-heatmap-scroll-wrap::-webkit-scrollbar {
+  display: none;
+}
+
+.stats-heatmap-grid-inner {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 100%;
+}
+
+.stats-heatmap-months-row {
+  display: flex;
+  gap: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  padding-left: 2px;
+}
+
+.stats-heatmap-matrix {
+  display: flex;
+  gap: 4.5px;
+}
+
+.stats-heatmap-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4.5px;
+}
+
+.stats-heatmap-cell {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: #22222e;
+  transition: transform 0.1s ease, filter 0.15s ease;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.stats-heatmap-cell:hover {
+  transform: scale(1.3);
+  z-index: 5;
+}
+
+.stats-heatmap-cell.level-0 { background: #1e1e28; }
+.stats-heatmap-cell.level-1 { background: #5c1d1d; }
+.stats-heatmap-cell.level-2 { background: #991b1b; }
+.stats-heatmap-cell.level-3 { background: #dc2626; }
+.stats-heatmap-cell.level-4 { background: #ef4444; }
+.stats-heatmap-cell.level-5 { background: #ff5d5d; box-shadow: 0 0 6px rgba(255, 93, 93, 0.4); }
+
+.stats-heatmap-cell.is-today {
+  border: 1.5px solid #ff5d5d;
+  box-sizing: border-box;
+}
+
+.stats-heatmap-cell.is-future {
+  opacity: 0.35;
+}
+
+.stats-heatmap-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #717182;
+  margin-top: 2px;
+}
+
+.stats-legend-scale {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.stats-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* ─── Muscle Balance / Anatomical View ─────────────────────── */
+.stats-anatomy-dual-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 0;
+  width: 100%;
+}
+
+.stats-anatomy-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 140px;
+  height: 270px;
+}
+
+.stats-anatomy-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.stats-anatomy-svg-card {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stats-anatomy-svg-card svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+}
+
+/* Untrained Muscles Chips */
+.stats-untrained-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.stats-untrained-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.stats-chips-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.stats-chip-tag {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.32);
+  color: #f59e0b;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.stats-chip-tag:hover {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(245, 158, 11, 0.6);
+  transform: translateY(-1px);
+}
+
+.stats-chip-tag.active {
+  background: rgba(245, 158, 11, 0.28);
+  border-color: #f59e0b;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+}
+
+/* ─── Effort / RIR Analysis Card ─────────────────────────── */
+.stats-effort-big-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.stats-effort-stat-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-effort-val {
+  font-family: var(--font-heading, 'Plus Jakarta Sans', sans-serif);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.stats-effort-val.yellow-text {
+  color: #facc15;
+  text-align: right;
+}
+
+.stats-effort-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted, #8b8b9e);
+  margin-top: 2px;
+}
+
+.stats-effort-rated-sub {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: -6px;
+}
+
+.stats-chart-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-top: 4px;
+}
+
+.stats-effort-sparkline-wrap {
+  width: 100%;
+  height: 120px;
+  position: relative;
+}
+
+/* RIR Distribution Bars */
+.stats-rir-dist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.stats-rir-dist-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stats-rir-dist-name {
+  width: 55px;
+  color: #e2e8f0;
+  flex-shrink: 0;
+}
+
+.stats-rir-bar-track {
+  flex: 1;
+  height: 6px;
+  background: #222230;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.stats-rir-bar-fill {
+  height: 100%;
+  background: #eab308;
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stats-rir-dist-count {
+  width: 65px;
+  text-align: right;
+  color: #94a3b8;
+  font-size: 12.5px;
+  font-family: var(--mono, monospace);
+  flex-shrink: 0;
+}
+
+.stats-footnote-box {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #64748b;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+/* ─── Body Weight Card ────────────────────────────────────── */
+.stats-weight-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stats-weight-target-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #facc15;
+}
+
+.stats-weight-log-btn {
+  background: transparent;
+  border: none;
+  color: #ff5d5d;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.stats-weight-log-btn:hover {
+  background: rgba(255, 93, 93, 0.1);
+}
+
+.stats-weight-chart-wrap {
+  width: 100%;
+  height: 160px;
+  position: relative;
+}
+
+/* ─── Exercise Progress Card ──────────────────────────────── */
+.stats-exercise-select-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: #1c1c27;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.stats-exercise-select-btn:hover {
+  background: #242434;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.stats-exercise-chart-wrap {
+  width: 100%;
+  height: 150px;
+  position: relative;
+}
+
+.stats-exercise-history-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 4px;
+}
+
+.stats-exercise-history-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 16px;
+}
+
+.stats-exercise-history-date {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  width: 55px;
+  flex-shrink: 0;
+  line-height: 1.25;
+}
+
+.stats-exercise-history-date span:first-child {
+  color: #e2e8f0;
+}
+
+.stats-exercise-history-sets {
+  flex: 1;
+  font-family: var(--mono, monospace);
+  font-size: 13px;
+  font-weight: 500;
+  color: #f1f5f9;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.stats-exercise-history-sets .rir-tag {
+  color: #94a3b8;
+}
+
+.stats-exercise-best-tag {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  padding: 8px 0 0;
+}
+
+.stats-exercise-best-tag strong {
+  color: #ff5d5d;
+}
+
+/* ─── Workout History Card Component (Shared) ─────────────── */
+.workout-history-card {
+  background: #14141c;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.workout-history-card:hover {
+  background: #1a1a24;
+  border-color: rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.workout-history-card:active {
+  transform: scale(0.99);
+}
+
+.workout-card-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.workout-card-icon-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #ff5252;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.workout-card-icon-badge svg {
+  width: 20px;
+  height: 20px;
+}
+
+.workout-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.workout-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.workout-card-sub {
+  font-size: 12.5px;
+  color: #94a3b8;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workout-card-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.workout-pr-pill {
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.35);
+  color: #facc15;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.workout-card-arrow {
+  color: #64748b;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Recent Workouts Section on Stats View ───────────────── */
+.recent-workouts-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.recent-workouts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.recent-workouts-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.recent-workouts-all-btn {
+  background: transparent;
+  border: none;
+  color: #ff5d5d;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.recent-workouts-all-btn:hover {
+  opacity: 0.85;
+}
+
+/* ─── Full History Screen Layout (Image 3) ────────────────── */
+.history-full-screen {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 12px 14px 100px;
+  display: flex;
+  flex-direction: column;
+  animation: fadeInStats 0.25s ease-out;
+}
+
+.history-top-nav-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.history-round-back-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #181822;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.history-round-back-btn:hover {
+  background: #222230;
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: scale(1.05);
+}
+
+.history-full-title {
+  font-family: var(--font-heading, 'Plus Jakarta Sans', sans-serif);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.history-full-subtitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted, #8b8b9e);
+  margin-top: 4px;
+}
+
+.history-log-past-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #ff5d5d;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 14px 0;
+  margin: 6px 0 10px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  transition: opacity 0.15s ease;
+}
+
+.history-log-past-trigger:hover {
+  opacity: 0.85;
+}
+
+/* ─── Exercise Picker & Modal Sheets ──────────────────────── */
+.stats-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeInBackdrop 0.2s ease-out;
+}
+
+@media (min-width: 640px) {
+  .stats-picker-backdrop {
+    align-items: center;
+  }
+}
+
+.stats-picker-sheet {
+  background: #14141c;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px 24px 0 0;
+  width: 100%;
+  max-width: 520px;
+  max-height: 80vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+  animation: slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 640px) {
+  .stats-picker-sheet {
+    border-radius: 24px;
+  }
+}
+
+@keyframes slideUpSheet {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fadeInBackdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.stats-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stats-picker-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.stats-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 55vh;
+  padding-right: 4px;
+}
+
+.stats-picker-item {
+  background: #1c1c27;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stats-picker-item:hover, .stats-picker-item.active {
+  background: #262638;
+  border-color: rgba(255, 93, 93, 0.4);
+}
+
+/* ─── Body Weight & Past Workout Modal ────────────────────── */
+.stats-weight-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stats-weight-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #1c1c27;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 10px 16px;
+}
+
+.stats-weight-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 800;
+  font-family: var(--mono, monospace);
+  outline: none;
+}
+
+.stats-weight-unit {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-muted, #8b8b9e);
+}
+
+/* ─── Desktop 2-Column Dashboard Layout (>= 1024px) ──────── */
+@media (min-width: 1024px) {
+  .stats-screen {
+    max-width: 100%;
+    margin: 0;
+    padding: 0 0 48px;
+    gap: 22px;
+  }
+
+  .stats-header-row {
+    margin-bottom: 2px;
+    padding: 0 2px;
+  }
+
+  .stats-title {
+    font-size: 28px;
+  }
+
+  .stats-subtitle {
+    font-size: 13.5px;
+  }
+
+  /* 2-Column Dashboard Grid (~66% Main / ~34% Secondary) */
+  .stats-dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.88fr) minmax(0, 1fr);
+    gap: 22px;
+    align-items: start;
+    width: 100%;
+  }
+
+  .stats-col-main {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    min-width: 0;
+  }
+
+  .stats-col-side {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    min-width: 0;
+  }
+
+  /* Top 4 Overview Summary Cards in One Row */
+  .stats-metrics-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+
+  .stats-metric-card {
+    padding: 16px 18px;
+    min-height: 94px;
+    background: #14141c;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 18px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .stats-metric-card:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .stats-metric-top {
+    font-size: 12.5px;
+  }
+
+  .stats-metric-val {
+    font-size: 28px;
+    margin-top: 6px;
+  }
+
+  /* Desktop Dashboard Widget Cards */
+  .stats-section-card {
+    padding: 22px 24px;
+    gap: 16px;
+    border-radius: 20px;
+    background: #14141c;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.32);
+    transition: border-color 0.15s ease;
+  }
+
+  .stats-section-card:hover {
+    border-color: rgba(255, 255, 255, 0.11);
+  }
+
+  .stats-card-title {
+    font-size: 15.5px;
+  }
+
+  .stats-card-subtitle {
+    font-size: 13px;
+  }
+
+  /* Heatmap Desktop Layout & Alignment */
+  .stats-heatmap-scroll-wrap {
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+
+  .stats-heatmap-grid-inner {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .stats-heatmap-months-row {
+    position: relative;
+    width: 100%;
+    height: 18px;
+    font-size: 11.5px;
+    color: #717182;
+    padding-left: 0;
+  }
+
+  .stats-heatmap-matrix {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    gap: 5px;
+  }
+
+  .stats-heatmap-col {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex: 1;
+  }
+
+  .stats-heatmap-cell {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    height: auto;
+    max-width: 16px;
+    max-height: 16px;
+    border-radius: 3.5px;
+  }
+
+  /* Muscle Balance Anatomical View */
+  .stats-anatomy-dual-wrap {
+    gap: 56px;
+    padding: 16px 0 8px;
+  }
+
+  .stats-anatomy-col {
+    width: 165px;
+    height: 310px;
+  }
+
+  /* Effort Sparkline */
+  .stats-effort-sparkline-wrap {
+    height: 125px;
+  }
+
+  /* Body Weight Card */
+  .stats-weight-chart-wrap {
+    height: 165px;
+  }
+
+  /* Exercise Progress Card */
+  .stats-exercise-chart-wrap {
+    height: 155px;
+  }
+
+  .stats-exercise-history-row {
+    padding: 11px 2px;
+  }
+
+  /* Recent Workouts on Side Column */
+  .recent-workouts-section {
+    gap: 10px;
+    margin-top: 0;
+  }
+
+  .recent-workouts-header {
+    padding: 0 2px;
+  }
+
+  .workout-history-card {
+    padding: 13px 15px;
+    margin-bottom: 8px;
+  }
+
+  .workout-card-title {
+    font-size: 14.5px;
+  }
+
+  .workout-card-sub {
+    font-size: 12px;
+  }
+}

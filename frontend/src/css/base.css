@@ -1,0 +1,357 @@
+/* ============================================================
+   base.css — Global Resets, Typography & Core Elements
+   ============================================================ */
+
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 99999;
+  opacity: 0.65;
+}
+
+/* ── Sleek Minimalist Scrollbars ───────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(6, 6, 10, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  transition: background var(--transition);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ── SVG Icon System ───────────────────────────────────────────────────────── */
+.cx-icon {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  stroke-width: 2;
+  stroke: currentColor;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vertical-align: middle;
+  flex-shrink: 0;
+  transition: transform var(--transition), stroke var(--transition), color var(--transition);
+}
+
+.cx-icon-xs { width: 12px; height: 12px; stroke-width: 2.2; }
+.cx-icon-sm { width: 14px; height: 14px; stroke-width: 2; }
+.cx-icon-md { width: 18px; height: 18px; stroke-width: 2; }
+.cx-icon-lg { width: 22px; height: 22px; stroke-width: 1.8; }
+.cx-icon-2xl { width: 36px; height: 36px; stroke-width: 1.5; }
+
+.cx-icon-inline {
+  margin-right: 6px;
+  vertical-align: -2px;
+}
+
+.cx-icon-accent { color: var(--accent); }
+.cx-icon-success { color: var(--success); }
+.cx-icon-danger { color: var(--danger); }
+.cx-icon-gold { color: #f59e0b; }
+.cx-icon-fire { color: #f97316; }
+.cx-icon-cyan { color: #06b6d4; }
+.cx-icon-muted { color: var(--text-muted); }
+
+/* ── Toast ─────────────────────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  transform: translateY(0);
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 1;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: opacity 300ms cubic-bezier(0.16, 1, 0.3, 1), transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toast-hidden {
+  opacity: 0;
+  transform: translateY(-12px);
+  pointer-events: none;
+}
+.toast-success { background: rgba(16, 185, 129, 0.95); color: #fff; }
+.toast-error   { background: rgba(239, 68, 68, 0.95);  color: #fff; }
+
+@media (max-width: 640px) {
+  .toast {
+    top: 16px;
+    right: 16px;
+    left: auto;
+    max-width: calc(100vw - 32px);
+  }
+}
+
+/* ── Error banner ──────────────────────────────────────────────────────────── */
+.error-banner {
+  margin: 40px auto;
+  max-width: 520px;
+  padding: 24px;
+  background: var(--danger-dim);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.error-banner code {
+  font-family: var(--mono);
+  background: rgba(0,0,0,0.3);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ── Typography Hierarchy & Letter Spacing ─────────────────────────────────── */
+h1, .type-h1 {
+  font-family: var(--font-heading);
+  font-size: var(--type-h1);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: var(--text);
+}
+
+h2, .type-h2 {
+  font-family: var(--sans);
+  font-size: var(--type-h2);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+h3, .type-h3 {
+  font-family: var(--sans);
+  font-size: var(--type-h3);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.type-hero {
+  font-family: var(--font-heading);
+  font-size: var(--type-hero);
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -0.04em;
+}
+
+.type-display {
+  font-family: var(--font-heading);
+  font-size: var(--type-display);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.type-body {
+  font-family: var(--sans);
+  font-size: var(--type-body);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.type-caption {
+  font-family: var(--sans);
+  font-size: var(--type-caption);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+}
+
+.type-micro {
+  font-family: var(--sans);
+  font-size: var(--type-micro);
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.type-uppercase-label {
+  font-size: var(--type-caption);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mono { font-family: var(--mono) !important; }
+.mono-hero { font-family: var(--mono) !important; font-size: var(--type-mono-hero) !important; font-weight: 700 !important; line-height: 1 !important; }
+
+/* ── Micro-Animations & Keyframes (Section 14) ────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardReveal {
+  from { opacity: 0; transform: scale(0.98) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.02); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 93, 93, 0.2); }
+  50%      { box-shadow: 0 0 16px 2px rgba(255, 93, 93, 0.35); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fadeInUp 220ms var(--transition-fast) both;
+}
+
+.animate-card-reveal {
+  animation: cardReveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+/* ============================================================
+   Liquid Morphism Foundation Style System
+   Apple Pro × High-End Athletic Dimensionality
+   ============================================================ */
+
+/* 1. Base Liquid Surface (Cards, Panels, Containers) */
+.liquid-surface,
+.liquid-card {
+  background: var(--liquid-surface-1-grad, var(--surface));
+  backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  border: var(--liquid-border);
+  border-radius: var(--radius-card, 16px);
+  box-shadow: var(--liquid-shadow-md), var(--liquid-highlight-top);
+  position: relative;
+}
+
+/* 2. Elevated Liquid Surface (Active Cards, Spotlight Cards, Floating Toolbars) */
+.liquid-surface-elevated {
+  background: var(--liquid-surface-elevated);
+  backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  border: var(--liquid-border-highlight);
+  border-radius: var(--radius-card, 16px);
+  box-shadow: var(--liquid-shadow-lg), var(--liquid-highlight-top-elevated);
+  position: relative;
+}
+
+/* 3. Overlay Liquid Surface (Modals, Popovers, Dropdowns, Sticky Header Bars) */
+.liquid-surface-overlay {
+  background: var(--liquid-surface-overlay);
+  backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  border: var(--liquid-border-highlight);
+  border-radius: var(--radius-modal, 20px);
+  box-shadow: var(--liquid-shadow-overlay), var(--liquid-highlight-top-elevated);
+  position: relative;
+}
+
+/* 4. Inset Liquid Surface (Metric Wells, Steppers, Track Wells, Input Fields) */
+.liquid-surface-inset {
+  background: var(--liquid-surface-inset);
+  border: var(--liquid-border-subtle);
+  border-radius: var(--radius-md, 10px);
+  box-shadow: var(--liquid-highlight-inset);
+}
+
+/* 5. Interactive Liquid Micro-States (Hover Lift & Specular Top Sheen) */
+.liquid-interactive {
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+}
+
+.liquid-interactive:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: var(--liquid-shadow-lg), inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.liquid-interactive:active {
+  transform: scale(0.99) translateY(0);
+  box-shadow: var(--liquid-shadow-sm), var(--liquid-highlight-top-subtle);
+}
+
+/* 6. Liquid Pill & Badges */
+.liquid-pill,
+.liquid-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(var(--liquid-blur-sm, 8px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-sm, 8px));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full, 9999px);
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), var(--liquid-highlight-top-subtle);
+}
+
+/* 7. Semantic Phase Accented Liquid Morphism */
+.liquid-prep {
+  background: var(--liquid-prep-surface);
+  border-color: var(--liquid-prep-border);
+  box-shadow: var(--liquid-prep-shadow), var(--liquid-prep-highlight);
+}
+
+.liquid-train {
+  background: var(--liquid-train-surface);
+  border-color: var(--liquid-train-border);
+  box-shadow: var(--liquid-train-shadow), var(--liquid-train-highlight);
+}
+
+.liquid-recover {
+  background: var(--liquid-recover-surface);
+  border-color: var(--liquid-recover-border);
+  box-shadow: var(--liquid-recover-shadow), var(--liquid-recover-highlight);
+}
+

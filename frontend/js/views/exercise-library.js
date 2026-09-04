@@ -24,6 +24,11 @@ function renderExerciseLibraryView() {
       if (_libraryActiveFilter === 'Core' && !pattern.includes('core') && !day.includes('core') && !name.includes('plank') && !name.includes('hollow')) return false;
       if (_libraryActiveFilter === 'Skill' && !pattern.includes('skill') && !day.includes('skill') && !name.includes('handstand') && !name.includes('lever') && !name.includes('planche')) return false;
       if (_libraryActiveFilter === 'Isometric' && ex.type !== 'duration') return false;
+      if (_libraryActiveFilter === 'In Profile') {
+        const req = typeof getExerciseRequiredEquipment === 'function' ? getExerciseRequiredEquipment(ex.name, ex.movement_pattern) : 'floor';
+        const profile = typeof getEquipmentProfile === 'function' ? getEquipmentProfile() : [];
+        if (req !== 'floor' && !profile.includes(req)) return false;
+      }
     }
 
     // Search query check
@@ -38,7 +43,7 @@ function renderExerciseLibraryView() {
     return true;
   });
 
-  const filterChips = ['All', 'Push', 'Pull', 'Legs', 'Core', 'Skill', 'Isometric'];
+  const filterChips = ['All', 'In Profile', 'Push', 'Pull', 'Legs', 'Core', 'Skill', 'Isometric'];
 
   return `
     <div class="library-view-wrap">
@@ -86,13 +91,47 @@ function renderExerciseLibraryView() {
       </div>
 
       <div class="library-cards-grid">
-        ${filtered.length === 0 ? `
+        ${(!exercises || exercises.length === 0) ? `
+          <div class="skeleton-exercise-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div class="cx-skeleton skeleton-text skeleton-title" style="width: 55%; margin: 0;"></div>
+              <div class="cx-skeleton skeleton-text skeleton-badge" style="width: 55px;"></div>
+            </div>
+            <div class="cx-skeleton skeleton-text skeleton-subtitle" style="width: 40%; margin-top: 8px;"></div>
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+              <div class="cx-skeleton skeleton-text skeleton-badge" style="width: 60px;"></div>
+              <div class="cx-skeleton skeleton-text skeleton-badge" style="width: 70px;"></div>
+            </div>
+          </div>
+          <div class="skeleton-exercise-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div class="cx-skeleton skeleton-text skeleton-title" style="width: 50%; margin: 0;"></div>
+              <div class="cx-skeleton skeleton-text skeleton-badge" style="width: 55px;"></div>
+            </div>
+            <div class="cx-skeleton skeleton-text skeleton-subtitle" style="width: 35%; margin-top: 8px;"></div>
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+              <div class="cx-skeleton skeleton-text skeleton-badge" style="width: 65px;"></div>
+              <div class="cx-skeleton skeleton-text skeleton-badge" style="width: 65px;"></div>
+            </div>
+          </div>
+          <div class="skeleton-exercise-card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div class="cx-skeleton skeleton-text skeleton-title" style="width: 60%; margin: 0;"></div>
+              <div class="cx-skeleton skeleton-text skeleton-badge" style="width: 55px;"></div>
+            </div>
+            <div class="cx-skeleton skeleton-text skeleton-subtitle" style="width: 45%; margin-top: 8px;"></div>
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+              <div class="cx-skeleton skeleton-text skeleton-badge" style="width: 70px;"></div>
+              <div class="cx-skeleton skeleton-text skeleton-badge" style="width: 60px;"></div>
+            </div>
+          </div>
+        ` : (filtered.length === 0 ? `
           <div class="library-empty-state">
             <svg class="cx-icon" style="width:48px; height:48px; opacity:0.4; margin-bottom:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             <p>No movements matched "${escapeHtml(_librarySearchQuery)}" in category "${_libraryActiveFilter}".</p>
             <button class="btn btn-secondary btn-sm" style="margin-top:12px;" onclick="clearLibraryFilters()">Clear Filters</button>
           </div>
-        ` : filtered.map(ex => renderExerciseCatalogCard(ex)).join('')}
+        ` : filtered.map(ex => renderExerciseCatalogCard(ex)).join(''))}
       </div>
     </div>
   `;
@@ -119,7 +158,20 @@ function renderExerciseCatalogCard(ex) {
   else if (patternLabel === 'Legs') muscles = ['Quads', 'Glutes', 'Hamstrings'];
   else if (patternLabel === 'Core') muscles = ['Abs', 'Obliques', 'Lower Back'];
   else if (patternLabel === 'Skill') muscles = ['Shoulders', 'Core', 'Stabilizers'];
-  else muscles = ['Full Body'];
+  const reqEquipment = typeof getExerciseRequiredEquipment === 'function' ? getExerciseRequiredEquipment(ex.name, ex.movement_pattern) : 'floor';
+  const currentProfile = typeof getEquipmentProfile === 'function' ? getEquipmentProfile() : ['pullup_bar', 'dip_bars', 'rings', 'parallettes', 'resistance_bands', 'floor'];
+  const hasEquipment = reqEquipment === 'floor' || currentProfile.includes(reqEquipment);
+  const equipmentNames = {
+    pullup_bar: 'Pull-up Bar',
+    rings: 'Rings',
+    dip_bars: 'Dip Station',
+    parallettes: 'Parallettes',
+    resistance_bands: 'Bands',
+    weight_vest: 'Weight Vest',
+    ab_wheel: 'Ab Wheel',
+    floor: 'Bodyweight'
+  };
+  const reqEquipmentName = equipmentNames[reqEquipment] || reqEquipment;
 
   return `
     <div class="library-card" id="ex-card-${ex.id}">
@@ -131,6 +183,7 @@ function renderExerciseCatalogCard(ex) {
         <span class="badge-pattern">${escapeHtml(patternLabel)}</span>
         <span class="badge-type">${isIsometric ? 'Hold (Secs)' : 'Reps Target'}</span>
         ${muscles.slice(0, 2).map(m => `<span class="badge-muscle">${escapeHtml(m)}</span>`).join('')}
+        ${!hasEquipment ? `<span class="badge-muscle" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);" title="Missing required equipment from active profile">⚠️ Needs ${escapeHtml(reqEquipmentName)}</span>` : ''}
       </div>
 
       ${(prereq || nextEx) ? `

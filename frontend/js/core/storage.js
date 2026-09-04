@@ -74,7 +74,10 @@ async function lsSyncPending() {
     }
   }
 
-  // 2. Sync pending individual log entries
+  // 2. Sync pending individual log entries (batch or single)
+  const pendingLogs = [];
+  const keyMap = [];
+
   for (const key of logKeys) {
     let record;
     try { record = JSON.parse(localStorage.getItem(key)); } catch { continue; }
@@ -85,17 +88,41 @@ async function lsSyncPending() {
       if (matched) record.exercise_id = matched.id;
       else { localStorage.removeItem(key); continue; }
     }
-    try {
-      if (typeof API !== 'undefined' && API.createLog) {
-        await API.createLog(record);
+    pendingLogs.push(record);
+    keyMap.push(key);
+  }
+
+  if (pendingLogs.length > 0) {
+    if (pendingLogs.length > 1 && typeof API !== 'undefined' && API.createLogsBatch) {
+      try {
+        await API.createLogsBatch(pendingLogs);
+        keyMap.forEach(k => localStorage.removeItem(k));
+      } catch (batchErr) {
+        // Fallback to sequential sync if batch endpoint failed
+        for (let i = 0; i < pendingLogs.length; i++) {
+          try {
+            if (API.createLog) await API.createLog(pendingLogs[i]);
+            localStorage.removeItem(keyMap[i]);
+          } catch (singleErr) {
+            if (singleErr?.message && (singleErr.message.includes('400') || singleErr.message.includes('404'))) {
+              localStorage.removeItem(keyMap[i]);
+            }
+          }
+        }
       }
-      localStorage.removeItem(key); // clean up confirmed entries
-    } catch (e) {
-      // If server returned a 4xx validation error, do not retry forever
-      if (e && e.message && (e.message.includes('400') || e.message.includes('404') || e.message.includes('Missing required'))) {
-        localStorage.removeItem(key);
+    } else {
+      for (let i = 0; i < pendingLogs.length; i++) {
+        try {
+          if (typeof API !== 'undefined' && API.createLog) {
+            await API.createLog(pendingLogs[i]);
+          }
+          localStorage.removeItem(keyMap[i]);
+        } catch (e) {
+          if (e && e.message && (e.message.includes('400') || e.message.includes('404') || e.message.includes('Missing required'))) {
+            localStorage.removeItem(keyMap[i]);
+          }
+        }
       }
-      // Otherwise network unavailable — leave in localStorage, will retry on next sync.
     }
   }
 

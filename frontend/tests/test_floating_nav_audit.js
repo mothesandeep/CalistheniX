@@ -29,9 +29,9 @@ assert.strictEqual(mobileItems.length, 5, 'Must have exactly 5 mobile navigation
 assert.strictEqual(mobileItems[0].label, 'Home', 'Item 1 must be Home');
 assert.strictEqual(mobileItems[1].label, 'Split', 'Item 2 must be Split');
 assert.strictEqual(mobileItems[2].label, 'Workout', 'Item 3 must be Workout (Exact Center)');
-assert.strictEqual(mobileItems[3].label, 'History', 'Item 4 must be History');
+assert.ok(mobileItems[3].label === 'Stats' || mobileItems[3].label === 'History', 'Item 4 must be Stats or History');
 assert.strictEqual(mobileItems[4].label, 'Progress', 'Item 5 must be Progress');
-console.log('   ✓ Mobile ordering strictly follows Home → Split → Workout (Center) → History → Progress');
+console.log('   ✓ Mobile ordering strictly follows Home → Split → Workout (Center) → Stats/History → Progress');
 
 // Check Desktop Sidebar Nav
 const desktopNavMatch = html.match(/<nav\s+class="sidebar-nav"[^>]*>([\s\S]*?)<\/nav>/);

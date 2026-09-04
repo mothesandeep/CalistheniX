@@ -129,6 +129,268 @@ const LS_SESSION_PREFIX   = 'cx_pending_session_';  // session sync queue
 const LS_AUDIO_CUES_KEY   = 'calisthenix_audio_cues';
 const LS_AUTO_ADVANCE_KEY = 'calisthenix_auto_advance';
 const LS_ACTIVE_SESSION   = 'cx_active_session';
+const LS_WEIGHT_UNIT_KEY  = 'cx_weight_unit';
+const LS_DEFAULT_REST_KEY = 'cx_default_rest_sec';
+const LS_REST_PAUSE_KEY   = 'cx_rest_pause_sec';
+const LS_KEEP_AWAKE_KEY   = 'cx_keep_screen_awake';
+const LS_FLASH_SCREEN_KEY = 'cx_flash_screen';
+const LS_EFFORT_MODE_KEY  = 'cx_effort_mode';
+const LS_THEME_KEY        = 'cx_theme';
+const LS_ACCENT_COLOR_KEY = 'cx_accent_color';
+const LS_BODY_MODEL_KEY   = 'cx_body_diagram_model';
+const LS_LANGUAGE_KEY     = 'cx_language';
+const LS_EQUIPMENT_KEY    = 'cx_equipment_profile';
+const LS_EQUIPMENT_PROFILES_KEY = 'cx_equipment_profiles';
+const LS_ACTIVE_EQUIPMENT_PROFILE_ID_KEY = 'cx_active_equipment_profile_id';
+
+const SETTINGS_DEFAULTS = {
+  weight_unit: 'kg',
+  default_rest_sec: 90,
+  rest_pause_sec: 15,
+  keep_screen_awake: true,
+  flash_screen: false,
+  effort_mode: 'RIR', // 'Off' | 'RIR' | 'RPE'
+  theme: 'dark', // 'dark' | 'light' | 'system'
+  accent_color: '#FF5D5D',
+  body_diagram_model: 'male', // 'male' | 'female'
+  language: 'en',
+  equipment: ['pullup_bar', 'dip_bars', 'rings', 'parallettes', 'resistance_bands', 'floor']
+};
+
+const LANGUAGES = {
+  en: 'English',
+  es: 'Español',
+  fr: 'Français',
+  de: 'Deutsch',
+  it: 'Italiano',
+  ja: '日本語'
+};
+
+const EQUIPMENT_CATALOG = [
+  { id: 'pullup_bar', name: 'Pull-up Bar', desc: 'Doorway, wall or ceiling mounted pull-up bar' },
+  { id: 'rings', name: 'Gymnastic Rings', desc: 'Wooden or composite rings with adjustable straps' },
+  { id: 'dip_bars', name: 'Dip Station / Parallel Bars', desc: 'Parallel bars for dips and leg raises' },
+  { id: 'parallettes', name: 'Low Parallettes', desc: 'Floor push-up and L-sit training bars' },
+  { id: 'resistance_bands', name: 'Resistance Bands', desc: 'Loop and pull-up assist bands' },
+  { id: 'weight_vest', name: 'Weight Vest / Dip Belt', desc: 'External loading for progressive overload' },
+  { id: 'ab_wheel', name: 'Ab Wheel / Roller', desc: 'Core extension rollout wheel' },
+  { id: 'floor', name: 'Floor & Wall Only', desc: 'Zero equipment bodyweight foundation' }
+];
+
+const DEFAULT_EQUIPMENT_PROFILES = [
+  {
+    id: 'profile_home',
+    name: 'Home Calisthenics',
+    desc: 'Pull-up bar, rings, dips, parallettes & bands',
+    icon: 'home',
+    isPreset: true,
+    equipment: ['pullup_bar', 'dip_bars', 'rings', 'parallettes', 'resistance_bands', 'floor']
+  },
+  {
+    id: 'profile_full',
+    name: 'Full Gym & Calisthenics Park',
+    desc: 'Complete equipment catalog with weighted calisthenics',
+    icon: 'dumbbell',
+    isPreset: true,
+    equipment: ['pullup_bar', 'rings', 'dip_bars', 'parallettes', 'resistance_bands', 'weight_vest', 'ab_wheel', 'floor']
+  },
+  {
+    id: 'profile_park',
+    name: 'Outdoor Calisthenics Park',
+    desc: 'High bars, parallel dip bars & rings',
+    icon: 'park',
+    isPreset: true,
+    equipment: ['pullup_bar', 'dip_bars', 'rings', 'floor']
+  },
+  {
+    id: 'profile_bodyweight',
+    name: 'Bodyweight Only / Travel',
+    desc: 'Zero equipment bodyweight & floor foundation',
+    icon: 'travel',
+    isPreset: true,
+    equipment: ['floor']
+  }
+];
+
+const ACCENT_SWATCHES = [
+  { hex: '#10B981', name: 'Emerald Green' },
+  { hex: '#3B82F6', name: 'Electric Blue' },
+  { hex: '#FF8A3D', name: 'Warmup Amber' },
+  { hex: '#A855F7', name: 'Cyber Purple' },
+  { hex: '#EC4899', name: 'Neon Pink' },
+  { hex: '#FF5D5D', name: 'Train Coral' },
+  { hex: '#35D8B0', name: 'Recover Teal' },
+  { hex: '#FFB800', name: 'Electric Yellow' }
+];
+
+const TRANSLATIONS = {
+  en: {
+    home: 'Home', workout: 'Workout', split: 'My Split', stats: 'Stats', progress: 'Progress', prs: 'PRs',
+    calendar: 'Calendar', library: 'Library', settings: 'Settings', profile: 'Profile', backup: 'Backup',
+    rest: 'Rest', weight: 'Weight', reps: 'Reps', hold: 'Hold', set: 'Set', sets: 'Sets', done: 'Done',
+    start: 'Start Workout', next: 'Next', previous: 'Previous', pause: 'Pause', resume: 'Resume',
+    finish: 'Finish Workout', skip: 'Skip', complete: 'Complete', completeSet: 'Complete Set',
+    markComplete: 'Mark Complete', streak: 'Day Streak', weekSessions: 'Weekly Sessions',
+    todayWorkout: "Today's Workout", restDay: 'Rest & Recovery Day', warmup: 'Warm-up',
+    mainWorkout: 'Main Workout', cooldown: 'Cool-down', prep: 'Prep', train: 'Train', recover: 'Recover',
+    exercises: 'Exercises', moveUp: 'Move Up', moveDown: 'Move Down', remove: 'Remove',
+    effort: 'Effort per set', theme: 'Theme', dark: 'Dark', light: 'Light', system: 'System',
+    bodyDiagram: 'Body diagram', male: 'Male', female: 'Female', accentColor: 'Accent color',
+    language: 'Language', selectLanguage: 'Select Language', weightUnit: 'Weight unit',
+    equipment: 'Equipment', equipmentProfiles: 'Equipment Profiles', activeProfile: 'Active Profile',
+    addEquipmentProfile: 'Add equipment profile', manageEquipment: 'Manage Equipment Profiles',
+    createProfile: 'Create Profile', newProfile: 'New Profile', editProfile: 'Edit Profile',
+    deleteProfile: 'Delete Profile', profileName: 'Profile Name', selectEquipment: 'Select Equipment',
+    presetProfile: 'Preset', customProfile: 'Custom', needsEquipment: 'Needs',
+    unavailableEquipment: 'Unavailable on active profile', inProfile: 'In Profile', allEquipment: 'All Movements',
+    searchMovements: 'Search movements...', save: 'Save', cancel: 'Cancel', close: 'Close',
+    goodMorning: 'Good morning', goodAfternoon: 'Good afternoon', goodEvening: 'Good evening'
+  },
+  es: {
+    home: 'Inicio', workout: 'Entrenamiento', split: 'Mi Rutina', stats: 'Estadísticas', progress: 'Progreso', prs: 'Récords',
+    calendar: 'Calendario', library: 'Biblioteca', settings: 'Ajustes', profile: 'Perfil', backup: 'Copia de Seguridad',
+    rest: 'Descanso', weight: 'Peso', reps: 'Reps', hold: 'Mantener', set: 'Serie', sets: 'Series', done: 'Hecho',
+    start: 'Comenzar Entrenamiento', next: 'Siguiente', previous: 'Anterior', pause: 'Pausar', resume: 'Reanudar',
+    finish: 'Finalizar Entrenamiento', skip: 'Saltar', complete: 'Completar', completeSet: 'Completar Serie',
+    markComplete: 'Marcar Completo', streak: 'Racha de Días', weekSessions: 'Sesiones Semanales',
+    todayWorkout: 'Entrenamiento de Hoy', restDay: 'Día de Descanso y Recuperación', warmup: 'Calentamiento',
+    mainWorkout: 'Entrenamiento Principal', cooldown: 'Enfriamiento', prep: 'Prep', train: 'Entrenar', recover: 'Recuperar',
+    exercises: 'Ejercicios', moveUp: 'Subir', moveDown: 'Bajar', remove: 'Eliminar',
+    effort: 'Esfuerzo por serie', theme: 'Tema', dark: 'Oscuro', light: 'Claro', system: 'Sistema',
+    bodyDiagram: 'Diagrama corporal', male: 'Hombre', female: 'Mujer', accentColor: 'Color de acento',
+    language: 'Idioma', selectLanguage: 'Seleccionar Idioma', weightUnit: 'Unidad de peso',
+    equipment: 'Equipamiento', equipmentProfiles: 'Perfiles de Equipamiento', activeProfile: 'Perfil Activo',
+    addEquipmentProfile: 'Añadir perfil de equipamiento', manageEquipment: 'Gestionar Perfiles de Equipamiento',
+    createProfile: 'Crear Perfil', newProfile: 'Nuevo Perfil', editProfile: 'Editar Perfil',
+    deleteProfile: 'Eliminar Perfil', profileName: 'Nombre del Perfil', selectEquipment: 'Seleccionar Equipamiento',
+    presetProfile: 'Predefinido', customProfile: 'Personalizado', needsEquipment: 'Requiere',
+    unavailableEquipment: 'No disponible en el perfil activo', inProfile: 'En Perfil', allEquipment: 'Todos los Movimientos',
+    searchMovements: 'Buscar movimientos...', save: 'Guardar', cancel: 'Cancelar', close: 'Cerrar',
+    goodMorning: 'Buenos días', goodAfternoon: 'Buenas tardes', goodEvening: 'Buenas noches'
+  },
+  fr: {
+    home: 'Accueil', workout: 'Entraînement', split: 'Programme', stats: 'Stats', progress: 'Progrès', prs: 'Records',
+    calendar: 'Calendrier', library: 'Bibliothèque', settings: 'Paramètres', profile: 'Profil', backup: 'Sauvegarde',
+    rest: 'Repos', weight: 'Poids', reps: 'Reps', hold: 'Maintien', set: 'Série', sets: 'Séries', done: 'Terminé',
+    start: 'Démarrer Entraînement', next: 'Suivant', previous: 'Précédent', pause: 'Pause', resume: 'Reprendre',
+    finish: 'Terminer Entraînement', skip: 'Passer', complete: 'Compléter', completeSet: 'Terminer Série',
+    markComplete: 'Marquer Terminé', streak: 'Série de Jours', weekSessions: 'Séances Semaine',
+    todayWorkout: "Entraînement d'aujourd'hui", restDay: 'Jour de Repos et Récupération', warmup: 'Échauffement',
+    mainWorkout: 'Entraînement Principal', cooldown: 'Retour au Calme', prep: 'Prép', train: 'Train', recover: 'Récup',
+    exercises: 'Exercices', moveUp: 'Monter', moveDown: 'Descendre', remove: 'Supprimer',
+    effort: 'Effort par série', theme: 'Thème', dark: 'Sombre', light: 'Clair', system: 'Système',
+    bodyDiagram: 'Diagramme corporel', male: 'Homme', female: 'Femme', accentColor: "Couleur d'accent",
+    language: 'Langue', selectLanguage: 'Sélectionner la Langue', weightUnit: 'Unité de poids',
+    equipment: 'Équipement', equipmentProfiles: "Profils d'Équipement", activeProfile: 'Profil Actif',
+    addEquipmentProfile: "Ajouter un profil d'équipement", manageEquipment: "Gérer les Profils d'Équipement",
+    createProfile: 'Créer Profil', newProfile: 'Nouveau Profil', editProfile: 'Modifier Profil',
+    deleteProfile: 'Supprimer Profil', profileName: 'Nom du Profil', selectEquipment: "Sélectionner l'Équipement",
+    presetProfile: 'Prédéfini', customProfile: 'Personnalisé', needsEquipment: 'Nécessite',
+    unavailableEquipment: 'Indisponible dans le profil actif', inProfile: 'Dans le Profil', allEquipment: 'Tous les Mouvements',
+    searchMovements: 'Rechercher des mouvements...', save: 'Enregistrer', cancel: 'Annuler', close: 'Fermer',
+    goodMorning: 'Bonjour', goodAfternoon: 'Bon après-midi', goodEvening: 'Bonsoir'
+  },
+  de: {
+    home: 'Start', workout: 'Training', split: 'Split-Plan', stats: 'Statistiken', progress: 'Fortschritt', prs: 'Bestleistungen',
+    calendar: 'Kalender', library: 'Übungen', settings: 'Einstellungen', profile: 'Profil', backup: 'Sicherung',
+    rest: 'Pause', weight: 'Gewicht', reps: 'Wdh', hold: 'Halten', set: 'Satz', sets: 'Sätze', done: 'Fertig',
+    start: 'Training Starten', next: 'Weiter', previous: 'Zurück', pause: 'Pause', resume: 'Fortsetzen',
+    finish: 'Training Beenden', skip: 'Überspringen', complete: 'Abschließen', completeSet: 'Satz Abschließen',
+    markComplete: 'Als Fertig Markieren', streak: 'Tage-Streak', weekSessions: 'Wochensitzungen',
+    todayWorkout: 'Heutiges Training', restDay: 'Ruhetag & Erholung', warmup: 'Aufwärmen',
+    mainWorkout: 'Haupttraining', cooldown: 'Abkühlen', prep: 'Vorbereitung', train: 'Training', recover: 'Erholung',
+    exercises: 'Übungen', moveUp: 'Nach Oben', moveDown: 'Nach Unten', remove: 'Entfernen',
+    effort: 'Anstrengung pro Satz', theme: 'Design', dark: 'Dunkel', light: 'Hell', system: 'System',
+    bodyDiagram: 'Körperdiagramm', male: 'Männlich', female: 'Weiblich', accentColor: 'Akzentfarbe',
+    language: 'Sprache', selectLanguage: 'Sprache Auswählen', weightUnit: 'Gewichtseinheit',
+    equipment: 'Ausrüstung', equipmentProfiles: 'Ausrüstungsprofile', activeProfile: 'Aktives Profil',
+    addEquipmentProfile: 'Ausrüstungsprofil hinzufügen', manageEquipment: 'Ausrüstungsprofile Verwalten',
+    createProfile: 'Profil Erstellen', newProfile: 'Neues Profil', editProfile: 'Profil Bearbeiten',
+    deleteProfile: 'Profil Löschen', profileName: 'Profilname', selectEquipment: 'Ausrüstung Auswählen',
+    presetProfile: 'Vorlage', customProfile: 'Benutzerdefiniert', needsEquipment: 'Benötigt',
+    unavailableEquipment: 'Nicht verfügbar im aktiven Profil', inProfile: 'Im Profil', allEquipment: 'Alle Übungen',
+    searchMovements: 'Übungen suchen...', save: 'Speichern', cancel: 'Abbrechen', close: 'Schließen',
+    goodMorning: 'Guten Morgen', goodAfternoon: 'Guten Tag', goodEvening: 'Guten Abend'
+  },
+  it: {
+    home: 'Home', workout: 'Allenamento', split: 'Scheda', stats: 'Statistiche', progress: 'Progressi', prs: 'Record',
+    calendar: 'Calendario', library: 'Libreria', settings: 'Impostazioni', profile: 'Profilo', backup: 'Backup',
+    rest: 'Riposo', weight: 'Peso', reps: 'Rip', hold: 'Tenuta', set: 'Serie', sets: 'Serie', done: 'Fatto',
+    start: 'Inizia Allenamento', next: 'Avanti', previous: 'Indietro', pause: 'Pausa', resume: 'Riprendi',
+    finish: 'Termina Allenamento', skip: 'Salta', complete: 'Completa', completeSet: 'Completa Serie',
+    markComplete: 'Segna Completato', streak: 'Giorni di Fila', weekSessions: 'Sessioni Settimanali',
+    todayWorkout: 'Allenamento di Oggi', restDay: 'Giorno di Riposo', warmup: 'Riscaldamento',
+    mainWorkout: 'Allenamento Principale', cooldown: 'Defaticamento', prep: 'Prep', train: 'Allena', recover: 'Recupera',
+    exercises: 'Esercizi', moveUp: 'Sposta Su', moveDown: 'Sposta Giù', remove: 'Rimuovi',
+    effort: 'Sforzo per serie', theme: 'Tema', dark: 'Scuro', light: 'Chiaro', system: 'Sistema',
+    bodyDiagram: 'Diagramma corporeo', male: 'Uomo', female: 'Donna', accentColor: 'Colore accento',
+    language: 'Lingua', selectLanguage: 'Seleziona Lingua', weightUnit: 'Unità di peso',
+    equipment: 'Attrezzatura', equipmentProfiles: 'Profili Attrezzatura', activeProfile: 'Profilo Attivo',
+    addEquipmentProfile: 'Aggiungi profilo attrezzatura', manageEquipment: 'Gestisci Profili Attrezzatura',
+    createProfile: 'Crea Profilo', newProfile: 'Nuovo Profilo', editProfile: 'Modifica Profilo',
+    deleteProfile: 'Elimina Profilo', profileName: 'Nome Profilo', selectEquipment: 'Seleziona Attrezzatura',
+    presetProfile: 'Predefinito', customProfile: 'Personalizzato', needsEquipment: 'Richiede',
+    unavailableEquipment: 'Non disponibile nel profilo attivo', inProfile: 'Nel Profilo', allEquipment: 'Tutti i Movimenti',
+    searchMovements: 'Cerca movimenti...', save: 'Salva', cancel: 'Annulla', close: 'Chiudi',
+    goodMorning: 'Buongiorno', goodAfternoon: 'Buon pomeriggio', goodEvening: 'Buonasera'
+  },
+  ja: {
+    home: 'ホーム', workout: 'ワークアウト', split: 'スプリット', stats: '統計', progress: '進捗', prs: '記録',
+    calendar: 'カレンダー', library: 'ライブラリ', settings: '設定', profile: 'プロフィール', backup: 'バックアップ',
+    rest: '休憩', weight: '重量', reps: '回数', hold: 'キープ', set: 'セット', sets: 'セット', done: '完了',
+    start: 'ワークアウト開始', next: '次へ', previous: '前へ', pause: '一時停止', resume: '再開',
+    finish: 'ワークアウト終了', skip: 'スキップ', complete: '完了', completeSet: 'セット完了',
+    markComplete: '完了にする', streak: '継続日数', weekSessions: '週間セッション',
+    todayWorkout: '今日のトレーニング', restDay: '休養・回復日', warmup: 'ウォームアップ',
+    mainWorkout: 'メインワークアウト', cooldown: 'クールダウン', prep: '準備', train: '鍛錬', recover: '回復',
+    exercises: '種目', moveUp: '上へ', moveDown: '下へ', remove: '削除',
+    effort: 'セット毎の負荷', theme: 'テーマ', dark: 'ダーク', light: 'ライト', system: 'システム',
+    bodyDiagram: '身体図モデル', male: '男性', female: '女性', accentColor: 'アクセントカラー',
+    language: '言語', selectLanguage: '言語を選択', weightUnit: '重量単位',
+    equipment: '器具', equipmentProfiles: '器具プロファイル', activeProfile: '使用中プロファイル',
+    addEquipmentProfile: '器具プロファイルを追加', manageEquipment: '器具プロファイルの管理',
+    createProfile: 'プロファイル作成', newProfile: '新規プロファイル', editProfile: 'プロファイル編集',
+    deleteProfile: 'プロファイル削除', profileName: 'プロファイル名', selectEquipment: '器具を選択',
+    presetProfile: 'プリセット', customProfile: 'カスタム', needsEquipment: '必要器具',
+    unavailableEquipment: '現在のプロファイルにありません', inProfile: '器具対応のみ', allEquipment: '全種目',
+    searchMovements: '種目を検索...', save: '保存', cancel: 'キャンセル', close: '閉じる',
+    goodMorning: 'おはようございます', goodAfternoon: 'こんにちは', goodEvening: 'こんばんは'
+  }
+};
+
+function t(key, fallback = '') {
+  let lang = 'en';
+  try {
+    if (typeof localStorage !== 'undefined') {
+      lang = localStorage.getItem('cx_language') || 'en';
+    } else if (typeof state !== 'undefined' && state.language) {
+      lang = state.language;
+    }
+  } catch {}
+  return TRANSLATIONS[lang]?.[key] || TRANSLATIONS['en']?.[key] || fallback || key;
+}
+
+function getExerciseRequiredEquipment(exerciseOrName, movementPattern = '') {
+  let name = '';
+  let pat = '';
+  if (typeof exerciseOrName === 'string') {
+    name = exerciseOrName;
+    pat = movementPattern;
+  } else if (exerciseOrName && typeof exerciseOrName === 'object') {
+    name = exerciseOrName.name || exerciseOrName.id || '';
+    pat = exerciseOrName.pattern || exerciseOrName.movement_pattern || exerciseOrName.category || movementPattern || '';
+  }
+  name = String(name).toLowerCase();
+  pat = String(pat).toLowerCase();
+  if (name.includes('ring') || pat.includes('ring')) return 'rings';
+  if (name.includes('parallette') || name.includes('low bar')) return 'parallettes';
+  if (name.includes('dip') || name.includes('parallel bar')) return 'dip_bars';
+  if (name.includes('pull-up') || name.includes('chin-up') || name.includes('dead hang') || name.includes('hanging') || name.includes('muscle-up')) return 'pullup_bar';
+  if (name.includes('band') || name.includes('assisted')) return 'resistance_bands';
+  if (name.includes('weighted') || name.includes('vest') || name.includes('belt')) return 'weight_vest';
+  if (name.includes('wheel') || name.includes('roller')) return 'ab_wheel';
+  return 'floor';
+}
 
 // ─── Workout State Machine Constants ─────────────────────────────────────────
 const WORKOUT_PHASES = {
@@ -142,8 +404,8 @@ const WORKOUT_PHASES = {
 };
 
 const PHASE_STATES = {
-  IDLE: 'IDLE',
-  ACTIVE: 'ACTIVE',
+  NOT_STARTED: 'NOT_STARTED',
+  IN_PROGRESS: 'IN_PROGRESS',
   PAUSED: 'PAUSED',
   COMPLETED: 'COMPLETED',
   SKIPPED: 'SKIPPED',
@@ -168,5 +430,15 @@ if (typeof window !== 'undefined') {
   window.WORKOUT_PHASES  = WORKOUT_PHASES;
   window.PHASE_STATES    = PHASE_STATES;
   window.MAIN_WORKOUT_STATES = MAIN_WORKOUT_STATES;
+  window.SETTINGS_DEFAULTS = SETTINGS_DEFAULTS;
+  window.LANGUAGES       = LANGUAGES;
+  window.EQUIPMENT_CATALOG = EQUIPMENT_CATALOG;
+  window.DEFAULT_EQUIPMENT_PROFILES = DEFAULT_EQUIPMENT_PROFILES;
+  window.ACCENT_SWATCHES = ACCENT_SWATCHES;
+  window.TRANSLATIONS    = TRANSLATIONS;
+  window.t               = t;
+  window.translate       = t;
+  window.LS_EQUIPMENT_PROFILES_KEY = LS_EQUIPMENT_PROFILES_KEY;
+  window.LS_ACTIVE_EQUIPMENT_PROFILE_ID_KEY = LS_ACTIVE_EQUIPMENT_PROFILE_ID_KEY;
+  window.getExerciseRequiredEquipment = getExerciseRequiredEquipment;
 }
-

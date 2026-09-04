@@ -962,6 +962,9 @@ function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
     }
 
     const setCount = sets.length || 3;
+    const hasCustomRest = le.rest_sec != null && typeof le.rest_sec === 'number' && le.rest_sec > 0;
+    const defaultRest = typeof getDefaultRestSec === 'function' ? getDefaultRestSec() : 90;
+    const resolvedRest = hasCustomRest ? le.rest_sec : defaultRest;
     return {
       id: le.id,
       exercise_id: le.exercise_id,
@@ -969,11 +972,12 @@ function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
       exercise_type: isHold ? 'duration' : 'reps',
       phase: 'main_workout',
       tempo: le.tempo,
-      rest_sec: le.rest_sec || 90,
+      rest_sec: resolvedRest,
+      custom_rest_sec: hasCustomRest,
       superset_group: le.superset_group,
       notes: le.notes,
       duration_text: `${setCount} sets × ${targetVal}${isHold ? 's hold' : ' reps'}`,
-      est_duration: `${Math.round((setCount * ((le.rest_sec || 90) + (isHold ? targetVal : 40))) / 60)} min`,
+      est_duration: `${Math.round((setCount * (resolvedRest + (isHold ? targetVal : 40))) / 60)} min`,
       sets,
     };
   });
@@ -1063,7 +1067,7 @@ function startWorkoutFromData(workoutName, exercisesList, workoutId = null) {
     },
     restTimer: {
       isRunning: false,
-      durationSec: 90,
+      durationSec: (typeof getDefaultRestSec === 'function' ? getDefaultRestSec() : 90),
       remainingSec: 0,
       startedAt: null,
       pausedAt: null,
@@ -1126,7 +1130,7 @@ async function startWorkoutSession(routineName) {
       sets: 3,
       reps: e.type === 'reps' ? 10 : null,
       duration_sec: e.type === 'duration' ? 30 : null,
-      rest_sec: 90
+      rest_sec: (typeof getDefaultRestSec === 'function' ? getDefaultRestSec() : 90)
     })));
     return;
   }
@@ -1167,6 +1171,9 @@ function openWorkoutView() {
   state.view = 'workout';
   if (typeof window !== 'undefined' && window.location) {
     window.location.hash = 'workout';
+  }
+  if (typeof acquireScreenWakeLock === 'function') {
+    acquireScreenWakeLock();
   }
   const session = getActiveSession();
   if (session && (session.status === 'in_progress' || session.status === 'active' || session.phaseState === 'ACTIVE') && (session.startTime || session.startedAt)) {
@@ -3782,7 +3789,8 @@ function stopWorkoutHold(saveAndComplete = true) {
     }
 
     // Trigger Rest Countdown
-    const restSec = currentEx.rest_sec || 90;
+    const defaultRest = typeof getDefaultRestSec === 'function' ? getDefaultRestSec() : 90;
+    const restSec = currentEx.rest_sec != null ? currentEx.rest_sec : defaultRest;
     if (restSec > 0) {
       session.mainWorkoutSubState = 'RESTING';
       const nextInfo = getNextSetDescription(session, exIdx, setIdx);
@@ -4196,8 +4204,10 @@ function renderWorkoutFloatingRestBar(session) {
     ? session.activeSetIndex
     : (curSetIdx !== -1 ? curSetIdx : (currentEx.sets ? currentEx.sets.length - 1 : 0));
 
+  const defaultRest = typeof getDefaultRestSec === 'function' ? getDefaultRestSec() : 90;
+  const restPauseDelta = typeof getRestPauseSec === 'function' ? getRestPauseSec() : 15;
   const remaining = _workoutRestState.remaining != null ? _workoutRestState.remaining : (session.restTimer ? session.restTimer.remainingSec : 0);
-  const total = _workoutRestState.total > 0 ? _workoutRestState.total : (session.restTimer?.durationSec || 90);
+  const total = _workoutRestState.total > 0 ? _workoutRestState.total : (session.restTimer?.durationSec || defaultRest);
   const isRestComplete = _workoutRestState.state === 'FINISHED' || _workoutRestState.completed || remaining <= 0;
   const progressPct = total > 0 ? Math.min(100, Math.max(0, (remaining / total) * 100)) : 0;
   const formattedTime = isRestComplete ? '0:00' : formatRestTime(remaining);
@@ -4225,8 +4235,8 @@ function renderWorkoutFloatingRestBar(session) {
       <!-- Bottom Row: Stepper Controls + Skip/Start Button (No Pause Button) -->
       <div class="runner-rest-card-bottom-row">
         <div class="runner-rest-controls-group">
-          <button class="runner-rest-text-btn" type="button" onclick="adjustWorkoutRest(-15)">− 15s</button>
-          <button class="runner-rest-text-btn" type="button" onclick="adjustWorkoutRest(15)">+ 15s</button>
+          <button class="runner-rest-text-btn" type="button" onclick="adjustWorkoutRest(-${restPauseDelta})">− ${restPauseDelta}s</button>
+          <button class="runner-rest-text-btn" type="button" onclick="adjustWorkoutRest(${restPauseDelta})">+ ${restPauseDelta}s</button>
         </div>
 
         ${!isRestComplete ? `
@@ -4502,7 +4512,8 @@ function toggleWorkoutSet(exIdx, setIdx) {
     }
 
     // Start Rest Timer for this exercise with contextual feedback
-    const restSec = currentEx.rest_sec || 90;
+    const defaultRest = typeof getDefaultRestSec === 'function' ? getDefaultRestSec() : 90;
+    const restSec = currentEx.rest_sec != null ? currentEx.rest_sec : defaultRest;
     if (restSec > 0) {
       session.mainWorkoutSubState = 'RESTING';
       const nextInfo = getNextSetDescription(session, exIdx, setIdx);
@@ -4953,15 +4964,51 @@ function confirmFinishAnyway() {
 async function promoteProgression(exerciseId, nextId) {
   if (!confirm('Advance this exercise to the next progression tier in your routine?')) return;
   const leRows = (state.levelExercises || []).filter(le => le.exercise_id === exerciseId);
-  try {
-    for (const le of leRows) {
-      if (API.updateLevelExercise) await API.updateLevelExercise(le.id, { exercise_id: nextId });
+
+  const prevExercises = JSON.parse(JSON.stringify(state.exercises || []));
+  const prevLevelExercises = JSON.parse(JSON.stringify(state.levelExercises || []));
+
+  if (typeof triggerHaptic === 'function') triggerHaptic('medium');
+
+  if (typeof optimisticMutate === 'function') {
+    await optimisticMutate({
+      optimistic: () => {
+        // Optimistically update local level exercises
+        if (state.levelExercises) {
+          state.levelExercises.forEach(le => {
+            if (le.exercise_id === exerciseId) le.exercise_id = nextId;
+          });
+        }
+        render();
+        return { prevExercises, prevLevelExercises };
+      },
+      action: async () => {
+        for (const le of leRows) {
+          if (API.updateLevelExercise) await API.updateLevelExercise(le.id, { exercise_id: nextId });
+        }
+        if (typeof loadExercises === 'function') await loadExercises();
+      },
+      rollback: (saved) => {
+        if (saved) {
+          state.exercises = saved.prevExercises;
+          state.levelExercises = saved.prevLevelExercises;
+          render();
+        }
+      },
+      successMsg: 'Progression advanced in Routine!',
+      errorMsg: 'Could not advance progression.'
+    });
+  } else {
+    try {
+      for (const le of leRows) {
+        if (API.updateLevelExercise) await API.updateLevelExercise(le.id, { exercise_id: nextId });
+      }
+      if (typeof loadExercises === 'function') await loadExercises();
+      showToast('Progression advanced in Routine!');
+      render();
+    } catch (e) {
+      showToast(`Promotion error: ${e.message}`, true);
     }
-    if (typeof loadExercises === 'function') await loadExercises();
-    showToast('Progression advanced in Routine!');
-    render();
-  } catch (e) {
-    showToast(`Promotion error: ${e.message}`, true);
   }
 }
 
@@ -6175,18 +6222,21 @@ function canNavigateToNextExercise(session) {
 let _isExerciseTransitioning = false;
 
 function transitionToExercise(direction, updateSessionFn) {
-  if (typeof updateSessionFn === 'function') {
-    updateSessionFn();
-  }
-
   let session = getActiveSession();
   if (!session) {
+    if (typeof updateSessionFn === 'function') updateSessionFn();
     render();
+    return;
+  }
+
+  // Prevent rapid double-clicks from triggering overlapping transitions
+  if (_isExerciseTransitioning) {
     return;
   }
 
   // If in Node or workout screen is not rendered in DOM, do standard render()
   if (typeof document === 'undefined' || typeof document.querySelector !== 'function') {
+    if (typeof updateSessionFn === 'function') updateSessionFn();
     render();
     return;
   }
@@ -6195,6 +6245,7 @@ function transitionToExercise(direction, updateSessionFn) {
   const centerCol = widescreenEl ? widescreenEl.querySelector('.runner-center-column') : null;
 
   if (!widescreenEl || !centerCol || (typeof state !== 'undefined' && state.view !== 'workout')) {
+    if (typeof updateSessionFn === 'function') updateSessionFn();
     render();
     return;
   }
@@ -6205,12 +6256,18 @@ function transitionToExercise(direction, updateSessionFn) {
     session.phaseState === (typeof PHASE_STATES !== 'undefined' ? PHASE_STATES.COMPLETED : 'COMPLETED');
 
   if (isTerminal) {
+    if (typeof updateSessionFn === 'function') updateSessionFn();
     render();
     return;
   }
 
-  // Prevent rapid double-clicks from triggering overlapping transitions
-  if (_isExerciseTransitioning) {
+  if (typeof updateSessionFn === 'function') {
+    updateSessionFn();
+  }
+
+  session = getActiveSession();
+  if (!session) {
+    render();
     return;
   }
 
@@ -6345,7 +6402,7 @@ function transitionToExercise(direction, updateSessionFn) {
         });
         widescreenEl.classList.remove('runner-stage-transitioning');
         _isExerciseTransitioning = false;
-      }, 160);
+      }, 130);
     });
   }, 110);
 }
@@ -6837,7 +6894,7 @@ function getWorkoutPhaseModel(session) {
   auth.main.list.forEach(ex => {
     const isH = ex.exercise_type === 'duration';
     (ex.sets || []).forEach(s => {
-      mainEstSec += (isH ? (s.target_val || 30) : (s.target_val || 10) * 3) + (ex.rest_sec || 90);
+      mainEstSec += (isH ? (s.target_val || 30) : (s.target_val || 10) * 3) + (ex.rest_sec || (typeof getDefaultRestSec === 'function' ? getDefaultRestSec() : 90));
     });
   });
   const mainEstMin = Math.max(15, Math.round(mainEstSec / 60));
@@ -7547,6 +7604,11 @@ function renderWarmupCardView(session) {
         <button onclick="requestFinishWorkout()"></button>
       </div>
 
+      <!-- Movement Indicator Dots -->
+      <div class="runner-set-dots-row" style="display:flex; justify-content:center; gap:6px; margin-bottom:12px;">
+        ${setDotsHtml}
+      </div>
+
       <!-- Movement Name & Context -->
       <div class="runner-exercise-name-zone">
         <h2 class="runner-exercise-name-title">${currentEx.exercise_name}</h2>
@@ -7704,7 +7766,7 @@ function renderMainWorkoutCardView(session) {
         <div class="runner-exercise-context-text mono">
           <span>Set ${activeSetIdx + 1} of ${totalSets} · ${currentEx.movement_pattern ? currentEx.movement_pattern.toUpperCase() : 'CALISTHENICS'}</span>
           <span class="runner-context-sep">·</span>
-          <span class="runner-context-rest-badge">⏱ Rest: ${currentEx.rest_sec || 90}s</span>
+          <span class="runner-context-rest-badge">⏱ Rest: ${currentEx.rest_sec || (typeof getDefaultRestSec === 'function' ? getDefaultRestSec() : 90)}s</span>
         </div>
       </div>
 
@@ -7862,6 +7924,11 @@ function renderCooldownCardView(session) {
         <span id="workout-elapsed-val">00:00</span>
         <button onclick="togglePauseWorkoutSession()"></button>
         <button onclick="requestFinishWorkout()"></button>
+      </div>
+
+      <!-- Stretch Indicator Dots -->
+      <div class="runner-set-dots-row" style="display:flex; justify-content:center; gap:6px; margin-bottom:12px;">
+        ${setDotsHtml}
       </div>
 
       <!-- Stretch Name & Context -->
@@ -8128,3 +8195,88 @@ if (typeof window !== 'undefined') {
   window.renderInlinePhaseQueue = renderInlinePhaseQueue;
   window.selectExerciseToExecute = selectExerciseToExecute;
 }
+
+// ─── Reactive Settings Event Listeners ────────────────────────────────────────
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  window.addEventListener('cx:rest-duration-changed', (e) => {
+    const sec = e.detail?.sec;
+    if (!sec || isNaN(sec)) return;
+    if (typeof state !== 'undefined') state.defaultRestSec = sec;
+    const session = typeof getActiveSession === 'function' ? getActiveSession() : null;
+    if (session) {
+      if (session.exercises && Array.isArray(session.exercises)) {
+        session.exercises.forEach(ex => {
+          if (!ex.custom_rest_sec) {
+            ex.rest_sec = sec;
+          }
+        });
+      }
+      if (session.restTimer && !session.restTimer.isRunning) {
+        session.restTimer.durationSec = sec;
+      }
+      if (typeof saveActiveSession === 'function') {
+        saveActiveSession(session);
+      }
+    }
+    if (typeof state !== 'undefined' && state.view === 'workout' && typeof render === 'function') {
+      render();
+    }
+  });
+
+  window.addEventListener('cx:rest-pause-changed', (e) => {
+    const sec = e.detail?.sec;
+    if (!sec || isNaN(sec)) return;
+    if (typeof state !== 'undefined') state.restPauseSec = sec;
+    if (typeof state !== 'undefined' && state.view === 'workout' && typeof render === 'function') {
+      render();
+    }
+  });
+
+  window.addEventListener('cx:wake-lock-changed', async (e) => {
+    const awake = !!e.detail?.awake;
+    if (typeof state !== 'undefined') state.keepScreenAwake = awake;
+    if (awake) {
+      const session = typeof getActiveSession === 'function' ? getActiveSession() : null;
+      if (session && (session.status === 'in_progress' || session.status === 'active')) {
+        if (typeof acquireScreenWakeLock === 'function') {
+          await acquireScreenWakeLock();
+        }
+      }
+    } else {
+      if (typeof releaseScreenWakeLock === 'function') {
+        await releaseScreenWakeLock();
+      }
+    }
+  });
+
+  window.addEventListener('cx:sounds-changed', (e) => {
+    const enabled = !!e.detail?.enabled;
+    if (typeof state !== 'undefined') state.soundsEnabled = enabled;
+    if (typeof setAudioCuesEnabled === 'function') {
+      setAudioCuesEnabled(enabled);
+    }
+  });
+
+  window.addEventListener('cx:flash-screen-changed', (e) => {
+    const enabled = !!e.detail?.enabled;
+    if (typeof state !== 'undefined') state.flashScreen = enabled;
+  });
+
+  window.addEventListener('cx:effort-mode-changed', (e) => {
+    const mode = e.detail?.mode || 'RIR';
+    if (typeof state !== 'undefined') state.effortMode = mode;
+    if (typeof state !== 'undefined' && state.view === 'workout' && typeof render === 'function') {
+      render();
+    }
+  });
+
+  window.addEventListener('cx:weight-unit-changed', (e) => {
+    const unit = e.detail?.unit || 'kg';
+    if (typeof state !== 'undefined') state.weightUnit = unit;
+    if (typeof state !== 'undefined' && state.view === 'workout' && typeof render === 'function') {
+      render();
+    }
+  });
+}
+

@@ -16,11 +16,9 @@ assert.ok(mobileViewMatch, 'Mobile home view block must exist in home.js');
 
 const mobileContent = mobileViewMatch[1];
 
-// Verify 4 core sections are present
-assert.ok(mobileContent.includes('mobileTodayCardHtml'), 'Section 1 (Today\'s Workout) must exist');
-assert.ok(mobileContent.includes('mobileThisWeekCardHtml'), 'Section 2 (This Week) must exist');
-assert.ok(mobileContent.includes('mobileStreakCardHtml'), 'Section 3 (Current Streak) must exist');
-assert.ok(mobileContent.includes('mobileUpNextCardHtml'), 'Section 4 (Up Next) must exist');
+assert.ok(mobileContent.includes('mobileWeekCardHtml'), 'This Week card must exist');
+assert.ok(mobileContent.includes('mobileStreakCardHtml'), 'Streak card must exist');
+assert.ok(mobileContent.includes('mobileUpNextCardHtml'), 'Up Next card must exist');
 
 console.log('✓ Exactly 4 dedicated conceptual sections present on Mobile Home:');
 console.log('  [1] Today\'s Workout ("What should I do today?")');

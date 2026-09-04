@@ -216,6 +216,8 @@ vm.runInContext(stateCode, sandbox);
 vm.runInContext(animCode, sandbox);
 vm.runInContext(runnerCode, sandbox);
 
+vm.runInContext("state.view = 'workout';", sandbox);
+
 console.log('=============================================================');
 console.log('CALISTHENIX — IN-PLACE EXERCISE TRANSITIONS TEST SUITE');
 console.log('=============================================================\n');
@@ -279,11 +281,14 @@ async function runTests() {
   // Test 1: Next Exercise navigation in Warm-Up
   console.log('>>> TEST 1: Next Exercise in Warm-Up Phase...');
   let session = createSampleSession();
+  mockWidescreen.setAttribute('data-phase', 'warmup');
   sandbox.saveActiveSession(session);
   sandbox._renderCount = 0;
 
   session.warmup[0].completed = true;
   sandbox.saveActiveSession(session);
+  sandbox.navigateToNextExercise();
+  await new Promise(r => setTimeout(r, 350));
 
   console.log('Session after navigate:', sandbox.getActiveSession().warmupIndex);
   console.log('Render count:', sandbox._renderCount);
@@ -376,6 +381,7 @@ async function runTests() {
   updatedSession = sandbox.getActiveSession();
   assert(updatedSession.currentPhase === 'cooldown' || updatedSession.activeExerciseIndex !== null, 'Session state remained healthy under rapid clicks');
   console.log('  ✓ Rapid repeated clicks are cleanly debounced.');
+  await new Promise(r => setTimeout(r, 350));
 
   // Test 8: prefers-reduced-motion check
   console.log('>>> TEST 8: Accessibility - prefers-reduced-motion Support...');

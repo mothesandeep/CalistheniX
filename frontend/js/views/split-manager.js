@@ -127,7 +127,7 @@ function renderExercisePickerModalHtml() {
   if (!state.showExercisePickerModal) return '';
   const phase = state.exercisePickerPhase || 'main';
   const phaseTitle = phase === 'warmup' ? 'Warm-up & Mobility' : (phase === 'cooldown' ? 'Cool-down & Recovery' : 'Main Workout');
-  const filterChips = ['All', 'Push', 'Pull', 'Legs', 'Core', 'Skill', 'Isometric'];
+  const filterChips = ['All', 'In Profile', 'Push', 'Pull', 'Legs', 'Core', 'Skill', 'Isometric'];
 
   return `
     <div class="split-modal-backdrop" onclick="if(event.target === this) closeExerciseLibraryPicker()">
@@ -2057,29 +2057,71 @@ async function selectSplit(splitId) {
 }
 
 async function activateSplit(splitId) {
-  try {
-    await API.activateSplit(splitId);
-    showToast('Split set as Active');
-    await loadSplits();
-    await loadTodayResolved();
-    render();
-  } catch (e) {
-    showToast(`Error activating split: ${e.message}`, true);
-  }
+  const prevSplits = JSON.parse(JSON.stringify(state.splits || []));
+  const prevActive = state.activeSplit ? JSON.parse(JSON.stringify(state.activeSplit)) : null;
+
+  if (typeof triggerHaptic === 'function') triggerHaptic('medium');
+
+  await optimisticMutate({
+    optimistic: () => {
+      if (state.splits) {
+        state.splits.forEach(s => { s.is_active = (s.id === splitId) ? 1 : 0; });
+        state.activeSplit = state.splits.find(s => s.id === splitId) || state.activeSplit;
+      }
+      render();
+      return { prevSplits, prevActive };
+    },
+    action: async () => {
+      await API.activateSplit(splitId);
+      await loadSplits();
+      await loadTodayResolved();
+      render();
+    },
+    rollback: (saved) => {
+      if (saved) {
+        state.splits = saved.prevSplits;
+        state.activeSplit = saved.prevActive;
+        render();
+      }
+    },
+    successMsg: 'Split set as Active',
+    errorMsg: 'Could not activate split.'
+  });
 }
 
 async function handleDeleteSplit(splitId, splitName) {
   if (!confirm(`Are you sure you want to delete "${splitName}"?\nCompleted workout sessions and logs will NOT be deleted.`)) return;
-  try {
-    await API.deleteSplit(splitId);
-    showToast(`Deleted split "${splitName}"`);
-    state.selectedSplitId = null;
-    await loadSplits();
-    await loadTodayResolved();
-    render();
-  } catch (e) {
-    showToast(`Error deleting split: ${e.message}`, true);
-  }
+
+  const prevSplits = JSON.parse(JSON.stringify(state.splits || []));
+  const prevSelectedId = state.selectedSplitId;
+
+  if (typeof triggerHaptic === 'function') triggerHaptic('medium');
+
+  await optimisticMutate({
+    optimistic: () => {
+      state.splits = (state.splits || []).filter(s => s.id !== splitId);
+      if (state.selectedSplitId === splitId) {
+        state.selectedSplitId = state.splits[0]?.id || null;
+      }
+      render();
+      return { prevSplits, prevSelectedId };
+    },
+    action: async () => {
+      await API.deleteSplit(splitId);
+      await loadSplits();
+      await loadTodayResolved();
+      render();
+    },
+    rollback: (saved) => {
+      if (saved) {
+        state.splits = saved.prevSplits;
+        state.selectedSplitId = saved.prevSelectedId;
+        render();
+      }
+    },
+    successMsg: `Deleted split "${splitName}"`,
+    errorMsg: `Failed to delete split "${splitName}".`
+  });
 }
 
 function openDayEditor(dayIndex) {
@@ -2431,6 +2473,7 @@ async function handleCreateWorkout(event) {
 }
 
 async function handleDuplicateWorkout(workoutId) {
+  if (typeof triggerHaptic === 'function') triggerHaptic('light');
   try {
     const detail = await API.getWorkoutDetail(workoutId);
     if (!detail) return;
@@ -2462,22 +2505,41 @@ async function handleDuplicateWorkout(workoutId) {
 
 async function handleDeleteWorkout(workoutId, workoutName) {
   if (!confirm(`Are you sure you want to delete "${workoutName || 'this workout'}"?`)) return;
-  try {
-    await API.deleteWorkout(workoutId);
-    showToast(`Deleted workout: ${workoutName || ''}`);
-    await loadWorkouts();
-    if (state.selectedWorkoutId === workoutId) {
-      state.selectedWorkoutId = state.workouts[0]?.id || null;
+
+  const prevWorkouts = JSON.parse(JSON.stringify(state.workouts || []));
+  const prevSelectedId = state.selectedWorkoutId;
+
+  if (typeof triggerHaptic === 'function') triggerHaptic('medium');
+
+  await optimisticMutate({
+    optimistic: () => {
+      state.workouts = (state.workouts || []).filter(w => w.id !== workoutId);
+      if (state.selectedWorkoutId === workoutId) {
+        state.selectedWorkoutId = state.workouts[0]?.id || null;
+      }
+      render();
+      return { prevWorkouts, prevSelectedId };
+    },
+    action: async () => {
+      await API.deleteWorkout(workoutId);
+      await loadWorkouts();
       if (state.selectedWorkoutId) {
         await loadWorkoutDetail(state.selectedWorkoutId);
       } else {
         state.selectedWorkoutDetail = null;
       }
-    }
-    render();
-  } catch (e) {
-    showToast(`Error deleting workout: ${e.message}`, true);
-  }
+      render();
+    },
+    rollback: (saved) => {
+      if (saved) {
+        state.workouts = saved.prevWorkouts;
+        state.selectedWorkoutId = saved.prevSelectedId;
+        render();
+      }
+    },
+    successMsg: `Deleted workout: ${workoutName || ''}`,
+    errorMsg: `Failed to delete workout.`
+  });
 }
 
 function adjustPhaseSlotSets(phase, idx, delta) {
@@ -2787,6 +2849,11 @@ function renderExercisePickerGridHtml() {
       if (filter === 'Core' && !pattern.includes('core') && !day.includes('core') && !name.includes('plank') && !name.includes('hollow')) return false;
       if (filter === 'Skill' && !pattern.includes('skill') && !day.includes('skill') && !name.includes('handstand') && !name.includes('lever') && !name.includes('planche')) return false;
       if (filter === 'Isometric' && ex.type !== 'duration') return false;
+      if (filter === 'In Profile') {
+        const req = typeof getExerciseRequiredEquipment === 'function' ? getExerciseRequiredEquipment(ex.name, ex.movement_pattern) : 'floor';
+        const profile = typeof getEquipmentProfile === 'function' ? getEquipmentProfile() : [];
+        if (req !== 'floor' && !profile.includes(req)) return false;
+      }
     }
     if (query) {
       const matchName = (ex.name || '').toLowerCase().includes(query);
@@ -2816,6 +2883,21 @@ function renderExercisePickerGridHtml() {
     else if (pattern.includes('core')) patternLabel = 'Core';
     else if (pattern.includes('skill')) patternLabel = 'Skill';
 
+    const reqEquipment = typeof getExerciseRequiredEquipment === 'function' ? getExerciseRequiredEquipment(ex.name, ex.movement_pattern) : 'floor';
+    const currentProfile = typeof getEquipmentProfile === 'function' ? getEquipmentProfile() : ['pullup_bar', 'dip_bars', 'rings', 'parallettes', 'resistance_bands', 'floor'];
+    const hasEquipment = reqEquipment === 'floor' || currentProfile.includes(reqEquipment);
+    const equipmentNames = {
+      pullup_bar: 'Pull-up Bar',
+      rings: 'Rings',
+      dip_bars: 'Dip Station',
+      parallettes: 'Parallettes',
+      resistance_bands: 'Bands',
+      weight_vest: 'Weight Vest',
+      ab_wheel: 'Ab Wheel',
+      floor: 'Bodyweight'
+    };
+    const reqEquipmentName = equipmentNames[reqEquipment] || reqEquipment;
+
     return `
       <div class="exercise-picker-card" onclick="addExerciseFromPicker(${ex.id}, '${phase}')">
         <div class="exercise-picker-card-info">
@@ -2823,6 +2905,7 @@ function renderExercisePickerGridHtml() {
           <div class="exercise-picker-card-tags">
             <span class="badge-pattern" style="font-size:9.5px; padding:1px 6px;">${patternLabel}</span>
             <span class="badge-type" style="font-size:9.5px; padding:1px 6px;">${isHold ? 'Hold (Secs)' : 'Reps Target'}</span>
+            ${!hasEquipment ? `<span class="badge-muscle" style="font-size:9.5px; padding:1px 6px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);">⚠️ Needs ${escapeHtml(reqEquipmentName)}</span>` : ''}
           </div>
         </div>
         <button type="button" class="btn btn-primary btn-sm" style="padding:4px 12px; font-size:11.5px; font-weight:700;" onclick="event.stopPropagation(); addExerciseFromPicker(${ex.id}, '${phase}')">
@@ -3471,6 +3554,21 @@ function renderPhaseAccordionGroupHtml(phaseKey, title, icon, phaseExercises, al
             const setsVal = ex.sets || 3;
             const repsVal = ex.target_reps || ex.reps || (ex.hold_seconds ? `${ex.hold_seconds}s` : '10');
 
+            const reqEquipment = typeof getExerciseRequiredEquipment === 'function' ? getExerciseRequiredEquipment(ex.exercise_name || ex.name, ex.movement_pattern) : 'floor';
+            const currentProfile = typeof getEquipmentProfile === 'function' ? getEquipmentProfile() : ['pullup_bar', 'dip_bars', 'rings', 'parallettes', 'resistance_bands', 'floor'];
+            const hasEquipment = reqEquipment === 'floor' || currentProfile.includes(reqEquipment);
+            const equipmentNames = {
+              pullup_bar: 'Pull-up Bar',
+              rings: 'Rings',
+              dip_bars: 'Dip Station',
+              parallettes: 'Parallettes',
+              resistance_bands: 'Bands',
+              weight_vest: 'Weight Vest',
+              ab_wheel: 'Ab Wheel',
+              floor: 'Bodyweight'
+            };
+            const reqEquipmentName = equipmentNames[reqEquipment] || reqEquipment;
+
             return `
               <div class="routine-ex-item-card">
                 <div class="routine-ex-item-thumb">
@@ -3478,7 +3576,10 @@ function renderPhaseAccordionGroupHtml(phaseKey, title, icon, phaseExercises, al
                 </div>
                 <div class="routine-ex-item-info" onclick="openExerciseConfigurator(${ex.exercise_id || ex.id || 1})">
                   <div class="routine-ex-item-name">${escapeHtml(ex.exercise_name || ex.name)}</div>
-                  <div class="routine-ex-item-sets-reps">${setsVal} × ${repsVal}</div>
+                  <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:2px;">
+                    <span class="routine-ex-item-sets-reps">${setsVal} × ${repsVal}</span>
+                    ${!hasEquipment ? `<span class="badge-muscle" style="font-size:9.5px; padding:1px 6px; background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);" title="Unavailable in active equipment profile">⚠️ Needs ${escapeHtml(reqEquipmentName)}</span>` : ''}
+                  </div>
                 </div>
                 <div class="routine-ex-item-controls">
                   <button type="button" class="btn-superset-link ${ex.is_superset ? 'active' : ''}" title="Superset with exercise above" onclick="toggleExerciseSuperset(${realIdx})">

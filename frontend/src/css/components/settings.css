@@ -1,0 +1,581 @@
+/* ==========================================================================
+   CalistheniX — Settings & Modal Dialogs (Native Mobile & Desktop)
+   ========================================================================== */
+
+/* ── Global Settings Backdrop Base ────────────────────────────────────────── */
+.settings-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 4, 10, 0.85);
+  backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* ── Desktop Settings Modal (>= 1024px) ───────────────────────────────────── */
+@media (min-width: 1024px) {
+  .settings-modal {
+    background: var(--liquid-surface-overlay, #0d0d16);
+    backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+    -webkit-backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+    border: var(--liquid-border-highlight, 1px solid rgba(255, 255, 255, 0.12));
+    border-radius: 20px;
+    max-width: 620px;
+    width: 100%;
+    max-height: 86vh;
+    padding: 22px 24px;
+    box-shadow: var(--liquid-shadow-overlay), var(--liquid-highlight-top-elevated);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    animation: modalPopIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    box-sizing: border-box;
+  }
+
+  .settings-modal::-webkit-scrollbar {
+    width: 6px;
+  }
+  .settings-modal::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .settings-modal::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 9999px;
+  }
+
+  .settings-sheet-backdrop {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 20px;
+  }
+
+  .settings-sheet {
+    border-radius: 20px !important;
+    max-width: 440px !important;
+    border: var(--liquid-border-highlight) !important;
+    box-shadow: var(--liquid-shadow-overlay) !important;
+    animation: modalPopIn 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+}
+
+/* ── Mobile Native Settings View (< 1024px) ───────────────────────────────── */
+@media (max-width: 1023px) {
+  .settings-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--bg, #09090b);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    z-index: 850;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    scroll-behavior: smooth;
+  }
+
+  .settings-modal {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    max-width: 100%;
+    width: 100%;
+    padding: 0;
+    gap: 0;
+    animation: none;
+  }
+}
+
+/* ── Mobile Settings Container & Spacing ──────────────────────────────────── */
+.settings-mobile-container {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 12px 14px max(112px, calc(96px + env(safe-area-inset-bottom, 0px)));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 180ms ease-out forwards;
+}
+
+/* ── Mobile Header ────────────────────────────────────────────────────────── */
+.settings-mobile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 2px 2px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg, #09090b);
+}
+
+.settings-back-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  background: var(--liquid-surface-2, rgba(255, 255, 255, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: all var(--transition-fast);
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settings-back-btn:active {
+  transform: scale(0.92);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.settings-mobile-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+/* ── Grouped Section Card Architecture ────────────────────────────────────── */
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.settings-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted, #8b8b9e);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0 4px;
+  margin-bottom: 1px;
+}
+
+.settings-card {
+  background: var(--liquid-surface-1, rgba(18, 18, 25, 0.85));
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-group-caption {
+  font-size: 11.5px;
+  color: var(--text-dim, #5a5a70);
+  line-height: 1.38;
+  padding: 3px 6px 0;
+  font-weight: 400;
+}
+
+/* ── Settings Row Layout ─────────────────────────────────────────────────── */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  min-height: 50px;
+  gap: 12px;
+  position: relative;
+  transition: background 120ms ease;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settings-row:not(:last-child) {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.settings-row.is-clickable {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.settings-row.is-clickable:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.settings-row.is-clickable:active {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.settings-row-left {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  flex: 1;
+}
+
+.settings-row-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.settings-row-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.settings-row-title.is-danger {
+  color: #FF5D5D;
+}
+
+.settings-row-subtitle {
+  font-size: 12px;
+  color: var(--text-muted, #8b8b9e);
+  line-height: 1.35;
+  margin-top: 2px;
+  font-weight: 400;
+}
+
+.settings-row-right {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.settings-value-label {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-muted, #8b8b9e);
+}
+
+.settings-chevron {
+  color: var(--text-dim, #5a5a70);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+}
+
+.settings-chevron svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.2;
+}
+
+/* ── Tinted Icon Boxes ───────────────────────────────────────────────────── */
+.settings-icon-box {
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+.settings-icon-box svg {
+  width: 16px;
+  height: 16px;
+}
+
+.box-gold {
+  background: #FFB800;
+  color: #0b0b10;
+}
+
+.box-blue {
+  background: #3B82F6;
+  color: #ffffff;
+}
+
+.box-teal {
+  background: #35D8B0;
+  color: #0b0b10;
+}
+
+.box-purple {
+  background: #A855F7;
+  color: #ffffff;
+}
+
+.box-pink {
+  background: #EC4899;
+  color: #ffffff;
+}
+
+.box-coral {
+  background: #FF5D5D;
+  color: #ffffff;
+}
+
+.box-amber {
+  background: #FF8A3D;
+  color: #0b0b10;
+}
+
+.box-green {
+  background: #10B981;
+  color: #ffffff;
+}
+
+.box-red {
+  background: #EF4444;
+  color: #ffffff;
+}
+
+.box-gray {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+/* ── Native iOS-Style Toggle Switch ───────────────────────────────────────── */
+.cx-switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.cx-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.cx-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.14);
+  transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cx-switch-slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #ffffff;
+  transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+.cx-switch input:checked + .cx-switch-slider {
+  background-color: var(--accent, #FF5D5D);
+  border-color: transparent;
+}
+
+.cx-switch input:checked + .cx-switch-slider:before {
+  transform: translateX(18px);
+}
+
+/* ── Native Segmented Control ────────────────────────────────────────────── */
+.cx-segmented {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 3px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 2px;
+}
+
+.cx-seg-btn {
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted, #8b8b9e);
+  padding: 5px 11px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 140ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cx-seg-btn:active {
+  transform: scale(0.96);
+}
+
+.cx-seg-btn.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* ── Accent Color Swatches Grid ───────────────────────────────────────────── */
+.settings-swatches-grid {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px 14px;
+  flex-wrap: wrap;
+}
+
+.settings-swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settings-swatch:active {
+  transform: scale(0.9);
+}
+
+.settings-swatch.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2.5px rgba(255, 255, 255, 0.45), 0 3px 10px rgba(0, 0, 0, 0.6);
+  transform: scale(1.12);
+}
+
+/* ── Interactive Sheets & Pickers ─────────────────────────────────────────── */
+.settings-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  z-index: 10001;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: fadeIn 150ms ease-out forwards;
+}
+
+.settings-sheet {
+  background: var(--liquid-surface-overlay, #111118);
+  border-top: var(--liquid-border-highlight);
+  border-radius: 22px 22px 0 0;
+  width: 100%;
+  max-width: 500px;
+  padding: 20px 16px max(24px, calc(16px + env(safe-area-inset-bottom, 0px)));
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation: slideUp 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  max-height: 82vh;
+  overflow-y: auto;
+}
+
+.settings-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-sheet-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.settings-sheet-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-sheet-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  cursor: pointer;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 120ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settings-sheet-option:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.settings-sheet-option.active {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
+  font-weight: 600;
+}
+
+/* ── App Footer & Metadata ───────────────────────────────────────────────── */
+.settings-app-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 5px;
+  padding: 6px 12px 20px;
+  color: var(--text-dim, #5a5a70);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.settings-app-footer strong {
+  color: var(--text-muted, #8b8b9e);
+  font-weight: 600;
+}
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

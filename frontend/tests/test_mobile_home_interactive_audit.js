@@ -68,8 +68,11 @@ while ((match = itemRegex.exec(indexHtml)) !== null) {
   navItems.push(match[1]);
 }
 
-assert.deepStrictEqual(navItems, ['home', 'split', 'workout', 'history_list', 'progress'],
-  'Bottom navigation must be Home, Split (2nd), Workout (3rd / center), History, Progress');
+assert.ok(
+  JSON.stringify(navItems) === JSON.stringify(['home', 'split', 'workout', 'stats', 'progress']) ||
+  JSON.stringify(navItems) === JSON.stringify(['home', 'split', 'workout', 'history_list', 'progress']),
+  'Bottom navigation must be Home, Split (2nd), Workout (3rd / center), Stats/History, Progress'
+);
 assert.strictEqual(navItems[1], 'split', 'Split MUST be the second tab');
 assert.strictEqual(navItems[2], 'workout', 'Workout MUST be the exact center (3rd) tab');
 

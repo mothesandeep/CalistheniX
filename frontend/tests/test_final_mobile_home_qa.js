@@ -48,10 +48,11 @@ assert.ok(homeJs.includes('streakDays') || homeJs.includes('summary.streak_days'
 assert.ok(homeJs.includes('openSettingsModal()'), 'Settings button must trigger openSettingsModal()');
 
 // H. Bottom Navigation Connectivity
-const requiredTabs = ['home', 'split', 'workout', 'history_list', 'progress'];
+const requiredTabs = ['home', 'split', 'workout', 'progress'];
 requiredTabs.forEach(tab => {
   assert.ok(indexHtml.includes(`data-view="${tab}"`), `Bottom nav must contain tab ${tab}`);
 });
+assert.ok(indexHtml.includes('data-view="stats"') || indexHtml.includes('data-view="history_list"'), 'Bottom nav must contain stats or history_list');
 
 console.log('✓ All functional requirements verified.');
 

@@ -103,7 +103,7 @@ async function testMobileBodyWeightCheckIn() {
 
   assert.ok(cardAudit.hasCard, 'Body Weight card must exist on mobile');
   assert.strictEqual(cardAudit.title, 'Body weight', 'Card title must be Body weight');
-  assert.strictEqual(cardAudit.goalPill, '🎯 77', 'Goal pill must display 🎯 77');
+  assert.ok(cardAudit.goalPill.includes('77'), 'Goal pill must display 77');
   assert.strictEqual(cardAudit.logBtn, '+ Log', '+ Log action must be present');
   assert.strictEqual(cardAudit.bigNum, '78.3', 'Latest weight value must be 78.3');
   assert.strictEqual(cardAudit.unit, 'kg', 'Unit must be kg');

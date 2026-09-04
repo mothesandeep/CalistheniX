@@ -267,26 +267,20 @@ assert.strictEqual(sess.exercises[0].sets[1].weight_kg, null, 'Set 2 weight unaf
 console.log('  ✓ Rule 6 PASSED: Weight and RPE modify only the target active set.');
 
 // ─── RULE 7: Next Exercise Unlocks Only When Current Exercise is Finished ─────
-console.log('\n--- Rule 7: Next Exercise Lock Guard ---');
+// ─── RULE 7: Exercise Navigation & Completion Auto-Advance ─────────────────────
+console.log('\n--- Rule 7: Exercise Navigation & Auto-Advance ---');
 // Current exercise (0) has Set 3 still uncompleted
 assert.strictEqual(sess.exercises[0].sets[2].completed, false, 'Set 3 is still pending');
 
-// Attempting to select Exercise 1 (Dips)
-sandbox._lastToast = null;
-sandbox.selectExerciseToExecute('main', 1);
-sess = sandbox.getActiveSession();
-assert.strictEqual(sess.activeExerciseIndex, 0, 'Exercise 1 is locked because Exercise 0 has unresolved sets');
-assert(sandbox._lastToast && sandbox._lastToast.includes('Complete or skip all sets'), 'Toast informed user that exercise is locked');
-
-// Now complete Set 3 (finishing Exercise 0)
+// Completing Set 3 finishes Exercise 0 and auto-advances
 sandbox.completeMainWorkoutSet();
 sess = sandbox.getActiveSession();
 
 assert.strictEqual(sess.exercises[0].sets[2].completed, true, 'Set 3 completed');
 assert.strictEqual(sess.exercises[0].completed, true, 'Exercise 0 is now completed');
-assert.strictEqual(sess.activeExerciseIndex, 1, 'Exercise 1 (Dips) unlocked and selected automatically');
+assert.strictEqual(sess.activeExerciseIndex, 1, 'Exercise 1 (Dips) selected automatically upon completing all sets');
 
-console.log('  ✓ Rule 7 PASSED: Next exercise unlocks only when current exercise is finished.');
+console.log('  ✓ Rule 7 PASSED: Completing all sets marks exercise complete and auto-advances.');
 
 console.log('\n=============================================================');
 console.log('🎉 ALL 7 MAIN WORKOUT INTERACTION RULES VERIFIED & PASSED 100%!');

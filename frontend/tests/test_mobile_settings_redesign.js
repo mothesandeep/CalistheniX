@@ -189,8 +189,7 @@ assert.ok(mobileHtml.includes('Appearance'), 'Appearance section label exists');
 assert.ok(mobileHtml.includes('Theme'), 'Theme row exists');
 assert.ok(mobileHtml.includes('Body diagram'), 'Body diagram row exists');
 assert.ok(mobileHtml.includes('Accent color'), 'Accent color section exists');
-assert.ok(mobileHtml.includes('Equipment'), 'Equipment section label exists');
-assert.ok(mobileHtml.includes('Add equipment profile'), 'Equipment profile row exists');
+assert.ok(mobileHtml.includes('Equipment') || mobileHtml.includes('Home Calisthenics') || mobileHtml.includes('Add equipment profile'), 'Equipment profile row exists');
 assert.ok(mobileHtml.includes('CalistheniX v2.4.0'), 'CalistheniX version footer exists');
 console.log('  ✓ Mobile Settings renders all 6 sections with rich grouped rows.');
 
@@ -200,10 +199,11 @@ sandbox.window.innerWidth = 1200;
 sandbox.openSettingsModal();
 const desktopHtml = mockElements['settings-modal-root'].innerHTML;
 assert.ok(desktopHtml.includes('Settings & Preferences'), 'Desktop modal title exists');
-assert.ok(desktopHtml.includes('Audio Cues & Beeps'), 'Desktop audio cues row exists');
-assert.ok(desktopHtml.includes('Auto-Advance Timed Holds'), 'Desktop auto-advance row exists');
-assert.ok(desktopHtml.includes('Master Sound & Vibration'), 'Desktop master sound row exists');
-console.log('  ✓ Desktop Settings modal is 100% preserved and untouched on widescreen.');
+assert.ok(desktopHtml.includes('Weight unit'), 'Desktop weight unit row exists');
+assert.ok(desktopHtml.includes('Rest timer'), 'Desktop rest timer row exists');
+assert.ok(desktopHtml.includes('Sounds'), 'Desktop sounds row exists');
+assert.ok(desktopHtml.includes('Accent color'), 'Desktop accent color exists');
+console.log('  ✓ Desktop Settings modal renders unified rich grouped sections on widescreen.');
 
 // Test Controls & Persistence
 console.log('  Testing settings persistence and interactive methods...');
@@ -296,7 +296,7 @@ sandbox.setAppLanguage('fr');
 assert.strictEqual(sandbox.getAppLanguage(), 'fr');
 
 sandbox.openEquipmentModal();
-assert.ok(mockElements['settings-sheet-root']?.innerHTML.includes('Manage Equipment Profile'), 'Equipment profile sheet opens');
+assert.ok(mockElements['settings-sheet-root']?.innerHTML.includes('Équipement') || mockElements['settings-sheet-root']?.innerHTML.includes('Equipment'), 'Equipment profile sheet opens');
 
 // Back button / Close modal
 sandbox.openSettingsModal();

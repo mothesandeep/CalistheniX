@@ -82,16 +82,105 @@ function fmtDurationMinSec(sec) {
   return `${m}m ${s}s`;
 }
 
+// ─── Tactile Micro-Interactions & Haptics ────────────────────────────────────
+function triggerHaptic(type = 'light') {
+  const nav = (typeof window !== 'undefined' && window.navigator) ? window.navigator : (typeof navigator !== 'undefined' ? navigator : null);
+  if (!nav || typeof nav.vibrate !== 'function') return;
+  try {
+    if (type === 'light') nav.vibrate(10);
+    else if (type === 'medium') nav.vibrate(25);
+    else if (type === 'success') nav.vibrate([15, 30, 20]);
+    else if (type === 'error') nav.vibrate([30, 40, 30]);
+  } catch (e) {}
+}
+
+// ─── Optimistic Mutation Utility with Automatic Rollback ─────────────────────
+async function optimisticMutate({
+  optimistic,
+  action,
+  rollback,
+  onSuccess,
+  onError,
+  successMsg,
+  errorMsg
+}) {
+  let rollbackState = null;
+  try {
+    if (typeof optimistic === 'function') {
+      rollbackState = optimistic();
+    }
+    const result = await action();
+    if (typeof onSuccess === 'function') onSuccess(result);
+    if (successMsg) showToast(successMsg, { type: 'success' });
+    return result;
+  } catch (err) {
+    console.warn('Optimistic action failed, rolling back:', err);
+    if (typeof rollback === 'function') {
+      try { rollback(rollbackState, err); } catch (rErr) { console.error('Rollback error:', rErr); }
+    }
+    const msg = errorMsg || (err?.message ? `Failed: ${err.message}` : 'Operation failed. Changes reverted.');
+    showToast(msg, { type: 'error' });
+    triggerHaptic('error');
+    if (typeof onError === 'function') onError(err);
+    throw err;
+  }
+}
+
+// ─── Rich Dynamic Toast System with Action & Feedback ─────────────────────────
 let _toastTimer = null;
-function showToast(msg, isError = false) {
+function showToast(msg, options = false) {
   const toast = document.getElementById('toast');
   if (!toast) return;
-  toast.textContent = msg;
-  toast.className = `toast ${isError ? 'toast-error' : 'toast-success'} toast-show`;
+
+  const isOldBool = typeof options === 'boolean';
+  const opts = isOldBool
+    ? { type: options ? 'error' : 'success', duration: 3500 }
+    : (typeof options === 'object' && options !== null ? options : { type: 'success', duration: 3500 });
+
+  const type = opts.type || 'success';
+  const duration = opts.duration || 3500;
+
+  let iconSvg = '';
+  if (type === 'success') {
+    iconSvg = '<svg class="toast-icon cx-icon-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  } else if (type === 'error') {
+    iconSvg = '<svg class="toast-icon cx-icon-danger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+  } else if (type === 'warning') {
+    iconSvg = '<svg class="toast-icon cx-icon-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+  } else {
+    iconSvg = '<svg class="toast-icon cx-icon-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+  }
+
+  const undoHtml = (opts.undoFn && typeof opts.undoFn === 'function')
+    ? `<button class="toast-undo-btn" id="toast-undo-btn">${opts.undoLabel || 'Undo'}</button>`
+    : '';
+
+  toast.innerHTML = `
+    <div class="toast-inner">
+      ${iconSvg}
+      <span class="toast-text">${typeof escapeHtml === 'function' ? escapeHtml(msg) : msg}</span>
+      ${undoHtml}
+    </div>
+  `;
+
+  toast.className = `toast toast-${type} toast-show`;
+
+  if (opts.undoFn) {
+    const undoBtn = document.getElementById('toast-undo-btn');
+    if (undoBtn) {
+      undoBtn.onclick = (e) => {
+        e.stopPropagation();
+        toast.className = 'toast toast-hidden';
+        clearTimeout(_toastTimer);
+        opts.undoFn();
+      };
+    }
+  }
+
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => {
     toast.className = 'toast toast-hidden';
-  }, 3500);
+  }, duration);
 }
 
 // ─── Session Helpers ─────────────────────────────────────────────────────────
@@ -185,6 +274,8 @@ if (typeof window !== 'undefined') {
   window.fmtSecs = fmtSecs;
   window.fmtDurationMinSec = fmtDurationMinSec;
   window.showToast = showToast;
+  window.triggerHaptic = triggerHaptic;
+  window.optimisticMutate = optimisticMutate;
   window.getExercise = getExercise;
   window.getActiveSession = getActiveSession;
   window.saveActiveSession = saveActiveSession;

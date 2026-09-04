@@ -1,0 +1,6379 @@
+/* ── Phase 3: Active Workout Execution Runner ──────────────────────────────── */
+
+/* ── Phase-Accent Dynamic Theming ──────────────────────────────────────────── */
+/* Default: Train phase (coral-red) */
+.runner-screen-widescreen {
+  --phase-accent: #FF5D5D;
+  --phase-accent-rgb: 255, 93, 93;
+  --phase-accent-hover: #FF4040;
+  --phase-accent-dim: rgba(255, 93, 93, 0.08);
+  --phase-accent-surface: rgba(255, 93, 93, 0.06);
+  --phase-accent-border: rgba(255, 93, 93, 0.25);
+  --phase-accent-glow: 0 0 20px rgba(255, 93, 93, 0.18);
+}
+
+.runner-screen-widescreen[data-phase="warmup"] {
+  --phase-accent: #FF8A3D;
+  --phase-accent-rgb: 255, 138, 61;
+  --phase-accent-hover: #FF7A20;
+  --phase-accent-dim: rgba(255, 138, 61, 0.08);
+  --phase-accent-surface: rgba(255, 138, 61, 0.06);
+  --phase-accent-border: rgba(255, 138, 61, 0.25);
+  --phase-accent-glow: 0 0 20px rgba(255, 138, 61, 0.18);
+}
+
+.runner-screen-widescreen[data-phase="cooldown"] {
+  --phase-accent: #35D8B0;
+  --phase-accent-rgb: 53, 216, 176;
+  --phase-accent-hover: #28C49E;
+  --phase-accent-dim: rgba(53, 216, 176, 0.08);
+  --phase-accent-surface: rgba(53, 216, 176, 0.06);
+  --phase-accent-border: rgba(53, 216, 176, 0.25);
+  --phase-accent-glow: 0 0 20px rgba(53, 216, 176, 0.18);
+}
+
+.workout-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
+  color: var(--text);
+}
+
+@keyframes pulse-accent {
+  0%, 100% { border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35); }
+  50% { border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.7); box-shadow: 0 0 6px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.2); }
+}
+
+@keyframes pulse-hold {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(0.97); filter: brightness(1.2); }
+}
+
+/* ── Today Execution Hub Styles (Phase 2 Separation) ──────────────────────── */
+.today-hero-card {
+  background: #121217;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.today-hero-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.today-hero-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.today-hero-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.today-hero-metrics {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.today-metric-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.today-metric-val {
+  color: var(--text);
+  font-weight: 600;
+  font-family: var(--mono);
+}
+
+.today-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.today-status-active {
+  background: var(--accent-dim);
+  color: var(--accent-light);
+  border: 1px solid var(--border-accent);
+}
+
+.today-status-done {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+/* ── Workout Paused Banner ─────────────────────────────────────────────────── */
+
+/* ── Workout Rest Banner ─────────────────────────────────────────────────── */
+
+@keyframes restSlideUp {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Decluttered Workout Runner (Priority P0) ─────────────────────────────── */
+.runner-screen {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.runner-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.runner-timer-pill {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--surface-2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.runner-progress-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 300ms ease;
+}
+.runner-exercise-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+.runner-benchmark-val {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text);
+}
+.runner-hold-btn-lg.running {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Secondary Drawer for RPE / Weight / Notes */
+
+/* Active Rest Countdown Box */
+
+/* ── 3. Active Exercise Stage Card ────────────────────────────────────────── */
+.runner-stage-card {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  animation: runnerStageFadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+@keyframes runnerStageFadeIn {
+  from {
+    opacity: 0.75;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.runner-stage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.runner-stage-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runner-set-stepper-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  margin-bottom: 2px;
+}
+
+.runner-set-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--phase-accent, #FF5D5D);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.runner-set-pips-track {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.runner-set-pip {
+  height: 6px;
+  border-radius: 99px;
+  transition: all 220ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.runner-set-pip.completed {
+  width: 14px;
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.45);
+  animation: pipCompleteBounce 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pipCompleteBounce {
+  0% { transform: scale(0.6); }
+  60% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.runner-set-pip.current {
+  width: 22px;
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 10px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.45);
+}
+
+.runner-set-pip.upcoming {
+  width: 10px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.runner-set-pill {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--phase-accent, #FF5D5D);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+
+.runner-exercise-name {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.runner-exercise-context {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.runner-stage-art {
+  width: 58px;
+  height: 58px;
+  min-width: 58px;
+  min-height: 58px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  transition: all var(--transition);
+}
+
+.runner-stage-art:hover {
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.06);
+  transform: scale(1.04);
+}
+
+.runner-illustration-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ── Benchmarks Strip (Secondary comparison) ──────────────────────────────── */
+.runner-benchmarks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+
+.runner-benchmark-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.runner-benchmark-col-right {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.runner-benchmark-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.runner-benchmark-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.runner-benchmark-time {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  line-height: 1.2;
+}
+
+/* ── Central Reps & Hold Counter Zone (Context-Aware Visual Focal Point) ──── */
+.runner-hero-counter-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 6px 0 2px;
+}
+
+.runner-reps-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.runner-reps-btn {
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  min-height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.runner-reps-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: scale(1.06);
+}
+
+.runner-reps-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.runner-reps-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.runner-reps-btn:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.runner-reps-digits-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 140px;
+  text-align: center;
+}
+
+.runner-reps-num {
+  font-family: var(--mono);
+  font-size: 62px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #ffffff;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  min-width: 2ch;
+  text-align: center;
+}
+
+.runner-reps-unit {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.14em;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+.runner-weight-pill {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--phase-accent, #FF5D5D);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.04em;
+}
+
+.runner-hold-live-control {
+  display: flex;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+/* ── Quick-Fill Performance Shortcut Chips ────────────────────────────────── */
+.runner-quick-fill-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.runner-quick-fill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+  padding: 5px 12px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.runner-quick-fill-chip:hover:not(:disabled) {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.14);
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.38);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.runner-quick-fill-chip:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.runner-quick-fill-chip.active {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.18);
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.45);
+  color: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 12px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.22);
+}
+
+.runner-quick-fill-chip:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.runner-ring-btn {
+  padding: 6px 16px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.runner-ring-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.runner-ring-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.runner-ring-btn.running {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #ef4444;
+}
+
+/* ── 4. Primary Complete Action CTA (Strongest Action) ────────────────────── */
+.runner-complete-action-btn {
+  width: 100%;
+  padding: 15px 20px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  background: var(--phase-accent, #FF5D5D);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.3);
+  transition: transform 140ms cubic-bezier(0.34, 1.56, 0.64, 1), background 160ms ease, box-shadow 160ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.runner-complete-action-btn:hover:not(:disabled) {
+  background: var(--phase-accent, #FF5D5D);
+  filter: brightness(1.12);
+  box-shadow: 0 6px 20px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.45);
+  transform: translateY(-1px);
+}
+
+.runner-complete-action-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.runner-complete-action-btn.btn-pop {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  box-shadow: 0 0 24px rgba(16, 185, 129, 0.55), 0 4px 14px rgba(16, 185, 129, 0.35) !important;
+  animation: btnCompleteSpring 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.runner-complete-action-btn.btn-pop .runner-check-icon {
+  animation: checkmarkPop 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes btnCompleteSpring {
+  0% { transform: scale(0.95); }
+  50% { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+
+@keyframes checkmarkPop {
+  0% { transform: scale(0.6) rotate(-20deg); }
+  60% { transform: scale(1.4) rotate(8deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+/* ── 5. Set Details Accordion ─────────────────────────────────────────────── */
+.runner-details-accordion {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 12px;
+}
+
+.runner-details-summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: color var(--transition);
+}
+
+.runner-details-summary:hover {
+  color: #ffffff;
+}
+
+.runner-details-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.runner-details-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.runner-details-summary:hover .runner-details-title {
+  color: #ffffff;
+}
+
+.runner-details-subtitle {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+}
+
+.runner-details-summary::-webkit-details-marker {
+  display: none;
+}
+
+.runner-details-body {
+  padding-top: 12px;
+}
+
+.runner-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.runner-form-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* ── 4. Session Overview Queue ────────────────────────────────────────────── */
+.runner-queue-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.runner-queue-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px 4px 4px;
+}
+
+.runner-queue-tag {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.runner-queue-summary {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.runner-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Base Sequence Row (Compact, strong alignment, not large cards) */
+.runner-seq-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 180ms ease;
+  user-select: none;
+}
+
+.runner-seq-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.runner-seq-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.runner-seq-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.runner-seq-name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-seq-sub {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.runner-seq-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.runner-seq-count {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* 1. COMPLETED: visually quieter, checkmark, reduced emphasis, reviewable with satisfying completion entry */
+.runner-seq-row.completed {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  opacity: 0.72;
+  animation: rowCompletedFlash 450ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes rowCompletedFlash {
+  0% {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: rgba(16, 185, 129, 0.5);
+    opacity: 1;
+    transform: scale(1.015);
+  }
+  100% {
+    background: rgba(255, 255, 255, 0.015);
+    border-color: rgba(255, 255, 255, 0.04);
+    opacity: 0.72;
+    transform: scale(1);
+  }
+}
+
+.runner-seq-row.completed:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.runner-seq-row.completed .runner-seq-icon {
+  color: #10b981;
+  animation: checkBounce 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes checkBounce {
+  0% { transform: scale(0.5) rotate(-15deg); }
+  60% { transform: scale(1.3) rotate(6deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.runner-seq-row.completed .runner-seq-name {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.runner-seq-row.completed .runner-seq-sub {
+  color: var(--text-dim);
+}
+
+.runner-seq-row.completed .runner-seq-count {
+  color: #10b981;
+}
+
+/* 2. CURRENT: strongest row, subtle active indicator, clearly connected to active card */
+.runner-seq-row.current {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.08);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.28);
+  border-left: 3px solid var(--phase-accent, #FF5D5D);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.runner-seq-row.current:hover {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12);
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.38);
+}
+
+.runner-seq-row.current .runner-seq-icon {
+  color: var(--phase-accent, #FF5D5D);
+  font-size: 13px;
+}
+
+.runner-seq-row.current .runner-seq-name {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.runner-seq-row.current .runner-seq-sub {
+  color: var(--text-muted);
+}
+
+.runner-seq-row.current .runner-seq-count {
+  color: #ffffff;
+}
+
+/* 3. UPCOMING: neutral/subdued, hollow circle, no unnecessary glow */
+.runner-seq-row.upcoming {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.runner-seq-row.upcoming:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.runner-seq-row.upcoming .runner-seq-icon {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.runner-seq-row.upcoming .runner-seq-name {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.runner-seq-row.upcoming .runner-seq-sub {
+  color: var(--text-dim);
+}
+
+.runner-seq-row.upcoming .runner-seq-count {
+  color: var(--text-dim);
+}
+
+.runner-coach-tip {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.runner-coach-tip-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--phase-accent, #FF5D5D);
+  display: flex;
+  align-items: center;
+}
+
+.runner-coach-tip-text {
+  flex: 1;
+  color: #cbd5e1;
+}
+
+.runner-coach-tip-text strong {
+  color: #ffffff;
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+@media (max-width: 640px) {
+  .runner-top-bar {
+    gap: 8px;
+  }
+  .runner-header-routine-title {
+    font-size: 13px;
+  }
+  .runner-header-session-sub {
+    font-size: 10px;
+  }
+  .runner-timer-pill {
+    padding: 4px 9px;
+    font-size: 12px;
+    gap: 4px;
+  }
+  .runner-back-btn,
+  .runner-header-opt-btn {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+  }
+  .runner-finish-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .runner-stage-card {
+    padding: 16px 16px 14px;
+    gap: 14px;
+  }
+  .runner-exercise-name {
+    font-size: 22px;
+  }
+  .runner-exercise-context {
+    font-size: 12px;
+  }
+  .runner-stage-art {
+    width: 48px;
+    height: 48px;
+  }
+  .runner-reps-num {
+    font-size: 52px;
+  }
+  .runner-reps-stepper {
+    gap: 16px;
+  }
+  .runner-reps-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+  .runner-complete-action-btn {
+    padding: 14px 16px;
+    font-size: 14px;
+  }
+  .runner-benchmarks {
+    padding: 8px 12px;
+  }
+  .runner-form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* ── Discard Workout Modal & Action Styling ───────────────────────────────── */
+.runner-discard-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all var(--transition);
+}
+
+.runner-discard-btn:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+}
+
+.discard-modal-card {
+  max-width: 440px !important;
+  width: 92% !important;
+  padding: 22px 24px 20px !important;
+  gap: 14px;
+}
+
+.discard-modal-header {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+}
+
+.discard-modal-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.discard-modal-icon-wrap {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.discard-modal-desc {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.discard-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.discard-modal-btn {
+  padding: 11px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+}
+
+.discard-modal-keep-btn {
+  background: var(--surface-2);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.discard-modal-keep-btn:hover {
+  background: var(--surface-3);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.discard-modal-keep-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.discard-modal-danger-btn {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.discard-modal-danger-btn:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .runner-stage-card,
+  .runner-rest-card,
+  .runner-seq-row,
+  .runner-reps-btn,
+  .runner-complete-action-btn,
+  .runner-progress-bar-fill,
+  .modal-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ── Minimalist Movement Animation Stick-Figure Component ─────────── */
+.cx-exercise-animation {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  overflow: visible;
+  box-sizing: border-box;
+  user-select: none;
+  flex-shrink: 0;
+  transition: transform var(--transition), filter var(--transition);
+}
+
+.cx-exercise-animation.cx-anim-card-badge {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.06);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 4px 12px rgba(0, 0, 0, 0.3);
+  padding: 6px;
+  border-radius: var(--radius);
+}
+
+.cx-anim-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  display: block;
+  filter: drop-shadow(0 2px 10px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.3));
+}
+
+.cx-anim-bone {
+  vector-effect: non-scaling-stroke;
+}
+
+.cx-anim-head {
+  filter: drop-shadow(0 0 6px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.6));
+}
+
+.cx-anim-joint {
+  opacity: 0.9;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: cxJointPulse 2.4s infinite ease-in-out;
+}
+
+@keyframes cxJointPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+    filter: drop-shadow(0 0 1px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.5));
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+    filter: drop-shadow(0 0 5px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.9));
+  }
+}
+
+.cx-anim-ambient-glow {
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.cx-anim-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-align: center;
+}
+
+.card:hover .cx-exercise-animation .cx-anim-svg,
+.workout-exercise-item:hover .cx-exercise-animation .cx-anim-svg,
+.runner-stage-card:hover .cx-exercise-animation .cx-anim-svg {
+  filter: drop-shadow(0 4px 16px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.55));
+}
+
+/* ── Paused Workout State Synchronisation ─────────────────────────────────── */
+.cx-anim-paused,
+.cx-anim-paused * {
+  animation-play-state: paused !important;
+}
+
+.cx-anim-paused .cx-anim-svg {
+  opacity: 0.55;
+  filter: grayscale(0.35) drop-shadow(0 2px 4px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.15));
+  transition: opacity 200ms ease, filter 200ms ease;
+}
+
+.cx-anim-pause-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(9, 9, 16, 0.6);
+  backdrop-filter: blur(1.5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius, 12px);
+  z-index: 5;
+  animation: fadeIn 150ms ease;
+}
+
+.cx-anim-pause-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #f97316;
+  background: rgba(249, 115, 22, 0.18);
+  border: 1px solid rgba(249, 115, 22, 0.38);
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.runner-timer-pill.paused {
+  background: rgba(249, 115, 22, 0.12);
+  border-color: rgba(249, 115, 22, 0.35);
+  color: #fb923c;
+}
+
+.runner-live-dot.paused {
+  background: #f97316;
+  box-shadow: 0 0 6px #f97316;
+  animation: none;
+  opacity: 0.8;
+}
+
+.runner-sticky-card.is-paused {
+  border-color: rgba(249, 115, 22, 0.2);
+}
+
+/* ── Sticky Left Visual Panel ─────────────────────────────────────────────── */
+.runner-sticky-visual-panel {
+  position: sticky;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+}
+
+.runner-sticky-card {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-card, 18px);
+  padding: 18px 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+  animation: runnerStickyFadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes runnerStickyFadeIn {
+  from {
+    opacity: 0.8;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.runner-sticky-card::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.18) 0%, rgba(var(--phase-accent-rgb, 255, 93, 93), 0) 70%);
+  pointer-events: none;
+  border-radius: 50%;
+}
+
+.runner-sticky-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-sticky-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.runner-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 8px var(--phase-accent, #FF5D5D);
+  animation: runnerLiveDotPulse 1.8s infinite ease-in-out;
+}
+
+@keyframes runnerLiveDotPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0.5;
+  }
+}
+
+.runner-pattern-badge {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--radius-badge, 5px);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.14);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.32);
+  color: var(--phase-accent, #FF5D5D);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.runner-sticky-anim-stage {
+  width: 100%;
+  min-height: 230px;
+  background: radial-gradient(circle at 50% 50%, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12) 0%, rgba(10, 10, 13, 0.8) 80%);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius, 14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 16px rgba(0, 0, 0, 0.6);
+}
+
+.runner-sticky-anim-stage .cx-exercise-animation {
+  width: 92% !important;
+  height: 92% !important;
+  max-width: 270px !important;
+  max-height: 220px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-sticky-anim-stage .cx-anim-svg {
+  width: 100% !important;
+  height: 100% !important;
+  filter: drop-shadow(0 6px 22px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.4));
+}
+
+.runner-sticky-anim-stage.is-muscle-view {
+  height: auto !important;
+  min-height: 220px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-sticky-anim-stage.is-muscle-view .cx-muscle-map-wrapper {
+  width: 100%;
+}
+
+.runner-sticky-anim-stage.is-muscle-view .cx-muscle-figure-card {
+  height: 142px;
+}
+
+.runner-sticky-anim-stage.is-muscle-view .cx-muscle-svg {
+  max-height: 132px;
+}
+
+.runner-sticky-cue {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.08);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.18);
+  border-radius: var(--radius-sm, 10px);
+  padding: 10px 14px;
+  margin-top: 0;
+}
+
+.runner-sticky-cue-icon {
+  color: var(--phase-accent, #FF5D5D);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.runner-sticky-cue-text {
+  font-size: 12px;
+  color: var(--text-secondary, #cbd5e1);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ── Up Next Preview Card (Left Panel Bottom) ────────────────────────────── */
+.runner-upnext-card {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-card, 16px);
+  padding: 12px 16px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 180ms ease;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+  animation: runnerStickyFadeIn 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.runner-upnext-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6), 0 0 20px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.15);
+}
+
+.runner-upnext-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px 0 0 99px;
+  opacity: 0.85;
+}
+
+.runner-upnext-card.finish-preview::before {
+  background: #10b981;
+}
+
+.runner-upnext-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-upnext-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.runner-upnext-tag.finish {
+  color: #10b981;
+}
+
+.runner-upnext-pattern {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
+  color: var(--phase-accent, #FF5D5D);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.runner-upnext-pattern.finish {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.runner-upnext-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.runner-upnext-thumb {
+  width: 60px;
+  height: 52px;
+  min-width: 60px;
+  border-radius: var(--radius-sm, 10px);
+  background: radial-gradient(circle at 50% 50%, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12) 0%, rgba(0, 0, 0, 0.5) 80%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: inset 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+.runner-upnext-thumb .cx-exercise-animation {
+  width: 56px !important;
+  height: 46px !important;
+}
+
+.runner-upnext-finish-icon {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-upnext-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.runner-upnext-name {
+  font-family: var(--font-heading);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-upnext-target {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.runner-main-controls-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* ─── Anatomical Muscle Map Component ───────────────────────────────────────── */
+.cx-muscle-map-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cx-muscle-map-dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+}
+
+.cx-muscle-map-dual.view-front,
+.cx-muscle-map-dual.view-back {
+  grid-template-columns: 1fr;
+  max-width: 180px;
+  margin: 0 auto;
+}
+
+.cx-muscle-figure-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.cx-muscle-view-label {
+  font-family: var(--mono, monospace);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted, #94a3b8);
+  text-transform: uppercase;
+}
+
+.cx-muscle-figure-card {
+  width: 100%;
+  height: 180px;
+  background: radial-gradient(circle at center, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.08) 0%, rgba(15, 17, 26, 0.6) 80%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm, 10px);
+  padding: 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.cx-muscle-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 164px;
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+
+.cx-body-base {
+  fill: #1a1d29;
+}
+
+.cx-muscle-part,
+.muscle {
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  transition: all 250ms ease;
+  cursor: pointer;
+}
+
+/* Inactive Muscle Part (Dark charcoal anatomical segment) */
+.cx-muscle-part.is-inactive,
+.muscle.is-inactive,
+.muscle:not(.active):not(.is-primary):not(.is-secondary) {
+  fill: #232838;
+  stroke: #161924;
+  stroke-width: 1px;
+}
+
+.cx-muscle-part.is-inactive:hover,
+.muscle.is-inactive:hover,
+.muscle:not(.active):not(.is-primary):not(.is-secondary):hover {
+  fill: #363d54;
+  stroke: #485270;
+}
+
+/* Primary Target Muscle (Coral-Red Glow) */
+.cx-muscle-part.is-primary,
+.cx-muscle-part.active,
+.muscle.is-primary,
+.muscle.active,
+[data-active="primary"] {
+  fill: #FF5D5D !important;
+  stroke: #ff8585 !important;
+  stroke-width: 1.4px;
+  filter: drop-shadow(0 0 7px rgba(255, 93, 93, 0.85));
+}
+
+.cx-muscle-part.is-primary:hover,
+.cx-muscle-part.active:hover,
+.muscle.is-primary:hover,
+.muscle.active:hover {
+  fill: #ff7575 !important;
+  stroke: #ffa8a8 !important;
+  filter: drop-shadow(0 0 11px rgba(255, 117, 117, 1));
+}
+
+/* Secondary Target Muscle (Warm Amber/Gold Glow) */
+.cx-muscle-part.is-secondary,
+.muscle.is-secondary,
+[data-active="secondary"] {
+  fill: #FF8A3D !important;
+  stroke: #ffb076 !important;
+  stroke-width: 1.2px;
+  filter: drop-shadow(0 0 5px rgba(255, 138, 61, 0.75));
+}
+
+.cx-muscle-part.is-secondary:hover,
+.muscle.is-secondary:hover {
+  fill: #ffa05e !important;
+  stroke: #ffcca6 !important;
+  filter: drop-shadow(0 0 8px rgba(255, 160, 94, 0.95));
+}
+
+/* Non-muscular joint/head parts */
+.cx-muscle-part.head.is-inactive,
+.cx-muscle-part.neck.is-inactive,
+.cx-muscle-part.hand.is-inactive,
+.cx-muscle-part.foot.is-inactive,
+.cx-muscle-part.knee.is-inactive,
+.neutral-joint {
+  fill: #1a1d28;
+  stroke: #141620;
+  stroke-width: 0.8px;
+  cursor: default;
+}
+
+/* ── Muscle Map Legend ── */
+.cx-muscle-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm, 8px);
+  padding: 6px 10px;
+}
+
+.cx-muscle-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-secondary, #cbd5e1);
+  line-height: 1.3;
+}
+
+.cx-muscle-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cx-muscle-legend-dot.primary {
+  background: #FF5D5D;
+  box-shadow: 0 0 6px rgba(255, 93, 93, 0.9);
+}
+
+.cx-muscle-legend-dot.secondary {
+  background: #FF8A3D;
+  box-shadow: 0 0 6px rgba(255, 138, 61, 0.85);
+}
+
+.cx-muscle-legend-label strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+/* ── Stage View Switch Tabs (Form & Motion vs Target Muscles) ── */
+.runner-stage-tabs {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 2px;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.runner-stage-tab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  font-family: var(--font-heading, sans-serif);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.runner-stage-tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.runner-stage-tab-btn.is-active {
+  color: #ffffff;
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.22);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.4);
+  box-shadow: 0 2px 8px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
+}
+
+/* ── Interactive Muscle Explorer Guide Modal Styles ── */
+.bio-guide-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bio-guide-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bio-guide-view-tabs {
+  display: inline-flex;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.bio-guide-view-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #94a3b8);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 180ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bio-guide-view-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.bio-guide-view-btn.active {
+  color: #fff;
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 10px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.4);
+}
+
+.bio-chips-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  max-height: 110px;
+  overflow-y: auto;
+}
+
+.bio-muscle-chip {
+  background: #191c28;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted, #94a3b8);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+
+.bio-muscle-chip:hover {
+  color: #fff;
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.5);
+  background: #252b3d;
+  transform: translateY(-1px);
+}
+
+.bio-muscle-chip.active {
+  color: #fff;
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
+  border-color: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 10px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.45);
+  font-weight: 700;
+}
+
+.bio-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background 200ms ease;
+}
+
+.bio-muscle-chip.active .bio-chip-dot {
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 6px var(--phase-accent, #FF5D5D);
+}
+
+.bio-guide-main-grid {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .bio-guide-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.bio-diagram-card {
+  background: var(--surface-2, #141721);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 320px;
+}
+
+.bio-details-card {
+  background: var(--surface-2, #141721);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bio-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 12px;
+}
+
+.bio-detail-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 2px 0;
+}
+
+.bio-detail-latin {
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  font-style: italic;
+}
+
+.bio-detail-badge {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.15);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.3);
+  color: var(--phase-accent, #FF5D5D);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.bio-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.bio-field-text {
+  font-size: 13px;
+  color: var(--text, #e2e8f0);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.bio-exercises-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.bio-ex-tag {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 180ms ease;
+}
+
+.bio-ex-tag:hover {
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+/* ── Database Exercise Targeting Discovery List ── */
+.bio-db-ex-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.bio-db-ex-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 4px;
+}
+
+.bio-ex-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.bio-ex-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 8px 12px;
+  transition: all 180ms ease;
+  gap: 10px;
+}
+
+.bio-ex-item:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.35);
+  transform: translateX(2px);
+}
+
+.bio-ex-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bio-ex-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.bio-ex-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  color: var(--text-dim, #64748b);
+}
+
+.bio-ex-split-tag {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted, #94a3b8);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.bio-ex-role {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.bio-ex-role.primary {
+  background: rgba(255, 93, 93, 0.15);
+  color: #ff8585;
+  border: 1px solid rgba(255, 93, 93, 0.4);
+}
+
+.bio-ex-role.secondary {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+/* ── Mobile Viewport Optimizations (375px - 412px) ── */
+@media (max-width: 640px) {
+  .bio-guide-container {
+    gap: 12px;
+  }
+
+  .bio-guide-controls-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .bio-guide-view-tabs {
+    width: 100%;
+    display: flex;
+  }
+
+  .bio-guide-view-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 4px;
+    font-size: 11px;
+    min-height: 36px;
+    text-align: center;
+  }
+
+  .prs-filter-pills {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  .prs-filter-btn {
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .bio-chips-wrapper {
+    max-height: 120px;
+    padding: 8px;
+    gap: 5px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .bio-muscle-chip {
+    font-size: 11px;
+    padding: 6px 10px;
+    min-height: 32px;
+    touch-action: manipulation;
+  }
+
+  .bio-diagram-card {
+    min-height: 280px;
+    padding: 12px 6px;
+  }
+
+  .bio-details-card {
+    padding: 14px 12px;
+    gap: 12px;
+  }
+
+  .bio-detail-title {
+    font-size: 15px;
+  }
+
+  .bio-detail-latin {
+    font-size: 11px;
+  }
+
+  .bio-ex-list {
+    max-height: 180px;
+  }
+
+  .bio-ex-item {
+    padding: 7px 10px;
+  }
+
+  .bio-ex-name {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .bio-guide-view-btn {
+    font-size: 10px;
+    padding: 6px 2px;
+  }
+
+  .bio-muscle-chip {
+    font-size: 10.5px;
+    padding: 5px 8px;
+  }
+}
+
+/* ==========================================================================
+   CalistheniX — Redesigned Mobile-Card Workout Session Runner
+   Matches Button Actions & User Flow Wireframe Specification
+   ========================================================================== */
+
+.runner-session-view-wrapper {
+  display: flex;
+  justify-content: stretch;
+  align-items: stretch;
+  width: 100%;
+  min-height: auto;
+  padding: 0 0 24px;
+}
+
+.runner-session-card {
+  width: 100%;
+  max-width: 100%;
+  background: var(--cx-surface, #151519);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  border-radius: 24px;
+  padding: 24px 28px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.runner-session-card::before {
+  content: '';
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12) 0%, rgba(var(--phase-accent-rgb, 255, 93, 93), 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── 1. Top Header Bar ── */
+.runner-card-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  padding-bottom: 4px;
+}
+
+.runner-card-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted, #94a3b8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.runner-card-back-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  transform: translateX(-2px);
+}
+
+.runner-card-title-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.runner-card-phase-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--phase-accent, #FF5D5D);
+}
+
+.runner-card-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  margin: 0;
+  text-align: center;
+}
+
+.runner-card-top-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-card-timer {
+  font-family: var(--mono, monospace);
+  font-size: 14px;
+  font-weight: 700;
+  color: #cbd5e1;
+  letter-spacing: 0.02em;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.runner-card-pause-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.14);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  color: var(--phase-accent, #FF5D5D);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.runner-card-pause-btn:hover {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.28);
+  color: #ffffff;
+  transform: scale(1.05);
+}
+.runner-card-pause-btn.is-paused {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: #f59e0b;
+  color: #fbbf24;
+}
+
+.runner-card-finish-btn {
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 700;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.runner-card-finish-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ── 2. Progress Indicator Bar ── */
+.runner-card-progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.runner-card-progress-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted, #8a8d9f);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-card-progress-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.runner-card-progress-fill {
+  height: 100%;
+  background: var(--phase-accent, #FF5D5D);
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+/* ── 3. Exercise Flow Strip & Header ── */
+.runner-card-flow-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 10px 16px;
+  margin: 2px 0 4px;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.runner-card-flow-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.runner-flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 68px;
+  text-align: center;
+}
+
+.runner-flow-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #8a8d9f;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.runner-flow-val {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.runner-flow-step.is-highlight .runner-flow-val {
+  color: var(--phase-accent, #FF5D5D);
+}
+
+.runner-flow-step.is-target .runner-flow-val {
+  color: #93c5fd;
+}
+
+.runner-flow-step.is-actual .runner-flow-val {
+  color: var(--phase-accent, #FF5D5D);
+}
+
+.runner-flow-step.is-rest .runner-flow-val {
+  color: #cbd5e1;
+}
+
+.runner-flow-arrow {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 13px;
+  font-weight: 700;
+  user-select: none;
+}
+
+.runner-card-exercise-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.runner-card-ex-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.runner-card-ex-sub {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--phase-accent, #FF5D5D);
+  letter-spacing: 0.03em;
+}
+
+.runner-card-badges-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.runner-badge-set {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.15);
+  color: var(--phase-accent, #FF5D5D);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.runner-badge-target {
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.runner-badge-rest {
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.03);
+  color: #94a3b8;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.runner-badge-load {
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+/* ── 4. Center Stage: Dual Visualization & Radial Dial ── */
+.runner-card-stage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: center;
+  justify-items: center;
+  padding: 8px 4px;
+  min-height: 180px;
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 640px) {
+  .runner-card-stage-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}
+
+.runner-card-stage-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 180px;
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 18px;
+  padding: 8px;
+}
+
+.runner-card-stage-visual svg {
+  max-height: 165px;
+  max-width: 160px;
+}
+
+.runner-card-stage-dial {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+.runner-dial-svg {
+  transform: rotate(-90deg);
+  width: 160px;
+  height: 160px;
+}
+
+.runner-dial-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 8;
+}
+
+.runner-dial-progress {
+  fill: none;
+  stroke: var(--phase-accent, #FF5D5D);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.25s ease;
+  filter: drop-shadow(0 0 8px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.6));
+}
+
+.runner-dial-center-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.runner-dial-number {
+  font-family: var(--mono, monospace);
+  font-size: 38px;
+  font-weight: 900;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.runner-dial-subtext {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted, #8a8d9f);
+  margin-top: 4px;
+}
+
+/* ── 5. Action Controls & Stepper Row ── */
+.runner-card-stepper-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 2px 0 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.runner-card-stepper-btn {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.runner-card-stepper-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.24);
+  transform: scale(1.05);
+}
+.runner-card-stepper-btn:active {
+  transform: scale(0.95);
+}
+
+.runner-stepper-val {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  min-width: 90px;
+  text-align: center;
+}
+
+.runner-card-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.runner-card-btn {
+  font-family: var(--font, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: 15px;
+  font-weight: 800;
+  border-radius: 16px;
+  padding: 15px 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: none;
+  outline: none;
+  letter-spacing: 0.03em;
+}
+
+.runner-card-btn-skip {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+.runner-card-btn-skip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.runner-card-btn-done {
+  flex: 1;
+  height: 54px;
+  background: var(--phase-accent, #FF5D5D);
+  color: #ffffff;
+  box-shadow: 0 6px 22px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+}
+.runner-card-btn-done:hover {
+  background: var(--phase-accent, #FF5D5D);
+  filter: brightness(1.12);
+  box-shadow: 0 8px 26px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.45);
+  transform: translateY(-2px);
+}
+.runner-card-btn-done:active {
+  transform: translateY(0);
+  filter: brightness(0.92);
+}
+
+.runner-card-btn-next {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+}
+.runner-card-btn-next:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.runner-card-btn-skip-set {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 9px;
+  color: var(--text-muted, #8a8d9f);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+.runner-card-btn-skip-set:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ── 6. Workout Complete Modal & Screen ── */
+.runner-complete-screen {
+  width: 100%;
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.runner-complete-modal-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--cx-surface, #151519);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  border-radius: 24px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  animation: modalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.runner-complete-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(62, 207, 142, 0.12);
+  border: 1px solid rgba(62, 207, 142, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: var(--cx-success, #3ECF8E);
+  position: relative;
+  box-shadow: 0 0 30px rgba(62, 207, 142, 0.3);
+}
+
+.runner-complete-icon-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -18px;
+  background: radial-gradient(circle, rgba(62, 207, 142, 0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  animation: transitionGlowPulse 2.5s infinite ease-in-out;
+}
+
+.runner-complete-kicker {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cx-success, #3ECF8E);
+}
+
+.runner-complete-title {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--cx-text, #F2F2F0);
+  margin: -6px 0 0;
+  letter-spacing: -0.02em;
+}
+
+.runner-complete-subtitle {
+  font-size: 13.5px;
+  color: var(--cx-text-secondary, #8A8A93);
+  margin-top: -8px;
+}
+
+.runner-complete-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 14px 10px;
+}
+
+.runner-complete-metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.runner-complete-metric-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #8a8d9f);
+}
+
+.runner-complete-metric-val {
+  font-family: var(--mono, monospace);
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.runner-complete-summary-box {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.runner-complete-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  gap: 8px;
+}
+
+.runner-complete-summary-title {
+  color: var(--text-muted, #8a8d9f);
+  font-weight: 600;
+}
+
+.runner-complete-summary-value {
+  color: #ffffff;
+  font-weight: 600;
+  text-align: right;
+}
+
+.runner-complete-summary-row.is-pr {
+  padding-top: 6px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.runner-complete-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.runner-complete-btn-secondary {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.runner-complete-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.runner-complete-btn-primary {
+  flex: 1.1;
+  background: var(--cx-success, #3ECF8E);
+  color: #0A0A0D;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(62, 207, 142, 0.35);
+  transition: all 0.18s ease;
+}
+.runner-complete-btn-primary:hover {
+  background: var(--cx-success, #3ECF8E);
+  filter: brightness(1.12);
+  box-shadow: 0 6px 20px rgba(62, 207, 142, 0.45);
+}
+.runner-complete-btn-primary:active {
+  filter: brightness(0.92);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PREMIUM REDESIGN: WORKOUT RUNNER (Sections 3, 4, 5, 6, 7, 8, 9)
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Section 3: Top Sticky Header ────────────────────────────────────────── */
+/* ── Section 3: Top Sticky Header (Liquid Morphism Surface) ──────────────── */
+.runner-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--liquid-surface-overlay, rgba(12, 12, 17, 0.88));
+  backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  border-bottom: var(--liquid-border);
+  box-shadow: var(--liquid-shadow-md), var(--liquid-highlight-top);
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.runner-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.runner-header-back-btn {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.03);
+  border: var(--liquid-border-subtle);
+  border-radius: 12px;
+  color: var(--cx-text-secondary, #8A8A93);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--liquid-highlight-top-subtle);
+  transition: all var(--transition-fast);
+}
+.runner-header-back-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.runner-header-title-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.runner-header-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-header-title {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.runner-header-subtitle {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--cx-text-secondary, #8A8A93);
+  letter-spacing: 0.02em;
+}
+
+.runner-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.runner-header-timer-pill {
+  background: var(--liquid-surface-inset, rgba(8, 8, 12, 0.6));
+  border: var(--liquid-border-subtle);
+  border-radius: 12px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: var(--liquid-highlight-inset);
+  transition: all var(--transition-fast);
+}
+.runner-header-timer-pill:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.runner-header-timer-pill.is-paused {
+  border-color: rgba(255, 138, 61, 0.35);
+  background: rgba(255, 138, 61, 0.08);
+}
+.runner-header-timer-pill.is-paused .runner-timer-digits {
+  color: var(--phase-prep, #FF8A3D);
+}
+
+.runner-timer-digits {
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.runner-timer-pause-btn {
+  background: transparent;
+  border: none;
+  color: var(--cx-text-secondary, #8A8A93);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  cursor: pointer;
+}
+.runner-timer-pause-btn:hover {
+  color: #ffffff;
+}
+
+.runner-header-gear-btn {
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.03);
+  border: var(--liquid-border-subtle);
+  border-radius: 12px;
+  color: var(--cx-text-secondary, #8A8A93);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--liquid-highlight-top-subtle);
+  transition: all var(--transition-fast);
+}
+.runner-header-gear-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: rotate(20deg);
+}
+
+.runner-header-end-btn {
+  background: rgba(255, 93, 93, 0.08);
+  border: 1px solid rgba(255, 93, 93, 0.22);
+  color: var(--phase-train, #FF5D5D);
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--liquid-highlight-top-subtle);
+  transition: all var(--transition-fast);
+}
+.runner-header-end-btn:hover {
+  background: rgba(255, 93, 93, 0.16);
+  border-color: rgba(255, 93, 93, 0.45);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* ── Section 6: Segmented Phase Tabs Strip ───────────────────────────────── */
+.runner-header-phase-tabs {
+  display: flex;
+  align-items: center;
+}
+
+.runner-phase-pill-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--liquid-surface-inset, rgba(8, 8, 12, 0.65));
+  border: var(--liquid-border-subtle);
+  box-shadow: var(--liquid-highlight-inset);
+  padding: 4px 8px;
+  border-radius: var(--radius-full, 9999px);
+  position: relative;
+}
+
+.runner-phase-arrow-sep {
+  color: var(--cx-text-secondary, #8A8A93);
+  opacity: 0.35;
+  font-size: 11px;
+  user-select: none;
+  padding: 0 1px;
+}
+
+.runner-phase-pill-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full, 9999px);
+  padding: 5px 12px;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cx-text-secondary, #8A8A93);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 1;
+}
+
+.runner-phase-pill-btn:hover:not(.is-locked) {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.runner-phase-pill-btn.is-active {
+  background: rgba(var(--phase-accent-rgb), 0.12);
+  color: var(--phase-accent);
+  border-color: rgba(var(--phase-accent-rgb), 0.35);
+  box-shadow: 0 2px 10px -2px rgba(var(--phase-accent-rgb), 0.25), inset 0 1px 0 0 rgba(var(--phase-accent-rgb), 0.35);
+}
+
+/* Phase-specific active overrides — use the per-phase accent */
+.runner-phase-pill-btn.phase-warmup.is-active {
+  background: rgba(255, 138, 61, 0.12);
+  border-color: rgba(255, 138, 61, 0.35);
+  color: #FF8A3D;
+  box-shadow: 0 2px 10px -2px rgba(255, 138, 61, 0.25), inset 0 1px 0 0 rgba(255, 138, 61, 0.35);
+}
+
+.runner-phase-pill-btn.phase-main.is-active {
+  background: rgba(255, 93, 93, 0.12);
+  border-color: rgba(255, 93, 93, 0.35);
+  color: #FF5D5D;
+  box-shadow: 0 2px 10px -2px rgba(255, 93, 93, 0.25), inset 0 1px 0 0 rgba(255, 93, 93, 0.35);
+}
+
+.runner-phase-pill-btn.phase-cooldown.is-active {
+  background: rgba(53, 216, 176, 0.12);
+  border-color: rgba(53, 216, 176, 0.35);
+  color: #35D8B0;
+  box-shadow: 0 2px 10px -2px rgba(53, 216, 176, 0.25), inset 0 1px 0 0 rgba(53, 216, 176, 0.35);
+}
+
+.runner-phase-pill-btn.is-done {
+  color: var(--cx-success, #3ECF8E);
+}
+.runner-phase-pill-btn.is-locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Phase dot: container */
+.runner-phase-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.runner-phase-dot-icon {
+  display: block;
+}
+
+.runner-phase-dot-icon.runner-phase-lock {
+  opacity: 0.6;
+}
+
+/* Phase dot circle (for active/upcoming phases) */
+.runner-phase-dot-circle {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--cx-text-secondary, #8A8A93);
+  background: transparent;
+  transition: all 200ms ease;
+}
+
+.runner-phase-dot-circle.is-active {
+  border-color: var(--phase-accent);
+  background: var(--phase-accent);
+  box-shadow: 0 0 8px rgba(var(--phase-accent-rgb), 0.6);
+}
+
+/* Connector line between phase buttons */
+.runner-phase-connector {
+  width: 24px;
+  height: 2px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 1px;
+  margin: 0 2px;
+  transition: all 200ms ease;
+}
+
+.runner-phase-connector.is-solid {
+  background: var(--cx-success, #3ECF8E);
+}
+
+.runner-phase-connector.is-dashed {
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.15) 0px,
+    rgba(255, 255, 255, 0.15) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.runner-phase-label {
+  font-family: var(--font-heading);
+  letter-spacing: 0.01em;
+}
+
+/* ── Section 4 & 5: Hero Active Exercise Card ─────────────────────────────── */
+.runner-active-exercise-card {
+  background: var(--cx-surface, #151519);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  max-width: 600px;
+  margin: 0 auto 20px;
+}
+
+/* Section 4: Progress Bar */
+.runner-progress-header-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.runner-progress-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-progress-exercise-count {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.runner-progress-percentage {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.runner-progress-percentage.is-gold {
+  color: #fbbf24;
+}
+
+.runner-progress-bar-3px {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.runner-progress-bar-fill-3px {
+  height: 100%;
+  background: var(--phase-accent, #FF5D5D);
+  border-radius: 999px;
+  transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.runner-progress-bar-fill-3px.is-complete {
+  background: var(--cx-success, #3ECF8E);
+}
+
+/* Card Header Row */
+.runner-card-top-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.runner-badge-phase-pill {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: var(--radius-badge);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.runner-badge-phase-pill.phase-main {
+  background: rgba(255, 93, 93, 0.12);
+  border-color: rgba(255, 93, 93, 0.3);
+  color: #FF5D5D;
+}
+.runner-badge-phase-pill.phase-warmup {
+  background: rgba(255, 138, 61, 0.12);
+  border-color: rgba(255, 138, 61, 0.3);
+  color: #FF8A3D;
+}
+.runner-badge-phase-pill.phase-rest {
+  background: rgba(53, 216, 176, 0.12);
+  border-color: rgba(53, 216, 176, 0.3);
+  color: #35D8B0;
+}
+
+.runner-set-dots-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.runner-set-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+}
+.runner-set-dot.pending {
+  background: var(--surface-3);
+}
+.runner-set-dot.active {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.runner-set-dot.done {
+  background: var(--success);
+}
+
+.runner-muscle-map-btn {
+  width: 36px;
+  height: 36px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.runner-muscle-map-btn:hover {
+  color: var(--accent);
+  border-color: var(--border-accent);
+  background: var(--surface-2);
+}
+
+/* Exercise Name Zone */
+.runner-exercise-name-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runner-exercise-name-title {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.025em;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.runner-exercise-muscles-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Target Row (2 Equal Side-by-Side Columns) */
+.runner-target-pills-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.runner-target-pill {
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: all 0.15s ease;
+}
+
+.runner-context-sep {
+  opacity: 0.4;
+  margin: 0 4px;
+}
+
+.runner-context-rest-badge {
+  color: var(--cx-text-secondary, #8A8A93);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.runner-target-pill.target-goal {
+  background: rgba(var(--phase-accent-rgb), 0.05);
+  border-color: rgba(var(--phase-accent-rgb), 0.2);
+}
+
+.runner-pill-lbl {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--cx-text-secondary, #8A8A93);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.runner-target-pill.target-goal .runner-pill-lbl {
+  color: var(--phase-accent);
+}
+
+.runner-pill-lbl-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.85;
+}
+
+.runner-pill-val {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cx-text, #F2F2F0);
+  font-variant-numeric: tabular-nums;
+}
+
+.runner-target-pill.target-goal .runner-pill-val {
+  color: #ffffff;
+}
+
+.runner-target-pill.target-last .runner-pill-val {
+  color: var(--cx-success, #3ECF8E);
+}
+
+/* Centered Stepper */
+.runner-stepper-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 12px 0 6px;
+}
+
+.runner-stepper-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 140px;
+}
+
+.runner-stepper-number {
+  font-family: var(--mono);
+  font-size: 56px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.runner-stepper-unit {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+}
+
+/* Shortcut Pills */
+.runner-shortcut-pills-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.runner-shortcut-pill {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.runner-shortcut-pill:hover {
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--border-light);
+}
+
+/* Primary CTA & Sub-actions */
+.runner-cta-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.runner-cta-btn {
+  width: 100%;
+}
+
+.runner-cta-sub-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-sub-sep {
+  color: var(--border-light);
+  font-size: 12px;
+}
+
+.runner-set-details-drawer {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px 16px;
+  margin-top: 6px;
+}
+
+.runner-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.runner-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runner-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.runner-coaching-tip-row {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.06);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.16);
+  border-radius: var(--radius-card);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+/* ── Section 8: In-Context Rest Morph ─────────────────────────────────────── */
+.runner-rest-morph-card {
+  text-align: center;
+}
+
+.runner-rest-depleting-track {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.runner-rest-depleting-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 1s linear;
+}
+.runner-rest-depleting-fill.is-warning {
+  background: var(--danger);
+}
+
+.runner-rest-hero-countdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 0 16px;
+}
+
+.runner-rest-hero-digits {
+  font-size: 56px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+}
+
+.runner-rest-hero-unit {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
+.runner-rest-next-preview-card {
+  background: var(--liquid-surface-inset, rgba(8, 8, 12, 0.6));
+  border: var(--liquid-border-subtle);
+  border-radius: var(--radius-card);
+  padding: 12px 16px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: var(--liquid-highlight-inset);
+}
+
+.runner-rest-next-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--phase-accent, #FF5D5D);
+}
+
+.runner-rest-next-name {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.runner-rest-next-meta {
+  font-size: 12px;
+  color: var(--cx-text-secondary, #8A8A93);
+}
+
+.runner-rest-adjust-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* ── Section 9: Phase Transition Card ─────────────────────────────────────── */
+.runner-phase-transition-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 480px;
+  margin: 20px auto;
+}
+
+.runner-phase-transition-card {
+  background: var(--liquid-surface-elevated, linear-gradient(180deg, rgba(26, 26, 36, 0.88) 0%, rgba(18, 18, 25, 0.92) 100%));
+  backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  border: var(--liquid-border-highlight);
+  border-radius: 24px;
+  padding: 36px 28px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--liquid-shadow-lg), var(--liquid-highlight-top-elevated);
+  width: 100%;
+}
+
+.runner-transition-top-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--phase-accent), transparent);
+}
+
+.runner-transition-badge-wrap {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(var(--phase-accent-rgb), 0.12);
+  border: 1px solid rgba(var(--phase-accent-rgb), 0.35);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin-bottom: 16px;
+  position: relative;
+  box-shadow: 0 0 30px rgba(var(--phase-accent-rgb), 0.3);
+}
+
+.runner-transition-badge-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -20px;
+  background: radial-gradient(circle, rgba(var(--phase-accent-rgb), 0.25) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: -1;
+  animation: transitionGlowPulse 2.5s infinite ease-in-out;
+}
+
+@keyframes transitionGlowPulse {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+
+.runner-transition-title {
+  font-family: var(--font-heading);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--cx-text, #F2F2F0);
+  letter-spacing: -0.03em;
+  margin: 0 0 6px;
+}
+
+.runner-transition-sub {
+  font-size: 14px;
+  color: var(--cx-text-secondary, #8A8A93);
+  line-height: 1.5;
+  margin: 0 0 22px;
+}
+
+.runner-transition-stat-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
+  border-radius: 14px;
+  padding: 12px 10px;
+  margin-bottom: 24px;
+}
+
+.runner-stat-strip-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.runner-stat-strip-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  margin-bottom: 2px;
+}
+
+.runner-stat-strip-label {
+  font-family: var(--font-heading);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cx-text-secondary, #8A8A93);
+}
+
+.runner-stat-strip-val {
+  font-family: var(--mono);
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--cx-text, #F2F2F0);
+}
+
+.runner-transition-chips-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.runner-transition-chip {
+  background: var(--cx-surface, #151519);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.runner-chip-icon {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.runner-transition-cta-btn {
+  width: 100%;
+}
+
+.runner-transition-upcoming-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  padding: 14px 18px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.runner-upcoming-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.runner-upcoming-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-upcoming-name {
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.runner-upcoming-sets {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   DUAL-STAGE WORKSPACE & VISUAL MOTION / MUSCLE FOCUS MAP
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.runner-stage-dual-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 1.15fr) minmax(320px, 1fr);
+  gap: 20px;
+  align-items: start;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1100px) {
+  .runner-stage-dual-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.runner-stage-col-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.runner-stage-col-card .runner-active-exercise-card {
+  max-width: 100%;
+  margin: 0;
+}
+
+.runner-stage-col-visuals {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/* ── Right Column: Exercise Visual Motion Card ─────────────────────────────── */
+.runner-visual-motion-card {
+  background: var(--cx-surface, #151519);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
+  border-radius: 20px;
+  padding: 18px 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.runner-visual-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-visual-card-tag-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-visual-pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 8px var(--phase-accent, #FF5D5D);
+  animation: cxGlowBreathe 2s ease-in-out infinite alternate;
+}
+
+.runner-visual-card-tag {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.runner-visual-badge-category {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--phase-accent, #FF5D5D);
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.1);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25);
+  padding: 3px 8px;
+  border-radius: var(--radius-badge);
+}
+
+/* Graphic Motion Stage */
+.runner-motion-graphic-stage {
+  width: 100%;
+  height: 160px;
+  background: radial-gradient(circle at center, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.1) 0%, rgba(9, 9, 11, 0.6) 75%);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.runner-motion-stage-ambient-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.runner-motion-stage-floor-reflection {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 14px;
+  background: linear-gradient(180deg, transparent 0%, rgba(var(--phase-accent-rgb, 255, 93, 93), 0.08) 100%);
+  pointer-events: none;
+}
+
+.cx-anim-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cx-anim-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 155px;
+}
+
+/* Motion Footer Bar */
+.runner-motion-footer-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.runner-tempo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+}
+
+.runner-tempo-label {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.runner-tempo-val {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 12px;
+}
+
+.runner-motion-form-tip {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.runner-tip-lead {
+  font-weight: 700;
+  color: var(--phase-accent, #FF5D5D);
+}
+
+/* ── Right Column: Muscle Engagement Anatomy Card ─────────────────────────── */
+.runner-muscle-anatomy-card {
+  background: var(--cx-surface, #151519);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.06));
+  border-radius: 20px;
+  padding: 18px 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.runner-anatomy-icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.runner-anatomy-badge-focus {
+  font-size: 11px;
+  font-weight: 700;
+  color: #2dd4bf;
+  background: rgba(20, 184, 166, 0.1);
+  border: 1px solid rgba(20, 184, 166, 0.25);
+  padding: 3px 8px;
+  border-radius: var(--radius-badge);
+}
+
+.runner-anatomy-dual-view {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px 8px 8px;
+}
+
+.runner-anatomy-figure-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 10px;
+  transition: all var(--transition-fast);
+}
+
+.runner-anatomy-figure-box.is-dominant {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.06);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.2);
+}
+
+.runner-anatomy-figure-lbl {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.runner-anatomy-figure-box.is-dominant .runner-anatomy-figure-lbl {
+  color: var(--phase-accent, #FF5D5D);
+}
+
+.runner-anatomy-svg-wrap {
+  width: 100%;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-anatomy-svg-wrap svg {
+  max-height: 135px;
+  width: auto;
+}
+
+.runner-anatomy-legend-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.runner-legend-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runner-legend-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+
+.runner-legend-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.runner-muscle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+}
+
+.runner-muscle-pill.primary-pill {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12);
+  border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  color: #ffffff;
+}
+
+.runner-muscle-pill.secondary-pill {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+.runner-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.runner-pill-dot.primary-dot {
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 6px var(--phase-accent, #FF5D5D);
+}
+
+.runner-pill-dot.secondary-dot {
+  background: var(--text-dim);
+}
+
+/* ── Motion Stage Keyframes & Animations ───────────────────────────────────── */
+
+/* 1. Leg Swing Pendulum */
+@keyframes cxLegSwing {
+  0% { transform: rotate(-24deg); transform-origin: 96px 92px; }
+  50% { transform: rotate(32deg); transform-origin: 96px 92px; }
+  100% { transform: rotate(-24deg); transform-origin: 96px 92px; }
+}
+
+.cx-swinging-leg {
+  animation: cxLegSwing 1.8s ease-in-out infinite;
+}
+
+/* 2. Squat Motion */
+@keyframes cxSquatAscent {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(22px) scaleY(0.85); }
+  55% { transform: translateY(22px) scaleY(0.85); }
+  100% { transform: translateY(0); }
+}
+
+.cx-anim-squat-figure {
+  animation: cxSquatAscent 2.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  transform-origin: 100px 146px;
+}
+
+/* 3. Push-up Motion */
+@keyframes cxPushupPress {
+  0% { transform: rotate(0deg); transform-origin: 45px 126px; }
+  45% { transform: rotate(-14deg); transform-origin: 45px 126px; }
+  55% { transform: rotate(-14deg); transform-origin: 45px 126px; }
+  100% { transform: rotate(0deg); transform-origin: 45px 126px; }
+}
+
+.cx-anim-pushup-figure {
+  animation: cxPushupPress 2.2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+/* 4. Pull-up Motion */
+@keyframes cxPullupHang {
+  0% { transform: translateY(0); }
+  45% { transform: translateY(-24px); }
+  55% { transform: translateY(-24px); }
+  100% { transform: translateY(0); }
+}
+
+.cx-anim-pullup-figure {
+  animation: cxPullupHang 2.6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+/* 5. Mobility Rotator */
+@keyframes cxArmOrbit {
+  0% { transform: rotate(0deg); transform-origin: 100px 58px; }
+  100% { transform: rotate(360deg); transform-origin: 100px 58px; }
+}
+
+.cx-anim-arm-rotator {
+  animation: cxArmOrbit 3.5s linear infinite;
+}
+
+@keyframes cxOrbitSpin {
+  0% { transform: rotate(0deg); transform-origin: 100px 75px; }
+  100% { transform: rotate(360deg); transform-origin: 100px 75px; }
+}
+
+.cx-anim-orbit-ring {
+  animation: cxOrbitSpin 6s linear infinite;
+}
+
+@keyframes cxPulseRing {
+  0% { r: 8; opacity: 0.8; }
+  100% { r: 24; opacity: 0; }
+}
+
+.cx-anim-pulse-ring {
+  animation: cxPulseRing 1.8s ease-out infinite;
+}
+
+@keyframes cxGlowBreathe {
+  0% { opacity: 0.6; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1.1); }
+}
+
+.cx-anim-joint-glow {
+  animation: cxGlowBreathe 1.5s ease-in-out infinite alternate;
+}
+
+.runner-ex-checkbox-btn {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  color: transparent;
+  padding: 0;
+}
+
+.runner-ex-checkbox-btn:hover {
+  border-color: var(--phase-accent, #FF5D5D);
+  transform: scale(1.05);
+}
+
+.runner-ex-checkbox-btn.is-checked {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+  animation: cx-check-pop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.runner-ex-checkbox-btn.is-skipped {
+  background: rgba(234, 179, 8, 0.15);
+  border-color: #eab308;
+  color: #eab308;
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.2);
+}
+
+.runner-ex-checkbox-btn.is-partial {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #10b981;
+}
+
+.runner-exercise-item-card.is-skipped {
+  border-color: rgba(234, 179, 8, 0.3);
+  background: rgba(234, 179, 8, 0.03);
+}
+
+.runner-exercise-item-card.is-resolved {
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CalistheniX Workout Runner — Targeted UI Polish Pass
+   Scope: spacing, typography hierarchy, button hierarchy, states, modal polish
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. SPACING CONSISTENCY ──────────────────────────────────────────────── */
+
+.runner-session-card {
+  gap: 14px;
+  padding: 20px 22px 22px;
+}
+.runner-active-exercise-card {
+  gap: 14px;
+  padding: 20px 20px 18px;
+  margin-bottom: 16px;
+}
+.runner-progress-header-zone { gap: 5px; }
+.runner-stepper-zone { padding: 8px 0 4px; }
+.runner-shortcut-pills-row { gap: 8px; flex-wrap: wrap; }
+.runner-cta-zone { gap: 8px; margin-top: 2px; }
+.runner-set-details-drawer { padding: 12px 14px; margin-top: 4px; }
+.runner-rest-hero-countdown { padding: 16px 0 10px; }
+.runner-phase-transition-card { padding: 32px 28px; }
+
+/* ─── 2. TYPOGRAPHY HIERARCHY ──────────────────────────────────────────────── */
+
+.runner-exercise-name-title {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+.runner-exercise-muscles-text { font-size: 12px; color: var(--text-dim); font-weight: 500; }
+.runner-benchmark-label { font-size: 10.5px; font-weight: 800; letter-spacing: 0.1em; }
+
+.runner-pill-lbl {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.runner-pill-val {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  font-family: var(--mono);
+}
+
+.runner-stepper-number { font-size: 52px; }
+.runner-stepper-unit { font-size: 10px; letter-spacing: 0.12em; color: var(--text-dim); margin-top: 2px; }
+
+.runner-rest-hero-digits {
+  font-family: var(--mono);
+  font-size: 60px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.runner-rest-hero-unit { font-size: 10px; letter-spacing: 0.12em; margin-top: 4px; }
+.runner-queue-tag { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; color: var(--text-dim); }
+.runner-queue-summary { font-size: 11px; color: var(--text-dim); }
+.runner-set-badge, .runner-set-pill { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; padding: 2px 7px; }
+.runner-card-phase-badge { font-size: 9.5px; font-weight: 800; letter-spacing: 0.1em; color: var(--accent-light); }
+.runner-card-ex-name { font-size: 22px; font-weight: 800; letter-spacing: -0.025em; }
+.runner-card-ex-sub { font-size: 12px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.02em; }
+
+/* ─── 3. BUTTON HIERARCHY ──────────────────────────────────────────────────── */
+
+.runner-complete-action-btn {
+  padding: 16px 20px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  border-radius: var(--radius-md);
+  box-shadow: 0 6px 18px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  text-transform: none;
+  border: none;
+}
+.runner-card-btn-done { height: 52px; font-size: 14px; font-weight: 800; letter-spacing: 0.02em; }
+.runner-card-btn-skip, .runner-card-btn-next { font-size: 13px; font-weight: 600; }
+.runner-card-btn-skip-set {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-dim);
+  border-color: rgba(255, 255, 255, 0.06);
+  padding: 8px;
+}
+.runner-card-btn-skip-set:hover {
+  color: var(--text-muted);
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+}
+.runner-header-end-btn { padding: 7px 14px; font-size: 12px; font-weight: 600; border-radius: var(--radius-btn); }
+
+.stepper-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 50%;
+  font-size: 22px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  user-select: none;
+  touch-action: manipulation;
+}
+.stepper-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); transform: scale(1.06); }
+.stepper-btn:active:not(:disabled) { transform: scale(0.94); }
+.stepper-btn:disabled { opacity: 0.22; cursor: not-allowed; transform: none; }
+
+/* ─── 4. STATE CLARITY: ACTIVE / COMPLETED / SKIPPED ─────────────────────── */
+
+.runner-set-pip.current { width: 24px; background: var(--phase-accent); box-shadow: 0 0 12px rgba(var(--phase-accent-rgb), 0.6); }
+.runner-set-pip.completed { width: 16px; background: var(--cx-success, #3ECF8E); box-shadow: 0 0 8px rgba(62, 207, 142, 0.5); }
+.runner-set-pip.skipped { width: 12px; background: var(--cx-skipped, #C98A3D); opacity: 0.75; }
+.runner-set-pip.upcoming { width: 8px; background: rgba(255, 255, 255, 0.1); }
+
+.runner-seq-row.completed {
+  background: rgba(16, 185, 129, 0.04);
+  border: 1px solid rgba(16, 185, 129, 0.12);
+  opacity: 0.78;
+}
+.runner-seq-row.completed:hover { opacity: 1; background: rgba(16, 185, 129, 0.07); border-color: rgba(16, 185, 129, 0.2); }
+.runner-seq-row.completed .runner-seq-name { color: var(--text-muted); font-weight: 500; }
+.runner-seq-row.completed .runner-seq-count { color: var(--success); font-size: 12px; }
+
+.runner-seq-row.skipped {
+  background: rgba(234, 179, 8, 0.03);
+  border: 1px solid rgba(234, 179, 8, 0.14);
+  opacity: 0.72;
+}
+.runner-seq-row.skipped:hover { opacity: 0.9; background: rgba(234, 179, 8, 0.06); border-color: rgba(234, 179, 8, 0.22); }
+.runner-seq-row.skipped .runner-seq-icon { color: #eab308; }
+.runner-seq-row.skipped .runner-seq-name { color: var(--text-muted); font-weight: 500; }
+.runner-seq-row.skipped .runner-seq-count { color: #eab308; font-size: 12px; }
+
+.runner-seq-row.current {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.09);
+  border: 1px solid rgba(var(--phase-accent-rgb, 255, 93, 93), 0.3);
+  border-left: 3px solid var(--phase-accent);
+}
+.runner-seq-row.current .runner-seq-name { font-weight: 700; color: #ffffff; }
+
+.runner-seq-row.locked {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.runner-phase-pill-btn.is-locked { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+.runner-phase-pill-btn.is-done { color: var(--cx-success, #3ECF8E); opacity: 0.85; }
+
+.runner-set-dot.done { background: var(--cx-success, #3ECF8E); box-shadow: 0 0 6px rgba(62, 207, 142, 0.5); }
+.runner-set-dot.skipped { background: var(--cx-skipped, #C98A3D); box-shadow: 0 0 5px rgba(201, 138, 61, 0.4); }
+.runner-set-dot.active { background: var(--phase-accent); box-shadow: 0 0 8px rgba(var(--phase-accent-rgb), 0.7); transform: scale(1.15); }
+.runner-set-dot.pending { background: var(--surface-3); opacity: 0.6; }
+
+.runner-complete-summary-value.is-skipped { color: #eab308; font-weight: 700; }
+.runner-complete-summary-value.is-completed { color: var(--success); font-weight: 700; }
+.runner-complete-summary-value.is-pr { color: #fbbf24; font-weight: 700; }
+
+/* ─── 5. CARD ALIGNMENT ────────────────────────────────────────────────────── */
+
+.runner-target-pills-row { align-items: stretch; }
+.runner-target-pill { padding: 10px 12px; border-radius: 10px; justify-content: space-between; }
+.runner-flow-arrow { font-size: 12px; color: rgba(255, 255, 255, 0.15); align-self: center; }
+.runner-card-exercise-header { gap: 4px; }
+.runner-benchmarks { padding: 10px 12px; gap: 10px; }
+.runner-benchmark-val { font-size: 14px; font-weight: 700; }
+.runner-details-grid { gap: 10px; }
+.runner-queue-list { gap: 5px; }
+.runner-seq-row { padding: 9px 12px; border-radius: var(--radius-md); }
+
+/* ─── 6. PROGRESS INDICATOR CLARITY ──────────────────────────────────────── */
+
+.runner-card-progress-track {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 99px;
+}
+.runner-card-progress-fill {
+  background: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 8px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.4);
+}
+.runner-progress-bar-3px { height: 3px; background: rgba(255, 255, 255, 0.07); }
+.runner-progress-bar-fill-3px { box-shadow: 0 0 6px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35); }
+.runner-progress-bar-fill-3px.is-complete { background: var(--cx-success, #3ECF8E); box-shadow: 0 0 6px rgba(62, 207, 142, 0.4); }
+.runner-rest-depleting-track { height: 5px; background: rgba(255, 255, 255, 0.07); }
+.runner-rest-depleting-fill { background: var(--phase-accent, #FF5D5D); transition: width 1s linear; }
+.runner-rest-depleting-fill.is-warning { background: var(--danger); box-shadow: 0 0 8px rgba(244, 63, 94, 0.5); }
+.runner-progress-percentage { font-size: 11.5px; font-weight: 700; color: var(--phase-accent, #FF5D5D); }
+.runner-progress-percentage.is-gold { color: #fbbf24; }
+.runner-progress-exercise-count { font-size: 11px; font-weight: 600; color: var(--text-dim); }
+
+/* ─── 7. TIMER VISIBILITY ─────────────────────────────────────────────────── */
+
+.runner-header-timer-pill { padding: 6px 12px; gap: 8px; background: var(--surface-2); border: 1px solid var(--border-light); }
+.runner-timer-digits { font-size: 15px; font-weight: 700; font-family: var(--mono); letter-spacing: -0.02em; color: var(--text); }
+.runner-header-timer-pill.is-paused { background: rgba(234, 179, 8, 0.1); border-color: rgba(234, 179, 8, 0.4); }
+.runner-header-timer-pill.is-paused .runner-timer-digits { color: #fbbf24; }
+.runner-live-dot { width: 7px; height: 7px; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.runner-card-timer {
+  font-family: var(--mono);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  padding: 4px 9px;
+  letter-spacing: -0.02em;
+}
+
+/* ─── 8. MODAL SPACING ────────────────────────────────────────────────────── */
+
+.discard-modal-card { padding: 20px 22px 18px !important; gap: 12px; border-radius: 20px; }
+.discard-modal-desc { font-size: 13.5px; line-height: 1.5; color: var(--text-muted); }
+.discard-modal-actions { gap: 10px; margin-top: 4px; }
+.discard-modal-btn { padding: 11px 14px; font-size: 13px; font-weight: 700; border-radius: var(--radius-md); text-align: center; }
+
+/* ─── 9. EXCESSIVE EMPTY SPACE ────────────────────────────────────────────── */
+
+.runner-complete-screen { padding: 16px; padding-top: 24px; min-height: auto; align-items: flex-start; }
+.runner-complete-modal-card { gap: 14px; padding: 24px 22px; }
+.runner-complete-icon-wrap { width: 52px; height: 52px; font-size: 22px; }
+.runner-complete-title { font-size: 21px; margin: -4px 0 0; }
+.runner-complete-subtitle { font-size: 13px; margin-top: -6px; }
+.runner-complete-metrics-grid { padding: 12px 8px; gap: 8px; }
+.runner-complete-metric-label { font-size: 9.5px; letter-spacing: 0.06em; }
+.runner-complete-metric-val { font-size: 14px; font-weight: 800; }
+.runner-complete-summary-box { padding: 11px 14px; gap: 7px; }
+.runner-complete-summary-row { font-size: 12px; }
+.runner-phase-transition-container { gap: 14px; margin: 12px auto; }
+.runner-transition-badge-wrap { width: 56px; height: 56px; font-size: 24px; margin-bottom: 12px; }
+.runner-transition-title { font-size: 24px; margin-bottom: 6px; }
+.runner-transition-sub { font-size: 13.5px; margin-bottom: 18px; }
+.runner-transition-chips-row { margin-bottom: 18px; gap: 8px; }
+.runner-queue-section { gap: 8px; margin-top: 6px; }
+.runner-queue-head { padding: 0 2px 2px 2px; }
+
+/* ─── 10. COLOR SYSTEM CONSISTENCY ───────────────────────────────────────── */
+
+.runner-target-pill.target-goal { background: rgba(var(--phase-accent-rgb), 0.06); border-color: rgba(var(--phase-accent-rgb), 0.35); box-shadow: 0 0 10px rgba(var(--phase-accent-rgb), 0.12); }
+.runner-target-pill.target-goal .runner-pill-lbl { color: var(--phase-accent); }
+.runner-target-pill.target-goal .runner-pill-val { color: #ffffff; }
+
+.runner-target-pill.target-last { background: var(--cx-surface, #151519); border-color: var(--cx-surface-border, rgba(255, 255, 255, 0.06)); }
+.runner-target-pill.target-last .runner-pill-lbl { color: var(--cx-text-secondary, #8A8A93); }
+.runner-target-pill.target-last .runner-pill-val { color: var(--cx-success, #3ECF8E); font-family: var(--mono); font-size: 12.5px; }
+
+.runner-shortcut-pill.target-pill { background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.06); border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.2); color: var(--phase-accent, #FF5D5D); }
+.runner-shortcut-pill.target-pill:hover { background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.12); border-color: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35); color: #ffffff; filter: brightness(1.1); }
+
+.runner-badge-phase-pill.phase-warmup { background: rgba(255, 138, 61, 0.1); border-color: rgba(255, 138, 61, 0.28); color: #FF8A3D; }
+.runner-badge-phase-pill.phase-main { background: rgba(255, 93, 93, 0.1); border-color: rgba(255, 93, 93, 0.28); color: #FF5D5D; }
+.runner-badge-phase-pill.phase-cooldown, .runner-badge-phase-pill.phase-rest { background: rgba(53, 216, 176, 0.1); border-color: rgba(53, 216, 176, 0.28); color: #35D8B0; }
+
+/* ─── 11. LOCKED / DISABLED STATE ────────────────────────────────────────── */
+
+.runner-seq-row.locked .runner-seq-name { color: var(--text-dim); }
+.runner-seq-row.locked .runner-seq-sub { color: rgba(90, 90, 112, 0.6); }
+.runner-seq-row.locked .runner-seq-icon { opacity: 0.3; }
+.runner-seq-row.locked .runner-seq-count { color: rgba(90, 90, 112, 0.5); font-size: 11px; }
+
+.runner-complete-action-btn:disabled,
+.runner-card-btn-done:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none !important;
+  background: var(--surface-2) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-dim) !important;
+}
+
+/* ─── 12. WARMUP & COOLDOWN CARD POLISH ──────────────────────────────────── */
+
+.warmup-movement-item.is-completed,
+.cooldown-stretch-item.is-completed {
+  background: rgba(16, 185, 129, 0.05);
+  border-color: rgba(16, 185, 129, 0.18) !important;
+}
+.warmup-movement-item.is-skipped,
+.cooldown-stretch-item.is-skipped {
+  background: rgba(234, 179, 8, 0.03);
+  border-color: rgba(234, 179, 8, 0.18) !important;
+  opacity: 0.78;
+}
+
+/* ─── 13. REST CARD POLISH ────────────────────────────────────────────────── */
+
+.runner-rest-next-preview-card { border-radius: var(--radius-md); padding: 10px 14px; }
+.runner-rest-next-tag { font-size: 9.5px; font-weight: 800; letter-spacing: 0.1em; color: var(--accent-light); }
+.runner-rest-next-name { font-size: 13.5px; font-weight: 700; color: var(--text); margin-top: 1px; }
+.runner-rest-next-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+.runner-rest-adjust-row { gap: 8px; margin-top: 6px; }
+
+@media (max-width: 640px) {
+  .runner-sticky-header {
+    padding: 10px 16px 4px;
+    gap: 10px;
+    margin-bottom: 10px;
+    background: transparent;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .runner-header-title { font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .runner-header-subtitle { font-size: 10.5px; font-weight: 700; color: var(--phase-accent, #ff5d5d); }
+  .runner-execution-card { padding: 14px 14px 12px; border-radius: 16px; gap: 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45); }
+  .runner-exercise-name-title { font-size: 19px; font-weight: 800; }
+  .runner-card-ex-name { font-size: 18px; }
+  .runner-stepper-number { font-size: 36px; font-weight: 900; }
+  .runner-stepper-zone { padding: 4px 6px; gap: 12px; }
+  .runner-progress-ring-wrap { width: 96px; height: 96px; }
+  .stepper-btn { width: 38px; height: 38px; font-size: 18px; border-radius: 12px; }
+  .runner-cta-btn { height: 46px; font-size: 14px; font-weight: 800; border-radius: 12px; }
+  .runner-nav-btn { height: 34px; font-size: 11.5px; border-radius: 10px; }
+  .runner-rest-hero-digits { font-size: 42px; }
+  .runner-complete-modal-card { padding: 18px 16px; gap: 10px; }
+  .runner-complete-title { font-size: 18px; }
+  .runner-phase-transition-card { padding: 20px 16px; }
+  .runner-target-pill { padding: 5px 8px; border-radius: 8px; }
+  .runner-shortcut-pill { font-size: 11px; padding: 4px 8px; border-radius: 8px; }
+}
+
+/* ─── Ultra Clean Modern Header System (Apple Aesthetics & Lineless) ──────── */
+.runner-clean-header {
+  width: 100%;
+  background: transparent;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  position: relative !important;
+  top: auto !important;
+  z-index: 10;
+  padding: 12px 16px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.runner-clean-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.runner-clean-circle-btn {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #ffffff;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.runner-clean-circle-btn:active {
+  transform: scale(0.92);
+}
+
+.runner-clean-exit-btn {
+  color: #c9cbd6;
+}
+.runner-clean-exit-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.runner-clean-done-btn {
+  background: rgba(255, 93, 93, 0.14);
+  border-color: rgba(255, 93, 93, 0.25);
+  color: var(--phase-train, #FF5D5D);
+}
+.runner-clean-done-btn:hover,
+.runner-clean-done-btn:active {
+  background: rgba(255, 93, 93, 0.28);
+  box-shadow: 0 0 14px rgba(255, 93, 93, 0.35);
+}
+
+.runner-clean-center-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 0;
+  flex: 1;
+}
+
+.runner-clean-title {
+  font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif);
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.runner-clean-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #8E8E93;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.runner-clean-dot-sep {
+  color: #48484A;
+  font-size: 12px;
+}
+
+/* Apple-Style Segmented Pill Control (Warm-Up, Workout, Cool-Down) */
+.runner-apple-pill-segment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(118, 118, 128, 0.18);
+  border-radius: 9999px;
+  padding: 3px;
+  gap: 2px;
+  width: 100%;
+  box-sizing: border-box;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.runner-apple-pill-btn {
+  flex: 1;
+  height: 32px;
+  border-radius: 9999px;
+  background: transparent;
+  border: none;
+  color: #8E8E93;
+  font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.runner-apple-pill-btn:active {
+  transform: scale(0.97);
+}
+
+.runner-apple-pill-btn.is-active {
+  background: #636366;
+  color: #FFFFFF;
+  font-weight: 700;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+.runner-apple-pill-btn.is-active.phase-warmup {
+  background: rgba(255, 138, 61, 0.22);
+  color: #FFAA55;
+  box-shadow: 0 3px 10px rgba(255, 138, 61, 0.25), inset 0 0 0 1px rgba(255, 138, 61, 0.35);
+}
+
+.runner-apple-pill-btn.is-active.phase-main {
+  background: rgba(255, 93, 93, 0.22);
+  color: #FF7575;
+  box-shadow: 0 3px 10px rgba(255, 93, 93, 0.25), inset 0 0 0 1px rgba(255, 93, 93, 0.35);
+}
+
+.runner-apple-pill-btn.is-active.phase-cooldown {
+  background: rgba(53, 216, 176, 0.22);
+  color: #4DEAC3;
+  box-shadow: 0 3px 10px rgba(53, 216, 176, 0.25), inset 0 0 0 1px rgba(53, 216, 176, 0.35);
+}
+
+.runner-apple-pill-btn.is-done {
+  color: #3ecf8e;
+}
+
+/* Minimalist Clean Counter & Queue Trigger (Seamless interactive row) */
+.runner-clean-counter-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 0 2px;
+}
+
+.runner-clean-queue-trigger {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #8E8E93;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.runner-clean-queue-trigger:hover,
+.runner-clean-queue-trigger:active {
+  color: #FFFFFF;
+}
+
+.runner-clean-ex-counter {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8E8E93;
+  letter-spacing: -0.01em;
+}
+
+.runner-clean-queue-trigger:hover .runner-clean-ex-counter,
+.runner-clean-queue-trigger:active .runner-clean-ex-counter {
+  color: #FFFFFF;
+}
+
+/* Set Selector Pills Bar for Rapid Set Tracking */
+.runner-set-selector-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 6px;
+  width: 100%;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.runner-set-selector-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.runner-set-badge-pill {
+  flex: 1;
+  min-width: 58px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8a8d9f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-heading, var(--sans));
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.runner-set-badge-pill:active {
+  transform: scale(0.96);
+}
+
+.runner-set-badge-pill.is-active {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.18);
+  border-color: var(--phase-accent, #ff5d5d);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.28);
+}
+
+.runner-set-badge-pill.is-done {
+  background: rgba(62, 207, 142, 0.12);
+  border-color: rgba(62, 207, 142, 0.35);
+  color: #3ecf8e;
+}
+
+.runner-set-badge-pill.is-skipped {
+  background: rgba(201, 138, 61, 0.1);
+  border-color: rgba(201, 138, 61, 0.25);
+  color: #c98a3d;
+  opacity: 0.7;
+}
+
+.runner-set-pill-status {
+  font-size: 11px;
+  font-family: var(--mono);
+}
+
+/* ─── 15. USABILITY-FIRST 3-PANEL & MOBILE DRAWER REDESIGN ────────────────── */
+
+.runner-3col-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 340px;
+  gap: 24px;
+  align-items: start;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 16px 40px;
+}
+
+.runner-rail-sidebar {
+  background: var(--liquid-surface-1-grad, rgba(16, 16, 23, 0.78));
+  backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  border: var(--liquid-border);
+  border-radius: 18px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  box-shadow: var(--liquid-shadow-md), var(--liquid-highlight-top);
+}
+
+.runner-rail-sidebar::-webkit-scrollbar,
+.runner-right-panel::-webkit-scrollbar {
+  width: 4px;
+}
+.runner-rail-sidebar::-webkit-scrollbar-track,
+.runner-right-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+.runner-rail-sidebar::-webkit-scrollbar-thumb,
+.runner-right-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+.runner-rail-sidebar::-webkit-scrollbar-thumb:hover,
+.runner-right-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.runner-rail-progress-box {
+  background: transparent;
+  border: none;
+  padding: 0 2px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.runner-rail-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10.5px;
+}
+
+.runner-rail-progress-label {
+  font-family: var(--font-heading);
+  color: var(--cx-text-secondary, #8A8A93);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+.runner-rail-progress-val {
+  font-family: var(--mono);
+  color: var(--cx-text, #F2F2F0);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.runner-rail-progress-bar {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 4px;
+  width: 100%;
+}
+
+.runner-rail-progress-segment {
+  flex: 1;
+  height: 100%;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: all 0.25s ease;
+}
+
+.runner-rail-progress-segment.is-completed {
+  background: var(--cx-success, #3ECF8E);
+}
+
+.runner-rail-progress-segment.is-active {
+  background: var(--phase-accent);
+}
+
+.runner-rail-progress-segment.is-skipped {
+  background: var(--cx-skipped, #C98A3D);
+}
+
+.runner-rail-queue-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.runner-rail-queue-title {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--cx-text-secondary, #8A8A93);
+  letter-spacing: 0.06em;
+  padding: 0 4px;
+}
+
+.runner-rail-exercise-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.runner-rail-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  opacity: 0.85;
+}
+
+.runner-rail-item:hover:not(.is-selected) {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: var(--liquid-highlight-top-subtle);
+  opacity: 1;
+}
+
+.runner-rail-item.is-selected {
+  background: rgba(var(--phase-accent-rgb), 0.10);
+  border-color: rgba(var(--phase-accent-rgb), 0.25);
+  border-left: 3px solid var(--phase-accent);
+  box-shadow: 0 2px 10px -2px rgba(var(--phase-accent-rgb), 0.2), inset 0 1px 0 0 rgba(var(--phase-accent-rgb), 0.25);
+  opacity: 1;
+}
+
+.runner-rail-item.is-done {
+  opacity: 0.55;
+}
+
+.runner-rail-item.is-skipped {
+  opacity: 0.45;
+}
+
+.runner-item-status-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--cx-text-secondary, #8A8A93);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.runner-item-status-icon.is-done {
+  background: rgba(62, 207, 142, 0.12);
+  border-color: rgba(62, 207, 142, 0.25);
+  color: var(--cx-success, #3ECF8E);
+}
+
+.runner-item-status-icon.is-skipped {
+  background: rgba(201, 138, 61, 0.12);
+  border-color: rgba(201, 138, 61, 0.25);
+  color: var(--cx-skipped, #C98A3D);
+}
+
+.runner-item-status-icon.is-current {
+  background: rgba(var(--phase-accent-rgb), 0.15);
+  border-color: rgba(var(--phase-accent-rgb), 0.35);
+  color: var(--phase-accent);
+}
+
+.runner-rail-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.runner-rail-item-name {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cx-text, #F2F2F0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-rail-item.is-selected .runner-rail-item-name {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.runner-rail-item-meta {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--cx-text-secondary, #8A8A93);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Center Stage & Focused Execution Card (Strongest Visual Focus) */
+.runner-center-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  transform: none !important;
+  filter: none !important;
+  perspective: none !important;
+  contain: none !important;
+}
+
+.runner-execution-card {
+  background: var(--liquid-surface-elevated, linear-gradient(180deg, rgba(26, 26, 36, 0.88) 0%, rgba(18, 18, 25, 0.92) 100%));
+  backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  border: var(--liquid-border-highlight);
+  border-radius: 18px;
+  padding: 16px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: var(--liquid-shadow-lg), var(--liquid-highlight-top-elevated);
+  position: relative;
+}
+
+.runner-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-badge-ex-counter {
+  font-size: 11px;
+  color: #8a8d9f;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.runner-exercise-name-title {
+  font-family: var(--font-heading);
+  font-size: 21px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1.18;
+  margin: 0;
+}
+
+.runner-exercise-context-text {
+  font-family: var(--font-heading);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--cx-text-secondary, #8A8A93);
+  letter-spacing: 0.03em;
+  margin-top: 2px;
+}
+
+.runner-card-badges-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.runner-badge-set {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--phase-accent, #FF5D5D);
+  background: var(--phase-accent-dim, rgba(255, 93, 93, 0.1));
+  border: 1px solid var(--phase-accent-border, rgba(255, 93, 93, 0.25));
+  border-radius: 6px;
+  padding: 2px 8px;
+  box-shadow: var(--liquid-highlight-top-subtle);
+}
+
+.runner-badge-target, .runner-badge-rest {
+  font-size: 11px;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.03);
+  border: var(--liquid-border-subtle);
+  border-radius: 6px;
+  padding: 2px 7px;
+  box-shadow: var(--liquid-highlight-top-subtle);
+}
+
+.runner-stepper-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 4px 10px;
+}
+
+.runner-stepper-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  position: relative;
+}
+
+/* SVG Progress Ring */
+.runner-progress-ring-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 104px;
+  height: 104px;
+}
+
+.runner-progress-ring-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.runner-ring-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 4;
+}
+
+.runner-ring-progress {
+  fill: none;
+  stroke: var(--phase-accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: drop-shadow(0 0 6px rgba(var(--phase-accent-rgb), 0.35));
+}
+
+.runner-ring-inner-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.runner-stepper-number {
+  font-family: var(--mono);
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 1;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.runner-stepper-unit {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--cx-text-secondary, #8A8A93);
+  margin-top: 2px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.stepper-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 19px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--liquid-highlight-top-subtle);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.stepper-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: scale(1.05);
+  box-shadow: var(--liquid-shadow-sm), inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+}
+
+.stepper-btn:active {
+  transform: scale(0.95);
+}
+
+.runner-cta-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.runner-cta-btn,
+button.runner-cta-btn {
+  height: 46px;
+  font-size: 14.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 4px 16px rgba(var(--phase-accent-rgb, 255, 138, 61), 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.25) !important;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.runner-cta-btn:hover,
+button.runner-cta-btn:hover {
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 28px rgba(var(--phase-accent-rgb, 255, 138, 61), 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.35) !important;
+  filter: brightness(1.12);
+}
+
+.runner-cta-btn:active,
+button.runner-cta-btn:active {
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  transform: translateY(1px);
+  filter: brightness(0.92);
+}
+
+.runner-cta-btn:focus,
+.runner-cta-btn:focus-visible,
+button.runner-cta-btn:focus,
+button.runner-cta-btn:focus-visible {
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  outline: 2px solid var(--phase-accent, #FF8A3D);
+  outline-offset: 2px;
+}
+
+.runner-transition-cta-btn,
+button.runner-transition-cta-btn {
+  height: 52px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 6px 20px rgba(var(--phase-accent-rgb, 255, 138, 61), 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.25) !important;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.18s ease;
+}
+
+.runner-transition-cta-btn:hover,
+button.runner-transition-cta-btn:hover {
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 26px rgba(var(--phase-accent-rgb, 255, 138, 61), 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.35) !important;
+  filter: brightness(1.12);
+}
+
+.runner-transition-cta-btn:active,
+button.runner-transition-cta-btn:active {
+  background: var(--phase-accent, #FF8A3D) !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  transform: translateY(1px);
+  filter: brightness(0.92);
+}
+
+/* ── Bidirectional Exercise Navigation Row ── */
+.runner-exercise-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.runner-nav-btn,
+button.runner-nav-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 8px 14px;
+  background: var(--cx-surface, #151519);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.08));
+  border-radius: 12px;
+  color: var(--cx-text-secondary, #8A8A93);
+  font-family: var(--font-heading, inherit);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.runner-nav-btn:hover:not(:disabled),
+button.runner-nav-btn:hover:not(:disabled) {
+  color: #ffffff;
+  background: var(--phase-accent-surface, rgba(255, 255, 255, 0.06));
+  border-color: var(--phase-accent-border, rgba(255, 255, 255, 0.22));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 12px var(--phase-accent-dim, rgba(255, 255, 255, 0.05));
+}
+
+.runner-nav-btn:active:not(:disabled),
+button.runner-nav-btn:active:not(:disabled) {
+  transform: translateY(1px);
+  filter: brightness(0.95);
+}
+
+.runner-nav-btn:focus-visible,
+button.runner-nav-btn:focus-visible {
+  outline: 2px solid var(--phase-accent, #FF8A3D);
+  outline-offset: 2px;
+}
+
+.runner-nav-btn:disabled,
+button.runner-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+.runner-cta-sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.runner-cta-sub-row .btn-ghost {
+  background: transparent;
+  border: none;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--cx-text-secondary, #8A8A93);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.runner-cta-sub-row .btn-ghost:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.runner-cta-sub-row .btn-accent-link {
+  color: var(--phase-accent);
+}
+
+.runner-cta-sub-row .btn-accent-link:hover {
+  color: #ffffff;
+  background: rgba(var(--phase-accent-rgb), 0.1);
+}
+
+.runner-sub-sep {
+  color: rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  user-select: none;
+}
+
+/* Right Panel & Exercise Intelligence Hierarchy */
+.runner-right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+.runner-intelligence-card {
+  background: var(--liquid-surface-1-grad, rgba(16, 16, 23, 0.78));
+  backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
+  border: var(--liquid-border);
+  border-radius: 18px;
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--liquid-shadow-md), var(--liquid-highlight-top);
+}
+
+.runner-intel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.runner-intel-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.runner-intel-type-badge {
+  font-family: var(--font-heading);
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--phase-accent, #FF5D5D);
+  background: rgba(var(--phase-accent-rgb), 0.08);
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(var(--phase-accent-rgb), 0.2);
+  box-shadow: var(--liquid-highlight-top-subtle);
+}
+
+.runner-intel-tempo {
+  font-size: 11px;
+  color: var(--cx-text-secondary, #8A8A93);
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.runner-intel-cue-box {
+  background: var(--liquid-surface-inset, rgba(8, 8, 12, 0.5));
+  border-radius: 10px;
+  padding: 8px 10px;
+  border: var(--liquid-border-subtle);
+  box-shadow: var(--liquid-highlight-inset);
+}
+
+.runner-intel-cue-label,
+.runner-intel-why-label,
+.runner-intel-section-label {
+  font-family: var(--font-heading);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cx-text-secondary, #8A8A93);
+}
+
+.runner-intel-cue-text,
+.runner-intel-why-text {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.runner-intel-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-intel-focus-label {
+  font-size: 10.5px;
+  color: var(--cx-text-secondary, #8A8A93);
+  font-weight: 600;
+}
+
+.runner-intel-muscle-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.runner-intel-why-box {
+  background: var(--liquid-surface-inset, rgba(8, 8, 12, 0.5));
+  border-radius: 10px;
+  padding: 8px 10px;
+  border: var(--liquid-border-subtle);
+  box-shadow: var(--liquid-highlight-inset);
+}
+
+.runner-anatomy-accordion {
+  background: var(--liquid-surface-inset, rgba(8, 8, 12, 0.5));
+  border: var(--liquid-border-subtle);
+  border-radius: 10px;
+  padding: 0;
+  overflow: hidden;
+  margin-top: 6px;
+  box-shadow: var(--liquid-highlight-inset);
+}
+
+.runner-anatomy-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 11px;
+  color: #cbd5e1;
+  list-style: none;
+}
+
+.runner-anatomy-summary::-webkit-details-marker {
+  display: none;
+}
+
+.runner-anatomy-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  color: var(--cx-text-secondary, #8A8A93);
+}
+
+.runner-anatomy-content {
+  padding: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Mobile Drawer Sheet & Header button */
+.runner-header-drawer-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: var(--liquid-border-subtle);
+  color: var(--cx-text, #F2F2F0);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--liquid-highlight-top-subtle);
+  transition: all 0.15s ease;
+}
+.runner-header-drawer-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.runner-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.runner-drawer-backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.runner-drawer-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--liquid-surface-overlay, rgba(14, 14, 20, 0.92));
+  backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  -webkit-backdrop-filter: blur(var(--liquid-blur-lg, 16px));
+  border-top: var(--liquid-border-highlight);
+  border-radius: 24px 24px 0 0;
+  padding: 14px 18px 36px;
+  z-index: 1001;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transform: translateY(100%);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--liquid-shadow-overlay), var(--liquid-highlight-top-elevated);
+}
+
+.runner-drawer-sheet.is-open {
+  transform: translateY(0);
+}
+
+.runner-drawer-handle {
+  width: 36px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 99px;
+  margin: 0 auto 6px;
+  cursor: pointer;
+}
+
+.runner-drawer-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.runner-drawer-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.runner-drawer-meta {
+  font-size: 12px;
+  color: var(--phase-accent, #FF5D5D);
+}
+
+.runner-drawer-close-btn {
+  background: transparent;
+  border: none;
+  color: #8a8d9f;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.runner-drawer-phase-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.runner-drawer-phase-btn {
+  flex: 1;
+  padding: 8px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8a8d9f;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+
+.runner-drawer-phase-btn.is-active {
+  background: var(--phase-accent-dim, rgba(255, 93, 93, 0.2));
+  border-color: var(--phase-accent-border, rgba(255, 93, 93, 0.5));
+  color: #ffffff;
+}
+
+.runner-drawer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 50vh;
+}
+
+.runner-drawer-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.runner-drawer-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.runner-drawer-item.is-selected {
+  background: var(--phase-accent-dim, rgba(255, 93, 93, 0.12));
+  border-color: var(--phase-accent-border, rgba(255, 93, 93, 0.35));
+}
+
+.runner-drawer-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.runner-drawer-item-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.runner-drawer-item-meta {
+  font-size: 11px;
+  color: #8a8d9f;
+}
+
+.runner-mobile-supplemental {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+@media (max-width: 1023px) {
+  .runner-3col-layout {
+    grid-template-columns: 1fr;
+    padding: 0 12px 60px;
+  }
+  .runner-rail-sidebar, .runner-right-panel {
+    display: none !important;
+  }
+  .runner-header-phase-tabs {
+    display: none !important;
+  }
+  .runner-header-drawer-btn {
+    display: inline-flex !important;
+  }
+  .runner-mobile-supplemental {
+    display: flex !important;
+  }
+}
+
+/* ── In-Place Smooth Exercise Transition System ───────────────────────────── */
+.runner-stage-transitioning {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.runner-slide-out-left {
+  opacity: 0 !important;
+  transform: translate3d(-20px, 0, 0) !important;
+  transition: opacity 110ms cubic-bezier(0.4, 0, 1, 1), transform 110ms cubic-bezier(0.4, 0, 1, 1) !important;
+  will-change: opacity, transform;
+}
+
+.runner-slide-out-right {
+  opacity: 0 !important;
+  transform: translate3d(20px, 0, 0) !important;
+  transition: opacity 110ms cubic-bezier(0.4, 0, 1, 1), transform 110ms cubic-bezier(0.4, 0, 1, 1) !important;
+  will-change: opacity, transform;
+}
+
+.runner-slide-in-from-right {
+  opacity: 0 !important;
+  transform: translate3d(20px, 0, 0) !important;
+}
+
+.runner-slide-in-from-left {
+  opacity: 0 !important;
+  transform: translate3d(-20px, 0, 0) !important;
+}
+
+.runner-slide-in-active {
+  opacity: 1 !important;
+  transform: translate3d(0, 0, 0) !important;
+  transition: opacity 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms cubic-bezier(0.16, 1, 0.3, 1) !important;
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .runner-slide-out-left,
+  .runner-slide-out-right,
+  .runner-slide-in-from-right,
+  .runner-slide-in-from-left,
+  .runner-slide-in-active {
+    transform: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* ─── Inline Exercise Queue (Directly Below Execution Card) ───────────────── */
+.runner-inline-queue-section {
+  width: 100%;
+  margin-top: 22px;
+  margin-bottom: 110px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 1024px) {
+  .runner-inline-queue-section {
+    margin-bottom: 40px;
+  }
+}
+
+.runner-inline-queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 2px;
+}
+
+.runner-queue-section-title {
+  font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #8E8E93;
+  text-transform: uppercase;
+}
+
+.runner-queue-section-count {
+  font-size: 11.5px;
+  color: #636366;
+  font-weight: 600;
+}
+
+.runner-inline-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.runner-queue-item-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.runner-queue-item-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+.runner-queue-item-card:active {
+  transform: scale(0.98);
+}
+
+/* Active Highlight */
+.runner-queue-item-card.is-active {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--phase-accent, #FF5D5D);
+  box-shadow: 0 0 16px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.22);
+}
+
+/* Completed & Greyed Out (Pushed to bottom) */
+.runner-queue-item-card.is-completed {
+  opacity: 0.45;
+  background: rgba(0, 0, 0, 0.22);
+  border-color: rgba(255, 255, 255, 0.03);
+}
+
+.runner-queue-item-card.is-completed:hover {
+  opacity: 0.75;
+}
+
+.runner-queue-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.runner-queue-item-badge {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8E8E93;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading, var(--sans));
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.runner-queue-item-badge.badge-active {
+  background: var(--phase-accent, #FF5D5D);
+  border-color: var(--phase-accent, #FF5D5D);
+  color: #FFFFFF;
+  box-shadow: 0 0 10px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.4);
+}
+
+.runner-queue-item-badge.badge-done {
+  background: rgba(62, 207, 142, 0.15);
+  border-color: rgba(62, 207, 142, 0.35);
+  color: #3ecf8e;
+}
+
+.runner-queue-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.runner-queue-item-name {
+  font-family: var(--font-heading, var(--sans));
+  font-size: 14px;
+  font-weight: 700;
+  color: #FFFFFF;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.runner-queue-item-card.is-completed .runner-queue-item-name {
+  text-decoration: line-through;
+  color: #8E8E93;
+}
+
+.runner-queue-item-meta {
+  font-size: 11px;
+  color: #8E8E93;
+}
+
+.runner-queue-item-right {
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.runner-queue-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.runner-queue-tag.tag-active {
+  background: rgba(var(--phase-accent-rgb, 255, 93, 93), 0.2);
+  color: var(--phase-accent, #FF5D5D);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.runner-queue-tag.tag-done {
+  background: rgba(62, 207, 142, 0.12);
+  color: #3ecf8e;
+}
+
+.runner-queue-tag.tag-target {
+  background: rgba(255, 255, 255, 0.04);
+  color: #8E8E93;
+}
+
+/* ─── Floating Rest Card (Exact Match to User Reference Mockup) ──────────── */
+.runner-floating-rest-island {
+  position: fixed !important;
+  bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: calc(100% - 32px) !important;
+  max-width: 440px !important;
+  z-index: 9999 !important;
+  background: #17171C !important;
+  border-radius: 20px !important;
+  padding: 16px 20px 14px !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 30px rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  animation: runnerSlideUpFloat 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  box-sizing: border-box !important;
+  pointer-events: auto !important;
+}
+
+@media (min-width: 1024px) {
+  .runner-floating-rest-island {
+    bottom: 32px !important;
+    width: 440px !important;
+  }
+}
+
+@keyframes runnerSlideUpFloat {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Top Row: Digits + Progress Bar */
+.runner-rest-card-top-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.runner-rest-timer-digits {
+  font-family: var(--mono, -apple-system, BlinkMacSystemFont, monospace);
+  font-size: 38px;
+  font-weight: 800;
+  color: #FFFFFF;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+.runner-rest-timer-digits.is-complete {
+  color: var(--cx-success, #3ECF8E);
+}
+
+.runner-rest-progress-track {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.runner-rest-progress-fill {
+  height: 100%;
+  background: var(--phase-accent, #FF5D5D);
+  border-radius: 4px;
+  transition: width 0.4s linear;
+}
+
+/* Bottom Row: Stepper Controls + Skip Button */
+.runner-rest-card-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.runner-rest-controls-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.runner-rest-text-btn {
+  background: none;
+  border: none;
+  color: var(--phase-accent, #FF5D5D);
+  font-family: var(--font-heading, var(--sans));
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.runner-rest-text-btn:hover {
+  opacity: 0.85;
+}
+
+.runner-rest-text-btn:active {
+  transform: scale(0.95);
+}
+
+.runner-rest-pause-btn {
+  color: #8E8E93;
+  font-size: 13.5px;
+}
+
+.runner-rest-skip-pill-btn {
+  background: var(--phase-accent, #FF5D5D);
+  color: #FFFFFF;
+  font-family: var(--font-heading, var(--sans));
+  font-size: 16px;
+  font-weight: 800;
+  padding: 10px 24px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(var(--phase-accent-rgb, 255, 93, 93), 0.35);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.runner-rest-skip-pill-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.runner-rest-skip-pill-btn:active {
+  transform: translateY(1px);
+}
+

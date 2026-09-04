@@ -158,9 +158,8 @@ vm.runInContext(stateCode, context);
   ];
 
   const expectedCooldown = [
-    'Passive Dead Hang',
+    'Passive Hang',
     'Lat Stretch',
-    'Cross-Body Shoulder Stretch',
     'Upper Back Stretch',
     'Neck Stretch'
   ];

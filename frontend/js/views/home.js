@@ -370,7 +370,49 @@ function resetHeroParallax(e) {
 
 // ─── Screen 1: Athlete-First Home / Dashboard Screen (Phase.md Target) ────────
 
+function renderHomeSkeleton() {
+  return `
+    <div class="home-desktop-view">
+      <div class="skeleton-hero-card" style="margin-bottom: 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="width:60%;">
+            <div class="cx-skeleton skeleton-text skeleton-title" style="width:70%; height:28px;"></div>
+            <div class="cx-skeleton skeleton-text skeleton-subtitle" style="width:45%;"></div>
+          </div>
+          <div class="cx-skeleton skeleton-circle" style="width:56px; height:56px;"></div>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:28px;">
+          <div class="cx-skeleton skeleton-text skeleton-button" style="width:160px; height:48px;"></div>
+          <div class="cx-skeleton skeleton-text skeleton-button" style="width:120px; height:48px;"></div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px;">
+        <div class="skeleton-card skeleton-stat-card">
+          <div class="cx-skeleton skeleton-text" style="width:40%; height:12px;"></div>
+          <div class="cx-skeleton skeleton-text" style="width:60%; height:26px; margin:8px 0;"></div>
+          <div class="cx-skeleton skeleton-text" style="width:50%; height:10px;"></div>
+        </div>
+        <div class="skeleton-card skeleton-stat-card">
+          <div class="cx-skeleton skeleton-text" style="width:45%; height:12px;"></div>
+          <div class="cx-skeleton skeleton-text" style="width:55%; height:26px; margin:8px 0;"></div>
+          <div class="cx-skeleton skeleton-text" style="width:40%; height:10px;"></div>
+        </div>
+        <div class="skeleton-card skeleton-stat-card">
+          <div class="cx-skeleton skeleton-text" style="width:35%; height:12px;"></div>
+          <div class="cx-skeleton skeleton-text" style="width:65%; height:26px; margin:8px 0;"></div>
+          <div class="cx-skeleton skeleton-text" style="width:45%; height:10px;"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderHomeView() {
+  if (state.todayResolved === null && (!state.exercises || state.exercises.length === 0) && !state.dashboardSummary) {
+    return renderHomeSkeleton();
+  }
+
   const summary = state.dashboardSummary || {
     streak_days: 0,
     week_sessions: 0,

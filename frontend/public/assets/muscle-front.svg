@@ -1,0 +1,177 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 420" width="100%" height="100%" class="cx-anatomical-svg front-view" role="img" aria-label="CalistheniX Human Muscle Silhouette Front View">
+  <defs>
+    <filter id="front-coral-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="#ef4444" flood-opacity="0.85" />
+    </filter>
+    <filter id="front-amber-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="2.5" flood-color="#f59e0b" flood-opacity="0.75" />
+    </filter>
+    <style>
+      :root {
+        --body-bg: #0f1118;
+        --muscle-inactive: #232838;
+        --muscle-inactive-stroke: #161924;
+        --muscle-hover: #363d54;
+        --accent: #ef4444;
+        --accent-light: #fca5a5;
+        --accent-secondary: #f59e0b;
+        --neutral-part: #1a1d28;
+      }
+      .cx-bg { fill: transparent; }
+      .cx-body-outline { fill: var(--body-bg); opacity: 0.5; }
+      .muscle, .cx-muscle-part {
+        fill: var(--muscle-inactive);
+        stroke: var(--muscle-inactive-stroke);
+        stroke-width: 1.1px;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+        transition: fill 0.25s ease, stroke 0.25s ease, filter 0.25s ease, transform 0.25s ease;
+        cursor: pointer;
+      }
+      .muscle:hover, .cx-muscle-part:hover {
+        fill: var(--muscle-hover);
+        stroke: #485270;
+      }
+      .muscle.active, .muscle.is-primary, .cx-muscle-part.active, .cx-muscle-part.is-primary, [data-active="primary"] {
+        fill: var(--accent) !important;
+        stroke: var(--accent-light) !important;
+        stroke-width: 1.4px;
+        filter: url(#front-coral-glow);
+      }
+      .muscle.is-secondary, .cx-muscle-part.is-secondary, [data-active="secondary"] {
+        fill: var(--accent-secondary) !important;
+        stroke: #fde68a !important;
+        stroke-width: 1.2px;
+        filter: url(#front-amber-glow);
+      }
+      .neutral-joint {
+        fill: var(--neutral-part);
+        stroke: var(--muscle-inactive-stroke);
+        stroke-width: 0.8px;
+      }
+    </style>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="200" height="420" class="cx-bg" />
+
+  <!-- Base Body Underlay Reference -->
+  <g class="cx-body-underlay">
+    <ellipse cx="100" cy="30" rx="14" ry="17" class="cx-body-outline" />
+  </g>
+
+  <!-- 1. HEAD & NECK -->
+  <g id="head_neck" class="neutral-group">
+    <path id="head" d="M 100 14 C 91 14 86 21 86 31 C 86 40 92 48 100 48 C 108 48 114 40 114 31 C 114 21 109 14 100 14 Z" class="neutral-joint" data-name="Head" />
+    <path id="neck_l" d="M 94 47 L 91 59 L 98 62 L 98 48 Z" class="neutral-joint" data-name="Neck Left" />
+    <path id="neck_r" d="M 106 47 L 109 59 L 102 62 L 102 48 Z" class="neutral-joint" data-name="Neck Right" />
+  </g>
+
+  <!-- 2. TRAPEZIUS (Upper Anterior) -->
+  <g id="traps_group" class="muscle-group">
+    <path id="traps_front_left" class="muscle traps upper_traps" data-muscle="traps" data-name="Upper Trapezius (Left)"
+          d="M 91 50 C 85 53 79 58 74 64 C 77 66 84 66 91 63 C 92 58 92 53 91 50 Z" />
+    <path id="traps_front_right" class="muscle traps upper_traps" data-muscle="traps" data-name="Upper Trapezius (Right)"
+          d="M 109 50 C 115 53 121 58 126 64 C 123 66 116 66 109 63 C 108 58 108 53 109 50 Z" />
+  </g>
+
+  <!-- 3. SHOULDERS: FRONT & SIDE DELTOIDS -->
+  <g id="shoulders_group" class="muscle-group">
+    <path id="front_delts_left" class="muscle front_delts shoulders" data-muscle="front_delts" data-name="Front Deltoid (Left)"
+          d="M 74 65 C 67 67 61 73 59 81 C 60 88 66 93 72 95 C 75 88 77 78 77 70 C 76 67 75 66 74 65 Z" />
+    <path id="front_delts_right" class="muscle front_delts shoulders" data-muscle="front_delts" data-name="Front Deltoid (Right)"
+          d="M 126 65 C 133 67 139 73 141 81 C 140 88 134 93 128 95 C 125 88 123 78 123 70 C 124 67 125 66 126 65 Z" />
+    <path id="side_delts_left" class="muscle side_delts shoulders" data-muscle="side_delts" data-name="Side Deltoid (Left)"
+          d="M 58 80 C 50 86 46 95 48 104 C 52 106 56 105 60 100 C 59 93 57 86 58 80 Z" />
+    <path id="side_delts_right" class="muscle side_delts shoulders" data-muscle="side_delts" data-name="Side Deltoid (Right)"
+          d="M 142 80 C 150 86 154 95 152 104 C 148 106 144 105 140 100 C 141 93 143 86 142 80 Z" />
+  </g>
+
+  <!-- 4. CHEST / PECTORALS -->
+  <g id="chest_group" class="muscle-group">
+    <path id="upper_chest_left" class="muscle chest upper_chest" data-muscle="upper_chest" data-name="Upper Pectoralis (Left)"
+          d="M 98 64 C 90 64 80 68 76 75 C 80 81 88 83 98 83 C 98 76 98 70 98 64 Z" />
+    <path id="upper_chest_right" class="muscle chest upper_chest" data-muscle="upper_chest" data-name="Upper Pectoralis (Right)"
+          d="M 102 64 C 110 64 120 68 124 75 C 120 81 112 83 102 83 C 102 76 102 70 102 64 Z" />
+    <path id="chest_left" class="muscle chest lower_chest" data-muscle="chest" data-name="Pectorals (Left)"
+          d="M 98 85 C 88 85 78 83 74 77 C 72 85 76 95 84 98 C 91 99 97 97 98 92 Z" />
+    <path id="chest_right" class="muscle chest lower_chest" data-muscle="chest" data-name="Pectorals (Right)"
+          d="M 102 85 C 112 85 122 83 126 77 C 128 85 124 95 116 98 C 109 99 103 97 102 92 Z" />
+  </g>
+
+  <!-- 5. ARMS: BICEPS & FOREARMS -->
+  <g id="arms_front_group" class="muscle-group">
+    <path id="biceps_left" class="muscle biceps" data-muscle="biceps" data-name="Biceps (Left)"
+          d="M 64 97 C 58 100 56 111 58 121 C 61 125 66 126 70 119 C 72 113 71 103 64 97 Z" />
+    <path id="biceps_right" class="muscle biceps" data-muscle="biceps" data-name="Biceps (Right)"
+          d="M 136 97 C 142 100 144 111 142 121 C 139 125 134 126 130 119 C 128 113 129 103 136 97 Z" />
+    <path id="forearms_left" class="muscle forearms" data-muscle="forearms" data-name="Forearms (Left)"
+          d="M 57 127 C 51 131 45 144 42 159 C 41 166 45 170 50 168 C 55 161 61 147 63 135 C 63 129 60 126 57 127 Z" />
+    <path id="forearms_right" class="muscle forearms" data-muscle="forearms" data-name="Forearms (Right)"
+          d="M 143 127 C 149 131 155 144 158 159 C 159 166 155 170 150 168 C 145 161 139 147 137 135 C 137 129 140 126 143 127 Z" />
+  </g>
+
+  <!-- HANDS (Neutral) -->
+  <g id="hands_front" class="neutral-group">
+    <path id="hand_left" d="M 41 169 C 36 174 31 183 28 192 C 27 197 31 199 34 195 C 38 188 43 181 46 174 Z" class="neutral-joint" data-name="Hand (Left)" />
+    <path id="hand_right" d="M 159 169 C 164 174 169 183 172 192 C 173 197 169 199 166 195 C 162 188 157 181 154 174 Z" class="neutral-joint" data-name="Hand (Right)" />
+  </g>
+
+  <!-- 6. ABDOMINALS (6-Pack Rectus Abdominis) -->
+  <g id="abs_group" class="muscle-group">
+    <path id="abs_upper_left" class="muscle abs core" data-muscle="abs" data-name="Upper Abs (Left)"
+          d="M 90 100 L 98 99 L 98 111 L 90 111 Z" />
+    <path id="abs_upper_right" class="muscle abs core" data-muscle="abs" data-name="Upper Abs (Right)"
+          d="M 102 99 L 110 100 L 110 111 L 102 111 Z" />
+    <path id="abs_mid_left" class="muscle abs core" data-muscle="abs" data-name="Mid Abs (Left)"
+          d="M 90 113 L 98 113 L 98 126 L 90 125 Z" />
+    <path id="abs_mid_right" class="muscle abs core" data-muscle="abs" data-name="Mid Abs (Right)"
+          d="M 102 113 L 110 113 L 110 125 L 102 126 Z" />
+    <path id="abs_lower_left" class="muscle abs core" data-muscle="abs" data-name="Lower Abs (Left)"
+          d="M 91 128 L 98 128 L 98 143 L 92 139 Z" />
+    <path id="abs_lower_right" class="muscle abs core" data-muscle="abs" data-name="Lower Abs (Right)"
+          d="M 102 128 L 109 128 L 108 139 L 102 143 Z" />
+  </g>
+
+  <!-- 7. OBLIQUES & CORE -->
+  <g id="obliques_group" class="muscle-group">
+    <path id="obliques_left" class="muscle obliques core" data-muscle="obliques" data-name="Obliques (Left)"
+          d="M 87 101 C 80 104 76 115 75 128 C 75 137 79 149 89 154 C 88 146 87 135 87 126 C 87 116 88 107 87 101 Z" />
+    <path id="obliques_right" class="muscle obliques core" data-muscle="obliques" data-name="Obliques (Right)"
+          d="M 113 101 C 120 104 124 115 125 128 C 125 137 121 149 111 154 C 112 146 113 135 113 126 C 113 116 112 107 113 101 Z" />
+    <path id="core_pelvic" class="muscle core" data-muscle="core" data-name="Pelvic Core"
+          d="M 91 145 L 100 160 L 109 145 C 103 148 97 148 91 145 Z" />
+  </g>
+
+  <!-- 8. LEGS: QUADRICEPS -->
+  <g id="quads_group" class="muscle-group">
+    <path id="quads_left_lateral" class="muscle quads legs" data-muscle="quads" data-name="Vastus Lateralis (Left)"
+          d="M 88 157 C 78 165 71 180 68 200 C 65 217 68 233 76 242 C 81 241 86 226 88 211 C 90 195 91 174 88 157 Z" />
+    <path id="quads_left_medial" class="muscle quads legs" data-muscle="quads" data-name="Vastus Medialis (Left)"
+          d="M 89 162 C 92 178 92 198 90 218 C 88 231 92 241 96 238 C 98 228 99 206 98 184 C 97 168 93 161 89 162 Z" />
+    <path id="quads_right_lateral" class="muscle quads legs" data-muscle="quads" data-name="Vastus Lateralis (Right)"
+          d="M 112 157 C 122 165 129 180 132 200 C 135 217 132 233 124 242 C 119 241 114 226 112 211 C 110 195 109 174 112 157 Z" />
+    <path id="quads_right_medial" class="muscle quads legs" data-muscle="quads" data-name="Vastus Medialis (Right)"
+          d="M 111 162 C 108 178 108 198 110 218 C 112 231 108 241 104 238 C 102 228 101 206 102 184 C 103 168 107 161 111 162 Z" />
+  </g>
+
+  <!-- KNEES (Neutral) -->
+  <g id="knees_front" class="neutral-group">
+    <circle id="knee_left" cx="81" cy="248" r="5" class="neutral-joint" data-name="Knee (Left)" />
+    <circle id="knee_right" cx="119" cy="248" r="5" class="neutral-joint" data-name="Knee (Right)" />
+  </g>
+
+  <!-- 9. SHINS & CALVES / TIBIALIS -->
+  <g id="calves_front_group" class="muscle-group">
+    <path id="calves_front_left" class="muscle calves tibialis legs" data-muscle="calves" data-name="Tibialis & Calves (Left)"
+          d="M 77 256 C 71 267 70 286 72 303 C 74 315 79 324 81 330 C 84 321 86 303 86 285 C 85 272 83 260 77 256 Z" />
+    <path id="calves_front_right" class="muscle calves tibialis legs" data-muscle="calves" data-name="Tibialis & Calves (Right)"
+          d="M 123 256 C 129 267 130 286 128 303 C 126 315 121 324 119 330 C 116 321 114 303 114 285 C 115 272 117 260 123 256 Z" />
+  </g>
+
+  <!-- FEET (Neutral) -->
+  <g id="feet_front" class="neutral-group">
+    <path id="foot_left" d="M 79 333 C 76 341 73 350 71 357 C 75 358 84 358 87 355 C 88 348 86 337 84 333 Z" class="neutral-joint" data-name="Foot (Left)" />
+    <path id="foot_right" d="M 121 333 C 124 341 127 350 129 357 C 125 358 116 358 113 355 C 112 348 114 337 116 333 Z" class="neutral-joint" data-name="Foot (Right)" />
+  </g>
+</svg>
