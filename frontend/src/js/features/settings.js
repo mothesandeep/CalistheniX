@@ -471,28 +471,117 @@ const CANONICAL_DEFAULT_WEIGHT_HISTORY = [
 ];
 
 async function resetDemoData() {
-  const defaultHistory = (typeof DEFAULT_WEIGHT_HISTORY !== 'undefined') ? DEFAULT_WEIGHT_HISTORY : CANONICAL_DEFAULT_WEIGHT_HISTORY;
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('cx_weight_history', JSON.stringify(defaultHistory));
-    localStorage.setItem('cx_target_weight', '77');
-    localStorage.removeItem('cx_active_session');
-    localStorage.removeItem('cx_active_workout');
-    if (typeof state !== 'undefined') {
-      state.weightHistory = [...defaultHistory];
-      state.targetWeight = 77.0;
-      state.activeSession = null;
-      state.todayLogs = {};
+  if (typeof restoreCleanDemoData === 'function') {
+    await restoreCleanDemoData();
+  } else if (typeof generateDemoDataset === 'function') {
+    const data = generateDemoDataset();
+    if (typeof localStorage !== 'undefined') {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && (
+          k.startsWith('cx_session_') ||
+          k.startsWith('cx_pending_') ||
+          k.startsWith('cx_pending_session_') ||
+          k === 'cx_sessions' ||
+          k === 'cx_workout_history' ||
+          k === 'cx_completed_sessions' ||
+          k === 'cx_today_logs' ||
+          k === 'cx_quick_checkins' ||
+          k === 'cx_prs' ||
+          k === 'cx_personal_records' ||
+          k === 'cx_dashboard_records'
+        )) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      data.sessions.forEach(sess => {
+        localStorage.setItem(`cx_session_${sess.session_uuid}`, JSON.stringify(sess));
+      });
+      localStorage.setItem('cx_sessions', JSON.stringify(data.sessions));
+      localStorage.setItem('cx_workout_history', JSON.stringify(data.sessions));
+      localStorage.setItem('cx_completed_sessions', JSON.stringify(data.sessions));
+      localStorage.setItem('cx_weight_history', JSON.stringify(data.weightHistory));
+      localStorage.setItem('cx_target_weight', '77');
+      localStorage.setItem('cx_latest_weight', '78.3');
+      localStorage.removeItem('cx_active_session');
+      localStorage.removeItem('cx_active_workout');
+      localStorage.removeItem('cx_current_workout');
+      localStorage.removeItem('cx_workout_draft');
+      localStorage.removeItem('cx_user_cleared');
+      localStorage.setItem('cx_initialized', '1');
+      localStorage.setItem('cx_demo_data', '1');
+
+      if (typeof state !== 'undefined') {
+        state.weightHistory = [...data.weightHistory];
+        state.targetWeight = 77.0;
+        state.latestWeight = 78.3;
+        state.activeSession = null;
+        state.todayLogs = {};
+        state.workoutSessions = [...data.sessions];
+        state.historyLogs = null;
+        state.dashboardRecords = null;
+        if (!state.userProfile) state.userProfile = {};
+        state.userProfile.target_weight = 77.0;
+        state.userProfile.current_weight = 78.3;
+      }
     }
-  }
-  if (typeof showToast === 'function') {
-    showToast('Demo data reset to initial defaults');
-  }
-  if (typeof loadDashboardSummary === 'function') {
-    await loadDashboardSummary();
+    if (typeof showToast === 'function') {
+      showToast('Demo data restored to clean baseline');
+    }
+    if (typeof loadDashboardSummary === 'function') {
+      await loadDashboardSummary();
+    }
+    if (typeof loadWorkoutSessions === 'function') {
+      await loadWorkoutSessions();
+    }
+    if (typeof render === 'function') {
+      render();
+    }
+    if (typeof renderApp === 'function') {
+      renderApp();
+    }
   }
   if (document.getElementById('settings-mobile-screen') || document.querySelector('.settings-modal-backdrop')) {
     openSettingsModal();
   }
+}
+
+function confirmResetDemoData() {
+  let sheetRoot = document.getElementById('settings-sheet-root');
+  if (!sheetRoot) {
+    sheetRoot = document.createElement('div');
+    sheetRoot.id = 'settings-sheet-root';
+    document.body.appendChild(sheetRoot);
+  }
+
+  sheetRoot.innerHTML = `
+    <div class="settings-sheet-backdrop" onclick="if(event.target === this) closeSettingsSheet()">
+      <div class="settings-sheet" style="max-width:440px;">
+        <div class="settings-sheet-header">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="color:var(--accent);">${renderIcon('refresh', 'cx-icon cx-icon-inline')}</span>
+            <h3 class="settings-sheet-title">Reset Demo Data</h3>
+          </div>
+          <button class="nav-btn-icon" onclick="closeSettingsSheet()">${renderIcon('x', 'cx-icon cx-icon-xs')}</button>
+        </div>
+
+        <p style="font-size:13px; color:var(--text-muted); line-height:1.5; margin:0;">
+          This will restore the original demo workouts, exercise logs, and bodyweight progress history to their clean initial state. Custom settings will be preserved.
+        </p>
+
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
+          <button class="btn btn-primary" style="width:100%; justify-content:center; padding:12px; font-weight:700;" onclick="closeSettingsSheet(); resetDemoData();">
+            ${renderIcon('refresh', 'cx-icon cx-icon-xs cx-icon-inline')} Reset Demo Data
+          </button>
+          <button class="btn btn-secondary" style="width:100%; justify-content:center; padding:11px;" onclick="closeSettingsSheet()">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function confirmResetEverything() {
@@ -533,6 +622,11 @@ function confirmResetEverything() {
 
 async function executeResetEverything() {
   closeSettingsSheet();
+  if (typeof clearAllUserData === 'function') {
+    await clearAllUserData();
+    return;
+  }
+
   if (typeof localStorage !== 'undefined') {
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -542,10 +636,11 @@ async function executeResetEverything() {
       }
     }
     keysToRemove.forEach(k => localStorage.removeItem(k));
-    
-    const defaultHistory = (typeof DEFAULT_WEIGHT_HISTORY !== 'undefined') ? DEFAULT_WEIGHT_HISTORY : CANONICAL_DEFAULT_WEIGHT_HISTORY;
-    localStorage.setItem('cx_weight_history', JSON.stringify(defaultHistory));
-    localStorage.setItem('cx_target_weight', '77');
+
+    localStorage.setItem('cx_user_cleared', '1');
+    localStorage.setItem('cx_initialized', '1');
+    localStorage.setItem('cx_demo_data', '0');
+    localStorage.setItem('cx_weight_history', '[]');
 
     const defaults = typeof SETTINGS_DEFAULTS !== 'undefined' ? SETTINGS_DEFAULTS : {
       weight_unit: 'kg',
@@ -575,10 +670,16 @@ async function executeResetEverything() {
 
     if (typeof state !== 'undefined') {
       state.view = 'home';
-      state.weightHistory = [...defaultHistory];
+      state.weightHistory = [];
+      state.latestWeight = null;
       state.targetWeight = 77.0;
       state.todayLogs = {};
       state.activeSession = null;
+      state.workoutSessions = [];
+      state.dashboardSummary = { streak_days: 0, week_sessions: 0, week_sets: 0, top_movers: [] };
+      state.dashboardRecords = [];
+      state.dashboardActivity = [];
+      state.historyLogs = [];
       state.weightUnit = defaults.weight_unit;
       state.defaultRestSec = defaults.default_rest_sec;
       state.restPauseSec = defaults.rest_pause_sec;
@@ -594,6 +695,17 @@ async function executeResetEverything() {
     }
   }
 
+  try {
+    if (typeof API !== 'undefined' && API.resetEverything) {
+      await API.resetEverything();
+    } else if (typeof API !== 'undefined' && API.api) {
+      await API.api('POST', '/reset-everything');
+    }
+    if (typeof API !== 'undefined' && API.invalidateCache) {
+      API.invalidateCache();
+    }
+  } catch (e) {}
+
   initThemeAndAccent();
   closeSettingsModal();
   if (typeof showToast === 'function') {
@@ -605,10 +717,19 @@ async function executeResetEverything() {
   if (typeof loadExercises === 'function') {
     await loadExercises();
   }
+  if (typeof loadSplits === 'function') {
+    await loadSplits();
+  }
+  if (typeof loadWorkouts === 'function') {
+    await loadWorkouts();
+  }
   if (typeof switchView === 'function') {
     switchView('home');
   } else if (typeof render === 'function') {
     render();
+  }
+  if (typeof renderApp === 'function') {
+    renderApp();
   }
 }
 
@@ -958,7 +1079,7 @@ function renderSettingsGroupedSections() {
         </div>
 
         <!-- Reset demo data -->
-        <div class="settings-row is-clickable" onclick="resetDemoData()">
+        <div class="settings-row is-clickable" onclick="confirmResetDemoData()">
           <div class="settings-row-left">
             <div class="settings-icon-box box-blue">${renderIcon('refresh')}</div>
             <div class="settings-row-text">
@@ -1357,7 +1478,7 @@ function openNotifModal() {
           <div style="background:var(--surface-2); border:1px solid var(--border); padding:12px 14px; border-radius:var(--radius); display:flex; gap:12px; align-items:flex-start;">
             <span>${renderIcon('zap', 'cx-icon cx-icon-lg cx-icon-accent')}</span>
             <div>
-              <strong style="color:#ffffff; font-size:13px;">${isWorkout ? `Today's Workout: ${workoutName}` : 'Rest & Recovery Day'}</strong>
+              <strong style="color:var(--text); font-size:13px;">${isWorkout ? `Today's Workout: ${workoutName}` : 'Rest & Recovery Day'}</strong>
               <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">${isWorkout ? 'Ready when you are. Step up and claim your strength.' : 'Hydrate, stretch, and prepare for tomorrow.'}</div>
             </div>
           </div>
@@ -1365,7 +1486,7 @@ function openNotifModal() {
           <div style="background:var(--surface-2); border:1px solid var(--border); padding:12px 14px; border-radius:var(--radius); display:flex; gap:12px; align-items:flex-start;">
             <span>${renderIcon('flame', 'cx-icon cx-icon-lg cx-icon-fire')}</span>
             <div>
-              <strong style="color:#ffffff; font-size:13px;">Active Streak Check</strong>
+              <strong style="color:var(--text); font-size:13px;">Active Streak Check</strong>
               <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Consistency drives progressive overload. Keep your training chain unbroken.</div>
             </div>
           </div>
@@ -2439,6 +2560,7 @@ if (typeof window !== 'undefined') {
   window.getAppLanguage = getAppLanguage;
   window.setAppLanguage = setAppLanguage;
   window.resetDemoData = resetDemoData;
+  window.confirmResetDemoData = confirmResetDemoData;
   window.confirmResetEverything = confirmResetEverything;
   window.executeResetEverything = executeResetEverything;
   window.closeSettingsSheet = closeSettingsSheet;

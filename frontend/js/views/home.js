@@ -17,30 +17,81 @@ function renderStreakSparklineSvg(streak) {
     </svg>`;
 }
 
+function calculateNiceGraphScale(minVal, maxVal, targetVal = null, maxTicks = 4) {
+  let low = Number(minVal);
+  let high = Number(maxVal);
+  if (targetVal != null && !isNaN(Number(targetVal))) {
+    low = Math.min(low, Number(targetVal));
+    high = Math.max(high, Number(targetVal));
+  }
+  if (low >= high) {
+    low -= 2;
+    high += 2;
+  }
+  const rawRange = high - low;
+  const pad = Math.max(0.8, rawRange * 0.12);
+  const paddedMin = low - pad;
+  const paddedMax = high + pad;
+  const span = paddedMax - paddedMin;
+
+  const roughStep = span / Math.max(2, maxTicks - 1);
+  const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+  const normalized = roughStep / magnitude;
+  let stepMultiplier = 1;
+  if (normalized > 6) stepMultiplier = 10;
+  else if (normalized > 3) stepMultiplier = 5;
+  else if (normalized > 1.5) stepMultiplier = 2.5;
+  else if (normalized > 0.8) stepMultiplier = 1;
+  else stepMultiplier = 0.5;
+
+  const step = Math.max(0.5, stepMultiplier * magnitude);
+  const niceMin = Math.floor(paddedMin / step) * step;
+  const niceMax = Math.ceil(paddedMax / step) * step;
+  const range = Math.max(0.1, niceMax - niceMin);
+
+  const ticks = [];
+  for (let v = niceMin; v <= niceMax + step * 0.01; v += step) {
+    ticks.push(Math.round(v * 10) / 10);
+  }
+
+  // Ensure reasonable number of ticks (between 3 and 5)
+  if (ticks.length > 5) {
+    const reducedTicks = [];
+    const stepIdx = Math.ceil((ticks.length - 1) / 3);
+    for (let i = 0; i < ticks.length; i += stepIdx) {
+      reducedTicks.push(ticks[i]);
+    }
+    if (reducedTicks[reducedTicks.length - 1] !== ticks[ticks.length - 1]) {
+      reducedTicks.push(ticks[ticks.length - 1]);
+    }
+    return { min: niceMin, max: niceMax, range, step, ticks: reducedTicks };
+  }
+
+  return { min: niceMin, max: niceMax, range, step, ticks };
+}
+
 function renderBodyWeightSparklineSvg(history, targetKg = 77) {
   if (!history || !Array.isArray(history) || history.length === 0) {
     return '';
   }
 
   const width = 360;
-  const height = 135;
-  const padLeft = 38;
-  const padRight = 18;
-  const padTop = 14;
-  const padBottom = 24;
+  const height = 140;
+  const padLeft = 40;
+  const padRight = 24;
+  const padTop = 16;
+  const padBottom = 26;
   const plotWidth = width - padLeft - padRight;
   const plotHeight = height - padTop - padBottom;
 
   const weights = history.map(h => Number(h.weight));
-  const dataMin = Math.min(...weights, targetKg);
-  const dataMax = Math.max(...weights, targetKg);
-  const minY = Math.min(76.5, Math.floor(dataMin - 0.5));
-  const maxY = Math.max(83.5, Math.ceil(dataMax + 0.5));
-  const kgRange = Math.max(1, maxY - minY);
+  const dataMin = Math.min(...weights);
+  const dataMax = Math.max(...weights);
+  const scale = calculateNiceGraphScale(dataMin, dataMax, targetKg, 4);
 
   const coords = history.map((item, idx) => {
     const x = padLeft + (history.length === 1 ? plotWidth / 2 : (idx / (history.length - 1)) * plotWidth);
-    const norm = (Number(item.weight) - minY) / kgRange;
+    const norm = (Number(item.weight) - scale.min) / scale.range;
     const y = padTop + (1 - norm) * plotHeight;
     return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, ...item };
   });
@@ -73,14 +124,13 @@ function renderBodyWeightSparklineSvg(history, targetKg = 77) {
   const lastCoord = coords[coords.length - 1];
   const areaD = `${lineD} L ${lastCoord.x.toFixed(1)} ${(height - padBottom).toFixed(1)} L ${firstCoord.x.toFixed(1)} ${(height - padBottom).toFixed(1)} Z`;
 
-  // Horizontal Grid Lines (82.5, 80, 77.5)
-  const gridValues = [82.5, 80.0, 77.5];
-  const gridLinesHtml = gridValues.map(gVal => {
-    const norm = (gVal - minY) / kgRange;
+  // Dynamic Horizontal Grid Lines & Non-Cramped Y-Axis Labels
+  const gridLinesHtml = scale.ticks.map(tickVal => {
+    const norm = (tickVal - scale.min) / scale.range;
     const y = padTop + (1 - norm) * plotHeight;
     return `
-      <line x1="${padLeft}" y1="${y.toFixed(1)}" x2="${width - padRight}" y2="${y.toFixed(1)}" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1" stroke-dasharray="2,3" />
-      <text x="${padLeft - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" fill="#717182" font-size="9" font-family="var(--sans)" font-weight="600">${gVal % 1 === 0 ? gVal : gVal.toFixed(1)}</text>
+      <line x1="${padLeft}" y1="${y.toFixed(1)}" x2="${width - padRight}" y2="${y.toFixed(1)}" stroke="rgba(255, 255, 255, 0.07)" stroke-width="1" stroke-dasharray="2,3" />
+      <text x="${padLeft - 7}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" fill="#8E8E9F" font-size="9.5" font-family="var(--mono, monospace)" font-weight="500">${tickVal % 1 === 0 ? tickVal : tickVal.toFixed(1)}</text>
     `;
   }).join('');
 
@@ -88,28 +138,44 @@ function renderBodyWeightSparklineSvg(history, targetKg = 77) {
   const vGridCols = [0.28, 0.50, 0.72];
   const vGridLinesHtml = vGridCols.map(pct => {
     const x = padLeft + plotWidth * pct;
-    return `<line x1="${x.toFixed(1)}" y1="${padTop}" x2="${x.toFixed(1)}" y2="${height - padBottom}" stroke="rgba(255, 255, 255, 0.05)" stroke-width="1" stroke-dasharray="2,3" />`;
+    return `<line x1="${x.toFixed(1)}" y1="${padTop}" x2="${x.toFixed(1)}" y2="${height - padBottom}" stroke="rgba(255, 255, 255, 0.04)" stroke-width="1" stroke-dasharray="2,3" />`;
   }).join('');
 
   // Target dashed line Y
-  const targetNorm = (targetKg - minY) / kgRange;
+  const targetNorm = (targetKg - scale.min) / scale.range;
   const targetY = Math.round((padTop + (1 - targetNorm) * plotHeight) * 10) / 10;
+  const isTargetVisible = targetY >= padTop - 5 && targetY <= height - padBottom + 5;
 
   // Small dots along curve
   const curveDotsHtml = coords.map((c, i) => {
     if (i === coords.length - 1) return '';
-    return `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="2" fill="#FFB800" opacity="0.85" />`;
+    return `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="2.2" fill="#FFB800" opacity="0.85" />`;
   }).join('');
 
   // Interactive point hit areas
   const hitAreasHtml = coords.map((c, i) => {
     return `
-      <circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="14" fill="transparent" class="weight-graph-hitarea" 
+      <circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="15" fill="transparent" class="weight-graph-hitarea" 
         data-date="${c.date}" data-weight="${c.weight}"
         onclick="selectWeightPointByIndex(${i})"
         onmouseenter="selectWeightPointByIndex(${i})" />
     `;
   }).join('');
+
+  // Dynamic X-Axis Date/Month Labels
+  let xLabelsHtml = '';
+  if (history.length >= 2) {
+    const firstDate = new Date(history[0].date);
+    const lastDate = new Date(history[history.length - 1].date);
+    const m1 = !isNaN(firstDate.getTime()) ? firstDate.toLocaleDateString('en-US', { month: 'short' }) : 'Jul';
+    const m2 = !isNaN(lastDate.getTime()) ? lastDate.toLocaleDateString('en-US', { month: 'short' }) : 'Aug';
+    xLabelsHtml = `
+      <text x="${(padLeft + plotWidth * 0.28).toFixed(1)}" y="${height - 6}" text-anchor="middle" fill="#8E8E9F" font-size="10" font-family="var(--sans)" font-weight="600">${m1}</text>
+      <text x="${(padLeft + plotWidth * 0.72).toFixed(1)}" y="${height - 6}" text-anchor="middle" fill="#8E8E9F" font-size="10" font-family="var(--sans)" font-weight="600">${m2}</text>
+    `;
+  } else {
+    xLabelsHtml = `<text x="${(padLeft + plotWidth / 2).toFixed(1)}" y="${height - 6}" text-anchor="middle" fill="#8E8E9F" font-size="10" font-family="var(--sans)" font-weight="600">Latest</text>`;
+  }
 
   return `
     <div class="home-mobile-chart-wrap home-mobile-weight-chart-wrap" 
@@ -123,8 +189,8 @@ function renderBodyWeightSparklineSvg(history, targetKg = 77) {
       <svg class="home-mobile-metric-svg home-mobile-weight-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
         <defs>
           <linearGradient id="weightAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="#FFB800" stop-opacity="0.30" />
-            <stop offset="50%" stop-color="#FFB800" stop-opacity="0.10" />
+            <stop offset="0%" stop-color="#FFB800" stop-opacity="0.32" />
+            <stop offset="60%" stop-color="#FFB800" stop-opacity="0.08" />
             <stop offset="100%" stop-color="#FFB800" stop-opacity="0.0" />
           </linearGradient>
         </defs>
@@ -133,9 +199,14 @@ function renderBodyWeightSparklineSvg(history, targetKg = 77) {
         ${vGridLinesHtml}
         ${gridLinesHtml}
 
-        <!-- Dashed Target Weight Line -->
-        <line x1="${padLeft}" y1="${targetY.toFixed(1)}" x2="${width - padRight}" y2="${targetY.toFixed(1)}" stroke="#FFB800" stroke-width="2" stroke-dasharray="6,4" />
-        <text x="${width - padRight}" y="${(targetY - 5).toFixed(1)}" text-anchor="end" fill="#FFB800" font-size="10.5" font-family="var(--font-heading, var(--sans))" font-weight="800">${targetKg}</text>
+        <!-- Dashed Target Weight Line & Non-colliding Pill Badge -->
+        ${isTargetVisible ? `
+          <line x1="${padLeft}" y1="${targetY.toFixed(1)}" x2="${width - padRight}" y2="${targetY.toFixed(1)}" stroke="#FFB800" stroke-width="1.8" stroke-dasharray="5,4" opacity="0.85" />
+          <g class="target-badge-g">
+            <rect x="${width - padRight - 30}" y="${(targetY - 8.5).toFixed(1)}" width="30" height="17" rx="4" fill="rgba(14, 14, 18, 0.9)" stroke="rgba(255, 184, 0, 0.35)" stroke-width="0.8"/>
+            <text x="${width - padRight - 15}" y="${(targetY + 3.5).toFixed(1)}" text-anchor="middle" fill="#FFB800" font-size="9.5" font-family="var(--mono, monospace)" font-weight="700">${targetKg}</text>
+          </g>
+        ` : ''}
 
         <!-- Area Gradient Fill -->
         <path d="${areaD}" fill="url(#weightAreaGrad)" />
@@ -146,11 +217,13 @@ function renderBodyWeightSparklineSvg(history, targetKg = 77) {
         <!-- Curve Inner Dots -->
         ${curveDotsHtml}
 
-        <!-- Interactive Guide Line (Shown on drag/hover) -->
-        <line id="weight-interactive-vline" x1="0" y1="${padTop}" x2="0" y2="${height - padBottom}" stroke="rgba(255, 255, 255, 0.32)" stroke-width="1.2" stroke-dasharray="3,3" style="display:none;" />
+        <!-- Interactive Crosshair Guide Lines (Smooth Hover) -->
+        <line id="weight-interactive-vline" x1="0" y1="${padTop}" x2="0" y2="${height - padBottom}" stroke="rgba(255, 255, 255, 0.45)" stroke-width="1.2" stroke-dasharray="3,3" style="display:none;" />
+        <line id="weight-interactive-hline" x1="${padLeft}" y1="0" x2="${width - padRight}" y2="0" stroke="rgba(255, 255, 255, 0.45)" stroke-width="1.2" stroke-dasharray="3,3" style="display:none;" />
 
-        <!-- Interactive Highlight Dot -->
-        <circle id="weight-interactive-dot" cx="0" cy="0" r="5.5" fill="#141418" stroke="#FFB800" stroke-width="3" style="display:none;" />
+        <!-- Interactive Highlight Glow & Dot -->
+        <circle id="weight-interactive-glow" cx="0" cy="0" r="10" fill="rgba(255, 184, 0, 0.22)" style="display:none;" />
+        <circle id="weight-interactive-dot" cx="0" cy="0" r="5" fill="#141418" stroke="#FFB800" stroke-width="2.5" style="display:none;" />
 
         <!-- Highlighted Latest Point -->
         <circle id="weight-latest-dot" cx="${lastCoord.x.toFixed(1)}" cy="${lastCoord.y.toFixed(1)}" r="5" fill="#FFB800" stroke="#141418" stroke-width="2" class="weight-graph-latest-dot" />
@@ -158,18 +231,23 @@ function renderBodyWeightSparklineSvg(history, targetKg = 77) {
         <!-- Hit areas for direct point clicks -->
         ${hitAreasHtml}
 
-        <!-- X-Axis Month Labels -->
-        <text x="${(padLeft + plotWidth * 0.28).toFixed(1)}" y="${height - 6}" text-anchor="middle" fill="#717182" font-size="10.5" font-family="var(--sans)" font-weight="600">Jul</text>
-        <text x="${(padLeft + plotWidth * 0.72).toFixed(1)}" y="${height - 6}" text-anchor="middle" fill="#717182" font-size="10.5" font-family="var(--sans)" font-weight="600">Aug</text>
+        <!-- X-Axis Month / Date Labels -->
+        ${xLabelsHtml}
       </svg>
 
       <!-- Floating Interactive Tooltip -->
-      <div id="weight-tooltip" class="weight-tooltip" style="display:none;" aria-live="polite"></div>
+      <div id="weight-tooltip" class="weight-tooltip cx-graph-tooltip" style="display:none;" aria-live="polite"></div>
     </div>
   `;
 }
 
+let _weightLeaveTimer = null;
+
 function handleWeightGraphPointer(evt) {
+  if (_weightLeaveTimer) {
+    clearTimeout(_weightLeaveTimer);
+    _weightLeaveTimer = null;
+  }
   const coords = window._weightGraphCoords;
   if (!coords || coords.length === 0) return;
   const container = document.querySelector('.home-mobile-weight-chart-wrap');
@@ -195,6 +273,10 @@ function handleWeightGraphPointer(evt) {
 }
 
 function selectWeightPointByIndex(idx) {
+  if (_weightLeaveTimer) {
+    clearTimeout(_weightLeaveTimer);
+    _weightLeaveTimer = null;
+  }
   const coords = window._weightGraphCoords;
   if (!coords || !coords[idx]) return;
   const container = document.querySelector('.home-mobile-weight-chart-wrap');
@@ -205,6 +287,8 @@ function selectWeightPointByIndex(idx) {
 
 function updateWeightGraphHighlight(point, rect) {
   const vline = document.getElementById('weight-interactive-vline');
+  const hline = document.getElementById('weight-interactive-hline');
+  const glow = document.getElementById('weight-interactive-glow');
   const dot = document.getElementById('weight-interactive-dot');
   const latestDot = document.getElementById('weight-latest-dot');
   const tooltip = document.getElementById('weight-tooltip');
@@ -216,37 +300,52 @@ function updateWeightGraphHighlight(point, rect) {
     vline.setAttribute('x2', point.x);
     vline.style.display = 'block';
   }
+  if (hline) {
+    hline.setAttribute('y1', point.y);
+    hline.setAttribute('y2', point.y);
+    hline.style.display = 'block';
+  }
+  if (glow) {
+    glow.setAttribute('cx', point.x);
+    glow.setAttribute('cy', point.y);
+    glow.style.display = 'block';
+  }
   if (dot) {
     dot.setAttribute('cx', point.x);
     dot.setAttribute('cy', point.y);
     dot.style.display = 'block';
   }
   if (latestDot) {
-    latestDot.style.opacity = isLatest ? '1' : '0.4';
+    latestDot.style.opacity = isLatest ? '1' : '0.35';
   }
 
   if (tooltip) {
     const formatted = typeof formatWeightPointDate === 'function' ? formatWeightPointDate(point.date) : point.date;
-    tooltip.innerHTML = `${formatted} · <strong>${Number(point.weight).toFixed(1)} kg</strong>`;
-    tooltip.style.display = 'block';
+    tooltip.innerHTML = `<span class="weight-tip-date">${formatted}</span> <span class="weight-tip-sep">·</span> <strong class="weight-tip-val mono">${Number(point.weight).toFixed(1)} kg</strong>`;
+    tooltip.style.display = 'flex';
     const tipPixelX = (point.x / 360) * rect.width;
-    tooltip.style.left = `${Math.max(65, Math.min(rect.width - 65, tipPixelX))}px`;
-    const tipPixelY = (point.y / 135) * rect.height;
-    tooltip.style.top = `${Math.max(0, tipPixelY - 36)}px`;
+    tooltip.style.left = `${Math.max(68, Math.min(rect.width - 68, tipPixelX))}px`;
+    const tipPixelY = (point.y / 140) * rect.height;
+    tooltip.style.top = `${Math.max(4, tipPixelY - 38)}px`;
   }
 }
 
 function handleWeightGraphPointerLeave() {
-  setTimeout(() => {
+  if (_weightLeaveTimer) clearTimeout(_weightLeaveTimer);
+  _weightLeaveTimer = setTimeout(() => {
     const vline = document.getElementById('weight-interactive-vline');
+    const hline = document.getElementById('weight-interactive-hline');
+    const glow = document.getElementById('weight-interactive-glow');
     const dot = document.getElementById('weight-interactive-dot');
     const latestDot = document.getElementById('weight-latest-dot');
     const tooltip = document.getElementById('weight-tooltip');
     if (vline) vline.style.display = 'none';
+    if (hline) hline.style.display = 'none';
+    if (glow) glow.style.display = 'none';
     if (dot) dot.style.display = 'none';
     if (latestDot) latestDot.style.opacity = '1';
     if (tooltip) tooltip.style.display = 'none';
-  }, 1800);
+  }, 1000);
 }
 
 function showWeightTooltip(evt, dateStr, weight) {
@@ -554,7 +653,12 @@ function renderHomeView() {
                 </button>
               </div>
             ` : `
-              <div class="empty-state" style="padding:20px 0;">No upcoming workout in queue.</div>
+              <div class="empty-state" style="padding:16px 0;">
+                <div class="empty-state-icon" style="width:36px; height:36px; margin-bottom:8px;">
+                  <svg class="cx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>
+                </div>
+                <div class="empty-state-message">No upcoming workout in queue.</div>
+              </div>
             `}
           </div>
         </div>
@@ -769,7 +873,7 @@ function renderHomeView() {
         </div>
 
         <div class="home-muscle-target-list">
-          <span style="color:var(--text-muted); font-weight:600;">Target:</span> <strong style="color:#ffffff; font-weight:700; margin-left:4px;">${_currentWorkoutMuscles.label}</strong>
+          <span style="color:var(--text-muted); font-weight:600;">Target:</span> <strong style="color:var(--text); font-weight:700; margin-left:4px;">${_currentWorkoutMuscles.label}</strong>
         </div>
       </div>
     </div>`;

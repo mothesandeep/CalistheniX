@@ -1,10 +1,9 @@
 /* ============================================================
-   nav.css — Floating Glass Navigation (Apple/iOS Liquid-Glass Design System)
-   Native Mobile Bottom Navigation & Desktop Sidebar Controls
-   Dark Mode Base + Apple-Style Translucent Off-White Light Mode
+   nav.css — Floating Glass Navigation (Apple Liquid Glass)
+   Mobile Bottom Navigation & Desktop Sidebar Controls
    ============================================================ */
 
-/* ── Mobile Floating Glass Bottom Navigation (Base / Dark Mode) ────────────── */
+/* ── 1. Mobile Floating Liquid Glass Bottom Navigation ─────────────────────── */
 .app-bottom-nav {
   display: none;
   position: fixed;
@@ -13,16 +12,12 @@
   transform: translateX(-50%);
   width: min(calc(100% - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)), 390px);
   height: 56px;
-  background: rgba(16, 16, 22, 0.85);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 9999px;
-  box-shadow:
-    0 12px 36px -4px rgba(0, 0, 0, 0.75),
-    0 4px 12px -2px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.12),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
   z-index: 900;
   justify-content: space-around;
   align-items: center;
@@ -31,41 +26,31 @@
   user-select: none;
   -webkit-user-select: none;
   pointer-events: auto;
-  transition: background 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+  transition: background var(--transition), border-color var(--transition), box-shadow var(--transition);
 }
 
-/* ── Sliding Active Background Pill Indicator (iOS Physics) ─────────────── */
+/* Sliding Active Background Pill Indicator */
 .bottom-nav-indicator {
   position: absolute;
   top: 0;
   left: 0;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   pointer-events: none !important;
   z-index: 1;
   opacity: 0;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 2px 6px rgba(0, 0, 0, 0.25),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.10);
-  transition:
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1.15),
-    width 260ms cubic-bezier(0.22, 1, 0.36, 1.15),
-    height 260ms cubic-bezier(0.22, 1, 0.36, 1.15),
-    background 220ms ease,
-    border-color 220ms ease,
-    box-shadow 220ms ease,
-    opacity 180ms ease;
+  background: var(--surface-2);
+  border: 1px solid var(--border-light);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1.15),
+              width 260ms cubic-bezier(0.22, 1, 0.36, 1.15),
+              height 260ms cubic-bezier(0.22, 1, 0.36, 1.15),
+              opacity 180ms ease;
   will-change: transform, width, height;
 }
 
-/* Workout Active Morph State on Sliding Pill */
 .bottom-nav-indicator.indicator-workout {
-  background: rgba(255, 93, 93, 0.12);
-  border: 1px solid rgba(255, 93, 93, 0.28);
-  box-shadow:
-    0 2px 8px -1px rgba(255, 93, 93, 0.25),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+  background: var(--phase-train-dim);
+  border: 1px solid var(--phase-train-border);
 }
 
 .bottom-nav-item {
@@ -76,17 +61,17 @@
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  color: var(--text-dim, #71717a);
+  color: var(--text-muted);
   font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.01em;
   gap: 2.5px;
   padding: 4px 2px;
-  border-radius: 9999px;
+  border-radius: var(--radius-full);
   min-width: 48px;
   flex: 1;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 120ms ease, color 180ms ease;
+  transition: color 180ms ease, transform 120ms ease;
   cursor: pointer;
   pointer-events: auto;
 }
@@ -97,17 +82,9 @@
   justify-content: center;
   width: 26px;
   height: 20px;
-  border-radius: 9999px;
-  background: transparent;
-  color: var(--text-dim, #71717a);
-  opacity: 0.75;
-  transform: translateY(0) scale(1);
-  transition:
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1.15),
-    opacity 200ms ease,
-    color 200ms ease,
-    filter 200ms ease;
-  will-change: transform, opacity;
+  color: var(--text-muted);
+  opacity: 0.85;
+  transition: transform 200ms ease, opacity 180ms ease, color 180ms ease;
 }
 
 .bottom-nav-icon svg,
@@ -115,265 +92,62 @@
   width: 17px;
   height: 17px;
   stroke-width: 2;
-  transition: stroke 200ms ease, fill 200ms ease;
 }
 
 .bottom-nav-label {
   line-height: 1;
   font-size: 10px;
   font-weight: 500;
-  color: var(--text-dim, #71717a);
-  opacity: 0.85;
-  transform: translateY(0);
+  color: var(--text-muted);
   white-space: nowrap;
-  transition:
-    color 200ms ease,
-    opacity 200ms ease,
-    font-weight 200ms ease,
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1.15);
+  transition: color 180ms ease, font-weight 180ms ease;
 }
 
 .bottom-nav-item:hover .bottom-nav-icon,
 .bottom-nav-item:hover .bottom-nav-label {
-  opacity: 0.95;
-  color: #e2e8f0;
+  color: var(--text);
+  opacity: 1;
 }
 
 .bottom-nav-item:active {
   transform: scale(0.94);
 }
 
-/* ── Standard Active Tab (Home, Split, History, Progress) ───────────────── */
-.bottom-nav-item.active {
-  color: #ffffff;
-}
-
+/* Active Tab Styling */
 .bottom-nav-item.active .bottom-nav-label {
-  font-weight: 600;
-  color: #ffffff;
+  font-weight: 700;
+  color: var(--text);
   opacity: 1;
-  transform: translateY(-0.5px);
 }
 
 .bottom-nav-item.active .bottom-nav-icon {
-  color: var(--phase-train, #FF5D5D);
+  color: var(--phase-train);
   opacity: 1;
-  transform: translateY(-1px) scale(1.05);
-  filter: drop-shadow(0 1px 4px rgba(255, 93, 93, 0.35));
-}
-
-/* ── Primary Action: Workout Center Tab ─────────────────────────────────── */
-.bottom-nav-workout {
-  position: relative;
-}
-
-.bottom-nav-workout .bottom-nav-icon {
-  width: 28px;
-  height: 20px;
+  transform: scale(1.06);
 }
 
 .bottom-nav-workout.active .bottom-nav-icon {
-  color: var(--phase-train, #FF5D5D);
-  opacity: 1;
-  transform: translateY(-1px) scale(1.08);
-  filter: drop-shadow(0 1px 5px rgba(255, 93, 93, 0.45));
+  color: var(--phase-train);
 }
 
-.bottom-nav-workout.active .bottom-nav-icon svg,
-.bottom-nav-workout.active .bottom-nav-icon .cx-icon {
-  stroke: var(--phase-train, #FF5D5D);
-  fill: rgba(255, 93, 93, 0.22);
+.bottom-nav-workout.active .bottom-nav-icon svg {
+  stroke: var(--phase-train);
+  fill: var(--phase-train-dim);
 }
 
-.bottom-nav-workout.active .bottom-nav-label {
-  color: #ffffff;
-  font-weight: 600;
-  opacity: 1;
-  transform: translateY(-0.5px);
-}
-
-/* ==========================================================================
-   Light-Mode Liquid-Glass Bottom Navigation (Apple Settings Cohesion)
-   - Translucent off-white glass surface
-   - Soft backdrop blur
-   - Very subtle border & specular highlight
-   - Soft layered shadow
-   - High legibility active/inactive tabs
-   ========================================================================== */
-
-[data-theme="light"] .app-bottom-nav {
-  background: rgba(248, 250, 252, 0.82);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  box-shadow:
-    0 12px 32px -4px rgba(15, 23, 42, 0.10),
-    0 4px 12px -2px rgba(15, 23, 42, 0.04),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
-    inset 0 -1px 0 0 rgba(0, 0, 0, 0.02);
-}
-
-[data-theme="light"] .bottom-nav-indicator {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow:
-    0 2px 8px -1px rgba(15, 23, 42, 0.08),
-    0 1px 2px rgba(15, 23, 42, 0.04),
-    inset 0 1px 0 0 rgba(255, 255, 255, 1);
-}
-
-[data-theme="light"] .bottom-nav-indicator.indicator-workout {
-  background: var(--accent-dim, rgba(255, 93, 93, 0.10));
-  border: 1px solid var(--border-accent, rgba(255, 93, 93, 0.28));
-  box-shadow:
-    0 2px 8px -1px rgba(255, 93, 93, 0.18),
-    inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
-}
-
-[data-theme="light"] .bottom-nav-item {
-  color: var(--text-muted, #64748b);
-}
-
-[data-theme="light"] .bottom-nav-icon {
-  color: var(--text-muted, #64748b);
-  opacity: 0.88;
-}
-
-[data-theme="light"] .bottom-nav-label {
-  color: var(--text-muted, #64748b);
-  opacity: 0.92;
-}
-
-[data-theme="light"] .bottom-nav-item:hover .bottom-nav-icon,
-[data-theme="light"] .bottom-nav-item:hover .bottom-nav-label {
-  opacity: 1;
-  color: var(--text, #0f172a);
-}
-
-[data-theme="light"] .bottom-nav-item.active {
-  color: var(--text, #0f172a);
-}
-
-[data-theme="light"] .bottom-nav-item.active .bottom-nav-label {
-  font-weight: 700;
-  color: var(--text, #0f172a);
-  opacity: 1;
-}
-
-[data-theme="light"] .bottom-nav-item.active .bottom-nav-icon {
-  color: var(--phase-train, #FF5D5D);
-  opacity: 1;
-  filter: drop-shadow(0 1px 3px rgba(255, 93, 93, 0.28));
-}
-
-[data-theme="light"] .bottom-nav-workout.active .bottom-nav-label {
-  color: var(--text, #0f172a);
-  font-weight: 700;
-}
-
-[data-theme="light"] .bottom-nav-workout.active .bottom-nav-icon {
-  color: var(--phase-train, #FF5D5D);
-  filter: drop-shadow(0 1px 4px rgba(255, 93, 93, 0.35));
-}
-
-[data-theme="light"] .bottom-nav-workout.active .bottom-nav-icon svg,
-[data-theme="light"] .bottom-nav-workout.active .bottom-nav-icon .cx-icon {
-  stroke: var(--phase-train, #FF5D5D);
-  fill: rgba(255, 93, 93, 0.16);
-}
-
-/* Light Mode — System Theme Support */
-@media (prefers-color-scheme: light) {
-  [data-theme="system"] .app-bottom-nav {
-    background: rgba(248, 250, 252, 0.82);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(0, 0, 0, 0.07);
-    box-shadow:
-      0 12px 32px -4px rgba(15, 23, 42, 0.10),
-      0 4px 12px -2px rgba(15, 23, 42, 0.04),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
-      inset 0 -1px 0 0 rgba(0, 0, 0, 0.02);
-  }
-
-  [data-theme="system"] .bottom-nav-indicator {
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    box-shadow:
-      0 2px 8px -1px rgba(15, 23, 42, 0.08),
-      0 1px 2px rgba(15, 23, 42, 0.04),
-      inset 0 1px 0 0 rgba(255, 255, 255, 1);
-  }
-
-  [data-theme="system"] .bottom-nav-indicator.indicator-workout {
-    background: var(--accent-dim, rgba(255, 93, 93, 0.10));
-    border: 1px solid var(--border-accent, rgba(255, 93, 93, 0.28));
-    box-shadow:
-      0 2px 8px -1px rgba(255, 93, 93, 0.18),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
-  }
-
-  [data-theme="system"] .bottom-nav-item {
-    color: var(--text-muted, #64748b);
-  }
-
-  [data-theme="system"] .bottom-nav-icon {
-    color: var(--text-muted, #64748b);
-    opacity: 0.88;
-  }
-
-  [data-theme="system"] .bottom-nav-label {
-    color: var(--text-muted, #64748b);
-    opacity: 0.92;
-  }
-
-  [data-theme="system"] .bottom-nav-item:hover .bottom-nav-icon,
-  [data-theme="system"] .bottom-nav-item:hover .bottom-nav-label {
-    opacity: 1;
-    color: var(--text, #0f172a);
-  }
-
-  [data-theme="system"] .bottom-nav-item.active {
-    color: var(--text, #0f172a);
-  }
-
-  [data-theme="system"] .bottom-nav-item.active .bottom-nav-label {
-    font-weight: 700;
-    color: var(--text, #0f172a);
-    opacity: 1;
-  }
-
-  [data-theme="system"] .bottom-nav-item.active .bottom-nav-icon {
-    color: var(--phase-train, #FF5D5D);
-    opacity: 1;
-    filter: drop-shadow(0 1px 3px rgba(255, 93, 93, 0.28));
-  }
-
-  [data-theme="system"] .bottom-nav-workout.active .bottom-nav-label {
-    color: var(--text, #0f172a);
-    font-weight: 700;
-  }
-
-  [data-theme="system"] .bottom-nav-workout.active .bottom-nav-icon {
-    color: var(--phase-train, #FF5D5D);
-    filter: drop-shadow(0 1px 4px rgba(255, 93, 93, 0.35));
-  }
-
-  [data-theme="system"] .bottom-nav-workout.active .bottom-nav-icon svg,
-  [data-theme="system"] .bottom-nav-workout.active .bottom-nav-icon .cx-icon {
-    stroke: var(--phase-train, #FF5D5D);
-    fill: rgba(255, 93, 93, 0.16);
-  }
-}
-
-/* ── Responsive Tiers (< 1024px) ────────────────────────────────────────── */
+/* ── 2. Responsive Bottom Nav (< 1024px) ───────────────────────────────────── */
 @media (max-width: 1023px) {
-  .desktop-nav { display: none; }
-  .app-bottom-nav { display: flex; }
-  .app-main { padding-bottom: max(96px, calc(80px + env(safe-area-inset-bottom, 0px))); }
+  .app-bottom-nav {
+    display: flex;
+  }
 }
 
-/* Small Phones (<= 374px, e.g. iPhone SE, compact Androids) */
+@media (min-width: 1024px) {
+  .app-bottom-nav {
+    display: none !important;
+  }
+}
+
 @media (max-width: 374px) {
   .app-bottom-nav {
     width: calc(100% - 16px);
@@ -383,32 +157,45 @@
   }
   .bottom-nav-item {
     min-width: 44px;
-    padding: 3px 2px;
-    gap: 2px;
+    padding: 2px;
   }
-  .bottom-nav-icon {
-    width: 24px;
-    height: 18px;
-  }
-  .bottom-nav-icon svg,
-  .bottom-nav-icon .cx-icon {
+  .bottom-nav-icon svg {
     width: 15px;
     height: 15px;
   }
-  .bottom-nav-workout .bottom-nav-icon {
-    width: 26px;
-    height: 18px;
-  }
   .bottom-nav-label {
-    font-size: 9.5px;
-    letter-spacing: -0.02em;
+    font-size: 9px;
   }
 }
 
-/* Large Phones / Tablets in mobile layout (768px - 1023px) */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .app-bottom-nav {
-    width: min(calc(100% - 32px), 410px);
-    max-width: 410px;
-  }
+/* ── 3. Theme Toggle Buttons ───────────────────────────────────────────────── */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 140ms ease, background var(--transition-fast), color var(--transition-fast);
+}
+
+.theme-toggle-btn:hover {
+  background: var(--surface-3);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.92);
+}
+
+.theme-toggle-btn svg {
+  width: 16px;
+  height: 16px;
 }

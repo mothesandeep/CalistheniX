@@ -1,11 +1,12 @@
 /* ==========================================================================
-   CalistheniX — Dedicated Training Calendar View (Liquid Morphism)
+   CalistheniX — Training Calendar View
+   Clean, flat, high-contrast calendar grid adhering to dual-mode tokens.
    ========================================================================== */
 
 .calendar-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--space-6);
 }
 
 .calendar-month-bar {
@@ -13,19 +14,16 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: var(--liquid-surface-1-grad, rgba(16, 16, 23, 0.78));
-  backdrop-filter: blur(var(--liquid-blur-md, 12px));
-  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
-  border: var(--liquid-border);
-  border-radius: 18px;
-  box-shadow: var(--liquid-shadow-sm), var(--liquid-highlight-top);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
 }
 
 .calendar-month-title {
   font-family: var(--font-heading);
-  font-size: 18px;
+  font-size: var(--text-lg);
   font-weight: 800;
-  color: #ffffff;
+  color: var(--text);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -38,13 +36,10 @@
 }
 
 .calendar-grid-card {
-  background: var(--liquid-surface-1-grad, rgba(16, 16, 23, 0.78));
-  backdrop-filter: blur(var(--liquid-blur-md, 12px));
-  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
-  border: var(--liquid-border);
-  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 20px;
-  box-shadow: var(--liquid-shadow-md), var(--liquid-highlight-top);
 }
 
 .calendar-weekdays-row {
@@ -52,13 +47,13 @@
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border);
   margin-bottom: 10px;
 }
 
@@ -70,43 +65,40 @@
 
 .calendar-day-cell {
   min-height: 84px;
-  border-radius: 12px;
-  border: var(--liquid-border-subtle);
-  background: var(--liquid-surface-inset, rgba(10, 10, 15, 0.6));
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-inset);
   padding: 8px 10px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
-  box-shadow: var(--liquid-highlight-inset);
   transition: all var(--transition-fast);
   position: relative;
 }
 
 .calendar-day-cell:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(22, 22, 30, 0.75);
+  border-color: var(--border-strong);
+  background: var(--surface-2);
   transform: translateY(-1px);
 }
 
 .calendar-day-cell.other-month {
-  opacity: 0.25;
+  opacity: 0.3;
 }
 
 .calendar-day-cell.is-today {
-  border-color: var(--phase-train, #FF5D5D);
-  box-shadow: 0 0 12px rgba(255, 93, 93, 0.2), var(--liquid-highlight-inset);
-  background: rgba(255, 93, 93, 0.06);
+  border-color: var(--phase-train);
+  background: var(--phase-train-dim);
 }
 
 .calendar-day-cell.is-selected {
-  border-color: #22c55e;
-  background: rgba(34, 197, 94, 0.1);
-  box-shadow: 0 0 12px rgba(34, 197, 94, 0.2), var(--liquid-highlight-inset);
+  border-color: var(--success);
+  background: var(--surface-2);
 }
 
 .calendar-day-cell.has-completed {
-  border-color: rgba(34, 197, 94, 0.35);
+  border-color: var(--success);
 }
 
 .calendar-day-top {
@@ -119,13 +111,13 @@
   font-family: var(--mono);
   font-size: 13px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .calendar-day-today-tag {
   font-size: 9px;
   font-weight: 800;
-  color: var(--phase-train, #FF5D5D);
+  color: var(--phase-train);
   text-transform: uppercase;
 }
 
@@ -133,7 +125,7 @@
   font-size: 10px;
   font-weight: 600;
   padding: 2px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
@@ -141,14 +133,14 @@
 }
 
 .calendar-day-badge-workout {
-  background: rgba(255, 255, 255, 0.05);
-  color: #e4e4e7;
-  border: var(--liquid-border-subtle);
+  background: var(--surface-3);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .calendar-day-badge-done {
   background: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
+  color: var(--success);
   border: 1px solid rgba(34, 197, 94, 0.35);
   display: flex;
   align-items: center;
@@ -156,21 +148,18 @@
 }
 
 .calendar-day-badge-rest {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-2);
   color: var(--text-muted);
 }
 
 .calendar-selected-day-card {
-  background: var(--liquid-surface-1-grad, rgba(16, 16, 23, 0.78));
-  backdrop-filter: blur(var(--liquid-blur-md, 12px));
-  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
-  border: var(--liquid-border);
-  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: var(--liquid-shadow-md), var(--liquid-highlight-top);
 }
 
 .calendar-selected-header {
@@ -180,7 +169,7 @@
   flex-wrap: wrap;
   gap: 12px;
   padding-bottom: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border);
 }
 
 @media (max-width: 768px) {

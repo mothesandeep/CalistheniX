@@ -126,10 +126,15 @@ function renderExerciseLibraryView() {
             </div>
           </div>
         ` : (filtered.length === 0 ? `
-          <div class="library-empty-state">
-            <svg class="cx-icon" style="width:48px; height:48px; opacity:0.4; margin-bottom:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <p>No movements matched "${escapeHtml(_librarySearchQuery)}" in category "${_libraryActiveFilter}".</p>
-            <button class="btn btn-secondary btn-sm" style="margin-top:12px;" onclick="clearLibraryFilters()">Clear Filters</button>
+          <div class="empty-state" style="grid-column: 1 / -1;">
+            <div class="empty-state-icon">
+              <svg class="cx-icon cx-icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+            <div class="empty-state-title">No Movements Found</div>
+            <div class="empty-state-message">No movements matched "${escapeHtml(_librarySearchQuery)}" in category "${_libraryActiveFilter}".</div>
+            <div class="empty-state-actions">
+              <button class="btn btn-secondary btn-sm" onclick="clearLibraryFilters()">Clear Filters</button>
+            </div>
           </div>
         ` : filtered.map(ex => renderExerciseCatalogCard(ex)).join(''))}
       </div>

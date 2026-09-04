@@ -3,33 +3,33 @@
 /* ── Phase-Accent Dynamic Theming ──────────────────────────────────────────── */
 /* Default: Train phase (coral-red) */
 .runner-screen-widescreen {
-  --phase-accent: #FF5D5D;
-  --phase-accent-rgb: 255, 93, 93;
-  --phase-accent-hover: #FF4040;
-  --phase-accent-dim: rgba(255, 93, 93, 0.08);
-  --phase-accent-surface: rgba(255, 93, 93, 0.06);
-  --phase-accent-border: rgba(255, 93, 93, 0.25);
-  --phase-accent-glow: 0 0 20px rgba(255, 93, 93, 0.18);
+  --phase-accent: var(--phase-train);
+  --phase-accent-rgb: var(--phase-train-rgb);
+  --phase-accent-hover: var(--phase-train-hover);
+  --phase-accent-dim: var(--phase-train-dim);
+  --phase-accent-surface: var(--phase-train-dim);
+  --phase-accent-border: var(--phase-train-border);
+  --phase-accent-glow: 0 0 20px rgba(var(--phase-train-rgb), 0.18);
 }
 
 .runner-screen-widescreen[data-phase="warmup"] {
-  --phase-accent: #FF8A3D;
-  --phase-accent-rgb: 255, 138, 61;
-  --phase-accent-hover: #FF7A20;
-  --phase-accent-dim: rgba(255, 138, 61, 0.08);
-  --phase-accent-surface: rgba(255, 138, 61, 0.06);
-  --phase-accent-border: rgba(255, 138, 61, 0.25);
-  --phase-accent-glow: 0 0 20px rgba(255, 138, 61, 0.18);
+  --phase-accent: var(--phase-prep);
+  --phase-accent-rgb: var(--phase-prep-rgb);
+  --phase-accent-hover: var(--phase-prep-hover);
+  --phase-accent-dim: var(--phase-prep-dim);
+  --phase-accent-surface: var(--phase-prep-dim);
+  --phase-accent-border: var(--phase-prep-border);
+  --phase-accent-glow: 0 0 20px rgba(var(--phase-prep-rgb), 0.18);
 }
 
 .runner-screen-widescreen[data-phase="cooldown"] {
-  --phase-accent: #35D8B0;
-  --phase-accent-rgb: 53, 216, 176;
-  --phase-accent-hover: #28C49E;
-  --phase-accent-dim: rgba(53, 216, 176, 0.08);
-  --phase-accent-surface: rgba(53, 216, 176, 0.06);
-  --phase-accent-border: rgba(53, 216, 176, 0.25);
-  --phase-accent-glow: 0 0 20px rgba(53, 216, 176, 0.18);
+  --phase-accent: var(--phase-recover);
+  --phase-accent-rgb: var(--phase-recover-rgb);
+  --phase-accent-hover: var(--phase-recover-hover);
+  --phase-accent-dim: var(--phase-recover-dim);
+  --phase-accent-surface: var(--phase-recover-dim);
+  --phase-accent-border: var(--phase-recover-border);
+  --phase-accent-glow: 0 0 20px rgba(var(--phase-recover-rgb), 0.18);
 }
 
 .workout-title {
@@ -51,15 +51,16 @@
 
 /* ── Today Execution Hub Styles (Phase 2 Separation) ──────────────────────── */
 .today-hero-card {
-  background: #121217;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 24px 20px;
   margin-bottom: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
 }
 
 .today-hero-header {
@@ -3058,7 +3059,7 @@
   font-family: var(--font-heading);
   font-size: 17px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -0.01em;
   margin: 0;
   line-height: 1.2;
@@ -3552,7 +3553,7 @@
 }
 
 .runner-target-pill.target-goal .runner-pill-val {
-  color: #ffffff;
+  color: var(--text);
 }
 
 .runner-target-pill.target-last .runner-pill-val {
@@ -4672,7 +4673,7 @@
 
 .runner-target-pill.target-goal { background: rgba(var(--phase-accent-rgb), 0.06); border-color: rgba(var(--phase-accent-rgb), 0.35); box-shadow: 0 0 10px rgba(var(--phase-accent-rgb), 0.12); }
 .runner-target-pill.target-goal .runner-pill-lbl { color: var(--phase-accent); }
-.runner-target-pill.target-goal .runner-pill-val { color: #ffffff; }
+.runner-target-pill.target-goal .runner-pill-val { color: var(--text); }
 
 .runner-target-pill.target-last { background: var(--cx-surface, #151519); border-color: var(--cx-surface-border, rgba(255, 255, 255, 0.06)); }
 .runner-target-pill.target-last .runner-pill-lbl { color: var(--cx-text-secondary, #8A8A93); }
@@ -4832,7 +4833,7 @@
   font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif);
   font-size: 18px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--text);
   margin: 0;
   letter-spacing: -0.02em;
   white-space: nowrap;
@@ -4861,14 +4862,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: rgba(118, 118, 128, 0.18);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 9999px;
   padding: 3px;
   gap: 2px;
   width: 100%;
   box-sizing: border-box;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
 }
 
 .runner-apple-pill-btn {
@@ -4877,7 +4877,7 @@
   border-radius: 9999px;
   background: transparent;
   border: none;
-  color: #8E8E93;
+  color: var(--text-muted);
   font-family: var(--font-heading, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif);
   font-size: 12.5px;
   font-weight: 600;
@@ -4897,32 +4897,35 @@
 }
 
 .runner-apple-pill-btn.is-active {
-  background: #636366;
-  color: #FFFFFF;
+  background: var(--surface);
+  color: var(--text);
   font-weight: 700;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow-sm);
 }
 
 .runner-apple-pill-btn.is-active.phase-warmup {
-  background: rgba(255, 138, 61, 0.22);
-  color: #FFAA55;
-  box-shadow: 0 3px 10px rgba(255, 138, 61, 0.25), inset 0 0 0 1px rgba(255, 138, 61, 0.35);
+  background: var(--phase-prep-dim);
+  color: var(--phase-prep);
+  border: 1px solid var(--phase-prep-border);
+  box-shadow: 0 2px 8px var(--phase-prep-dim);
 }
 
 .runner-apple-pill-btn.is-active.phase-main {
-  background: rgba(255, 93, 93, 0.22);
-  color: #FF7575;
-  box-shadow: 0 3px 10px rgba(255, 93, 93, 0.25), inset 0 0 0 1px rgba(255, 93, 93, 0.35);
+  background: var(--phase-train-dim);
+  color: var(--phase-train);
+  border: 1px solid var(--phase-train-border);
+  box-shadow: 0 2px 8px var(--phase-train-dim);
 }
 
 .runner-apple-pill-btn.is-active.phase-cooldown {
-  background: rgba(53, 216, 176, 0.22);
-  color: #4DEAC3;
-  box-shadow: 0 3px 10px rgba(53, 216, 176, 0.25), inset 0 0 0 1px rgba(53, 216, 176, 0.35);
+  background: var(--phase-recover-dim);
+  color: var(--phase-recover);
+  border: 1px solid var(--phase-recover-border);
+  box-shadow: 0 2px 8px var(--phase-recover-dim);
 }
 
 .runner-apple-pill-btn.is-done {
-  color: #3ecf8e;
+  color: var(--success);
 }
 
 /* Minimalist Clean Counter & Queue Trigger (Seamless interactive row) */
@@ -5241,7 +5244,7 @@
   font-family: var(--font-heading);
   font-size: 13px;
   font-weight: 600;
-  color: var(--cx-text, #F2F2F0);
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5249,7 +5252,7 @@
 
 .runner-rail-item.is-selected .runner-rail-item-name {
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .runner-rail-item-meta {
@@ -5274,16 +5277,14 @@
 }
 
 .runner-execution-card {
-  background: var(--liquid-surface-elevated, linear-gradient(180deg, rgba(26, 26, 36, 0.88) 0%, rgba(18, 18, 25, 0.92) 100%));
-  backdrop-filter: blur(var(--liquid-blur-md, 12px));
-  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
-  border: var(--liquid-border-highlight);
-  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   padding: 16px 18px 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  box-shadow: var(--liquid-shadow-lg), var(--liquid-highlight-top-elevated);
+  box-shadow: var(--shadow-sm);
   position: relative;
 }
 
@@ -5310,7 +5311,7 @@
   font-family: var(--font-heading);
   font-size: 21px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -0.02em;
   line-height: 1.18;
   margin: 0;
@@ -5417,7 +5418,7 @@
   font-size: 38px;
   font-weight: 900;
   line-height: 1;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
@@ -5441,12 +5442,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: var(--liquid-highlight-top-subtle);
-  color: #ffffff;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
   cursor: pointer;
   transition: all 0.15s ease;
+}
 }
 
 .stepper-btn:hover {
@@ -5576,11 +5577,10 @@ button.runner-nav-btn {
   gap: 6px;
   min-height: 42px;
   padding: 8px 14px;
-  background: var(--cx-surface, #151519);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
-  border: 1px solid var(--cx-surface-border, rgba(255, 255, 255, 0.08));
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 12px;
-  color: var(--cx-text-secondary, #8A8A93);
+  color: var(--text);
   font-family: var(--font-heading, inherit);
   font-size: 13px;
   font-weight: 700;
@@ -5588,7 +5588,6 @@ button.runner-nav-btn {
   cursor: pointer;
   user-select: none;
   transition: all 0.18s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .runner-nav-btn:hover:not(:disabled),
@@ -5897,7 +5896,7 @@ button.runner-nav-btn:disabled {
 .runner-drawer-title {
   font-size: 16px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .runner-drawer-meta {
@@ -5976,7 +5975,7 @@ button.runner-nav-btn:disabled {
 .runner-drawer-item-name {
   font-size: 13.5px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .runner-drawer-item-meta {
@@ -6193,7 +6192,7 @@ button.runner-nav-btn:disabled {
   font-family: var(--font-heading, var(--sans));
   font-size: 14px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -6247,17 +6246,20 @@ button.runner-nav-btn:disabled {
   width: calc(100% - 32px) !important;
   max-width: 440px !important;
   z-index: 9999 !important;
-  background: #17171C !important;
+  background: var(--surface-glass) !important;
+  backdrop-filter: var(--glass-blur) !important;
+  -webkit-backdrop-filter: var(--glass-blur) !important;
   border-radius: 20px !important;
   padding: 16px 20px 14px !important;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 30px rgba(0, 0, 0, 0.5) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: var(--glass-shadow), var(--glass-highlight) !important;
+  border: var(--glass-border) !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 14px !important;
   animation: runnerSlideUpFloat 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   box-sizing: border-box !important;
   pointer-events: auto !important;
+  color: var(--text) !important;
 }
 
 @media (min-width: 1024px) {

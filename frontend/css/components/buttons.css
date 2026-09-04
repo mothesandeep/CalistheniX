@@ -1,271 +1,320 @@
 /* ============================================================
-   buttons.css — Design System Buttons & Steppers (Section 13)
-   Enhanced with tactile micro-interactions, hover lifts, 
-   smooth active compressions, and accessible focus-visible rings
+   buttons.css — Shared Button Hierarchy & Interactive Steppers
+   Hierarchy:
+     1. Filled       = Primary Action (.btn-primary)
+     2. Outline      = Secondary Action (.btn-secondary)
+     3. Tinted-Red   = Destructive Action (.btn-destructive, .btn-danger)
+     4. Borderless   = Ghost Action (.btn-ghost)
+     5. Liquid Glass = Floating Action Buttons (.btn-glass-fab, .runner-cta-btn)
    ============================================================ */
 
-/* ── Base Button ───────────────────────────────────────────────────────────── */
+/* ── 1. Base Button ────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 18px;
-  border-radius: var(--radius-btn, 10px);
+  min-height: 42px;
+  padding: 8px 18px;
+  border-radius: var(--radius-btn);
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  border: none;
+  border: 1px solid transparent;
   text-decoration: none;
   line-height: 1.2;
-  transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1), 
-              box-shadow 0.18s ease, 
-              background-color 0.18s ease, 
-              border-color 0.18s ease, 
-              filter 0.18s ease;
   user-select: none;
   -webkit-user-select: none;
   position: relative;
-  will-change: transform;
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1),
+              background 140ms ease,
+              border-color 140ms ease,
+              box-shadow 140ms ease,
+              filter 140ms ease;
+  box-sizing: border-box;
 }
 
 .btn:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .btn:active {
-  transform: scale(0.96) translateY(0);
-  transition-duration: 0.05s;
+  transform: scale(0.97) translateY(0);
 }
 
 .btn:focus-visible {
-  outline: 2px solid var(--accent, #FF5D5D);
-  outline-offset: 3px;
-  box-shadow: 0 0 0 4px var(--accent-dim, rgba(255, 93, 93, 0.2));
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--accent-dim);
 }
 
-.btn:disabled {
-  opacity: 0.38;
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.42;
   cursor: not-allowed;
   pointer-events: none;
   transform: none !important;
   box-shadow: none !important;
 }
 
-/* ── Primary Button (Complete Set, Start Workout, CTA) ────────────────────── */
+/* ── 2. Primary Button (Filled Primary Action) ─────────────────────────────── */
 .btn-primary {
-  background: var(--phase-train, #FF5D5D);
+  background: var(--phase-train);
   color: #ffffff;
   font-weight: 700;
-  letter-spacing: 0.01em;
-  box-shadow: 0 4px 16px rgba(255, 93, 93, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
 }
 
 .btn-primary:hover {
-  background: var(--phase-train, #FF5D5D);
-  filter: brightness(1.12);
-  box-shadow: 0 6px 22px rgba(255, 93, 93, 0.45);
-  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
 }
 
 .btn-primary:active {
-  transform: scale(0.96) translateY(0);
-  filter: brightness(0.92);
-  box-shadow: 0 2px 8px rgba(255, 93, 93, 0.25);
-  transition-duration: 0.05s;
+  filter: brightness(0.94);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
-.btn-hero {
-  height: 56px;
-  padding: 0 28px;
+/* Phase-specific Primary Variants */
+.btn-primary.btn-prep {
+  background: var(--phase-prep);
+}
+
+.btn-primary.btn-recover {
+  background: var(--phase-recover);
+}
+
+/* Hero / Large Primary Button */
+.btn-hero,
+.btn-lg {
+  min-height: 52px;
+  padding: 0 26px;
   font-size: 15px;
-  border-radius: var(--radius-btn-lg, 14px);
-  box-shadow: 0 8px 28px rgba(255, 93, 93, 0.35);
+  border-radius: var(--radius-btn-lg);
+  font-weight: 700;
 }
 
-.btn-hero:hover {
-  transform: translateY(-2px) scale(1.01);
-  box-shadow: 0 12px 36px rgba(255, 93, 93, 0.5);
+/* Small Button */
+.btn-sm {
+  min-height: 34px;
+  padding: 5px 12px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
 }
 
-.btn-hero:active {
-  transform: scale(0.97) translateY(0);
-  transition-duration: 0.05s;
-}
-
-/* ── Secondary Button (Edit Day, Actions) ─────────────────────────────────── */
+/* ── 3. Secondary Button (Outline Secondary Action) ────────────────────────── */
 .btn-secondary {
-  height: 40px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: var(--text-muted, #a1a1aa);
-  font-size: 13px;
-  font-weight: 500;
-  border-radius: var(--radius-btn, 10px);
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text);
+  font-weight: 600;
 }
 
 .btn-secondary:hover {
-  border-color: rgba(255, 255, 255, 0.24);
-  color: var(--text, #ffffff);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  background: var(--surface-2);
+  border-color: var(--border-focus);
+  color: var(--text);
 }
 
 .btn-secondary:active {
-  transform: scale(0.96) translateY(0);
-  background: rgba(255, 255, 255, 0.05);
-  transition-duration: 0.05s;
+  background: var(--surface-3);
 }
 
-.btn-sm {
-  height: 32px;
-  padding: 6px 14px;
-  font-size: 12px;
-  border-radius: var(--radius-sm, 8px);
+/* ── 4. Destructive Button (Tinted-Red Destructive Action) ──────────────────── */
+.btn-destructive,
+.btn-danger {
+  background: var(--danger-dim);
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-weight: 600;
 }
 
-/* ── Ghost Button (Skip Set, Skip Rest, Back) ─────────────────────────────── */
-.btn-ghost {
-  height: 36px;
-  background: transparent;
-  border: none;
-  color: var(--text-dim, #71717a);
-  font-size: 13px;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: var(--radius-sm, 8px);
+.btn-destructive:hover,
+.btn-danger:hover {
+  background: var(--danger);
+  color: #ffffff;
+  box-shadow: 0 3px 12px rgba(239, 68, 68, 0.35);
 }
 
-.btn-ghost:hover {
-  color: var(--text, #ffffff);
-  background: rgba(255, 255, 255, 0.06);
-  transform: translateY(-1px);
+.btn-destructive:active,
+.btn-danger:active {
+  filter: brightness(0.92);
 }
 
-.btn-ghost:active {
-  transform: scale(0.96) translateY(0);
-  background: rgba(255, 255, 255, 0.04);
-  transition-duration: 0.05s;
-}
-
-/* ── Danger Ghost Button (End Session) ────────────────────────────────────── */
+/* Destructive Ghost (e.g. End Session link) */
 .btn-danger-ghost {
-  height: 36px;
+  min-height: 36px;
   background: transparent;
   border: none;
-  color: var(--text-dim, #71717a);
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 500;
   padding: 6px 12px;
-  border-radius: var(--radius-sm, 8px);
-  transition: all 0.18s ease;
+  border-radius: var(--radius-sm);
 }
 
 .btn-danger-ghost:hover {
-  color: var(--danger, #f43f5e);
-  background: rgba(244, 63, 94, 0.12);
+  color: var(--danger);
+  background: var(--danger-dim);
+}
+
+/* ── 5. Ghost Button (Borderless Subtle Actions) ───────────────────────────── */
+.btn-ghost {
+  min-height: 36px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.btn-ghost:hover {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.btn-ghost:active {
+  background: var(--surface-3);
+}
+
+/* ── 6. Floating Action Buttons (Apple Liquid Glass) ───────────────────────── */
+.btn-glass-fab {
+  min-height: 52px;
+  padding: 0 24px;
+  border-radius: var(--radius-full);
+  background: var(--phase-train);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 15px;
+  box-shadow: var(--shadow-glass), var(--glass-highlight);
+  letter-spacing: 0.02em;
+  z-index: 100;
+}
+
+.btn-glass-fab:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px);
+}
+
+.btn-glass-fab:active {
+  transform: scale(0.97) translateY(0);
+}
+
+/* Workout Runner Main Complete Set Floating Button */
+.runner-cta-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  padding: 12px 24px;
+  border-radius: var(--radius-btn-lg);
+  background: var(--phase-train);
+  color: #ffffff;
+  font-family: var(--sans);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), var(--glass-highlight);
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1), filter 140ms ease, box-shadow 140ms ease;
+  user-select: none;
+  -webkit-user-select: none;
+  box-sizing: border-box;
+}
+
+.runner-cta-btn:hover {
+  filter: brightness(1.1);
   transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
-.btn-danger-ghost:active {
-  transform: scale(0.96) translateY(0);
-  transition-duration: 0.05s;
+.runner-cta-btn:active {
+  transform: scale(0.98);
 }
 
-/* ── Stepper (+ / − rep controls) ─────────────────────────────────────────── */
+/* ── 7. Stepper Controls (+ / − Set Steppers) ──────────────────────────────── */
 .stepper-btn {
   width: 48px;
   height: 48px;
   min-width: 48px;
+  min-height: 48px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
-  background: var(--surface-2, #181820);
-  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
-  color: var(--text, #ffffff);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  border: 1px solid var(--border-light);
+  color: var(--text);
   font-size: 22px;
   font-weight: 600;
   cursor: pointer;
   user-select: none;
-  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), 
-              border-color 0.15s ease, 
-              background-color 0.15s ease;
+  -webkit-user-select: none;
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1),
+              border-color var(--transition-fast),
+              background var(--transition-fast);
 }
 
 .stepper-btn:hover {
-  border-color: var(--border-focus, rgba(255, 255, 255, 0.25));
-  background: var(--surface-3, #22222c);
-  color: #ffffff;
+  border-color: var(--border-focus);
+  background: var(--surface-3);
+  color: var(--text);
   transform: translateY(-1px);
 }
 
 .stepper-btn:active {
-  transform: scale(0.88);
-  transition-duration: 0.05s;
+  transform: scale(0.92);
 }
 
 .stepper-btn:focus-visible {
-  outline: 2px solid var(--accent, #FF5D5D);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* ── Icon Button ─────────────────────────────────────────────────────────── */
-.btn-icon {
+/* ── 8. Icon Button Component ──────────────────────────────────────────────── */
+.btn-icon,
+.nav-btn-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-sm, 8px);
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: var(--radius-sm);
   background: transparent;
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-  color: var(--text-muted, #a1a1aa);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
   font-size: 14px;
   cursor: pointer;
-  transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1), 
-              background-color 0.18s ease, 
-              color 0.18s ease, 
-              border-color 0.18s ease;
+  padding: 0;
+  transition: transform 120ms ease, background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 
-.btn-icon:hover {
-  background: var(--surface-2, #181820);
-  color: var(--text, #ffffff);
-  border-color: var(--border-light, rgba(255, 255, 255, 0.16));
+.btn-icon:hover,
+.nav-btn-icon:hover {
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-light);
   transform: translateY(-1px);
 }
 
-.btn-icon:active {
-  transform: scale(0.92);
-  transition-duration: 0.05s;
+.btn-icon:active,
+.nav-btn-icon:active {
+  transform: scale(0.94);
 }
 
-.btn-icon:focus-visible {
-  outline: 2px solid var(--accent, #FF5D5D);
+.btn-icon:focus-visible,
+.nav-btn-icon:focus-visible {
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-
-/* ── Badges & Tags ───────────────────────────────────────────────────────── */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  border-radius: var(--radius-badge, 6px);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  line-height: 18px;
-  white-space: nowrap;
-  transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.badge-reps { background: rgba(255, 255, 255, 0.06); color: #e4e4e7; }
-.badge-hold { background: rgba(255, 93, 93, 0.12); color: #ff8585; border: 1px solid rgba(255, 93, 93, 0.25); }
-.badge-accent { background: rgba(255, 93, 93, 0.12); color: #ff8585; border: 1px solid rgba(255, 93, 93, 0.25); }
-.badge-success { background: rgba(16, 185, 129, 0.12); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.25); }
-.badge-warning { background: rgba(249, 115, 22, 0.12); color: #fdba74; border: 1px solid rgba(249, 115, 22, 0.25); }

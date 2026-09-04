@@ -253,9 +253,15 @@ function renderHistoryListView() {
     }).join('');
   } else {
     cardsHtml = `
-      <div style="background:#14141c; border:1px dashed rgba(255,255,255,0.06); border-radius:18px; padding:36px 20px; text-align:center; margin-top:8px;">
-        <p style="color:#94a3b8; font-size:14px; margin:0 0 16px;">No workout sessions logged yet.</p>
-        <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <svg class="cx-icon cx-icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div class="empty-state-title">No Workout Sessions Yet</div>
+        <div class="empty-state-message">No workout sessions logged yet. Complete a live workout or log a past workout to build your training history.</div>
+        <div class="empty-state-actions">
           <button class="btn btn-primary btn-sm" onclick="switchView('workout')">Start Today's Workout</button>
           <button class="btn btn-secondary btn-sm" onclick="openLogPastWorkoutModal()">+ Log a Past Workout</button>
         </div>

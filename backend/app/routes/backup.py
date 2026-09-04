@@ -266,3 +266,103 @@ def import_logs():
             'imported_splits': len(split_items),
             'total_processed': len(log_items) + len(session_items)
         }), 200
+
+
+@backup_bp.route('/reset-everything', methods=['POST'])
+def reset_everything():
+    """Wipe all user and demo data (logs, workout_sessions).
+    Preserves all exercise catalogs, workouts, workout_exercises, training_splits, and weekly_schedules."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM logs')
+        cursor.execute('DELETE FROM workout_sessions')
+        cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('logs', 'workout_sessions')")
+        conn.commit()
+    return jsonify({
+        'status': 'success',
+        'message': 'All user logs and workout sessions wiped successfully. Workout presets preserved.'
+    }), 200
+
+
+@backup_bp.route('/demo/reset', methods=['POST'])
+def reset_demo_data():
+    """Reset demo data to canonical clean baseline: clear logs and workout_sessions, and re-seed demo data."""
+    try:
+        from backend.app.data.demo_dataset import get_canonical_demo_data
+    except ImportError:
+        from data.demo_dataset import get_canonical_demo_data
+
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM logs')
+        cursor.execute('DELETE FROM workout_sessions')
+        cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('logs', 'workout_sessions')")
+
+        sessions, logs = get_canonical_demo_data(conn)
+
+        for s in sessions:
+            cursor.execute('''
+                INSERT INTO workout_sessions
+                    (session_uuid, routine_name, level, started_at, completed_at, duration_sec,
+                     warmup_duration_sec, main_duration_sec, cooldown_duration_sec,
+                     warmup_status, cooldown_status, total_sets, completed_sets, status, raw_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                s['session_uuid'],
+                s['routine_name'],
+                s.get('level', 1),
+                s['started_at'],
+                s['completed_at'],
+                s['duration_sec'],
+                s.get('warmup_duration_sec', 0),
+                s.get('main_duration_sec', 0),
+                s.get('cooldown_duration_sec', 0),
+                s.get('warmup_status', 'completed'),
+                s.get('cooldown_status', 'completed'),
+                s.get('total_sets', 0),
+                s.get('completed_sets', 0),
+                s.get('status', 'completed'),
+                s.get('raw_json')
+            ))
+
+        for l in logs:
+            cursor.execute('''
+                INSERT INTO logs
+                    (exercise_id, timestamp, reps, weight_kg, duration_sec, rpe, client_uuid, session_uuid, phase)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                l['exercise_id'],
+                l['timestamp'],
+                l.get('reps'),
+                l.get('weight_kg'),
+                l.get('duration_sec'),
+                l.get('rpe'),
+                l['client_uuid'],
+                l.get('session_uuid'),
+                l.get('phase', 'main')
+            ))
+
+        conn.commit()
+
+    return jsonify({
+        'status': 'success',
+        'message': 'Demo data reset to clean baseline',
+        'sessions_count': len(sessions),
+        'logs_count': len(logs)
+    }), 200
+
+
+@backup_bp.route('/demo/seed', methods=['POST'])
+def seed_demo_data():
+    """Seed demo data if no logs and workout_sessions exist."""
+    with get_db() as conn:
+        s_count = conn.execute('SELECT COUNT(*) FROM workout_sessions').fetchone()[0]
+        l_count = conn.execute('SELECT COUNT(*) FROM logs').fetchone()[0]
+        if s_count > 0 or l_count > 0:
+            return jsonify({
+                'status': 'skipped',
+                'message': 'Database already contains workout data'
+            }), 200
+
+    return reset_demo_data()
+

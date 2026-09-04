@@ -53,10 +53,26 @@
     return keys.some(k => (setCounts[k] || 0) > 0);
   }
 
+  function isMainExercise(e) {
+    if (!e || !e.name) return false;
+    const day = (e.day || '').toLowerCase();
+    const pattern = (e.movement_pattern || '').toLowerCase();
+    const phase = (e.phase || '').toLowerCase();
+    const name = e.name.toLowerCase();
+
+    if (day.includes('mobility') || day.includes('stretch')) return false;
+    if (phase === 'warmup' || phase === 'cooldown') return false;
+    if (pattern.startsWith('mobility') || pattern.startsWith('stretch')) return false;
+    if (name.includes('circle') || name.includes('rotation') || name.includes('stretch') || name.includes('arm swings') || name.includes('leg swings') || name.includes('cat-cow') || name.includes('pull-apart')) {
+      return false;
+    }
+    return true;
+  }
+
   function getAllSelectableExercises() {
     const map = new Map();
     (state.exercises || []).forEach(e => {
-      if (e && e.name) {
+      if (e && e.name && isMainExercise(e)) {
         map.set(e.name.toLowerCase().trim(), {
           id: e.id,
           name: e.name,
@@ -70,6 +86,9 @@
       const logs = extractSessionLogs(sess);
       logs.forEach(l => {
         if (l.exercise_name) {
+          const logPhase = (l.phase || '').toLowerCase();
+          if (logPhase === 'warmup' || logPhase === 'cooldown') return;
+          if (!isMainExercise({ name: l.exercise_name, phase: l.phase, type: l.exercise_type })) return;
           const k = l.exercise_name.toLowerCase().trim();
           if (!map.has(k)) {
             map.set(k, {
@@ -783,16 +802,15 @@
       </div>
     `).join('');
 
-    // Weekly Line Chart SVG
     const weeklyPoints = Object.values(weeklyMap).sort((a, b) => new Date(a.date) - new Date(b.date));
     let sparklineSvg = '';
 
     if (weeklyPoints.length >= 2) {
       const width = 340;
-      const height = 105;
-      const padL = 28;
+      const height = 120;
+      const padL = 34;
       const padR = 20;
-      const padT = 15;
+      const padT = 16;
       const padB = 25;
       const plotW = width - padL - padR;
       const plotH = height - padT - padB;
@@ -805,6 +823,10 @@
         return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, ...p };
       });
 
+      if (typeof window !== 'undefined') {
+        window._statsEffortCoords = coords;
+      }
+
       let lineD = `M ${coords[0].x} ${coords[0].y}`;
       for (let i = 0; i < coords.length - 1; i++) {
         const p1 = coords[i];
@@ -814,29 +836,51 @@
       }
       const areaD = `${lineD} L ${coords[coords.length - 1].x} ${height - padB} L ${coords[0].x} ${height - padB} Z`;
 
+      // Horizontal Grid Lines for Effort (RIR 2, 4, 6)
+      const rirTicks = [2, 4, 6];
+      const rirGridHtml = rirTicks.map(rVal => {
+        const y = padT + (rVal / 6) * plotH;
+        return `
+          <line x1="${padL}" y1="${y.toFixed(1)}" x2="${width - padR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
+          <text x="${padL - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" fill="#8E8E9F" font-size="9" font-family="var(--mono, monospace)" font-weight="500">${rVal}</text>
+        `;
+      }).join('');
+
       sparklineSvg = `
-        <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%; height:100%;">
-          <defs>
-            <linearGradient id="effortGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#facc15" stop-opacity="0.32" />
-              <stop offset="100%" stop-color="#facc15" stop-opacity="0.0" />
-            </linearGradient>
-          </defs>
-          <line x1="${padL}" y1="${padT + plotH * 0.33}" x2="${width - padR}" y2="${padT + plotH * 0.33}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3,3" />
-          <line x1="${padL}" y1="${padT + plotH * 0.66}" x2="${width - padR}" y2="${padT + plotH * 0.66}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3,3" />
-          <text x="14" y="${padT + plotH * 0.33 + 3}" fill="#64748b" font-size="9" font-weight="600">2</text>
-          <text x="14" y="${padT + plotH * 0.66 + 3}" fill="#64748b" font-size="9" font-weight="600">4</text>
-          <path d="${areaD}" fill="url(#effortGrad)" />
-          <path d="${lineD}" stroke="#facc15" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="${coords[coords.length - 1].x}" cy="${coords[coords.length - 1].y}" r="4.5" fill="#facc15" />
-        </svg>
+        <div class="stats-chart-interactive-box" style="position:relative; width:100%; height:100%; touch-action:pan-y;"
+          onpointermove="handleStatsEffortPointer(event)"
+          onpointerdown="handleStatsEffortPointer(event)"
+          onpointerleave="handleStatsEffortPointerLeave()"
+          ontouchmove="handleStatsEffortPointer(event)"
+          ontouchstart="handleStatsEffortPointer(event)"
+          ontouchend="handleStatsEffortPointerLeave()">
+          <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%; height:100%;">
+            <defs>
+              <linearGradient id="effortGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#facc15" stop-opacity="0.32" />
+                <stop offset="100%" stop-color="#facc15" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+            ${rirGridHtml}
+            <path d="${areaD}" fill="url(#effortGrad)" />
+            <path d="${lineD}" stroke="#facc15" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="${coords[coords.length - 1].x}" cy="${coords[coords.length - 1].y}" r="4.5" fill="#facc15" />
+
+            <!-- Interactive Crosshair Lines (Smooth Hover) -->
+            <line id="stats-effort-vline" x1="0" y1="${padT}" x2="0" y2="${height - padB}" stroke="rgba(255, 255, 255, 0.45)" stroke-width="1.2" stroke-dasharray="3,3" style="display:none;" />
+            <line id="stats-effort-hline" x1="${padL}" y1="0" x2="${width - padR}" y2="0" stroke="rgba(255, 255, 255, 0.45)" stroke-width="1.2" stroke-dasharray="3,3" style="display:none;" />
+            <circle id="stats-effort-glow" cx="0" cy="0" r="10" fill="rgba(250, 204, 21, 0.22)" style="display:none;" />
+            <circle id="stats-effort-dot" cx="0" cy="0" r="4.5" fill="#141418" stroke="#facc15" stroke-width="2.5" style="display:none;" />
+          </svg>
+          <div id="stats-effort-tooltip" class="stats-graph-tooltip cx-graph-tooltip" style="display:none;" aria-live="polite"></div>
+        </div>
       `;
     } else if (weeklyPoints.length === 1) {
       const width = 340;
-      const height = 105;
-      const padL = 28;
+      const height = 120;
+      const padL = 34;
       const padR = 20;
-      const padT = 15;
+      const padT = 16;
       const padB = 25;
       const plotH = height - padT - padB;
       const p = weeklyPoints[0];
@@ -847,15 +891,15 @@
 
       sparklineSvg = `
         <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%; height:100%;">
-          <line x1="${padL}" y1="${padT + plotH * 0.33}" x2="${width - padR}" y2="${padT + plotH * 0.33}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3,3" />
-          <line x1="${padL}" y1="${padT + plotH * 0.66}" x2="${width - padR}" y2="${padT + plotH * 0.66}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="3,3" />
-          <text x="14" y="${padT + plotH * 0.33 + 3}" fill="#64748b" font-size="9" font-weight="600">2</text>
-          <text x="14" y="${padT + plotH * 0.66 + 3}" fill="#64748b" font-size="9" font-weight="600">4</text>
+          <line x1="${padL}" y1="${padT + plotH * 0.33}" x2="${width - padR}" y2="${padT + plotH * 0.33}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
+          <line x1="${padL}" y1="${padT + plotH * 0.66}" x2="${width - padR}" y2="${padT + plotH * 0.66}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
+          <text x="${padL - 6}" y="${padT + plotH * 0.33 + 3.5}" text-anchor="end" fill="#8E8E9F" font-size="9" font-family="var(--mono, monospace)">2</text>
+          <text x="${padL - 6}" y="${padT + plotH * 0.66 + 3.5}" text-anchor="end" fill="#8E8E9F" font-size="9" font-family="var(--mono, monospace)">4</text>
           <line x1="${padL}" y1="${y}" x2="${width - padR}" y2="${y}" stroke="rgba(250, 204, 21, 0.25)" stroke-width="1.5" stroke-dasharray="4,4" />
           <circle cx="${x}" cy="${y}" r="5.5" fill="#facc15" />
           <circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#facc15" stroke-width="1" opacity="0.4" />
-          <text x="${x}" y="${y - 10}" text-anchor="middle" fill="#facc15" font-size="10" font-weight="700">RIR ${avg}</text>
-          <text x="${x}" y="${height - 8}" text-anchor="middle" fill="#94a3b8" font-size="9" font-weight="500">${p.date || 'Recent'}</text>
+          <text x="${x}" y="${y - 10}" text-anchor="middle" fill="#facc15" font-size="10.5" font-weight="700">RIR ${avg}</text>
+          <text x="${x}" y="${height - 8}" text-anchor="middle" fill="#94a3b8" font-size="9.5" font-weight="500">${p.date || 'Recent'}</text>
         </svg>
       `;
     } else {
@@ -927,27 +971,31 @@
 
     if (filtered.length >= 2) {
       const width = 340;
-      const height = 135;
-      const padL = 34;
+      const height = 140;
+      const padL = 38;
       const padR = 24;
-      const padT = 12;
-      const padB = 24;
+      const padT = 16;
+      const padB = 25;
       const plotW = width - padL - padR;
       const plotH = height - padT - padB;
 
       const weights = filtered.map(f => Number(f.weight));
-      const dataMin = Math.min(...weights, targetKg);
-      const dataMax = Math.max(...weights, targetKg);
-      const minY = Math.floor(dataMin - 1);
-      const maxY = Math.ceil(dataMax + 1);
-      const kgRange = Math.max(1, maxY - minY);
+      const dataMin = Math.min(...weights);
+      const dataMax = Math.max(...weights);
+      const scale = (typeof calculateNiceGraphScale === 'function')
+        ? calculateNiceGraphScale(dataMin, dataMax, targetKg, 4)
+        : { min: Math.floor(dataMin - 1), max: Math.ceil(dataMax + 1), range: Math.max(1, dataMax - dataMin + 2), ticks: [Math.floor(dataMin), Math.ceil(dataMax)] };
 
       const coords = filtered.map((item, idx) => {
         const x = padL + (idx / (filtered.length - 1)) * plotW;
-        const norm = (Number(item.weight) - minY) / kgRange;
+        const norm = (Number(item.weight) - scale.min) / scale.range;
         const y = padT + (1 - norm) * plotH;
         return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, ...item };
       });
+
+      if (typeof window !== 'undefined') {
+        window._statsWeightCoords = coords;
+      }
 
       let lineD = `M ${coords[0].x} ${coords[0].y}`;
       for (let i = 0; i < coords.length - 1; i++) {
@@ -961,66 +1009,89 @@
       const lastCoord = coords[coords.length - 1];
       const areaD = `${lineD} L ${lastCoord.x} ${height - padB} L ${firstCoord.x} ${height - padB} Z`;
 
-      const targetNorm = (targetKg - minY) / kgRange;
-      const targetY = Math.round((padT + (1 - targetNorm) * plotH) * 10) / 10;
+      // Dynamic Grid Lines with Clean Y-Axis Numbers
+      const gridLinesHtml = scale.ticks.map(tVal => {
+        const norm = (tVal - scale.min) / scale.range;
+        const y = padT + (1 - norm) * plotH;
+        return `
+          <line x1="${padL}" y1="${y.toFixed(1)}" x2="${width - padR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
+          <text x="${padL - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" fill="#8E8E9F" font-size="9" font-family="var(--mono, monospace)" font-weight="500">${tVal % 1 === 0 ? tVal : tVal.toFixed(1)}</text>
+        `;
+      }).join('');
 
-      const midY = (minY + maxY) / 2;
+      const targetNorm = (targetKg - scale.min) / scale.range;
+      const targetY = Math.round((padT + (1 - targetNorm) * plotH) * 10) / 10;
+      const isTargetVisible = targetY >= padT - 5 && targetY <= height - padB + 5;
 
       weightChartContent = `
-        <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%; height:100%;">
-          <defs>
-            <linearGradient id="weightGradCoral" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#ef4444" stop-opacity="0.35" />
-              <stop offset="100%" stop-color="#ef4444" stop-opacity="0.0" />
-            </linearGradient>
-          </defs>
+        <div class="stats-chart-interactive-box" style="position:relative; width:100%; height:100%; touch-action:pan-y;"
+          onpointermove="handleStatsWeightPointer(event)"
+          onpointerdown="handleStatsWeightPointer(event)"
+          onpointerleave="handleStatsWeightPointerLeave()"
+          ontouchmove="handleStatsWeightPointer(event)"
+          ontouchstart="handleStatsWeightPointer(event)"
+          ontouchend="handleStatsWeightPointerLeave()">
+          <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%; height:100%;">
+            <defs>
+              <linearGradient id="weightGradCoral" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ef4444" stop-opacity="0.35" />
+                <stop offset="100%" stop-color="#ef4444" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
 
-          <line x1="${padL}" y1="${padT}" x2="${width - padR}" y2="${padT}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
-          <line x1="${padL}" y1="${padT + plotH / 2}" x2="${width - padR}" y2="${padT + plotH / 2}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
-          <line x1="${padL}" y1="${padT + plotH}" x2="${width - padR}" y2="${padT + plotH}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
+            ${gridLinesHtml}
 
-          <text x="${padL - 6}" y="${padT + 3}" text-anchor="end" fill="#64748b" font-size="9" font-weight="600">${maxY}</text>
-          <text x="${padL - 6}" y="${padT + plotH / 2 + 3}" text-anchor="end" fill="#64748b" font-size="9" font-weight="600">${Math.round(midY)}</text>
-          <text x="${padL - 6}" y="${padT + plotH + 3}" text-anchor="end" fill="#64748b" font-size="9" font-weight="600">${minY}</text>
+            <!-- Dashed Target Weight Line & Non-colliding Pill Badge -->
+            ${isTargetVisible ? `
+              <line x1="${padL}" y1="${targetY}" x2="${width - padR}" y2="${targetY}" stroke="#eab308" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.85" />
+              <g class="target-badge-g">
+                <rect x="${width - padR - 28}" y="${(targetY - 8).toFixed(1)}" width="28" height="16" rx="4" fill="rgba(14, 14, 18, 0.9)" stroke="rgba(234, 179, 8, 0.35)" stroke-width="0.8"/>
+                <text x="${width - padR - 14}" y="${(targetY + 3.5).toFixed(1)}" text-anchor="middle" fill="#eab308" font-size="9" font-family="var(--mono, monospace)" font-weight="700">${targetKg}</text>
+              </g>
+            ` : ''}
 
-          <line x1="${padL}" y1="${targetY}" x2="${width - padR}" y2="${targetY}" stroke="#eab308" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.85" />
-          <text x="${width - padR + 2}" y="${targetY + 3.5}" fill="#eab308" font-size="9" font-weight="700">${targetKg}</text>
+            <path d="${areaD}" fill="url(#weightGradCoral)" />
+            <path d="${lineD}" stroke="#ef4444" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="${lastCoord.x}" cy="${lastCoord.y}" r="4.5" fill="#ff5d5d" />
 
-          <path d="${areaD}" fill="url(#weightGradCoral)" />
-          <path d="${lineD}" stroke="#ef4444" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="${lastCoord.x}" cy="${lastCoord.y}" r="4.5" fill="#ff5d5d" />
-          <text x="${lastCoord.x}" y="${Math.max(padT + 8, lastCoord.y - 8)}" text-anchor="${lastCoord.x > width - 45 ? 'end' : 'middle'}" fill="#ff5d5d" font-size="10" font-weight="700">${Number(lastCoord.weight).toFixed(1)} kg</text>
-        </svg>
+            <!-- Interactive Crosshair Lines (Smooth Hover) -->
+            <line id="stats-weight-vline" x1="0" y1="${padT}" x2="0" y2="${height - padB}" stroke="rgba(255, 255, 255, 0.45)" stroke-width="1.2" stroke-dasharray="3,3" style="display:none;" />
+            <line id="stats-weight-hline" x1="${padL}" y1="0" x2="${width - padR}" y2="0" stroke="rgba(255, 255, 255, 0.45)" stroke-width="1.2" stroke-dasharray="3,3" style="display:none;" />
+            <circle id="stats-weight-glow" cx="0" cy="0" r="10" fill="rgba(239, 68, 68, 0.22)" style="display:none;" />
+            <circle id="stats-weight-dot" cx="0" cy="0" r="4.5" fill="#141418" stroke="#ef4444" stroke-width="2.5" style="display:none;" />
+          </svg>
+          <div id="stats-weight-tooltip" class="stats-graph-tooltip cx-graph-tooltip" style="display:none;" aria-live="polite"></div>
+        </div>
       `;
     } else if (filtered.length === 1) {
       const width = 340;
-      const height = 135;
-      const padL = 34;
+      const height = 140;
+      const padL = 38;
       const padR = 24;
-      const padT = 12;
-      const padB = 24;
+      const padT = 16;
+      const padB = 25;
       const plotH = height - padT - padB;
       const wVal = Number(filtered[0].weight);
       const dataMin = Math.min(wVal, targetKg);
       const dataMax = Math.max(wVal, targetKg);
-      const minY = Math.floor(dataMin - 1);
-      const maxY = Math.ceil(dataMax + 1);
-      const kgRange = Math.max(1, maxY - minY);
-      const norm = (wVal - minY) / kgRange;
+      const scale = (typeof calculateNiceGraphScale === 'function')
+        ? calculateNiceGraphScale(dataMin, dataMax, targetKg, 4)
+        : { min: Math.floor(dataMin - 1), max: Math.ceil(dataMax + 1), range: Math.max(1, dataMax - dataMin + 2), ticks: [Math.floor(dataMin), Math.ceil(dataMax)] };
+
+      const norm = (wVal - scale.min) / scale.range;
       const y = Math.round((padT + (1 - norm) * plotH) * 10) / 10;
       const x = width / 2;
 
-      const targetNorm = (targetKg - minY) / kgRange;
+      const targetNorm = (targetKg - scale.min) / scale.range;
       const targetY = Math.round((padT + (1 - targetNorm) * plotH) * 10) / 10;
 
       weightChartContent = `
         <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%; height:100%;">
           <line x1="${padL}" y1="${padT}" x2="${width - padR}" y2="${padT}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
-          <line x1="${padL}" y1="${padT + plotH / 2}" x2="${width - padR}" y2="${padT + plotH / 2}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
           <line x1="${padL}" y1="${padT + plotH}" x2="${width - padR}" y2="${padT + plotH}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
 
-          <text x="${padL - 6}" y="${padT + 3}" text-anchor="end" fill="#64748b" font-size="9" font-weight="600">${maxY}</text>
-          <text x="${padL - 6}" y="${padT + plotH + 3}" text-anchor="end" fill="#64748b" font-size="9" font-weight="600">${minY}</text>
+          <text x="${padL - 6}" y="${padT + 3.5}" text-anchor="end" fill="#8E8E9F" font-size="9" font-family="var(--mono, monospace)">${scale.max}</text>
+          <text x="${padL - 6}" y="${padT + plotH + 3.5}" text-anchor="end" fill="#8E8E9F" font-size="9" font-family="var(--mono, monospace)">${scale.min}</text>
 
           <line x1="${padL}" y1="${targetY}" x2="${width - padR}" y2="${targetY}" stroke="#eab308" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.85" />
           <text x="${width - padR + 2}" y="${targetY + 3.5}" fill="#eab308" font-size="9" font-weight="700">${targetKg}</text>
@@ -1029,14 +1100,14 @@
           <circle cx="${x}" cy="${y}" r="5.5" fill="#ef4444" />
           <circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#ef4444" stroke-width="1" opacity="0.4" />
           <text x="${x}" y="${y - 10}" text-anchor="middle" fill="#ef4444" font-size="10.5" font-weight="700">${wVal.toFixed(1)} kg</text>
-          <text x="${x}" y="${height - 6}" text-anchor="middle" fill="#94a3b8" font-size="9" font-weight="500">${filtered[0].date || 'Latest'}</text>
+          <text x="${x}" y="${height - 6}" text-anchor="middle" fill="#94a3b8" font-size="9.5" font-weight="500">${filtered[0].date || 'Latest'}</text>
         </svg>
       `;
     } else {
       weightChartContent = `
         <div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#64748b; font-size:12.5px; border:1px dashed rgba(255,255,255,0.06); border-radius:12px; padding:16px;">
           <span>No body weight logs in this period.</span>
-          <button class="stats-weight-log-btn" style="margin-top:8px;" onclick="openStatsWeightModal()">+ Log Today's Weight</button>
+          <button class="btn btn-secondary btn-sm" style="margin-top:10px;" onclick="openStatsWeightModal()">+ Log Today's Weight</button>
         </div>
       `;
     }
@@ -1214,10 +1285,10 @@
 
     if (pointsChronological.length >= 2) {
       const width = 340;
-      const height = 130;
-      const padL = 30;
+      const height = 135;
+      const padL = 36;
       const padR = 20;
-      const padT = 15;
+      const padT = 16;
       const padB = 25;
       const plotW = width - padL - padR;
       const plotH = height - padT - padB;
@@ -1225,15 +1296,21 @@
       const vals = pointsChronological.map(p => p[curMetric] != null ? p[curMetric] : (p.top_set || 0));
       const minVal = Math.min(...vals);
       const maxVal = Math.max(...vals);
-      const valRange = Math.max(1, maxVal - minVal);
+      const scale = (typeof calculateNiceGraphScale === 'function')
+        ? calculateNiceGraphScale(minVal, maxVal, null, 4)
+        : { min: minVal, max: maxVal, range: Math.max(1, maxVal - minVal), ticks: [minVal, maxVal] };
 
       const coords = pointsChronological.map((p, idx) => {
         const x = padL + (idx / (pointsChronological.length - 1)) * plotW;
         const v = p[curMetric] != null ? p[curMetric] : (p.top_set || 0);
-        const norm = maxVal === minVal ? 0.5 : (v - minVal) / valRange;
+        const norm = (v - scale.min) / scale.range;
         const y = padT + (1 - norm) * plotH;
         return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, ...p };
       });
+
+      if (typeof window !== 'undefined') {
+        window._statsExerciseCoords = coords;
+      }
 
       let lineD = `M ${coords[0].x} ${coords[0].y}`;
       for (let i = 0; i < coords.length - 1; i++) {
@@ -1244,37 +1321,52 @@
       }
       const areaD = `${lineD} L ${coords[coords.length - 1].x} ${height - padB} L ${coords[0].x} ${height - padB} Z`;
 
-      const minLabel = maxVal === minVal
-        ? (curMetric === 'effort' ? `RIR ${Math.max(0, minVal - 1)}` : `${Math.max(0, minVal - 2)}`)
-        : (curMetric === 'effort' ? `RIR ${minVal}` : `${minVal}`);
-      const maxLabel = maxVal === minVal
-        ? (curMetric === 'effort' ? `RIR ${maxVal + 1}` : `${maxVal + 2}`)
-        : (curMetric === 'effort' ? `RIR ${maxVal}` : `${maxVal}`);
+      // Dynamic Grid Lines with Clean Labels
+      const gridLinesHtml = scale.ticks.map(tVal => {
+        const norm = (tVal - scale.min) / scale.range;
+        const y = padT + (1 - norm) * plotH;
+        const labelStr = curMetric === 'effort' ? `RIR ${tVal}` : `${tVal}`;
+        return `
+          <line x1="${padL}" y1="${y.toFixed(1)}" x2="${width - padR}" y2="${y.toFixed(1)}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
+          <text x="${padL - 6}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" fill="#8E8E9F" font-size="9" font-family="var(--mono, monospace)" font-weight="500">${labelStr}</text>
+        `;
+      }).join('');
 
       chartSvg = `
-        <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%; height:100%;">
-          <defs>
-            <linearGradient id="exProgGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35" />
-              <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0" />
-            </linearGradient>
-          </defs>
-          <line x1="${padL}" y1="${padT}" x2="${width - padR}" y2="${padT}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
-          <line x1="${padL}" y1="${padT + plotH}" x2="${width - padR}" y2="${padT + plotH}" stroke="rgba(255,255,255,0.06)" stroke-width="1" stroke-dasharray="2,3" />
-          <text x="${padL - 6}" y="${padT + 3}" text-anchor="end" fill="#64748b" font-size="9" font-weight="600">${maxLabel}</text>
-          <text x="${padL - 6}" y="${padT + plotH + 3}" text-anchor="end" fill="#64748b" font-size="9" font-weight="600">${minLabel}</text>
+        <div class="stats-chart-interactive-box" style="position:relative; width:100%; height:100%; touch-action:pan-y;"
+          onpointermove="handleStatsExercisePointer(event)"
+          onpointerdown="handleStatsExercisePointer(event)"
+          onpointerleave="handleStatsExercisePointerLeave()"
+          ontouchmove="handleStatsExercisePointer(event)"
+          ontouchstart="handleStatsExercisePointer(event)"
+          ontouchend="handleStatsExercisePointerLeave()">
+          <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" style="width:100%; height:100%;">
+            <defs>
+              <linearGradient id="exProgGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35" />
+                <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0" />
+              </linearGradient>
+            </defs>
+            ${gridLinesHtml}
+            <path d="${areaD}" fill="url(#exProgGrad)" />
+            <path d="${lineD}" stroke="#38bdf8" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            ${coords.map(c => `<circle cx="${c.x}" cy="${c.y}" r="3.5" fill="#38bdf8" />`).join('')}
 
-          <path d="${areaD}" fill="url(#exProgGrad)" />
-          <path d="${lineD}" stroke="#38bdf8" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          ${coords.map(c => `<circle cx="${c.x}" cy="${c.y}" r="3.5" fill="#38bdf8" />`).join('')}
-        </svg>
+            <!-- Interactive Crosshair Lines (Smooth Hover) -->
+            <line id="stats-ex-vline" x1="0" y1="${padT}" x2="0" y2="${height - padB}" stroke="rgba(255, 255, 255, 0.45)" stroke-width="1.2" stroke-dasharray="3,3" style="display:none;" />
+            <line id="stats-ex-hline" x1="${padL}" y1="0" x2="${width - padR}" y2="0" stroke="rgba(255, 255, 255, 0.45)" stroke-width="1.2" stroke-dasharray="3,3" style="display:none;" />
+            <circle id="stats-ex-glow" cx="0" cy="0" r="10" fill="rgba(56, 189, 248, 0.22)" style="display:none;" />
+            <circle id="stats-ex-dot" cx="0" cy="0" r="4.5" fill="#141418" stroke="#38bdf8" stroke-width="2.5" style="display:none;" />
+          </svg>
+          <div id="stats-exercise-tooltip" class="stats-graph-tooltip cx-graph-tooltip" style="display:none;" aria-live="polite"></div>
+        </div>
       `;
     } else if (pointsChronological.length === 1) {
       const width = 340;
-      const height = 130;
-      const padL = 30;
+      const height = 135;
+      const padL = 36;
       const padR = 20;
-      const padT = 15;
+      const padT = 16;
       const padB = 25;
       const plotH = height - padT - padB;
       const p = pointsChronological[0];
@@ -1291,7 +1383,7 @@
           <circle cx="${x}" cy="${y}" r="5.5" fill="#38bdf8" />
           <circle cx="${x}" cy="${y}" r="9" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.4" />
           <text x="${x}" y="${y - 10}" text-anchor="middle" fill="#38bdf8" font-size="10.5" font-weight="700">${valLabel}</text>
-          <text x="${x}" y="${height - 6}" text-anchor="middle" fill="#94a3b8" font-size="9" font-weight="500">${p.date || 'Initial Milestone'}</text>
+          <text x="${x}" y="${height - 6}" text-anchor="middle" fill="#94a3b8" font-size="9.5" font-weight="500">${p.date || 'Initial Milestone'}</text>
         </svg>
       `;
     } else {
@@ -1636,6 +1728,246 @@
     }
   }
 
+  // ─── Stats Interactive Graph Handlers (Smooth Hover Crosshairs) ───────────
+  let _statsWeightLeaveTimer = null;
+  function handleStatsWeightPointer(evt) {
+    if (_statsWeightLeaveTimer) {
+      clearTimeout(_statsWeightLeaveTimer);
+      _statsWeightLeaveTimer = null;
+    }
+    const coords = window._statsWeightCoords;
+    if (!coords || !coords.length) return;
+    const container = document.querySelector('.stats-weight-chart-wrap');
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const clientX = evt.touches && evt.touches[0] ? evt.touches[0].clientX : evt.clientX;
+    if (clientX == null) return;
+    const relX = clientX - rect.left;
+    const svgX = (relX / rect.width) * 340;
+
+    let closest = coords[0];
+    let minDist = Math.abs(coords[0].x - svgX);
+    for (let i = 1; i < coords.length; i++) {
+      const dist = Math.abs(coords[i].x - svgX);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = coords[i];
+      }
+    }
+
+    const vline = document.getElementById('stats-weight-vline');
+    const hline = document.getElementById('stats-weight-hline');
+    const glow = document.getElementById('stats-weight-glow');
+    const dot = document.getElementById('stats-weight-dot');
+    const tooltip = document.getElementById('stats-weight-tooltip');
+
+    if (vline) {
+      vline.setAttribute('x1', closest.x);
+      vline.setAttribute('x2', closest.x);
+      vline.style.display = 'block';
+    }
+    if (hline) {
+      hline.setAttribute('y1', closest.y);
+      hline.setAttribute('y2', closest.y);
+      hline.style.display = 'block';
+    }
+    if (glow) {
+      glow.setAttribute('cx', closest.x);
+      glow.setAttribute('cy', closest.y);
+      glow.style.display = 'block';
+    }
+    if (dot) {
+      dot.setAttribute('cx', closest.x);
+      dot.setAttribute('cy', closest.y);
+      dot.style.display = 'block';
+    }
+    if (tooltip) {
+      const dateFormatted = typeof formatWeightPointDate === 'function' ? formatWeightPointDate(closest.date) : (closest.date || '');
+      tooltip.innerHTML = `<span class="weight-tip-date">${dateFormatted}</span> <span class="weight-tip-sep">·</span> <strong class="weight-tip-val mono">${Number(closest.weight).toFixed(1)} kg</strong>`;
+      tooltip.style.display = 'flex';
+      const tipPixelX = (closest.x / 340) * rect.width;
+      tooltip.style.left = `${Math.max(68, Math.min(rect.width - 68, tipPixelX))}px`;
+      const tipPixelY = (closest.y / 140) * rect.height;
+      tooltip.style.top = `${Math.max(2, tipPixelY - 38)}px`;
+    }
+  }
+
+  function handleStatsWeightPointerLeave() {
+    if (_statsWeightLeaveTimer) clearTimeout(_statsWeightLeaveTimer);
+    _statsWeightLeaveTimer = setTimeout(() => {
+      const vline = document.getElementById('stats-weight-vline');
+      const hline = document.getElementById('stats-weight-hline');
+      const glow = document.getElementById('stats-weight-glow');
+      const dot = document.getElementById('stats-weight-dot');
+      const tooltip = document.getElementById('stats-weight-tooltip');
+      if (vline) vline.style.display = 'none';
+      if (hline) hline.style.display = 'none';
+      if (glow) glow.style.display = 'none';
+      if (dot) dot.style.display = 'none';
+      if (tooltip) tooltip.style.display = 'none';
+    }, 1000);
+  }
+
+  let _statsEffortLeaveTimer = null;
+  function handleStatsEffortPointer(evt) {
+    if (_statsEffortLeaveTimer) {
+      clearTimeout(_statsEffortLeaveTimer);
+      _statsEffortLeaveTimer = null;
+    }
+    const coords = window._statsEffortCoords;
+    if (!coords || !coords.length) return;
+    const container = document.querySelector('.stats-effort-sparkline-wrap');
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const clientX = evt.touches && evt.touches[0] ? evt.touches[0].clientX : evt.clientX;
+    if (clientX == null) return;
+    const relX = clientX - rect.left;
+    const svgX = (relX / rect.width) * 340;
+
+    let closest = coords[0];
+    let minDist = Math.abs(coords[0].x - svgX);
+    for (let i = 1; i < coords.length; i++) {
+      const dist = Math.abs(coords[i].x - svgX);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = coords[i];
+      }
+    }
+
+    const vline = document.getElementById('stats-effort-vline');
+    const hline = document.getElementById('stats-effort-hline');
+    const glow = document.getElementById('stats-effort-glow');
+    const dot = document.getElementById('stats-effort-dot');
+    const tooltip = document.getElementById('stats-effort-tooltip');
+    const avg = closest.count > 0 ? (closest.sumRir / closest.count).toFixed(1) : '—';
+
+    if (vline) {
+      vline.setAttribute('x1', closest.x);
+      vline.setAttribute('x2', closest.x);
+      vline.style.display = 'block';
+    }
+    if (hline) {
+      hline.setAttribute('y1', closest.y);
+      hline.setAttribute('y2', closest.y);
+      hline.style.display = 'block';
+    }
+    if (glow) {
+      glow.setAttribute('cx', closest.x);
+      glow.setAttribute('cy', closest.y);
+      glow.style.display = 'block';
+    }
+    if (dot) {
+      dot.setAttribute('cx', closest.x);
+      dot.setAttribute('cy', closest.y);
+      dot.style.display = 'block';
+    }
+    if (tooltip) {
+      tooltip.innerHTML = `<span>${closest.date || 'Week'}</span> <span class="tip-sep">·</span> <strong>RIR ${avg}</strong> <span style="opacity:0.75; font-size:11px;">(${closest.count} sets)</span>`;
+      tooltip.style.display = 'flex';
+      const tipPixelX = (closest.x / 340) * rect.width;
+      tooltip.style.left = `${Math.max(72, Math.min(rect.width - 72, tipPixelX))}px`;
+      const tipPixelY = (closest.y / 120) * rect.height;
+      tooltip.style.top = `${Math.max(2, tipPixelY - 38)}px`;
+    }
+  }
+
+  function handleStatsEffortPointerLeave() {
+    if (_statsEffortLeaveTimer) clearTimeout(_statsEffortLeaveTimer);
+    _statsEffortLeaveTimer = setTimeout(() => {
+      const vline = document.getElementById('stats-effort-vline');
+      const hline = document.getElementById('stats-effort-hline');
+      const glow = document.getElementById('stats-effort-glow');
+      const dot = document.getElementById('stats-effort-dot');
+      const tooltip = document.getElementById('stats-effort-tooltip');
+      if (vline) vline.style.display = 'none';
+      if (hline) hline.style.display = 'none';
+      if (glow) glow.style.display = 'none';
+      if (dot) dot.style.display = 'none';
+      if (tooltip) tooltip.style.display = 'none';
+    }, 1000);
+  }
+
+  let _statsExLeaveTimer = null;
+  function handleStatsExercisePointer(evt) {
+    if (_statsExLeaveTimer) {
+      clearTimeout(_statsExLeaveTimer);
+      _statsExLeaveTimer = null;
+    }
+    const coords = window._statsExerciseCoords;
+    if (!coords || !coords.length) return;
+    const container = document.querySelector('.stats-exercise-chart-wrap');
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const clientX = evt.touches && evt.touches[0] ? evt.touches[0].clientX : evt.clientX;
+    if (clientX == null) return;
+    const relX = clientX - rect.left;
+    const svgX = (relX / rect.width) * 340;
+
+    let closest = coords[0];
+    let minDist = Math.abs(coords[0].x - svgX);
+    for (let i = 1; i < coords.length; i++) {
+      const dist = Math.abs(coords[i].x - svgX);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = coords[i];
+      }
+    }
+
+    const vline = document.getElementById('stats-ex-vline');
+    const hline = document.getElementById('stats-ex-hline');
+    const glow = document.getElementById('stats-ex-glow');
+    const dot = document.getElementById('stats-ex-dot');
+    const tooltip = document.getElementById('stats-exercise-tooltip');
+    const curMetric = statsLocalState.exerciseMetric;
+    const val = closest[curMetric] != null ? closest[curMetric] : (closest.top_set || 0);
+    const valText = curMetric === 'effort' ? `RIR ${val}` : `${val} kg`;
+
+    if (vline) {
+      vline.setAttribute('x1', closest.x);
+      vline.setAttribute('x2', closest.x);
+      vline.style.display = 'block';
+    }
+    if (hline) {
+      hline.setAttribute('y1', closest.y);
+      hline.setAttribute('y2', closest.y);
+      hline.style.display = 'block';
+    }
+    if (glow) {
+      glow.setAttribute('cx', closest.x);
+      glow.setAttribute('cy', closest.y);
+      glow.style.display = 'block';
+    }
+    if (dot) {
+      dot.setAttribute('cx', closest.x);
+      dot.setAttribute('cy', closest.y);
+      dot.style.display = 'block';
+    }
+    if (tooltip) {
+      tooltip.innerHTML = `<span>${closest.date || ''}</span> <span class="tip-sep">·</span> <strong class="mono">${valText}</strong>`;
+      tooltip.style.display = 'flex';
+      const tipPixelX = (closest.x / 340) * rect.width;
+      tooltip.style.left = `${Math.max(68, Math.min(rect.width - 68, tipPixelX))}px`;
+      const tipPixelY = (closest.y / 135) * rect.height;
+      tooltip.style.top = `${Math.max(2, tipPixelY - 38)}px`;
+    }
+  }
+
+  function handleStatsExercisePointerLeave() {
+    if (_statsExLeaveTimer) clearTimeout(_statsExLeaveTimer);
+    _statsExLeaveTimer = setTimeout(() => {
+      const vline = document.getElementById('stats-ex-vline');
+      const hline = document.getElementById('stats-ex-hline');
+      const glow = document.getElementById('stats-ex-glow');
+      const dot = document.getElementById('stats-ex-dot');
+      const tooltip = document.getElementById('stats-exercise-tooltip');
+      if (vline) vline.style.display = 'none';
+      if (hline) hline.style.display = 'none';
+      if (glow) glow.style.display = 'none';
+      if (dot) dot.style.display = 'none';
+      if (tooltip) tooltip.style.display = 'none';
+    }, 1000);
+  }
+
   // ─── Export to Window Namespace ─────────────────────────────────────────────
   if (typeof window !== 'undefined') {
     window.renderStatsView = renderStatsView;
@@ -1651,6 +1983,12 @@
     window.openStatsWeightModal = openStatsWeightModal;
     window.closeStatsWeightModal = closeStatsWeightModal;
     window.submitStatsWeightLog = submitStatsWeightLog;
+    window.handleStatsWeightPointer = handleStatsWeightPointer;
+    window.handleStatsWeightPointerLeave = handleStatsWeightPointerLeave;
+    window.handleStatsEffortPointer = handleStatsEffortPointer;
+    window.handleStatsEffortPointerLeave = handleStatsEffortPointerLeave;
+    window.handleStatsExercisePointer = handleStatsExercisePointer;
+    window.handleStatsExercisePointerLeave = handleStatsExercisePointerLeave;
     window.getCompletedSessions = getCompletedSessions;
     window.extractSessionLogs = extractSessionLogs;
     window.calculateSessionVolume = calculateSessionVolume;

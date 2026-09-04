@@ -1,6 +1,6 @@
 /* ============================================================
    stats.css — High-Fidelity Stats & Analytics Hub View
-   Deep Charcoal Black with Phase Accents (Coral-Red, Amber, Teal)
+   Dual-Mode Flat & Legible Design Tokens with Dynamic Phase Accents
    ============================================================ */
 
 .stats-screen {
@@ -12,6 +12,7 @@
   flex-direction: column;
   gap: 16px;
   animation: fadeInStats 0.25s ease-out;
+  color: var(--text);
 }
 
 .stats-dashboard-grid {
@@ -49,7 +50,7 @@
   font-size: 32px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: #ffffff;
+  color: var(--text);
   line-height: 1.15;
   margin: 0;
 }
@@ -57,7 +58,7 @@
 .stats-subtitle {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
@@ -65,9 +66,9 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: #181822;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--text-muted, #8b8b9e);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,9 +78,9 @@
 }
 
 .stats-history-icon-btn:hover {
-  background: #222230;
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.18);
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--border-light);
   transform: scale(1.05);
 }
 
@@ -95,27 +96,28 @@
 }
 
 .stats-metric-card {
-  background: #14141c;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 16px 18px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-height: 98px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  transition: border-color 0.15s ease;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.15s ease, transform 0.15s ease;
 }
 
 .stats-metric-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--border-light);
+  transform: translateY(-1px);
 }
 
 .stats-metric-top {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 600;
 }
@@ -124,7 +126,7 @@
   width: 16px;
   height: 16px;
   stroke-width: 2;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--text-muted);
 }
 
 .stats-metric-val {
@@ -132,22 +134,22 @@
   font-size: 32px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #ffffff;
+  color: var(--text);
   line-height: 1.1;
   margin-top: 8px;
 }
 
-.stats-metric-val.val-red { color: #ff5d5d; }
-.stats-metric-val.val-green { color: #10b981; }
-.stats-metric-val.val-amber { color: #f59e0b; }
+.stats-metric-val.val-red { color: var(--phase-train); }
+.stats-metric-val.val-green { color: var(--success); }
+.stats-metric-val.val-amber { color: var(--warning); }
 
 /* ─── Common Section Card Container ───────────────────────── */
 .stats-section-card {
-  background: #14141c;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -172,7 +174,7 @@
 .stats-card-title {
   font-size: 15px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text);
   letter-spacing: -0.01em;
   display: flex;
   align-items: center;
@@ -182,14 +184,14 @@
 .stats-card-subtitle {
   font-size: 12.5px;
   font-weight: 500;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--text-muted);
 }
 
 /* ─── Time Filter Buttons & Segmented Controls ────────────── */
 .stats-pill-tabs {
   display: flex;
-  background: #1c1c27;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 3px;
   gap: 2px;
@@ -203,7 +205,7 @@
   padding: 7px 12px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s ease;
   text-align: center;
@@ -211,20 +213,21 @@
 }
 
 .stats-pill-tab:hover:not(.active) {
-  color: #ffffff;
+  color: var(--text);
 }
 
 .stats-pill-tab.active {
-  background: #2a2a3a;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  font-weight: 700;
 }
 
-/* Big Top Tabs (Muscle Balance / Fatigue / Strength) */
+/* Segmented Bar (Muscle Balance / Fatigue / Strength) */
 .stats-segmented-bar {
   display: flex;
-  background: #1c1c27;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 4px;
   gap: 4px;
@@ -239,16 +242,20 @@
   padding: 10px 8px;
   font-size: 13.5px;
   font-weight: 700;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   text-align: center;
 }
 
+.stats-segmented-item:hover:not(.active) {
+  color: var(--text);
+}
+
 .stats-segmented-item.active {
-  background: #2b2b3b;
-  color: #ffffff;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ─── Activity 12-Month Heatmap ───────────────────────────── */
@@ -276,7 +283,7 @@
   gap: 20px;
   font-size: 11px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--text-muted);
   padding-left: 2px;
 }
 
@@ -295,7 +302,8 @@
   width: 12px;
   height: 12px;
   border-radius: 3px;
-  background: #22222e;
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
   transition: transform 0.1s ease, filter 0.15s ease;
   cursor: pointer;
   position: relative;
@@ -307,15 +315,15 @@
   z-index: 5;
 }
 
-.stats-heatmap-cell.level-0 { background: #1e1e28; }
-.stats-heatmap-cell.level-1 { background: #5c1d1d; }
-.stats-heatmap-cell.level-2 { background: #991b1b; }
-.stats-heatmap-cell.level-3 { background: #dc2626; }
-.stats-heatmap-cell.level-4 { background: #ef4444; }
-.stats-heatmap-cell.level-5 { background: #ff5d5d; box-shadow: 0 0 6px rgba(255, 93, 93, 0.4); }
+.stats-heatmap-cell.level-0 { background: var(--surface-2); border-color: var(--border-subtle); }
+.stats-heatmap-cell.level-1 { background: rgba(var(--phase-train-rgb, 255, 93, 93), 0.22); }
+.stats-heatmap-cell.level-2 { background: rgba(var(--phase-train-rgb, 255, 93, 93), 0.45); }
+.stats-heatmap-cell.level-3 { background: rgba(var(--phase-train-rgb, 255, 93, 93), 0.68); }
+.stats-heatmap-cell.level-4 { background: rgba(var(--phase-train-rgb, 255, 93, 93), 0.86); }
+.stats-heatmap-cell.level-5 { background: var(--phase-train); box-shadow: 0 0 6px var(--phase-train-dim); }
 
 .stats-heatmap-cell.is-today {
-  border: 1.5px solid #ff5d5d;
+  border: 1.5px solid var(--phase-train);
   box-sizing: border-box;
 }
 
@@ -330,7 +338,7 @@
   gap: 6px;
   font-size: 11px;
   font-weight: 500;
-  color: #717182;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -368,7 +376,7 @@
 .stats-anatomy-label {
   font-size: 10px;
   font-weight: 700;
-  color: #64748b;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -384,7 +392,7 @@
 .stats-anatomy-svg-card svg {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.2));
 }
 
 /* Untrained Muscles Chips */
@@ -398,7 +406,7 @@
 .stats-untrained-title {
   font-size: 13.5px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-secondary);
 }
 
 .stats-chips-cloud {
@@ -408,9 +416,9 @@
 }
 
 .stats-chip-tag {
-  background: rgba(245, 158, 11, 0.08);
+  background: var(--warning-dim);
   border: 1px solid rgba(245, 158, 11, 0.32);
-  color: #f59e0b;
+  color: var(--warning);
   border-radius: 999px;
   padding: 5px 12px;
   font-size: 12px;
@@ -421,16 +429,15 @@
 }
 
 .stats-chip-tag:hover {
-  background: rgba(245, 158, 11, 0.16);
-  border-color: rgba(245, 158, 11, 0.6);
+  background: rgba(245, 158, 11, 0.18);
+  border-color: var(--warning);
   transform: translateY(-1px);
 }
 
 .stats-chip-tag.active {
-  background: rgba(245, 158, 11, 0.28);
-  border-color: #f59e0b;
+  background: var(--warning);
   color: #ffffff;
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+  box-shadow: 0 0 10px var(--warning-dim);
 }
 
 /* ─── Effort / RIR Analysis Card ─────────────────────────── */
@@ -451,33 +458,33 @@
   font-size: 32px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #ffffff;
+  color: var(--text);
   line-height: 1.1;
 }
 
 .stats-effort-val.yellow-text {
-  color: #facc15;
+  color: var(--warning);
   text-align: right;
 }
 
 .stats-effort-label {
   font-size: 12.5px;
   font-weight: 500;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
 .stats-effort-rated-sub {
   font-size: 12px;
   font-weight: 500;
-  color: #64748b;
+  color: var(--text-muted);
   margin-top: -6px;
 }
 
 .stats-chart-section-title {
   font-size: 13px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-secondary);
   margin-top: 4px;
 }
 
@@ -505,14 +512,14 @@
 
 .stats-rir-dist-name {
   width: 55px;
-  color: #e2e8f0;
+  color: var(--text);
   flex-shrink: 0;
 }
 
 .stats-rir-bar-track {
   flex: 1;
   height: 6px;
-  background: #222230;
+  background: var(--surface-inset);
   border-radius: 999px;
   overflow: hidden;
   position: relative;
@@ -520,7 +527,7 @@
 
 .stats-rir-bar-fill {
   height: 100%;
-  background: #eab308;
+  background: var(--warning);
   border-radius: 999px;
   transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -528,7 +535,7 @@
 .stats-rir-dist-count {
   width: 65px;
   text-align: right;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-size: 12.5px;
   font-family: var(--mono, monospace);
   flex-shrink: 0;
@@ -537,8 +544,8 @@
 .stats-footnote-box {
   font-size: 12.5px;
   line-height: 1.5;
-  color: #64748b;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
   padding-top: 12px;
   margin-top: 4px;
 }
@@ -556,13 +563,13 @@
   gap: 5px;
   font-size: 13.5px;
   font-weight: 700;
-  color: #facc15;
+  color: var(--warning);
 }
 
 .stats-weight-log-btn {
   background: transparent;
   border: none;
-  color: #ff5d5d;
+  color: var(--phase-train);
   font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
@@ -575,7 +582,7 @@
 }
 
 .stats-weight-log-btn:hover {
-  background: rgba(255, 93, 93, 0.1);
+  background: var(--phase-train-dim);
 }
 
 .stats-weight-chart-wrap {
@@ -590,11 +597,11 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  background: #1c1c27;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 16px;
-  color: #ffffff;
+  color: var(--text);
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
@@ -603,8 +610,8 @@
 }
 
 .stats-exercise-select-btn:hover {
-  background: #242434;
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--surface-3);
+  border-color: var(--border-light);
 }
 
 .stats-exercise-chart-wrap {
@@ -617,7 +624,7 @@
   display: flex;
   flex-direction: column;
   gap: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--border);
   margin-top: 4px;
 }
 
@@ -626,7 +633,7 @@
   align-items: flex-start;
   justify-content: space-between;
   padding: 14px 2px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-subtle);
   gap: 16px;
 }
 
@@ -635,14 +642,14 @@
   flex-direction: column;
   font-size: 13px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-muted);
   width: 55px;
   flex-shrink: 0;
   line-height: 1.25;
 }
 
 .stats-exercise-history-date span:first-child {
-  color: #e2e8f0;
+  color: var(--text);
 }
 
 .stats-exercise-history-sets {
@@ -650,31 +657,31 @@
   font-family: var(--mono, monospace);
   font-size: 13px;
   font-weight: 500;
-  color: #f1f5f9;
+  color: var(--text);
   line-height: 1.45;
   word-break: break-word;
 }
 
 .stats-exercise-history-sets .rir-tag {
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .stats-exercise-best-tag {
   font-size: 12.5px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-muted);
   padding: 8px 0 0;
 }
 
 .stats-exercise-best-tag strong {
-  color: #ff5d5d;
+  color: var(--phase-train);
 }
 
 /* ─── Workout History Card Component (Shared) ─────────────── */
 .workout-history-card {
-  background: #14141c;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 14px 16px;
   margin-bottom: 9px;
   display: flex;
@@ -684,12 +691,13 @@
   cursor: pointer;
   transition: all 0.15s ease;
   text-decoration: none;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-sm);
+  color: var(--text);
 }
 
 .workout-history-card:hover {
-  background: #1a1a24;
-  border-color: rgba(255, 255, 255, 0.14);
+  background: var(--surface-2);
+  border-color: var(--border-light);
   transform: translateY(-1px);
 }
 
@@ -709,8 +717,9 @@
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  background: #ff5252;
-  color: #ffffff;
+  background: var(--phase-train-dim);
+  border: 1px solid var(--phase-train-border);
+  color: var(--phase-train);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -732,13 +741,13 @@
 .workout-card-title {
   font-size: 15px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text);
   line-height: 1.2;
 }
 
 .workout-card-sub {
   font-size: 12.5px;
-  color: #94a3b8;
+  color: var(--text-muted);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -753,9 +762,9 @@
 }
 
 .workout-pr-pill {
-  background: rgba(234, 179, 8, 0.15);
-  border: 1px solid rgba(234, 179, 8, 0.35);
-  color: #facc15;
+  background: var(--warning-dim);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: var(--warning);
   font-size: 12px;
   font-weight: 700;
   padding: 4px 10px;
@@ -767,7 +776,7 @@
 }
 
 .workout-card-arrow {
-  color: #64748b;
+  color: var(--text-muted);
   width: 16px;
   height: 16px;
   display: flex;
@@ -793,13 +802,13 @@
 .recent-workouts-title {
   font-size: 15px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--text-secondary);
 }
 
 .recent-workouts-all-btn {
   background: transparent;
   border: none;
-  color: #ff5d5d;
+  color: var(--phase-train);
   font-size: 14px;
   font-weight: 700;
   display: flex;
@@ -813,7 +822,7 @@
   opacity: 0.85;
 }
 
-/* ─── Full History Screen Layout (Image 3) ────────────────── */
+/* ─── Full History Screen Layout ─────────────────────────── */
 .history-full-screen {
   width: 100%;
   max-width: 640px;
@@ -822,6 +831,7 @@
   display: flex;
   flex-direction: column;
   animation: fadeInStats 0.25s ease-out;
+  color: var(--text);
 }
 
 .history-top-nav-row {
@@ -835,9 +845,9 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #181822;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -848,8 +858,8 @@
 }
 
 .history-round-back-btn:hover {
-  background: #222230;
-  border-color: rgba(255, 255, 255, 0.18);
+  background: var(--surface-3);
+  border-color: var(--border-light);
   transform: scale(1.05);
 }
 
@@ -858,7 +868,7 @@
   font-size: 32px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: #ffffff;
+  color: var(--text);
   line-height: 1.15;
   margin: 0;
 }
@@ -866,7 +876,7 @@
 .history-full-subtitle {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--text-muted);
   margin-top: 4px;
 }
 
@@ -875,7 +885,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  color: #ff5d5d;
+  color: var(--phase-train);
   font-size: 15px;
   font-weight: 700;
   padding: 14px 0;
@@ -895,14 +905,18 @@
 .stats-picker-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(8, 9, 14, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   z-index: 1000;
   display: flex;
   align-items: flex-end;
   justify-content: center;
   animation: fadeInBackdrop 0.2s ease-out;
+}
+
+[data-theme="light"] .stats-picker-backdrop {
+  background: rgba(15, 23, 42, 0.38);
 }
 
 @media (min-width: 640px) {
@@ -912,8 +926,10 @@
 }
 
 .stats-picker-sheet {
-  background: #14141c;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--surface-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
   border-radius: 24px 24px 0 0;
   width: 100%;
   max-width: 520px;
@@ -922,8 +938,9 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
   animation: slideUpSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--text);
 }
 
 @media (min-width: 640px) {
@@ -951,7 +968,7 @@
 .stats-picker-title {
   font-size: 18px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .stats-picker-list {
@@ -964,11 +981,11 @@
 }
 
 .stats-picker-item {
-  background: #1c1c27;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 14px;
-  color: #ffffff;
+  color: var(--text);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -980,8 +997,8 @@
 }
 
 .stats-picker-item:hover, .stats-picker-item.active {
-  background: #262638;
-  border-color: rgba(255, 93, 93, 0.4);
+  background: var(--surface-3);
+  border-color: var(--phase-train-border);
 }
 
 /* ─── Body Weight & Past Workout Modal ────────────────────── */
@@ -995,8 +1012,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #1c1c27;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 10px 16px;
 }
@@ -1005,7 +1022,7 @@
   flex: 1;
   background: transparent;
   border: none;
-  color: #ffffff;
+  color: var(--text);
   font-size: 28px;
   font-weight: 800;
   font-family: var(--mono, monospace);
@@ -1015,7 +1032,7 @@
 .stats-weight-unit {
   font-size: 18px;
   font-weight: 700;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--text-muted);
 }
 
 /* ─── Desktop 2-Column Dashboard Layout (>= 1024px) ──────── */
@@ -1040,7 +1057,6 @@
     font-size: 13.5px;
   }
 
-  /* 2-Column Dashboard Grid (~66% Main / ~34% Secondary) */
   .stats-dashboard-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.88fr) minmax(0, 1fr);
@@ -1049,13 +1065,7 @@
     width: 100%;
   }
 
-  .stats-col-main {
-    display: flex;
-    flex-direction: column;
-    gap: 22px;
-    min-width: 0;
-  }
-
+  .stats-col-main,
   .stats-col-side {
     display: flex;
     flex-direction: column;
@@ -1063,7 +1073,6 @@
     min-width: 0;
   }
 
-  /* Top 4 Overview Summary Cards in One Row */
   .stats-metrics-grid {
     grid-template-columns: repeat(4, 1fr);
     gap: 14px;
@@ -1072,17 +1081,17 @@
   .stats-metric-card {
     padding: 16px 18px;
     min-height: 94px;
-    background: #14141c;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 18px;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-sm);
     transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
   .stats-metric-card:hover {
-    border-color: rgba(255, 255, 255, 0.14);
+    border-color: var(--border-light);
     transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--shadow-md);
   }
 
   .stats-metric-top {
@@ -1094,19 +1103,18 @@
     margin-top: 6px;
   }
 
-  /* Desktop Dashboard Widget Cards */
   .stats-section-card {
     padding: 22px 24px;
     gap: 16px;
-    border-radius: 20px;
-    background: #14141c;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.32);
+    border-radius: var(--radius-card);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
     transition: border-color 0.15s ease;
   }
 
   .stats-section-card:hover {
-    border-color: rgba(255, 255, 255, 0.11);
+    border-color: var(--border-light);
   }
 
   .stats-card-title {
@@ -1117,7 +1125,6 @@
     font-size: 13px;
   }
 
-  /* Heatmap Desktop Layout & Alignment */
   .stats-heatmap-scroll-wrap {
     overflow-x: visible;
     padding-bottom: 0;
@@ -1135,7 +1142,7 @@
     width: 100%;
     height: 18px;
     font-size: 11.5px;
-    color: #717182;
+    color: var(--text-muted);
     padding-left: 0;
   }
 
@@ -1162,7 +1169,6 @@
     border-radius: 3.5px;
   }
 
-  /* Muscle Balance Anatomical View */
   .stats-anatomy-dual-wrap {
     gap: 56px;
     padding: 16px 0 8px;
@@ -1173,17 +1179,14 @@
     height: 310px;
   }
 
-  /* Effort Sparkline */
   .stats-effort-sparkline-wrap {
     height: 125px;
   }
 
-  /* Body Weight Card */
   .stats-weight-chart-wrap {
     height: 165px;
   }
 
-  /* Exercise Progress Card */
   .stats-exercise-chart-wrap {
     height: 155px;
   }
@@ -1192,7 +1195,6 @@
     padding: 11px 2px;
   }
 
-  /* Recent Workouts on Side Column */
   .recent-workouts-section {
     gap: 10px;
     margin-top: 0;
@@ -1214,4 +1216,36 @@
   .workout-card-sub {
     font-size: 12px;
   }
+}
+
+/* ── Interactive Graph Crosshairs & Glassmorphic Tooltips ── */
+.cx-graph-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -100%);
+  background: var(--surface-elevated, #1a1b23);
+  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text, #f8fafc);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 20;
+  white-space: nowrap;
+}
+
+.cx-graph-tooltip strong {
+  font-family: var(--mono, monospace);
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.target-badge-g {
+  pointer-events: none;
 }

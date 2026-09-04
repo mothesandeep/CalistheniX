@@ -55,6 +55,9 @@ async function init() {
   if (typeof initThemeAndAccent === 'function') {
     initThemeAndAccent();
   }
+  if (typeof updateThemeToggleIcons === 'function') {
+    updateThemeToggleIcons();
+  }
 
   // Restore in-progress active workout session from crash recovery
   const savedActive = getActiveSession();
@@ -73,8 +76,20 @@ async function init() {
     muteBtn.title = muted ? 'Unmute sounds' : 'Mute sounds';
   }
 
+  // Auto-initialize demo data on fresh app launch if no user data exists
+  if (typeof shouldInitializeDemoData === 'function' && shouldInitializeDemoData()) {
+    try {
+      await initializeDemoData();
+    } catch (e) {
+      console.warn('Demo initialization error:', e);
+    }
+  }
+
   window.addEventListener('hashchange', applyHash);
   applyHash();
+  if (typeof loadWorkoutSessions === 'function') {
+    await loadWorkoutSessions();
+  }
   render();
 
   // Load core catalog asynchronously

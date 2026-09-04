@@ -64,13 +64,41 @@ function computeStats(points) {
 // Parse a <form> into a payload object, coercing numeric fields and
 // converting empty strings to null on nullable fields.
 
+function isMainExercise(e) {
+  if (!e || !e.name) return false;
+  const day = (e.day || '').toLowerCase();
+  const pattern = (e.movement_pattern || '').toLowerCase();
+  const phase = (e.phase || '').toLowerCase();
+  const name = e.name.toLowerCase();
+
+  if (day.includes('mobility') || day.includes('stretch')) return false;
+  if (phase === 'warmup' || phase === 'cooldown') return false;
+  if (pattern.startsWith('mobility') || pattern.startsWith('stretch')) return false;
+  if (name.includes('circle') || name.includes('rotation') || name.includes('stretch') || name.includes('arm swings') || name.includes('leg swings') || name.includes('cat-cow') || name.includes('pull-apart')) {
+    return false;
+  }
+  return true;
+}
+
+function getMainExercises() {
+  const all = state.exercises || [];
+  const filtered = all.filter(isMainExercise);
+  return filtered.length > 0 ? filtered : all;
+}
+
 // ─── Screen 5: Progress & Insights View ─────────────────────────────────────
 
 function renderProgressView() {
-  const selectedExId = state.historyExerciseId || (state.exercises[0]?.id ?? null);
-  const ex = getExercise(selectedExId);
+  const mainExercises = getMainExercises();
+  let selectedExId = state.historyExerciseId;
+  let ex = mainExercises.find(e => e.id === selectedExId);
+  if (!ex) {
+    ex = mainExercises[0] || (typeof getExercise === 'function' ? getExercise(selectedExId) : null);
+    selectedExId = ex?.id || null;
+    state.historyExerciseId = selectedExId;
+  }
 
-  const exOptionsHtml = state.exercises.map(e => `
+  const exOptionsHtml = mainExercises.map(e => `
     <option value="${e.id}" ${e.id === selectedExId ? 'selected' : ''}>
       ${e.name} (${e.type === 'duration' ? 'Hold' : 'Reps'})
     </option>
@@ -205,42 +233,100 @@ function buildHistoryChart() {
   });
   const dataValues = points.map(p => p.metric);
 
+  const compStyles = window.getComputedStyle(document.documentElement);
+  const strokeColor = compStyles.getPropertyValue('--phase-train').trim() || '#FF5D5D';
+  const gridColor = compStyles.getPropertyValue('--border').trim() || 'rgba(255, 255, 255, 0.08)';
+  const tickColor = compStyles.getPropertyValue('--text-muted').trim() || '#8b92a5';
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  const tooltipBg = compStyles.getPropertyValue('--surface-elevated').trim() || (isLight ? '#ffffff' : '#14151b');
+  const tooltipBorder = compStyles.getPropertyValue('--border').trim() || 'rgba(255, 255, 255, 0.12)';
+  const tooltipTitle = compStyles.getPropertyValue('--text').trim() || '#f8fafc';
+  const tooltipBody = compStyles.getPropertyValue('--text-secondary').trim() || '#cbd5e1';
+  const pointBorder = compStyles.getPropertyValue('--surface').trim() || '#ffffff';
+
   const ctx = canvas.getContext('2d');
   const gradient = ctx.createLinearGradient(0, 0, 0, 240);
-  gradient.addColorStop(0, 'rgba(124, 106, 247, 0.45)');
-  gradient.addColorStop(1, 'rgba(124, 106, 247, 0.0)');
+  gradient.addColorStop(0, strokeColor.startsWith('#') ? `${strokeColor}33` : 'rgba(255, 93, 93, 0.2)');
+  gradient.addColorStop(1, 'rgba(255, 93, 93, 0.0)');
+
+  // Dotted Crosshair Plugin for Chart.js (Horizontal & Vertical Guidelines)
+  const crosshairPlugin = {
+    id: 'cxDottedCrosshair',
+    afterDraw: (chart) => {
+      if (chart.tooltip?._active && chart.tooltip._active.length) {
+        const activePoint = chart.tooltip._active[0];
+        const cCtx = chart.ctx;
+        const x = activePoint.element.x;
+        const y = activePoint.element.y;
+        const topY = chart.scales.y.top;
+        const bottomY = chart.scales.y.bottom;
+        const leftX = chart.scales.x.left;
+        const rightX = chart.scales.x.right;
+
+        cCtx.save();
+        cCtx.beginPath();
+        cCtx.setLineDash([3, 3]);
+        cCtx.lineWidth = 1.2;
+        cCtx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+
+        // Vertical dotted crosshair line
+        cCtx.moveTo(x, topY);
+        cCtx.lineTo(x, bottomY);
+
+        // Horizontal dotted crosshair line
+        cCtx.moveTo(leftX, y);
+        cCtx.lineTo(rightX, y);
+
+        cCtx.stroke();
+
+        // Glowing outer indicator circle
+        cCtx.beginPath();
+        cCtx.arc(x, y, 9, 0, 2 * Math.PI);
+        cCtx.fillStyle = strokeColor.startsWith('#') ? `${strokeColor}33` : 'rgba(255, 93, 93, 0.2)';
+        cCtx.fill();
+
+        cCtx.restore();
+      }
+    }
+  };
 
   _chartInstance = new Chart(canvas, {
     type: 'line',
+    plugins: [crosshairPlugin],
     data: {
       labels: labels,
       datasets: [{
         label: mode === 'best' ? (isHold ? 'Best Hold (sec)' : 'Best Reps') : (isHold ? 'Total Hold (sec)' : 'Volume'),
         data: dataValues,
-        borderColor: '#7c6af7',
-        borderWidth: 3,
+        borderColor: strokeColor,
+        borderWidth: 2.8,
         backgroundColor: gradient,
         fill: true,
         tension: 0.35,
-        pointBackgroundColor: '#ef4444',
-        pointBorderColor: '#ffffff',
+        pointBackgroundColor: strokeColor,
+        pointBorderColor: pointBorder,
         pointBorderWidth: 2,
-        pointRadius: 5,
-        pointHoverRadius: 7
+        pointRadius: 4.5,
+        pointHoverRadius: 6.5
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#181e2e',
-          borderColor: '#2e3852',
+          backgroundColor: tooltipBg,
+          borderColor: tooltipBorder,
           borderWidth: 1,
-          titleColor: '#e8edf8',
-          bodyColor: '#a1adc7',
-          padding: 10,
+          titleColor: tooltipTitle,
+          bodyColor: tooltipBody,
+          padding: 12,
+          cornerRadius: 10,
           displayColors: false,
           callbacks: {
             label: (ctx) => `${ctx.dataset.label}: ${ctx.raw}`
@@ -249,12 +335,12 @@ function buildHistoryChart() {
       },
       scales: {
         x: {
-          grid: { color: 'rgba(46, 56, 82, 0.4)' },
-          ticks: { color: '#6e7d9c', font: { size: 11, family: 'Inter' } }
+          grid: { color: gridColor },
+          ticks: { color: tickColor, font: { size: 11, family: 'Inter, sans-serif' } }
         },
         y: {
-          grid: { color: 'rgba(46, 56, 82, 0.4)' },
-          ticks: { color: '#6e7d9c', font: { size: 11, family: 'Inter' }, precision: 0 },
+          grid: { color: gridColor },
+          ticks: { color: tickColor, font: { size: 11, family: 'JetBrains Mono, monospace' }, precision: 0, padding: 8 },
           beginAtZero: true
         }
       }
@@ -266,7 +352,14 @@ if (typeof window !== 'undefined') {
   window.openHistoryView = openHistoryView;
   window.setHistoryMetricMode = setHistoryMetricMode;
   window.buildHistoryChart = buildHistoryChart;
+
+  window.addEventListener('cx:theme-changed', () => {
+    if (document.getElementById('history-canvas')) {
+      buildHistoryChart();
+    }
+  });
 }
+
 
 
 

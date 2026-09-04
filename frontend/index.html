@@ -53,26 +53,26 @@
       } catch (e) {}
     })();
   </script>
-  <link rel="stylesheet" href="css/variables.css" />
-  <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/layout.css" />
-  <link rel="stylesheet" href="css/components/buttons.css" />
-  <link rel="stylesheet" href="css/components/cards.css" />
-  <link rel="stylesheet" href="css/components/forms.css" />
-  <link rel="stylesheet" href="css/components/toast.css" />
-  <link rel="stylesheet" href="css/components/skeletons.css" />
-  <link rel="stylesheet" href="css/components/nav.css" />
-  <link rel="stylesheet" href="css/components/modals.css" />
-  <link rel="stylesheet" href="css/components/home-dashboard.css" />
-  <link rel="stylesheet" href="css/components/workout-runner.css" />
-  <link rel="stylesheet" href="css/components/split-editor.css" />
-  <link rel="stylesheet" href="css/components/stats.css" />
-  <link rel="stylesheet" href="css/components/history.css" />
-  <link rel="stylesheet" href="css/components/progress-charts.css" />
-  <link rel="stylesheet" href="css/components/prs.css" />
-  <link rel="stylesheet" href="css/components/calendar.css" />
-  <link rel="stylesheet" href="css/components/exercise-library.css" />
-  <link rel="stylesheet" href="css/components/settings.css" />
+  <link rel="stylesheet" href="css/variables.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/base.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/layout.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/buttons.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/cards.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/forms.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/toast.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/skeletons.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/nav.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/modals.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/home-dashboard.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/workout-runner.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/split-editor.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/stats.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/history.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/progress-charts.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/prs.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/calendar.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/exercise-library.css?v=2.4.0" />
+  <link rel="stylesheet" href="css/components/settings.css?v=2.4.0" />
 </head>
 
 <body>
@@ -83,9 +83,14 @@
         <a href="#home" class="app-logo-link" style="text-decoration:none;">
           <span class="app-logo">Calisthen<span class="logo-x">i</span><span class="logo-x-accent">X</span></span>
         </a>
-        <span id="sync-status-pill" class="sync-dot-compact" title="Cloud sync · 2s ago" aria-label="Sync status">
-          <span class="sync-dot"></span>
-        </span>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="theme-toggle-btn" id="theme-toggle-desktop" onclick="toggleAppTheme()" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+            <svg class="cx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          </button>
+          <span id="sync-status-pill" class="sync-dot-compact" title="Cloud sync · 2s ago" aria-label="Sync status">
+            <span class="sync-dot"></span>
+          </span>
+        </div>
       </div>
 
       <nav class="sidebar-nav">
@@ -172,9 +177,14 @@
             <span class="sync-dot"></span>
           </span>
         </div>
-        <button class="nav-btn-icon" onclick="openSettingsModal()" title="Settings & Backup" aria-label="Settings">
-          <svg class="cx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button class="theme-toggle-btn" id="theme-toggle-mobile" onclick="toggleAppTheme()" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+            <svg class="cx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          </button>
+          <button class="nav-btn-icon" onclick="openSettingsModal()" title="Settings & Backup" aria-label="Settings">
+            <svg class="cx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
       </header>
 
       <main id="app-root" class="app-main"></main>
@@ -222,28 +232,30 @@
 
   <!-- Chart.js via CDN (architecture.md §5 — no build step) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="js/core/constants.js"></script>
-  <script src="js/core/utils.js"></script>
-  <script src="js/core/audio.js"></script>
-  <script src="js/core/storage.js"></script>
-  <script src="js/core/state.js"></script>
-  <script src="js/api.js"></script>
-  <script src="js/core/prefetch.js"></script>
-  <script src="js/components/exercise-animation.js"></script>
-  <script src="js/components/muscle-map.js"></script>
-  <script src="js/views/home.js"></script>
-  <script src="js/views/workout-runner.js"></script>
-  <script src="js/views/log-entry.js"></script>
-  <script src="js/views/history-list.js"></script>
-  <script src="js/views/stats.js"></script>
-  <script src="js/views/progress-chart.js"></script>
-  <script src="js/views/personal-records.js"></script>
-  <script src="js/views/calendar.js"></script>
-  <script src="js/views/split-manager.js"></script>
-  <script src="js/views/exercise-library.js"></script>
-  <script src="js/views/settings.js"></script>
-  <script src="js/router.js"></script>
-  <script src="js/bootstrap.js"></script>
+  <!-- Application Scripts -->
+  <script src="js/core/constants.js?v=2.4.2"></script>
+  <script src="js/core/utils.js?v=2.4.2"></script>
+  <script src="js/core/audio.js?v=2.4.2"></script>
+  <script src="js/core/demo-data.js?v=2.4.2"></script>
+  <script src="js/core/storage.js?v=2.4.2"></script>
+  <script src="js/core/state.js?v=2.4.2"></script>
+  <script src="js/api.js?v=2.4.2"></script>
+  <script src="js/core/prefetch.js?v=2.4.2"></script>
+  <script src="js/components/exercise-animation.js?v=2.4.2"></script>
+  <script src="js/components/muscle-map.js?v=2.4.2"></script>
+  <script src="js/views/home.js?v=2.4.2"></script>
+  <script src="js/views/workout-runner.js?v=2.4.2"></script>
+  <script src="js/views/log-entry.js?v=2.4.2"></script>
+  <script src="js/views/history-list.js?v=2.4.2"></script>
+  <script src="js/views/stats.js?v=2.4.2"></script>
+  <script src="js/views/progress-chart.js?v=2.4.2"></script>
+  <script src="js/views/personal-records.js?v=2.4.2"></script>
+  <script src="js/views/calendar.js?v=2.4.2"></script>
+  <script src="js/views/split-manager.js?v=2.4.2"></script>
+  <script src="js/views/exercise-library.js?v=2.4.2"></script>
+  <script src="js/views/settings.js?v=2.4.2"></script>
+  <script src="js/router.js?v=2.4.2"></script>
+  <script src="js/bootstrap.js?v=2.4.2"></script>
 </body>
 
 </html>

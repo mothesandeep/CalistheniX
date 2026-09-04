@@ -60,6 +60,14 @@
       primary: ['lats', 'upper_back'],
       secondary: ['biceps', 'rear_delts', 'forearms', 'core']
     },
+    'Pull-ups Close Grip': {
+      primary: ['lats', 'biceps'],
+      secondary: ['upper_back', 'forearms', 'core']
+    },
+    'Commando Pull-ups': {
+      primary: ['lats', 'biceps', 'upper_back'],
+      secondary: ['forearms', 'core', 'obliques']
+    },
     'Close-Grip Chin-ups': {
       primary: ['biceps', 'lats'],
       secondary: ['upper_back', 'forearms', 'core']

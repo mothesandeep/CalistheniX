@@ -4,22 +4,8 @@
    Base: Deep Charcoal-Black with Liquid Morphism Dimensional Surfaces
    ========================================================================== */
 
-:root {
-  --phase-prep: #FF8A3D;
-  --phase-prep-dim: rgba(255, 138, 61, 0.1);
-  --phase-prep-border: rgba(255, 138, 61, 0.3);
-  --phase-prep-glow: 0 0 16px rgba(255, 138, 61, 0.2);
+/* Phase colors are inherited directly from variables.css */
 
-  --phase-train: #FF5D5D;
-  --phase-train-dim: rgba(255, 93, 93, 0.1);
-  --phase-train-border: rgba(255, 93, 93, 0.3);
-  --phase-train-glow: 0 0 16px rgba(255, 93, 93, 0.25);
-
-  --phase-recover: #35D8B0;
-  --phase-recover-dim: rgba(53, 216, 176, 0.1);
-  --phase-recover-border: rgba(53, 216, 176, 0.3);
-  --phase-recover-glow: 0 0 16px rgba(53, 216, 176, 0.2);
-}
 
 .split-screen {
   max-width: 1360px;
@@ -55,9 +41,9 @@
 }
 
 .btn-new-split {
-  background: rgba(255, 255, 255, 0.04);
-  border: var(--liquid-border);
-  color: #F2F2F0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
   font-size: 13px;
   font-weight: 600;
   border-radius: 10px;
@@ -66,13 +52,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: var(--liquid-highlight-top-subtle);
+  box-shadow: var(--shadow-sm);
   transition: all var(--transition-fast);
 }
 .btn-new-split:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #FFFFFF;
+  background: var(--surface-2);
+  border-color: var(--border-light);
+  color: var(--text);
   transform: translateY(-1px);
 }
 
@@ -81,7 +67,7 @@
   display: flex;
   gap: 8px;
   margin-bottom: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border);
   padding-bottom: 10px;
   overflow-x: auto;
 }
@@ -90,7 +76,7 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: 10px;
-  color: #8A8A93;
+  color: var(--text-muted);
   font-family: var(--sans);
   font-size: 13.5px;
   font-weight: 600;
@@ -103,14 +89,15 @@
   transition: all var(--transition-fast);
 }
 .split-subtab-btn:hover {
-  color: #FFFFFF;
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  background: var(--surface-2);
 }
 .split-subtab-btn.active {
-  color: #FFFFFF;
-  background: rgba(255, 255, 255, 0.06);
-  border: var(--liquid-border);
-  box-shadow: var(--liquid-highlight-top-subtle);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  font-weight: 700;
 }
 
 /* ── Split Switcher Tabs Bar ────────────────────────────────────────────── */
@@ -124,12 +111,10 @@
 }
 
 .split-tab-btn {
-  background: var(--liquid-surface-1, rgba(18, 18, 25, 0.72));
-  backdrop-filter: blur(var(--liquid-blur-sm, 8px));
-  -webkit-backdrop-filter: blur(var(--liquid-blur-sm, 8px));
-  border: var(--liquid-border);
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
-  color: #8A8A93;
+  color: var(--text-secondary);
   font-family: var(--sans);
   font-size: 13px;
   font-weight: 600;
@@ -140,20 +125,20 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: var(--liquid-highlight-top-subtle);
+  box-shadow: var(--shadow-sm);
 }
 .split-tab-btn:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: #FFFFFF;
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--surface-2);
+  color: var(--text);
+  border-color: var(--border-light);
   transform: translateY(-1px);
 }
 .split-tab-btn.active {
-  background: rgba(255, 138, 61, 0.1);
-  border-color: rgba(255, 138, 61, 0.35);
-  color: #FFFFFF;
+  background: var(--accent-dim);
+  border-color: var(--border-accent);
+  color: var(--accent);
   font-weight: 700;
-  box-shadow: 0 2px 10px -2px rgba(255, 138, 61, 0.25), inset 0 1px 0 0 rgba(255, 138, 61, 0.35);
+  box-shadow: 0 2px 10px -2px var(--accent-dim);
 }
 
 /* ── 2. Weekly Schedule Grid (7 Days Monday–Sunday) ─────────────────────── */
@@ -181,33 +166,28 @@
 }
 
 .schedule-day-card {
-  background: var(--liquid-surface-1-grad, rgba(16, 16, 23, 0.78));
-  backdrop-filter: blur(var(--liquid-blur-md, 12px));
-  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
-  border: var(--liquid-border);
-  border-radius: 16px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 16px 14px;
   min-height: 155px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 12px;
-  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
   position: relative;
-  box-shadow: var(--liquid-shadow-sm), var(--liquid-highlight-top);
 }
 
 .schedule-day-card:hover:not(.is-rest-day) {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: var(--liquid-surface-2-grad, rgba(22, 22, 30, 0.84));
+  border-color: var(--border-hover);
+  background: var(--surface-hover);
   transform: translateY(-2px);
-  box-shadow: var(--liquid-shadow-md), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
 }
 
 .schedule-day-card.schedule-day-today {
-  background: linear-gradient(180deg, rgba(255, 93, 93, 0.08) 0%, rgba(18, 18, 25, 0.85) 100%);
-  border: 1px solid rgba(255, 93, 93, 0.38);
-  box-shadow: 0 8px 24px -4px rgba(255, 93, 93, 0.15), inset 0 1px 0 rgba(255, 93, 93, 0.3);
+  background: var(--surface-card);
+  border: 1.5px solid var(--accent);
 }
 
 .schedule-day-card.schedule-day-today::before {
@@ -217,23 +197,22 @@
   left: 0;
   right: 0;
   height: 3px;
-  border-radius: 16px 16px 0 0;
-  background: linear-gradient(90deg, #FF5D5D, #FF8A3D);
-  box-shadow: 0 0 10px rgba(255, 93, 93, 0.5);
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+  background: var(--accent);
 }
 
 .schedule-day-card.is-rest-day {
-  opacity: 0.55;
-  border: 1px dashed rgba(255, 255, 255, 0.07);
-  background: rgba(10, 10, 14, 0.4);
+  opacity: 0.6;
+  border: 1px dashed var(--border);
+  background: var(--surface-2);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow: none;
 }
 
 .schedule-day-card.is-rest-day:hover {
-  opacity: 0.8;
-  border-color: rgba(255, 255, 255, 0.14);
+  opacity: 0.85;
+  border-color: var(--border-hover);
 }
 
 .schedule-day-header {
@@ -253,7 +232,7 @@
 .schedule-day-name {
   font-size: 13px;
   font-weight: 700;
-  color: #8A8A93;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -263,11 +242,10 @@
   font-size: 9.5px;
   font-weight: 800;
   letter-spacing: 0.06em;
-  background: #FF5D5D;
+  background: var(--phase-train);
   color: #FFFFFF;
   padding: 2px 6px;
   border-radius: 6px;
-  box-shadow: 0 0 8px rgba(255, 93, 93, 0.4);
 }
 
 .schedule-header-right {
@@ -324,14 +302,14 @@
   font-family: var(--font-heading, var(--sans));
   font-size: 15px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: var(--text);
   line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .schedule-day-card.is-rest-day .schedule-workout-title {
-  color: #8A8A93;
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -374,30 +352,26 @@
 }
 
 .workout-summary-card {
-  background: var(--liquid-surface-1-grad, rgba(16, 16, 23, 0.78));
-  backdrop-filter: blur(var(--liquid-blur-md, 12px));
-  -webkit-backdrop-filter: blur(var(--liquid-blur-md, 12px));
-  border: var(--liquid-border);
-  border-radius: 18px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
   padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 16px;
-  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
-  box-shadow: var(--liquid-shadow-md), var(--liquid-highlight-top);
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
 }
 
 .workout-summary-card:hover {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: var(--border-hover);
+  background: var(--surface-hover);
   transform: translateY(-2px);
-  box-shadow: var(--liquid-shadow-lg), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
 }
 
 .workout-summary-card.is-selected {
-  border-color: rgba(255, 93, 93, 0.4);
-  background: linear-gradient(145deg, rgba(255, 93, 93, 0.07) 0%, rgba(18, 18, 25, 0.88) 100%);
-  box-shadow: 0 8px 28px rgba(255, 93, 93, 0.15), inset 0 1px 0 0 rgba(255, 93, 93, 0.3);
+  border-color: var(--accent);
+  background: var(--accent-dim);
 }
 
 .workout-phase-counts {
@@ -1051,13 +1025,13 @@
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: #FFFFFF;
+  color: var(--text);
   margin: 0 0 4px 0;
 }
 
 .split-mobile-subtitle {
   font-size: 13.5px;
-  color: var(--text-muted, #8A8A93);
+  color: var(--text-muted);
   margin: 0;
   font-weight: 400;
 }
@@ -1080,7 +1054,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-dim, #71717a);
+  color: var(--text-muted);
 }
 
 .split-mobile-schedule-list {
@@ -1096,9 +1070,9 @@
   min-height: 52px;
   height: 52px;
   padding: 0 14px;
-  background: var(--surface-2, rgba(22, 22, 30, 0.75));
-  border: 1px solid rgba(255, 255, 255, 0.055);
-  border-radius: 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   cursor: pointer;
   box-sizing: border-box;
   user-select: none;
@@ -1107,19 +1081,20 @@
 }
 
 .split-mobile-day-row:active {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--surface-hover);
   transform: scale(0.99);
 }
 
 .split-mobile-day-row.is-today {
-  border-color: rgba(255, 93, 93, 0.35);
-  background: linear-gradient(180deg, rgba(255, 93, 93, 0.06) 0%, rgba(22, 22, 30, 0.85) 100%);
-  box-shadow: inset 0 1px 0 0 rgba(255, 93, 93, 0.2), 0 2px 8px rgba(0, 0, 0, 0.25);
+  border-color: var(--accent);
+  background: var(--surface-card);
+  box-shadow: 0 2px 8px var(--shadow-sm);
 }
 
 .split-mobile-day-row.is-rest {
-  background: var(--surface-1, rgba(14, 14, 20, 0.55));
-  border-color: rgba(255, 255, 255, 0.035);
+  background: var(--surface-2);
+  border-color: var(--border);
+  opacity: 0.7;
 }
 
 .split-mobile-day-left {
@@ -1132,11 +1107,11 @@
 .split-mobile-day-name {
   font-size: 14px;
   font-weight: 600;
-  color: #FFFFFF;
+  color: var(--text);
 }
 
 .split-mobile-day-row.is-rest .split-mobile-day-name {
-  color: var(--text-muted, #8b8b9e);
+  color: var(--text-muted);
   font-weight: 500;
 }
 
@@ -1144,9 +1119,9 @@
   font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: #FF5D5D;
-  background: rgba(255, 93, 93, 0.12);
-  border: 1px solid rgba(255, 93, 93, 0.3);
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
   border-radius: 4px;
   padding: 1px 5px;
   line-height: 1.2;
@@ -1162,7 +1137,7 @@
 .split-mobile-workout-name {
   font-size: 13.5px;
   font-weight: 600;
-  color: #e2e8f0;
+  color: var(--text-muted);
   text-align: right;
   white-space: nowrap;
   overflow: hidden;
@@ -1172,13 +1147,13 @@
 .split-mobile-workout-name.is-rest-label {
   font-size: 13px;
   font-weight: 400;
-  color: var(--text-dim, #71717a);
+  color: var(--text-muted);
 }
 
 .split-mobile-chevron {
   display: flex;
   align-items: center;
-  color: var(--text-dim, #71717a);
+  color: var(--text-muted);
   opacity: 0.7;
 }
 
@@ -1198,9 +1173,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  background: var(--surface-2, rgba(22, 22, 30, 0.75));
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   cursor: pointer;
   box-sizing: border-box;
   user-select: none;
@@ -1209,14 +1184,14 @@
 }
 
 .split-mobile-saved-card:active {
-  background: rgba(255, 255, 255, 0.07);
+  background: var(--surface-hover);
   transform: scale(0.99);
 }
 
 .split-mobile-saved-card.is-active-split {
-  border-color: rgba(255, 93, 93, 0.35);
-  background: linear-gradient(180deg, rgba(255, 93, 93, 0.06) 0%, rgba(22, 22, 30, 0.85) 100%);
-  box-shadow: inset 0 1px 0 0 rgba(255, 93, 93, 0.2), 0 2px 8px rgba(0, 0, 0, 0.25);
+  border-color: var(--accent);
+  background: var(--surface-card);
+  box-shadow: 0 2px 8px var(--shadow-sm);
 }
 
 .split-mobile-saved-info {
@@ -1229,7 +1204,7 @@
 .split-mobile-saved-name {
   font-size: 14.5px;
   font-weight: 600;
-  color: #FFFFFF;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1237,7 +1212,7 @@
 
 .split-mobile-saved-desc {
   font-size: 12px;
-  color: var(--text-muted, #8b8b9e);
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1255,7 +1230,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FF5D5D;
+  color: var(--accent);
 }
 
 .split-mobile-inactive-chevron {
@@ -2288,24 +2263,27 @@
 .add-ex-sheet-container {
   width: 100%;
   max-width: 540px;
-  background: #141416;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--surface-glass);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   max-height: 92vh;
   height: 92vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.8);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
   animation: slideUpSpring 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
   box-sizing: border-box;
+  color: var(--text);
 }
 
 .add-ex-sheet-handle {
   width: 36px;
   height: 5px;
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--border-light);
   border-radius: 3px;
   margin: 10px auto 12px auto;
   flex-shrink: 0;
@@ -2316,14 +2294,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .add-ex-sheet-title {
   font-size: 21px;
-  font-weight: 700;
-  color: #FFFFFF;
+  font-weight: 800;
+  color: var(--text);
   letter-spacing: -0.02em;
   margin: 0;
 }
@@ -2337,10 +2315,10 @@
 .add-ex-search-input {
   width: 100%;
   height: 44px;
-  background: #202024;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
   border-radius: 12px;
-  color: #FFFFFF;
+  color: var(--text);
   font-size: 14px;
   padding: 0 14px 0 38px;
   box-sizing: border-box;
@@ -2348,14 +2326,14 @@
   transition: border-color 0.2s;
 }
 .add-ex-search-input:focus {
-  border-color: #FF5D5D;
+  border-color: var(--accent);
 }
 .add-ex-search-icon {
   position: absolute;
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #8E8E93;
+  color: var(--text-muted);
   pointer-events: none;
 }
 
@@ -2374,22 +2352,22 @@
 .add-ex-filter-pill {
   flex-shrink: 0;
   padding: 7px 14px;
-  background: #202024;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 20px;
-  color: #8E8E93;
+  color: var(--text-muted);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 .add-ex-filter-pill:hover {
-  background: #28282C;
-  color: #FFFFFF;
+  background: var(--surface-3);
+  color: var(--text);
 }
 .add-ex-filter-pill.active {
-  background: #FF5D5D;
-  border-color: #FF5D5D;
+  background: var(--phase-train);
+  border-color: var(--phase-train);
   color: #FFFFFF;
   font-weight: 700;
 }
@@ -2402,9 +2380,10 @@
 }
 
 .add-ex-custom-card {
-  background: #1C1C1E;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
   padding: 14px 16px;
   display: flex;
   align-items: center;
@@ -2412,29 +2391,31 @@
   margin-bottom: 12px;
   cursor: pointer;
   transition: all 0.2s;
+  color: var(--text);
 }
 .add-ex-custom-card:hover {
-  background: #242428;
-  border-color: rgba(255, 255, 255, 0.15);
+  background: var(--surface-2);
+  border-color: var(--border-light);
 }
 
 .add-ex-custom-icon {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-2);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FF8A3D;
+  color: var(--phase-prep);
   font-size: 18px;
   flex-shrink: 0;
 }
 
 .add-ex-item-card {
-  background: #1C1C1E;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-sm);
   padding: 10px 14px;
   display: flex;
   align-items: center;
@@ -2443,17 +2424,18 @@
   cursor: pointer;
   transition: all 0.2s;
   gap: 12px;
+  color: var(--text);
 }
 .add-ex-item-card:hover {
-  background: #252529;
-  border-color: rgba(255, 255, 255, 0.12);
+  background: var(--surface-2);
+  border-color: var(--border-light);
 }
 
 .add-ex-item-thumb {
   width: 54px;
   height: 54px;
   border-radius: 12px;
-  background: #2C2C2E;
+  background: var(--surface-2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2471,23 +2453,23 @@
 .add-ex-item-name {
   font-size: 15px;
   font-weight: 600;
-  color: #FFFFFF;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .add-ex-item-meta {
   font-size: 12.5px;
-  color: #8E8E93;
+  color: var(--text-muted);
 }
 
 .add-ex-item-plus-btn {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
-  border: none;
-  color: #8E8E93;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2497,11 +2479,11 @@
   flex-shrink: 0;
 }
 .add-ex-item-card:hover .add-ex-item-plus-btn {
-  background: #FF5D5D;
+  background: var(--phase-train);
   color: #FFFFFF;
 }
 
-/* ─── Exercise Configurator View (Screenshots 2 & 3) ───────────────── */
+/* ─── Exercise Configurator View ─────────────────────────────────── */
 .add-ex-config-body {
   flex: 1;
   overflow-y: auto;
@@ -2513,7 +2495,8 @@
   width: 100%;
   height: 240px;
   border-radius: 20px;
-  background: #1C1C1E;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
   display: flex;

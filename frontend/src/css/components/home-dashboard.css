@@ -2455,4 +2455,37 @@
   opacity: 0.6;
 }
 
+/* ── Interactive Graph Crosshairs & Glassmorphic Tooltips ── */
+.cx-graph-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -100%);
+  background: var(--surface-elevated, #1a1b23);
+  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text, #f8fafc);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 20;
+  white-space: nowrap;
+}
+
+.cx-graph-tooltip strong {
+  font-family: var(--mono, monospace);
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.target-badge-g {
+  pointer-events: none;
+}
+
+
 

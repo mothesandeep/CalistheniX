@@ -10,20 +10,22 @@ CalistheniX operates as a responsive single-page progressive web application (PW
 
 ```mermaid
 flowchart TD
-    A[Global Navigation] --> B[Home / Command Center #home]
+    A[Global Navigation Shell] --> B[Home / Command Center #home]
     A --> C[Live Workout Runner #workout]
     A --> D[Split & Schedule Builder #split]
-    A --> E[Training History & Logs #history]
+    A --> E[Stats & Consistency #stats]
     A --> F[Progression & Analytics #progress]
     A --> G[Personal Records #prs]
-    A --> H[Calendar Density #calendar]
-    A --> I[Muscle Anatomy Explorer modal]
+    A --> H[Training Calendar #calendar]
+    A --> I[Exercise Library #library]
+    A --> J[Session History Feed #history_list]
+    A --> K[Athlete Settings Modal #settings]
 
     B -->|Start Workout| C
-    C -->|Complete Workout| E
-    E -->|View Drilldown| J[Session Detail Breakdown]
-    D -->|Edit Workout / Blueprint| K[Reusable Workout Editor]
-    F -->|Analyze Movement| L[Chart.js Overload Trends]
+    C -->|Complete Workout| J
+    J -->|View Drilldown| L[Session Detail Breakdown #session-uuid]
+    D -->|Edit Workout / Blueprint| M[Reusable Workout Editor]
+    F -->|Analyze Movement| N[Chart.js Overload Trends]
 ```
 
 ---
@@ -35,10 +37,8 @@ flowchart TD
 
 The athlete's home dashboard serves as the central command hub. It instantly resolves the active training split, calculates weekly workout adherence, displays consecutive daily streaks, and previews today's scheduled movements alongside a real-time anterior and posterior muscle activation map.
 
-![01_dashboard_home](/Users/sandeep/.gemini/antigravity-ide/brain/b8926a1d-925e-4a64-874c-bbafe570f297/screenshots/01_dashboard_home.png)
-
 #### Key UI Elements:
-- **Hero Workout Banner**: Displays the active split name (*Push Pull Legs PPL*), workout title (*Pull B*), total movements (15), sets count (28), and estimated completion duration (~42 min).
+- **Hero Workout Banner**: Displays the active split name (*Push Pull Legs PPL*), workout title (*Pull B*), total movements, sets count, and estimated completion duration.
 - **Session Directives**: Cadence cues (e.g. *3s eccentric tempo on compounds*) and target exertion (*RPE 8.0*).
 - **Movement Routine Queue**: Step-by-step numbered exercise list with targets (reps / hold seconds) and inter-set rest intervals.
 - **Dual Vector Muscle Focus**: High-precision anterior (front) and posterior (back) anatomical figures highlighting targeted muscle groups in coral red and amber.
@@ -51,19 +51,14 @@ The athlete's home dashboard serves as the central command hub. It instantly res
 
 The active workout runner is tailored for zero-friction mobile and desktop execution during strenuous training. It maintains a sticky session stopwatch, audio cues for hold and rest countdowns, and dynamic stage toggles between stick-figure movement kinematics and real-time anatomical muscle spotlights.
 
-#### Motion & Form Stage:
-![02_live_workout_runner](/Users/sandeep/.gemini/antigravity-ide/brain/b8926a1d-925e-4a64-874c-bbafe570f297/screenshots/02_live_workout_runner.png)
-
-#### Dynamic Muscle Activation Stage:
-![02b_live_runner_muscle_map](/Users/sandeep/.gemini/antigravity-ide/brain/b8926a1d-925e-4a64-874c-bbafe570f297/screenshots/02b_live_runner_muscle_map.png)
-
 #### Runner Features & User Actions:
 1. **Live Session Stopwatch**: Persistent elapsed training timer with pause/resume controls.
 2. **Kinematic Stage**: Animated SVG stick-figure rendering the dynamic range of motion (eccentric to concentric) for the active movement.
-3. **Muscle Stage**: Instant vector body diagram highlighting primary targets (coral red `#ef4444`) and secondary stabilizers (warm gold `#f59e0b`).
+3. **Muscle Stage**: Instant vector body diagram highlighting primary targets (coral red) and secondary stabilizers (warm gold).
 4. **Target vs. Actual Input Steppers**: Large, high-contrast rep/second adjustments with "Same as last" quick-fill.
 5. **Phase Transitions**: Seamless progression through *Warm-up (Prep)* &rarr; *Main Workout (Training)* &rarr; *Cool-down (Recovery)*.
 6. **Rest Interval Countdown**: Automated timer with vibration and audio beeps signaling the next set.
+7. **In-Workout PR Detection**: Automatic detection of all-time records across reps, hold duration, and added load with audio fanfare.
 
 ---
 
@@ -72,12 +67,10 @@ The active workout runner is tailored for zero-friction mobile and desktop execu
 
 Allows athletes to structure and customize their training week from Monday through Sunday, assigning modular workouts or rest days with one tap.
 
-![03_training_split_schedule](/Users/sandeep/.gemini/antigravity-ide/brain/b8926a1d-925e-4a64-874c-bbafe570f297/screenshots/03_training_split_schedule.png)
-
 #### Features:
 - **7-Day Interactive Grid**: Monday–Sunday layout showing assigned routines (Push A, Pull A, Legs A, Push B, Pull B, Legs B, Rest).
 - **Day Editor Modal**: Quick re-assignment of workout templates or toggle between Workout and Rest Day.
-- **Multiple Split Profiles**: Switch between different seasonal splits (e.g. *Push-Pull-Legs*, *Upper-Lower*, *Full-Body Skill*).
+- **Multiple Split Profiles**: Switch between different program splits (e.g. *Push-Pull-Legs*, *Upper-Lower*, *Full-Body Skill*).
 
 ---
 
@@ -85,8 +78,6 @@ Allows athletes to structure and customize their training week from Monday throu
 **Route**: `http://localhost:8080/#split` (Reusable Workouts Tab)
 
 A modular workout blueprint library where users can create, edit, duplicate, and test-run structured training routines.
-
-![04_reusable_workouts](/Users/sandeep/.gemini/antigravity-ide/brain/b8926a1d-925e-4a64-874c-bbafe570f297/screenshots/04_reusable_workouts.png)
 
 #### Blueprint Capabilities:
 - **Tri-Phase Architecture**: Categorizes exercises into Warm-up Prep, Main Training, and Cool-down Recovery.
@@ -96,16 +87,14 @@ A modular workout blueprint library where users can create, edit, duplicate, and
 ---
 
 ### Flow 5: Training History & Completed Session Feed
-**Route**: `http://localhost:8080/#history`
+**Route**: `http://localhost:8080/#history_list`
 
 A chronological timeline feed of all completed workouts, detailing duration breakdowns, set completion ratios, and tri-phase status.
 
-![05_workout_history_feed](/Users/sandeep/.gemini/antigravity-ide/brain/b8926a1d-925e-4a64-874c-bbafe570f297/screenshots/05_workout_history_feed.png)
-
 #### Feed Metadata:
-- **Phase Completion Badges**: Green checkmarks indicating completed Warm-up Prep (`Prep 2m`) and Cool-down Recovery (`Recover 2m`).
-- **Session Duration Metrics**: Total elapsed time, dedicated training time, and completed vs total sets.
-- **Direct Drilldown**: Clicking any session card opens the immutable execution breakdown.
+- **Phase Completion Badges**: Indicators showing completed Warm-up Prep and Cool-down Recovery.
+- **Session Duration Metrics**: Total elapsed time, dedicated training time, and completed vs. total sets.
+- **Direct Drilldown**: Clicking any session card opens the immutable execution breakdown (`#session-<uuid>`).
 
 ---
 
@@ -114,22 +103,17 @@ A chronological timeline feed of all completed workouts, detailing duration brea
 
 An immutable snapshot of a completed workout session, grouping performance by phase and displaying exact reps, hold seconds, load (+kg), and athlete RPE ratings.
 
-![06_session_log_drilldown](/Users/sandeep/.gemini/antigravity-ide/brain/b8926a1d-925e-4a64-874c-bbafe570f297/screenshots/06_session_log_drilldown.png)
-
 ---
 
 ### Flow 7: Progressive Overload & Analytics Hub
 **Route**: `http://localhost:8080/#progress`
 
-Visualizes performance progression over time using interactive Chart.js trend curves, calculates 4-week percentage deltas, and generates natural-language coaching insights.
-
-![07_progression_analytics](/Users/sandeep/.gemini/antigravity-ide/brain/b8926a1d-925e-4a64-874c-bbafe570f297/screenshots/07_progression_analytics.png)
+Visualizes performance progression over time using interactive Chart.js trend curves, calculates rolling percentage deltas, and provides one-tap progression promotions.
 
 #### Analytics Modules:
 - **Exercise Selector**: Dropdown to switch between any rep-based or isometric hold movement.
-- **Explainable Insight Banner**: AI-style natural language feedback (e.g. *"Great progress! Your best performance improved by +33% over the last 2 weeks."*).
-- **KPI Stat Cards**: Current best, 2-weeks ago baseline, and 4-week progression percentage.
-- **Interactive Trend Line**: Smooth cubic bezier curve with gradient fills and tooltips across training dates.
+- **Weighted Readiness Card**: 60% hit-rate weight + 40% fatigue credit with fatigue guard protection.
+- **Interactive Trend Line**: Chart.js progression curve with gradient fills and tooltips across training dates.
 - **Metric Toggles**: Switch between *Best Set / Best Hold* and *Total Training Volume*.
 
 ---
@@ -138,8 +122,6 @@ Visualizes performance progression over time using interactive Chart.js trend cu
 **Route**: `http://localhost:8080/#prs`
 
 Tracks an athlete's personal bests across rep maximums, longest isometric holds, and heaviest added loads.
-
-![08_personal_records](/Users/sandeep/.gemini/antigravity-ide/brain/b8926a1d-925e-4a64-874c-bbafe570f297/screenshots/08_personal_records.png)
 
 #### Leaderboard Features:
 - **Top Summary Cards**: Total PR count, Max Rep Record, Longest Static Hold, and Top Added Load.
@@ -153,22 +135,17 @@ Tracks an athlete's personal bests across rep maximums, longest isometric holds,
 
 An interactive biomechanics and anatomy explorer mapped on scalable vector coordinates with discrete muscle path selection.
 
-![09_muscle_anatomy_guide](/Users/sandeep/.gemini/antigravity-ide/brain/b8926a1d-925e-4a64-874c-bbafe570f297/screenshots/09_muscle_anatomy_guide.png)
-
 #### Anatomy Features:
 - **Interactive Vector Diagrams**: Anterior (Front) and Posterior (Back) athletic models with click-to-select muscle highlighting.
-- **Filter Chips**: Upper Body, Core, Lower Body, and discrete muscle groups (Chest, Front Delts, Side Delts, Rear Delts, Biceps, Triceps, Lats, Traps, Abs, Obliques, Quads, Hamstrings, Calves).
-- **Mind-Muscle Cues**: Specific neuromuscular cues for strict calisthenics form.
-- **Targeting Exercise Database**: Live directory of all catalog exercises activating the chosen muscle group as primary or secondary targets.
+- **Filter Chips**: Upper Body, Core, Lower Body, and discrete muscle groups.
+- **Targeting Exercise Database**: Directory of catalog exercises activating the chosen muscle group as primary or secondary targets.
 
 ---
 
-### Flow 10: 30-Day Training Calendar & Volume Density
+### Flow 10: Training Calendar & Volume Density
 **Route**: `http://localhost:8080/#calendar`
 
 Provides a month-level overview of workout consistency, scheduled training distribution, and completed sessions.
-
-![10_calendar_density](/Users/sandeep/.gemini/antigravity-ide/brain/b8926a1d-925e-4a64-874c-bbafe570f297/screenshots/10_calendar_density.png)
 
 ---
 
@@ -176,10 +153,12 @@ Provides a month-level overview of workout consistency, scheduled training distr
 
 | Route | Method | Purpose | Response Format |
 |---|---|---|---|
-| `/today` | `GET` | Resolves today's scheduled workout from the active split | `{ date, day_name, split_name, workout: { id, name, exercises: [...] } }` |
+| `/today` | `GET` | Resolves today's scheduled workout from the active split | `{ status, day_of_week, day_name, split_name, workout: { ... } }` |
 | `/splits` | `GET` / `POST` | Fetches all splits or creates a new split profile | `[ { id, name, is_active, schedule: [...] } ]` |
-| `/workouts` | `GET` / `POST` | Manages reusable modular workout blueprints | `[ { id, name, warmup_template, cooldown_template, exercises } ]` |
-| `/workout_sessions` | `GET` / `POST` | Fetches completed sessions or syncs a finished workout | `{ id, routine_name, duration_sec, warmup_status, cooldown_status, logs }` |
+| `/workouts` | `GET` / `POST` | Manages reusable modular workout blueprints | `[ { id, name, warm_up, main, cool_down, exercises } ]` |
+| `/workout_sessions` | `GET` / `POST` | Fetches completed sessions or syncs a finished workout | `[ { session_uuid, routine_name, duration_sec, warmup_status, cooldown_status } ]` |
 | `/exercises/<id>/logs`| `GET` | Fetches historical log timeline for trend charting | `[ { id, reps, duration_sec, weight_kg, rpe, timestamp } ]` |
 | `/dashboard/summary` | `GET` | Retrieves aggregate streak days, weekly volume, and sets | `{ streak_days, week_sessions, week_sets, top_movers }` |
-| `/dashboard/records` | `GET` | Retrieves all-time personal records across exercises | `[ { exercise_id, exercise_name, record_type, value, date } ]` |
+| `/dashboard/records` | `GET` | Retrieves all-time personal records across exercises | `[ { exercise_id, exercise_name, max_reps, max_duration_sec, max_weight_kg } ]` |
+| `/export` | `GET` | Full JSON database backup dump (Bundle v2.1) | `{ export_version: '2.1', logs, workout_sessions, exercises, ... }` |
+| `/import` | `POST` | Idempotent multi-entity restore and merge | `{ status: 'success', imported_logs, imported_sessions, ... }` |

@@ -1,81 +1,12 @@
 /* ============================================================
-   forms.css — Forms, Inputs, Selects & Cards Design System
-   Enhanced with glowing focus rings, smooth transitions, and tactile card lifts
+   forms.css — Forms, Inputs, Selects & Form Controls Design System
+   Flat, clean, high-contrast inputs adhering to dual-mode tokens.
    ============================================================ */
 
-/* ── Card ──────────────────────────────────────────────────────────────────── */
-.card {
-  background: var(--surface-1, #121218);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
-  border-radius: var(--radius-card, 16px);
-  overflow: hidden;
-  margin-bottom: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), 
-              box-shadow 0.2s ease, 
-              border-color 0.2s ease;
-}
-
-.card:hover {
-  border-color: rgba(255, 255, 255, 0.14);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.08));
-}
-
-.card-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: -0.015em;
-}
-
-.card-count {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-muted, #a1a1aa);
-}
-
-.card-body { padding: 18px; }
-
-/* ── Exercise list (Edit view) ─────────────────────────────────────────────── */
-.ex-name { 
-  font-size: 13px; 
-  font-weight: 500; 
-  display: flex; 
-  align-items: center; 
-  gap: 6px; 
-  flex-wrap: wrap; 
-}
-
-/* ── Empty state ───────────────────────────────────────────────────────────── */
-.empty-state {
-  padding: 40px 18px;
-  text-align: center;
-  color: var(--text-muted, #a1a1aa);
-  font-size: 13px;
-}
-
-.empty-state a { 
-  color: var(--accent, #FF5D5D); 
-  text-decoration: none; 
-}
-
-.empty-state a:hover { 
-  text-decoration: underline; 
-}
-
-/* ── Add form ──────────────────────────────────────────────────────────────── */
+/* ── Form Layout ──────────────────────────────────────────────────────────── */
 .form-row { 
   display: flex; 
-  gap: 12px; 
+  gap: var(--space-3); 
   flex-wrap: wrap; 
   align-items: flex-end; 
 }
@@ -83,7 +14,7 @@
 .form-group { 
   display: flex; 
   flex-direction: column; 
-  gap: 5px; 
+  gap: var(--space-1); 
 }
 
 .form-group-wide { 
@@ -92,51 +23,67 @@
 }
 
 .form-label {
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-muted, #a1a1aa);
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
 }
 
 .opt { 
   text-transform: none; 
   letter-spacing: 0; 
   font-weight: 400; 
-  color: var(--text-dim, #71717a); 
+  color: var(--text-muted); 
 }
 
+/* ── Inputs & Selects ─────────────────────────────────────────────────────── */
 .form-input {
-  background: var(--surface-2, #181820);
-  border: 1px solid var(--border-light, rgba(255, 255, 255, 0.08));
-  border-radius: var(--radius-sm, 8px);
-  color: var(--text, #ffffff);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: var(--text-sm);
   padding: 9px 12px;
   width: 100%;
-  transition: border-color 0.18s ease, 
-              box-shadow 0.18s ease, 
-              background-color 0.18s ease;
+  transition: border-color var(--transition-fast), 
+              box-shadow var(--transition-fast), 
+              background-color var(--transition-fast);
   -webkit-appearance: none;
   box-sizing: border-box;
 }
 
 .form-input.mono { font-family: var(--mono); }
-.form-input::placeholder { color: var(--text-dim, #71717a); }
+.form-input::placeholder { color: var(--text-muted); }
 
 .form-input:hover { 
-  border-color: rgba(255, 255, 255, 0.2); 
-  background: var(--surface-3, #22222c);
+  border-color: var(--border-strong); 
+  background: var(--surface-3);
 }
 
 .form-input:focus { 
   outline: none; 
-  border-color: var(--accent, #FF5D5D); 
-  box-shadow: 0 0 0 3px var(--accent-surface, rgba(255, 93, 93, 0.15));
-  background: var(--surface-2, #181820);
+  border-color: var(--phase-train); 
+  box-shadow: 0 0 0 3px var(--phase-train-dim);
+  background: var(--surface-2);
 }
 
 .form-select { 
   cursor: pointer; 
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+
+/* ── Exercise list (Edit view) ─────────────────────────────────────────────── */
+.ex-name { 
+  font-size: var(--text-sm); 
+  font-weight: 500; 
+  display: flex; 
+  align-items: center; 
+  gap: var(--space-2); 
+  flex-wrap: wrap; 
+  color: var(--text);
 }

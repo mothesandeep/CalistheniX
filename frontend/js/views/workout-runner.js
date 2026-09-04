@@ -2312,19 +2312,19 @@ function openSkipMainWorkoutSetModal() {
   }
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:380px; text-align:center; padding:28px 24px; background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:20px; box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06);" onclick="event.stopPropagation()">
-      <div style="width:48px; height:48px; border-radius:50%; background:rgba(201,138,61,0.12); border:1px solid rgba(201,138,61,0.3); color:var(--cx-skipped, #C98A3D); display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px;">
+    <div class="modal-card discard-modal-card" style="max-width:380px; text-align:center; padding:28px 24px;" onclick="event.stopPropagation()">
+      <div style="width:48px; height:48px; border-radius:50%; background:var(--phase-prep-dim); border:1px solid var(--phase-prep); color:var(--phase-prep); display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       </div>
-      <h2 class="modal-title" id="skip-set-title" style="font-family:var(--font-heading); font-size:19px; font-weight:800; color:var(--cx-text, #F2F2F0); margin-bottom:8px;">Skip this set?</h2>
-      <p class="discard-modal-desc" style="font-size:13.5px; color:var(--cx-text-secondary, #8A8A93); margin-bottom:24px; line-height:1.5;">
+      <h2 class="modal-title" id="skip-set-title" style="font-family:var(--font-heading); font-size:19px; font-weight:800; color:var(--text); margin-bottom:8px;">Skip this set?</h2>
+      <p class="discard-modal-desc" style="font-size:13.5px; color:var(--text-muted); margin-bottom:24px; line-height:1.5;">
         You are skipping this set. It will not count as completed.
       </p>
       <div style="display:flex; gap:12px; width:100%;">
-        <button class="btn btn-secondary" style="flex:1; padding:12px; font-family:var(--font-heading); font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:var(--cx-text, #F2F2F0); cursor:pointer; transition:all 0.2s;" type="button" onclick="closeSkipMainWorkoutSetModal()">
+        <button class="btn btn-secondary" style="flex:1;" type="button" onclick="closeSkipMainWorkoutSetModal()">
           Cancel
         </button>
-        <button class="btn" style="flex:1; padding:12px; font-family:var(--font-heading); font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(201,138,61,0.08); border:1.5px solid var(--cx-skipped, #C98A3D); color:var(--cx-skipped, #C98A3D); cursor:pointer; transition:all 0.2s; box-shadow:0 0 12px rgba(201,138,61,0.15);" type="button" onclick="confirmSkipMainWorkoutSet()">
+        <button class="btn btn-primary" style="flex:1;" type="button" onclick="confirmSkipMainWorkoutSet()">
           Skip Set
         </button>
       </div>
@@ -2645,19 +2645,19 @@ function openSkipCooldownExerciseModal() {
   }
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:380px; text-align:center; padding:28px 24px; background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:20px; box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06);" onclick="event.stopPropagation()">
-      <div style="width:48px; height:48px; border-radius:50%; background:rgba(201,138,61,0.12); border:1px solid rgba(201,138,61,0.3); color:var(--cx-skipped, #C98A3D); display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px;">
+    <div class="modal-card discard-modal-card" style="max-width:380px; text-align:center; padding:28px 24px;" onclick="event.stopPropagation()">
+      <div style="width:48px; height:48px; border-radius:50%; background:var(--phase-recover-dim); border:1px solid var(--phase-recover); color:var(--phase-recover); display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       </div>
-      <h2 class="modal-title" id="skip-cooldown-title" style="font-family:var(--font-heading); font-size:19px; font-weight:800; color:var(--cx-text, #F2F2F0); margin-bottom:8px;">Skip this stretch?</h2>
-      <p class="discard-modal-desc" style="font-size:13.5px; color:var(--cx-text-secondary, #8A8A93); margin-bottom:24px; line-height:1.5;">
+      <h2 class="modal-title" id="skip-cooldown-title" style="font-family:var(--font-heading); font-size:19px; font-weight:800; color:var(--text); margin-bottom:8px;">Skip this stretch?</h2>
+      <p class="discard-modal-desc" style="font-size:13.5px; color:var(--text-muted); margin-bottom:24px; line-height:1.5;">
         You are skipping this stretch. It will not count as completed.
       </p>
       <div style="display:flex; gap:12px; width:100%;">
-        <button class="btn btn-secondary" style="flex:1; padding:12px; font-family:var(--font-heading); font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:var(--cx-text, #F2F2F0); cursor:pointer; transition:all 0.2s;" type="button" onclick="closeSkipCooldownExerciseModal()">
+        <button class="btn btn-secondary" style="flex:1;" type="button" onclick="closeSkipCooldownExerciseModal()">
           Cancel
         </button>
-        <button class="btn" style="flex:1; padding:12px; font-family:var(--font-heading); font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(201,138,61,0.08); border:1.5px solid var(--cx-skipped, #C98A3D); color:var(--cx-skipped, #C98A3D); cursor:pointer; transition:all 0.2s; box-shadow:0 0 12px rgba(201,138,61,0.15);" type="button" onclick="confirmSkipCooldownExercise()">
+        <button class="btn btn-primary" style="flex:1;" type="button" onclick="confirmSkipCooldownExercise()">
           Skip Stretch
         </button>
       </div>
@@ -2693,19 +2693,19 @@ function openSkipWarmupExerciseModal() {
   }
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:380px; text-align:center; padding:28px 24px; background:var(--cx-surface, #151519); border:1px solid var(--cx-surface-border, rgba(255,255,255,0.06)); border-radius:20px; box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.06);" onclick="event.stopPropagation()">
-      <div style="width:48px; height:48px; border-radius:50%; background:rgba(201,138,61,0.12); border:1px solid rgba(201,138,61,0.3); color:var(--cx-skipped, #C98A3D); display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px;">
+    <div class="modal-card discard-modal-card" style="max-width:380px; text-align:center; padding:28px 24px;" onclick="event.stopPropagation()">
+      <div style="width:48px; height:48px; border-radius:50%; background:var(--phase-prep-dim); border:1px solid var(--phase-prep); color:var(--phase-prep); display:inline-flex; align-items:center; justify-content:center; margin-bottom:14px;">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
       </div>
-      <h2 class="modal-title" id="skip-warmup-title" style="font-family:var(--font-heading); font-size:19px; font-weight:800; color:var(--cx-text, #F2F2F0); margin-bottom:8px;">Skip this exercise?</h2>
-      <p class="discard-modal-desc" style="font-size:13.5px; color:var(--cx-text-secondary, #8A8A93); margin-bottom:24px; line-height:1.5;">
+      <h2 class="modal-title" id="skip-warmup-title" style="font-family:var(--font-heading); font-size:19px; font-weight:800; color:var(--text); margin-bottom:8px;">Skip this exercise?</h2>
+      <p class="discard-modal-desc" style="font-size:13.5px; color:var(--text-muted); margin-bottom:24px; line-height:1.5;">
         You are skipping this movement. It will not count as completed.
       </p>
       <div style="display:flex; gap:12px; width:100%;">
-        <button class="btn btn-secondary" style="flex:1; padding:12px; font-family:var(--font-heading); font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:var(--cx-text, #F2F2F0); cursor:pointer; transition:all 0.2s;" type="button" onclick="closeSkipWarmupExerciseModal()">
+        <button class="btn btn-secondary" style="flex:1;" type="button" onclick="closeSkipWarmupExerciseModal()">
           Cancel
         </button>
-        <button class="btn" style="flex:1; padding:12px; font-family:var(--font-heading); font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(201,138,61,0.08); border:1.5px solid var(--cx-skipped, #C98A3D); color:var(--cx-skipped, #C98A3D); cursor:pointer; transition:all 0.2s; box-shadow:0 0 12px rgba(201,138,61,0.15);" type="button" onclick="confirmSkipWarmupExercise()">
+        <button class="btn btn-primary" style="flex:1;" type="button" onclick="confirmSkipWarmupExercise()">
           Skip Exercise
         </button>
       </div>
@@ -2741,16 +2741,16 @@ function openExitWarmupModal() {
   }
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:340px; text-align:center; padding:24px 20px; background:#131422; border:1px solid rgba(139,92,246,0.25); border-radius:20px;" onclick="event.stopPropagation()">
-      <h2 class="modal-title" id="exit-warmup-title" style="font-size:19px; font-weight:800; color:#ffffff; margin-bottom:8px;">Exit Warm-Up?</h2>
-      <p class="discard-modal-desc" style="font-size:13px; color:#8a8d9f; margin-bottom:22px; line-height:1.4;">
+    <div class="modal-card discard-modal-card" style="max-width:340px; text-align:center; padding:24px 20px;" onclick="event.stopPropagation()">
+      <h2 class="modal-title" id="exit-warmup-title" style="font-size:19px; font-weight:800; color:var(--text); margin-bottom:8px;">Exit Warm-Up?</h2>
+      <p class="discard-modal-desc" style="font-size:13px; color:var(--text-muted); margin-bottom:22px; line-height:1.4;">
         Your workout session progress will be lost.
       </p>
       <div style="display:flex; gap:10px; width:100%;">
-        <button class="btn btn-secondary" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1;" type="button" onclick="closeExitWarmupModal()">
+        <button class="btn btn-secondary" style="flex:1;" type="button" onclick="closeExitWarmupModal()">
           Cancel
         </button>
-        <button class="btn btn-danger" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:#ef4444; color:#ffffff; border:none; box-shadow:0 4px 14px rgba(239,68,68,0.4);" type="button" onclick="confirmExitWarmup()">
+        <button class="btn btn-danger" style="flex:1;" type="button" onclick="confirmExitWarmup()">
           Exit
         </button>
       </div>
@@ -2958,19 +2958,19 @@ function openExitWorkoutModal() {
   }
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px; background:var(--cx-surface, #151519); border:1px solid rgba(255,255,255,0.08); border-radius:20px;" onclick="event.stopPropagation()">
-      <div style="width:44px; height:44px; border-radius:50%; background:rgba(239,68,68,0.15); color:#ef4444; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
+    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px;" onclick="event.stopPropagation()">
+      <div style="width:44px; height:44px; border-radius:50%; background:var(--phase-train-dim); color:var(--phase-train); display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
         ${renderIcon('alertTriangle', 'cx-icon cx-icon-md')}
       </div>
-      <h2 class="modal-title" id="exit-modal-title" style="font-size:19px; font-weight:800; color:#ffffff; margin-bottom:8px;">Exit Workout?</h2>
-      <p class="discard-modal-desc" style="font-size:13px; color:#8a8d9f; margin-bottom:22px; line-height:1.4;">
+      <h2 class="modal-title" id="exit-modal-title" style="font-size:19px; font-weight:800; color:var(--text); margin-bottom:8px;">Exit Workout?</h2>
+      <p class="discard-modal-desc" style="font-size:13px; color:var(--text-muted); margin-bottom:22px; line-height:1.4;">
         Your current workout progress will be saved, but this session will end.
       </p>
       <div style="display:flex; gap:10px; width:100%;">
-        <button class="btn btn-secondary" id="exit-modal-continue-btn" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; cursor:pointer;" type="button" onclick="closeExitWorkoutModal()">
+        <button class="btn btn-secondary" id="exit-modal-continue-btn" style="flex:1;" type="button" onclick="closeExitWorkoutModal()">
           Continue Workout
         </button>
-        <button class="btn btn-danger" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:#ef4444; color:#ffffff; border:none; box-shadow:0 4px 14px rgba(239,68,68,0.4); cursor:pointer;" type="button" onclick="confirmExitWorkout()">
+        <button class="btn btn-danger" style="flex:1;" type="button" onclick="confirmExitWorkout()">
           Exit Workout
         </button>
       </div>
@@ -4925,19 +4925,19 @@ function openConfirmFinishWorkoutModal(model) {
   const totalSets = model ? model.overall.totalSets : 0;
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px; background:var(--cx-surface, #151519); border:1px solid rgba(255,255,255,0.08); border-radius:20px;" onclick="event.stopPropagation()">
-      <div style="width:44px; height:44px; border-radius:50%; background:rgba(255, 93, 93, 0.15); color:var(--phase-train, #FF5D5D); display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
+    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px;" onclick="event.stopPropagation()">
+      <div style="width:44px; height:44px; border-radius:50%; background:var(--phase-train-dim); color:var(--phase-train); display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
         ${renderIcon('alertTriangle', 'cx-icon cx-icon-md')}
       </div>
-      <h2 class="modal-title" id="confirm-finish-modal-title" style="font-size:19px; font-weight:800; color:#ffffff; margin-bottom:8px;">Finish Workout Early?</h2>
-      <p class="discard-modal-desc" style="font-size:13px; color:#8a8d9f; margin-bottom:22px; line-height:1.4;">
+      <h2 class="modal-title" id="confirm-finish-modal-title" style="font-size:19px; font-weight:800; color:var(--text); margin-bottom:8px;">Finish Workout Early?</h2>
+      <p class="discard-modal-desc" style="font-size:13px; color:var(--text-muted); margin-bottom:22px; line-height:1.4;">
         ${completedSets} of ${totalSets} sets completed.
       </p>
       <div style="display:flex; gap:10px; width:100%;">
-        <button class="btn btn-secondary" id="confirm-finish-continue-btn" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; cursor:pointer;" type="button" onclick="closeConfirmFinishWorkoutModal()">
-          Continue Workout
+        <button class="btn btn-secondary" id="confirm-finish-continue-btn" style="flex:1;" type="button" onclick="closeConfirmFinishWorkoutModal()">
+          Continue
         </button>
-        <button class="btn btn-primary" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:var(--phase-train, #FF5D5D); color:#ffffff; border:none; box-shadow:0 4px 14px rgba(255,93,93,0.4); cursor:pointer;" type="button" onclick="confirmFinishAnyway()">
+        <button class="btn btn-primary" style="flex:1;" type="button" onclick="confirmFinishAnyway()">
           Finish Anyway
         </button>
       </div>
@@ -5823,19 +5823,19 @@ function openSkipWarmupPhaseModal() {
   }
 
   modal.innerHTML = `
-    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px; background:#131422; border:1px solid rgba(234,179,8,0.3); border-radius:20px;" onclick="event.stopPropagation()">
-      <div style="width:44px; height:44px; border-radius:50%; background:rgba(234,179,8,0.15); color:#facc15; display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
+    <div class="modal-card discard-modal-card" style="max-width:360px; text-align:center; padding:24px 20px;" onclick="event.stopPropagation()">
+      <div style="width:44px; height:44px; border-radius:50%; background:var(--phase-prep-dim); color:var(--phase-prep); display:inline-flex; align-items:center; justify-content:center; margin-bottom:12px;">
         ${renderIcon('alertTriangle', 'cx-icon cx-icon-md')}
       </div>
-      <h2 class="modal-title" id="skip-warmup-modal-title" style="font-size:19px; font-weight:800; color:#ffffff; margin-bottom:8px;">Skip Warm-Up?</h2>
-      <p class="discard-modal-desc" style="font-size:13px; color:#8a8d9f; margin-bottom:22px; line-height:1.4;">
+      <h2 class="modal-title" id="skip-warmup-modal-title" style="font-size:19px; font-weight:800; color:var(--text); margin-bottom:8px;">Skip Warm-Up?</h2>
+      <p class="discard-modal-desc" style="font-size:13px; color:var(--text-muted); margin-bottom:22px; line-height:1.4;">
         Are you sure you want to skip the Warm-Up phase and start the Main Workout?
       </p>
       <div style="display:flex; gap:10px; width:100%;">
-        <button class="btn btn-secondary" id="skip-warmup-cancel-btn" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); color:#cbd5e1; cursor:pointer;" type="button" onclick="closeSkipWarmupPhaseModal()">
+        <button class="btn btn-secondary" id="skip-warmup-cancel-btn" style="flex:1;" type="button" onclick="closeSkipWarmupPhaseModal()">
           Cancel
         </button>
-        <button class="btn" style="flex:1; padding:11px; font-size:13.5px; font-weight:700; border-radius:12px; background:#eab308; color:#000000; border:none; box-shadow:0 4px 14px rgba(234,179,8,0.35); cursor:pointer;" type="button" onclick="confirmSkipWarmupPhase()">
+        <button class="btn btn-primary" style="flex:1; background:var(--phase-prep); border-color:var(--phase-prep); color:#000;" type="button" onclick="confirmSkipWarmupPhase()">
           Skip Warm-Up
         </button>
       </div>

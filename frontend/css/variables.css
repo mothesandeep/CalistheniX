@@ -1,82 +1,146 @@
 /* ============================================================
-   variables.css — Theme Tokens & Custom Properties
-   Apple × Linear × Nike Training Club Design System
+   variables.css — Unified Theme Tokens & Design System
+   CalistheniX UI/UX System (Dual Dark / Light Mode)
+   Inspired by Apple's Liquid Glass on Floating Elements,
+   Flat & High-Legibility Content Cards Across All Screens
    ============================================================ */
 
-:root {
-  /* ── 1.1 Color Palette Refinement ───────────────────────────────────────── */
-  --bg:              #09090b;
-  --surface:         #0e0e13;
-  --surface-glass:   rgba(14, 14, 19, 0.85);
-  --surface-2:       #16161e;
-  --surface-3:       #1e1e28;
-  --surface-inset:   #0b0b10;
+:root,
+[data-theme="dark"] {
+  /* ── 1. Dark Mode Color Palette (Deep Charcoal Base, Not Pure Black) ──── */
+  --bg:              #0d0e12;
+  --surface:         #14151b;
+  --surface-2:       #1b1c24;
+  --surface-3:       #232530;
+  --surface-inset:   #101116;
+  --surface-glass:   rgba(20, 22, 30, 0.82);
 
-  --border:          rgba(255, 255, 255, 0.065);
+  --border:          rgba(255, 255, 255, 0.08);
   --border-subtle:   rgba(255, 255, 255, 0.04);
-  --border-light:    rgba(255, 255, 255, 0.12);
-  --border-focus:    rgba(255, 255, 255, 0.28);
-  --border-accent:   rgba(255, 93, 93, 0.25);
+  --border-light:    rgba(255, 255, 255, 0.13);
+  --border-focus:    rgba(255, 255, 255, 0.35);
+  --border-accent:   rgba(255, 93, 93, 0.32);
 
   --text:            #f8fafc;
-  --text-muted:      #8b8b9e;
-  --text-dim:        #5a5a70;
+  --text-secondary:  #94a3b8;
+  --text-muted:      #64748b;
+  --text-dim:        #475569;
 
+  /* Accent (defaults to Coral-Red, dynamically customizable in Settings) */
   --accent:          #FF5D5D;
   --accent-light:    #ff7575;
-  --accent-hover:    #e54b4b;
-  --accent-dim:      rgba(255, 93, 93, 0.08);
-  --accent-surface:  rgba(255, 93, 93, 0.06);
-  --accent-ring:     rgba(255, 93, 93, 0.2);
-  --accent-glow:     0 0 20px rgba(255, 93, 93, 0.18);
+  --accent-hover:    #f44336;
+  --accent-dim:      rgba(255, 93, 93, 0.12);
+  --accent-surface:  rgba(255, 93, 93, 0.08);
+  --accent-ring:     rgba(255, 93, 93, 0.25);
+  --accent-glow:     0 0 20px rgba(255, 93, 93, 0.22);
 
+  /* Semantic Colors */
   --success:         #10b981;
-  --success-dim:     rgba(16, 185, 129, 0.15);
-  --danger:          #f43f5e;
-  --danger-dim:      rgba(244, 63, 94, 0.15);
-  --warning:         #f97316;
-  --warning-dim:     rgba(249, 115, 22, 0.15);
+  --success-dim:     rgba(16, 185, 129, 0.14);
+  --danger:          #ef4444;
+  --danger-dim:      rgba(239, 68, 68, 0.14);
+  --warning:         #f59e0b;
+  --warning-dim:     rgba(245, 158, 11, 0.14);
 
   --badge-reps-bg:   rgba(255, 255, 255, 0.06);
-  --badge-reps-fg:   #e4e4e7;
-  --badge-hold-bg:   rgba(255, 255, 255, 0.06);
-  --badge-hold-fg:   #e4e4e7;
+  --badge-reps-fg:   #e2e8f0;
+  --badge-hold-bg:   rgba(255, 93, 93, 0.12);
+  --badge-hold-fg:   #ff8585;
 
-  /* ── 1.1b Workout Runner — Phase-Accent Tokens ─────────────────────────── */
-  --cx-bg:            #0A0A0D;
-  --cx-surface:       #151519;
-  --cx-surface-border: rgba(255, 255, 255, 0.06);
-  --cx-text:          #F2F2F0;
-  --cx-text-secondary: #8A8A93;
-  --cx-success:       #3ECF8E;
-  --cx-skipped:       #C98A3D;
+  /* ── 2. Workout Phase Tokens (Dark Mode) ──────────────────────────────── */
+  /* Warm-Up / Prep (Vivid Amber) */
+  --phase-prep:        #F59E0B;
+  --phase-prep-rgb:    245, 158, 11;
+  --phase-prep-dim:    rgba(245, 158, 11, 0.12);
+  --phase-prep-border: rgba(245, 158, 11, 0.32);
+  --phase-prep-hover:  #d97706;
 
-  /* Phase accent — defaults to Train (coral-red), overridden via data-phase */
-  --phase-accent:     #FF5D5D;
-  --phase-accent-rgb: 255, 93, 93;
-
-  /* Explicit Phase Accent Tokens */
-  --phase-prep:        #FF8A3D;
-  --phase-prep-rgb:    255, 138, 61;
-  --phase-prep-dim:    rgba(255, 138, 61, 0.1);
-  --phase-prep-border: rgba(255, 138, 61, 0.3);
-
+  /* Train / Main Workout (Vivid Coral-Red) */
   --phase-train:        #FF5D5D;
   --phase-train-rgb:    255, 93, 93;
-  --phase-train-dim:    rgba(255, 93, 93, 0.1);
-  --phase-train-border: rgba(255, 93, 93, 0.3);
+  --phase-train-dim:    rgba(255, 93, 93, 0.12);
+  --phase-train-border: rgba(255, 93, 93, 0.32);
+  --phase-train-hover:  #f43f5e;
 
-  --phase-recover:        #35D8B0;
-  --phase-recover-rgb:    53, 216, 176;
-  --phase-recover-dim:    rgba(53, 216, 176, 0.1);
-  --phase-recover-border: rgba(53, 216, 176, 0.3);
+  /* Cool-Down / Recover (Vivid Mint-Teal) */
+  --phase-recover:        #2DD4BF;
+  --phase-recover-rgb:    45, 212, 191;
+  --phase-recover-dim:    rgba(45, 212, 191, 0.12);
+  --phase-recover-border: rgba(45, 212, 191, 0.32);
+  --phase-recover-hover:  #14b8a6;
 
-  /* ── 1.2 Typography Hierarchy ───────────────────────────────────────────── */
-  --sans:            'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  --font-heading:    'Inter', 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+  /* Active phase accent defaults to Train */
+  --phase-accent:     var(--phase-train);
+  --phase-accent-rgb: 255, 93, 93;
+
+  /* Aliases for legacy runner selectors */
+  --cx-bg:            var(--bg);
+  --cx-surface:       var(--surface);
+  --cx-surface-border: var(--border);
+  --cx-text:          var(--text);
+  --cx-text-secondary: var(--text-secondary);
+  --cx-success:       var(--success);
+  --cx-skipped:       var(--warning);
+
+  /* ── 3. Shadows & Glassmorphism Foundation (Dark Mode) ────────────────── */
+  --shadow-sm:        0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md:        0 4px 12px rgba(0, 0, 0, 0.38);
+  --shadow-lg:        0 10px 28px rgba(0, 0, 0, 0.55);
+  --shadow-card:      0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-glass:     0 12px 36px -4px rgba(0, 0, 0, 0.75), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+
+  /* Selective Glass Tokens (Used exclusively for bottom nav, modals/sheets, FABs) */
+  --glass-bg:         var(--surface-glass);
+  --glass-blur:       blur(20px) saturate(180%);
+  --glass-border:     1px solid rgba(255, 255, 255, 0.12);
+  --glass-highlight:  inset 0 1px 0 0 rgba(255, 255, 255, 0.16);
+  --glass-shadow:     var(--shadow-glass);
+
+  /* Clean up / map legacy liquid variables to avoid breaking existing styles */
+  --liquid-bg:                 var(--bg);
+  --liquid-surface-1:          var(--surface);
+  --liquid-surface-1-grad:     var(--surface);
+  --liquid-surface-2:          var(--surface-2);
+  --liquid-surface-2-grad:     var(--surface-2);
+  --liquid-surface-3:          var(--surface-3);
+  --liquid-surface-elevated:   var(--surface-2);
+  --liquid-surface-overlay:    var(--surface-glass);
+  --liquid-surface-inset:      var(--surface-inset);
+  --liquid-blur-sm:            8px;
+  --liquid-blur-md:            12px;
+  --liquid-blur-lg:            18px;
+  --liquid-border:             1px solid var(--border);
+  --liquid-border-subtle:      1px solid var(--border-subtle);
+  --liquid-border-highlight:   1px solid var(--border-light);
+  --liquid-border-interactive: 1px solid var(--border-focus);
+  --liquid-highlight-top:      inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  --liquid-highlight-top-elevated: inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
+  --liquid-highlight-top-subtle:   inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  --liquid-highlight-inset:    inset 0 1px 2px rgba(0, 0, 0, 0.4);
+  --liquid-shadow-sm:          var(--shadow-sm);
+  --liquid-shadow-md:          var(--shadow-md);
+  --liquid-shadow-lg:          var(--shadow-lg);
+  --liquid-shadow-overlay:     var(--shadow-glass);
+  --liquid-prep-surface:       var(--phase-prep-dim);
+  --liquid-prep-border:        var(--phase-prep-border);
+  --liquid-prep-highlight:     inset 0 1px 0 0 rgba(245, 158, 11, 0.25);
+  --liquid-prep-shadow:        0 4px 14px rgba(245, 158, 11, 0.15);
+  --liquid-train-surface:      var(--phase-train-dim);
+  --liquid-train-border:       var(--phase-train-border);
+  --liquid-train-highlight:    inset 0 1px 0 0 rgba(255, 93, 93, 0.25);
+  --liquid-train-shadow:       0 4px 14px rgba(255, 93, 93, 0.15);
+  --liquid-recover-surface:    var(--phase-recover-dim);
+  --liquid-recover-border:     var(--phase-recover-border);
+  --liquid-recover-highlight:  inset 0 1px 0 0 rgba(45, 212, 191, 0.25);
+  --liquid-recover-shadow:     0 4px 14px rgba(45, 212, 191, 0.15);
+
+  /* ── 4. Global Typography Hierarchy ──────────────────────────────────── */
+  --sans:            'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading:    'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
   --mono:            'JetBrains Mono', monospace;
 
-  --type-hero:       48px;
+  --type-hero:       44px;
   --type-display:    32px;
   --type-h1:         24px;
   --type-h2:         18px;
@@ -85,217 +149,291 @@
   --type-caption:    12px;
   --type-micro:      11px;
   --type-mono:       13px;
-  --type-mono-hero:  56px;
+  --type-mono-hero:  52px;
 
-  /* ── 1.3 Spacing Scale (8pt Grid) ───────────────────────────────────────── */
-  --space-xs:        4px;
-  --space-sm:        8px;
-  --space-md:        12px;
-  --space-base:      16px;
-  --space-lg:        24px;
-  --space-xl:        32px;
-  --space-2xl:       40px;
-  --space-3xl:       48px;
-  --space-4xl:       64px;
+  /* ── 5. Standard 4/8px Spacing Scale ─────────────────────────────────── */
+  --space-1:         4px;
+  --space-2:         8px;
+  --space-3:         12px;
+  --space-4:         16px;
+  --space-5:         20px;
+  --space-6:         24px;
+  --space-8:         32px;
+  --space-10:        40px;
+  --space-12:        48px;
+  --space-16:        64px;
 
-  /* ── Radii & Elevation ─────────────────────────────────────────────────── */
+  /* Aliases for backwards compatibility */
+  --space-xs:        var(--space-1);
+  --space-sm:        var(--space-2);
+  --space-md:        var(--space-3);
+  --space-base:      var(--space-4);
+  --space-lg:        var(--space-6);
+  --space-xl:        var(--space-8);
+  --space-2xl:       var(--space-10);
+  --space-3xl:       var(--space-12);
+  --space-4xl:       var(--space-16);
+
+  /* ── 6. Corner Radii Scale ───────────────────────────────────────────── */
   --radius-xs:       4px;
-  --radius-sm:       6px;
-  --radius-md:       10px;
+  --radius-sm:       8px;
+  --radius-md:       12px;
   --radius:          14px;
-  --radius-lg:       18px;
-  --radius-xl:       24px;
-  --radius-2xl:      28px;
+  --radius-lg:       16px;
+  --radius-xl:       20px;
+  --radius-2xl:      24px;
   --radius-full:     9999px;
 
-  --radius-btn:      10px;
-  --radius-btn-lg:   16px;
-  --radius-input:    8px;
-  --radius-badge:    6px;
   --radius-card:     16px;
-  --radius-hero:     20px;
+  --radius-btn:      12px;
+  --radius-btn-lg:   14px;
+  --radius-input:    10px;
+  --radius-badge:    6px;
+  --radius-hero:     18px;
   --radius-modal:    20px;
 
-  --shadow-sm:       0 2px 8px rgba(0, 0, 0, 0.4);
-  --shadow-md:       0 8px 24px rgba(0, 0, 0, 0.55);
-  --shadow-lg:       0 16px 44px rgba(0, 0, 0, 0.8);
-  --shadow-glass:    0 8px 24px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --shadow-accent:   0 0 0 1px rgba(255, 93, 93, 0.15), 0 8px 32px rgba(255, 93, 93, 0.08);
-
-  /* ── 1.4 Liquid Morphism Foundation Tokens ─────────────────────────────── */
-  /* Translucent Dark Surfaces — Restrained, High-Contrast & Legible */
-  --liquid-bg:                     #09090D;
-  --liquid-surface-1:              rgba(18, 18, 25, 0.75);
-  --liquid-surface-1-grad:         linear-gradient(180deg, rgba(22, 22, 30, 0.78) 0%, rgba(14, 14, 20, 0.84) 100%);
-  --liquid-surface-2:              rgba(24, 24, 34, 0.80);
-  --liquid-surface-2-grad:         linear-gradient(180deg, rgba(26, 26, 36, 0.84) 0%, rgba(18, 18, 25, 0.90) 100%);
-  --liquid-surface-3:              rgba(30, 30, 42, 0.86);
-  --liquid-surface-elevated:       linear-gradient(180deg, rgba(28, 28, 40, 0.88) 0%, rgba(18, 18, 26, 0.92) 100%);
-  --liquid-surface-overlay:        rgba(14, 14, 19, 0.92);
-  --liquid-surface-inset:          rgba(8, 8, 12, 0.65);
-
-  /* Restrained Background Blur (Performance-friendly & Crisp) */
-  --liquid-blur-sm:                6px;
-  --liquid-blur-md:                10px;
-  --liquid-blur-lg:                14px;
-
-  /* Thin Low-Opacity Crisp Borders */
-  --liquid-border:                 1px solid rgba(255, 255, 255, 0.065);
-  --liquid-border-subtle:          1px solid rgba(255, 255, 255, 0.04);
-  --liquid-border-highlight:       1px solid rgba(255, 255, 255, 0.11);
-  --liquid-border-interactive:     1px solid rgba(255, 255, 255, 0.15);
-
-  /* Subtle Inner Highlights (Specular Top Sheen) */
-  --liquid-highlight-top:          inset 0 1px 0 0 rgba(255, 255, 255, 0.07);
-  --liquid-highlight-top-elevated: inset 0 1px 0 0 rgba(255, 255, 255, 0.10), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-  --liquid-highlight-top-subtle:   inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  --liquid-highlight-inset:        inset 0 2px 4px 0 rgba(0, 0, 0, 0.5), inset 0 1px 1px 0 rgba(0, 0, 0, 0.3);
-
-  /* Soft Layered Shadows */
-  --liquid-shadow-sm:              0 2px 6px -1px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.25);
-  --liquid-shadow-md:              0 6px 20px -3px rgba(0, 0, 0, 0.5), 0 2px 5px rgba(0, 0, 0, 0.3);
-  --liquid-shadow-lg:              0 12px 32px -6px rgba(0, 0, 0, 0.65), 0 4px 10px rgba(0, 0, 0, 0.4);
-  --liquid-shadow-overlay:         0 20px 48px -10px rgba(0, 0, 0, 0.8), 0 6px 16px rgba(0, 0, 0, 0.5);
-
-  /* Semantic Phase Accents — Liquid Morphism Tiers */
-  /* Warm-Up / Prep (Amber #FF8A3D) */
-  --liquid-prep-surface:           rgba(255, 138, 61, 0.04);
-  --liquid-prep-border:            rgba(255, 138, 61, 0.22);
-  --liquid-prep-highlight:         inset 0 1px 0 0 rgba(255, 138, 61, 0.25);
-  --liquid-prep-shadow:            0 6px 20px -3px rgba(255, 138, 61, 0.12), 0 2px 5px rgba(0, 0, 0, 0.35);
-
-  /* Train (Coral-Red #FF5D5D) */
-  --liquid-train-surface:          rgba(255, 93, 93, 0.04);
-  --liquid-train-border:           rgba(255, 93, 93, 0.22);
-  --liquid-train-highlight:        inset 0 1px 0 0 rgba(255, 93, 93, 0.25);
-  --liquid-train-shadow:           0 6px 20px -3px rgba(255, 93, 93, 0.12), 0 2px 5px rgba(0, 0, 0, 0.35);
-
-  /* Cool Down / Recover (Teal #35D8B0) */
-  --liquid-recover-surface:        rgba(53, 216, 176, 0.04);
-  --liquid-recover-border:         rgba(53, 216, 176, 0.22);
-  --liquid-recover-highlight:      inset 0 1px 0 0 rgba(53, 216, 176, 0.25);
-  --liquid-recover-shadow:         0 6px 20px -3px rgba(53, 216, 176, 0.12), 0 2px 5px rgba(0, 0, 0, 0.35);
-
-  --transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  /* ── 7. Transitions ──────────────────────────────────────────────────── */
+  --transition-fast: 140ms cubic-bezier(0.16, 1, 0.3, 1);
   --transition:      200ms cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-slow: 350ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 320ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── Light Theme Overrides ─────────────────────────────────────────────────── */
+/* ==========================================================================
+   Light Mode Design Tokens (Soft Warm-Grey Base, Pure White Cards)
+   Avoids harsh white-on-white while maintaining Apple Liquid Glass clarity
+   ========================================================================== */
 [data-theme="light"] {
-  --bg:              #f6f8fa;
+  /* ── 1. Light Mode Backgrounds & Surfaces ────────────────────────────── */
+  --bg:              #f4f5f8;
   --surface:         #ffffff;
-  --surface-glass:   rgba(255, 255, 255, 0.88);
-  --surface-2:       #f0f3f7;
-  --surface-3:       #e4e8f0;
-  --surface-inset:   #edf1f6;
+  --surface-2:       #eceef2;
+  --surface-3:       #e2e5eb;
+  --surface-inset:   #ebedf2;
+  --surface-glass:   rgba(255, 255, 255, 0.84);
 
   --border:          rgba(0, 0, 0, 0.08);
   --border-subtle:   rgba(0, 0, 0, 0.04);
   --border-light:    rgba(0, 0, 0, 0.12);
   --border-focus:    rgba(0, 0, 0, 0.35);
-  --border-accent:   rgba(255, 93, 93, 0.35);
+  --border-accent:   rgba(225, 29, 72, 0.35);
 
   --text:            #0f172a;
+  --text-secondary:  #334155;
   --text-muted:      #64748b;
   --text-dim:        #94a3b8;
 
-  --badge-reps-bg:   rgba(0, 0, 0, 0.06);
+  /* Accent (Tuned for high readability on light canvas) */
+  --accent:          #E11D48;
+  --accent-light:    #f43f5e;
+  --accent-hover:    #be123c;
+  --accent-dim:      rgba(225, 29, 72, 0.10);
+  --accent-surface:  rgba(225, 29, 72, 0.06);
+  --accent-ring:     rgba(225, 29, 72, 0.20);
+  --accent-glow:     0 0 16px rgba(225, 29, 72, 0.16);
+
+  /* Semantic Colors (Light Mode) */
+  --success:         #059669;
+  --success-dim:     rgba(5, 150, 105, 0.12);
+  --danger:          #dc2626;
+  --danger-dim:      rgba(220, 38, 38, 0.12);
+  --warning:         #d97706;
+  --warning-dim:     rgba(217, 119, 6, 0.12);
+
+  --badge-reps-bg:   rgba(0, 0, 0, 0.05);
   --badge-reps-fg:   #1e293b;
-  --badge-hold-bg:   rgba(0, 0, 0, 0.06);
-  --badge-hold-fg:   #1e293b;
+  --badge-hold-bg:   rgba(225, 29, 72, 0.08);
+  --badge-hold-fg:   #be123c;
 
-  --cx-bg:            #f6f8fa;
-  --cx-surface:       #ffffff;
-  --cx-surface-border: rgba(0, 0, 0, 0.08);
-  --cx-text:          #0f172a;
-  --cx-text-secondary: #64748b;
+  /* ── 2. Workout Phase Tokens (Light Mode — Calibrated Contrast) ──────── */
+  /* Warm-Up / Prep (Deep Amber/Orange for high contrast on light surface) */
+  --phase-prep:        #D97706;
+  --phase-prep-rgb:    217, 119, 6;
+  --phase-prep-dim:    rgba(217, 119, 6, 0.10);
+  --phase-prep-border: rgba(217, 119, 6, 0.28);
+  --phase-prep-hover:  #b45309;
 
-  --liquid-surface-1:              rgba(255, 255, 255, 0.90);
-  --liquid-surface-1-grad:         linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 248, 250, 0.92) 100%);
-  --liquid-surface-2:              rgba(240, 243, 247, 0.88);
-  --liquid-surface-2-grad:         linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, rgba(238, 242, 246, 0.90) 100%);
-  --liquid-surface-3:              rgba(228, 232, 240, 0.92);
-  --liquid-surface-elevated:       linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 247, 250, 0.95) 100%);
-  --liquid-surface-overlay:        rgba(255, 255, 255, 0.98);
-  --liquid-surface-inset:          rgba(235, 238, 243, 0.75);
+  /* Train / Main Workout (Deep Coral/Crimson) */
+  --phase-train:        #E11D48;
+  --phase-train-rgb:    225, 29, 72;
+  --phase-train-dim:    rgba(225, 29, 72, 0.10);
+  --phase-train-border: rgba(225, 29, 72, 0.28);
+  --phase-train-hover:  #be123c;
 
-  --liquid-border:                 1px solid rgba(0, 0, 0, 0.08);
-  --liquid-border-subtle:          1px solid rgba(0, 0, 0, 0.04);
-  --liquid-border-highlight:       1px solid rgba(0, 0, 0, 0.12);
-  --liquid-border-interactive:     1px solid rgba(0, 0, 0, 0.16);
+  /* Cool-Down / Recover (Deep Teal) */
+  --phase-recover:        #0D9488;
+  --phase-recover-rgb:    13, 148, 136;
+  --phase-recover-dim:    rgba(13, 148, 136, 0.10);
+  --phase-recover-border: rgba(13, 148, 136, 0.28);
+  --phase-recover-hover:  #0f766e;
 
-  --liquid-highlight-top:          inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
-  --liquid-highlight-top-elevated: inset 0 1px 0 0 rgba(255, 255, 255, 0.95), inset 0 0 0 1px rgba(0, 0, 0, 0.02);
-  --liquid-highlight-top-subtle:   inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
-  --liquid-highlight-inset:        inset 0 2px 4px 0 rgba(0, 0, 0, 0.06), inset 0 1px 1px 0 rgba(0, 0, 0, 0.03);
+  /* Active phase accent defaults to Train */
+  --phase-accent:     var(--phase-train);
+  --phase-accent-rgb: 225, 29, 72;
 
-  --liquid-shadow-sm:              0 2px 6px -1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03);
-  --liquid-shadow-md:              0 6px 20px -3px rgba(0, 0, 0, 0.08), 0 2px 5px rgba(0, 0, 0, 0.04);
-  --liquid-shadow-lg:              0 12px 32px -6px rgba(0, 0, 0, 0.10), 0 4px 10px rgba(0, 0, 0, 0.04);
-  --liquid-shadow-overlay:         0 20px 48px -10px rgba(0, 0, 0, 0.14), 0 6px 16px rgba(0, 0, 0, 0.06);
+  --cx-bg:            var(--bg);
+  --cx-surface:       var(--surface);
+  --cx-surface-border: var(--border);
+  --cx-text:          var(--text);
+  --cx-text-secondary: var(--text-secondary);
+  --cx-success:       var(--success);
+  --cx-skipped:       var(--warning);
 
-  --liquid-card-bg:                rgba(255, 255, 255, 0.88);
-  --liquid-card-border:            rgba(0, 0, 0, 0.08);
-  --liquid-card-shadow:            0 4px 16px -2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
+  /* ── 3. Shadows & Glassmorphism Foundation (Light Mode) ──────────────── */
+  --shadow-sm:        0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md:        0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg:        0 10px 28px rgba(0, 0, 0, 0.08);
+  --shadow-card:      0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-glass:     0 12px 32px -4px rgba(15, 23, 42, 0.10), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+
+  /* Light Frosted Blur + Subtle Border + Specular Highlight */
+  --glass-bg:         var(--surface-glass);
+  --glass-blur:       blur(20px) saturate(180%);
+  --glass-border:     1px solid rgba(0, 0, 0, 0.08);
+  --glass-highlight:  inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+  --glass-shadow:     var(--shadow-glass);
+
+  /* Legacy liquid variable mappings in light mode */
+  --liquid-bg:                 var(--bg);
+  --liquid-surface-1:          var(--surface);
+  --liquid-surface-1-grad:     var(--surface);
+  --liquid-surface-2:          var(--surface-2);
+  --liquid-surface-2-grad:     var(--surface-2);
+  --liquid-surface-3:          var(--surface-3);
+  --liquid-surface-elevated:   var(--surface-2);
+  --liquid-surface-overlay:    var(--surface-glass);
+  --liquid-surface-inset:      var(--surface-inset);
+  --liquid-border:             1px solid var(--border);
+  --liquid-border-subtle:      1px solid var(--border-subtle);
+  --liquid-border-highlight:   1px solid var(--border-light);
+  --liquid-border-interactive: 1px solid var(--border-focus);
+  --liquid-highlight-top:      inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+  --liquid-highlight-top-elevated: inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+  --liquid-highlight-top-subtle:   inset 0 1px 0 0 rgba(255, 255, 255, 0.7);
+  --liquid-highlight-inset:    inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  --liquid-shadow-sm:          var(--shadow-sm);
+  --liquid-shadow-md:          var(--shadow-md);
+  --liquid-shadow-lg:          var(--shadow-lg);
+  --liquid-shadow-overlay:     var(--shadow-glass);
+  --liquid-card-bg:            var(--surface);
+  --liquid-card-border:        var(--border);
+  --liquid-card-shadow:        var(--shadow-card);
+  --liquid-prep-surface:       var(--phase-prep-dim);
+  --liquid-prep-border:        var(--phase-prep-border);
+  --liquid-prep-highlight:     inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+  --liquid-prep-shadow:        0 2px 8px rgba(217, 119, 6, 0.12);
+  --liquid-train-surface:      var(--phase-train-dim);
+  --liquid-train-border:       var(--phase-train-border);
+  --liquid-train-highlight:    inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+  --liquid-train-shadow:       0 2px 8px rgba(225, 29, 72, 0.12);
+  --liquid-recover-surface:    var(--phase-recover-dim);
+  --liquid-recover-border:     var(--phase-recover-border);
+  --liquid-recover-highlight:  inset 0 1px 0 0 rgba(255, 255, 255, 0.8);
+  --liquid-recover-shadow:     0 2px 8px rgba(13, 148, 136, 0.12);
 }
 
+/* System Theme Preference Handling */
 @media (prefers-color-scheme: light) {
   [data-theme="system"] {
-    --bg:              #f6f8fa;
+    --bg:              #f4f5f8;
     --surface:         #ffffff;
-    --surface-glass:   rgba(255, 255, 255, 0.88);
-    --surface-2:       #f0f3f7;
-    --surface-3:       #e4e8f0;
-    --surface-inset:   #edf1f6;
+    --surface-2:       #eceef2;
+    --surface-3:       #e2e5eb;
+    --surface-inset:   #ebedf2;
+    --surface-glass:   rgba(255, 255, 255, 0.84);
 
     --border:          rgba(0, 0, 0, 0.08);
     --border-subtle:   rgba(0, 0, 0, 0.04);
     --border-light:    rgba(0, 0, 0, 0.12);
     --border-focus:    rgba(0, 0, 0, 0.35);
-    --border-accent:   rgba(255, 93, 93, 0.35);
+    --border-accent:   rgba(225, 29, 72, 0.35);
 
     --text:            #0f172a;
+    --text-secondary:  #334155;
     --text-muted:      #64748b;
     --text-dim:        #94a3b8;
 
-    --badge-reps-bg:   rgba(0, 0, 0, 0.06);
+    --accent:          #E11D48;
+    --accent-light:    #f43f5e;
+    --accent-hover:    #be123c;
+    --accent-dim:      rgba(225, 29, 72, 0.10);
+    --accent-surface:  rgba(225, 29, 72, 0.06);
+    --accent-ring:     rgba(225, 29, 72, 0.20);
+    --accent-glow:     0 0 16px rgba(225, 29, 72, 0.16);
+
+    --success:         #059669;
+    --success-dim:     rgba(5, 150, 105, 0.12);
+    --danger:          #dc2626;
+    --danger-dim:      rgba(220, 38, 38, 0.12);
+    --warning:         #d97706;
+    --warning-dim:     rgba(217, 119, 6, 0.12);
+
+    --badge-reps-bg:   rgba(0, 0, 0, 0.05);
     --badge-reps-fg:   #1e293b;
-    --badge-hold-bg:   rgba(0, 0, 0, 0.06);
-    --badge-hold-fg:   #1e293b;
+    --badge-hold-bg:   rgba(225, 29, 72, 0.08);
+    --badge-hold-fg:   #be123c;
 
-    --cx-bg:            #f6f8fa;
-    --cx-surface:       #ffffff;
-    --cx-surface-border: rgba(0, 0, 0, 0.08);
-    --cx-text:          #0f172a;
-    --cx-text-secondary: #64748b;
+    --phase-prep:        #D97706;
+    --phase-prep-rgb:    217, 119, 6;
+    --phase-prep-dim:    rgba(217, 119, 6, 0.10);
+    --phase-prep-border: rgba(217, 119, 6, 0.28);
+    --phase-prep-hover:  #b45309;
 
-    --liquid-surface-1:              rgba(255, 255, 255, 0.90);
-    --liquid-surface-1-grad:         linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 248, 250, 0.92) 100%);
-    --liquid-surface-2:              rgba(240, 243, 247, 0.88);
-    --liquid-surface-2-grad:         linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, rgba(238, 242, 246, 0.90) 100%);
-    --liquid-surface-3:              rgba(228, 232, 240, 0.92);
-    --liquid-surface-elevated:       linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 247, 250, 0.95) 100%);
-    --liquid-surface-overlay:        rgba(255, 255, 255, 0.98);
-    --liquid-surface-inset:          rgba(235, 238, 243, 0.75);
+    --phase-train:        #E11D48;
+    --phase-train-rgb:    225, 29, 72;
+    --phase-train-dim:    rgba(225, 29, 72, 0.10);
+    --phase-train-border: rgba(225, 29, 72, 0.28);
+    --phase-train-hover:  #be123c;
 
-    --liquid-border:                 1px solid rgba(0, 0, 0, 0.08);
-    --liquid-border-subtle:          1px solid rgba(0, 0, 0, 0.04);
-    --liquid-border-highlight:       1px solid rgba(0, 0, 0, 0.12);
-    --liquid-border-interactive:     1px solid rgba(0, 0, 0, 0.16);
+    --phase-recover:        #0D9488;
+    --phase-recover-rgb:    13, 148, 136;
+    --phase-recover-dim:    rgba(13, 148, 136, 0.10);
+    --phase-recover-border: rgba(13, 148, 136, 0.28);
+    --phase-recover-hover:  #0f766e;
 
-    --liquid-highlight-top:          inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
-    --liquid-highlight-top-elevated: inset 0 1px 0 0 rgba(255, 255, 255, 0.95), inset 0 0 0 1px rgba(0, 0, 0, 0.02);
-    --liquid-highlight-top-subtle:   inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
-    --liquid-highlight-inset:        inset 0 2px 4px 0 rgba(0, 0, 0, 0.06), inset 0 1px 1px 0 rgba(0, 0, 0, 0.03);
+    --phase-accent:     var(--phase-train);
+    --phase-accent-rgb: 225, 29, 72;
 
-    --liquid-shadow-sm:              0 2px 6px -1px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.03);
-    --liquid-shadow-md:              0 6px 20px -3px rgba(0, 0, 0, 0.08), 0 2px 5px rgba(0, 0, 0, 0.04);
-    --liquid-shadow-lg:              0 12px 32px -6px rgba(0, 0, 0, 0.10), 0 4px 10px rgba(0, 0, 0, 0.04);
-    --liquid-shadow-overlay:         0 20px 48px -10px rgba(0, 0, 0, 0.14), 0 6px 16px rgba(0, 0, 0, 0.06);
+    --cx-bg:            var(--bg);
+    --cx-surface:       var(--surface);
+    --cx-surface-border: var(--border);
+    --cx-text:          var(--text);
+    --cx-text-secondary: var(--text-secondary);
 
-    --liquid-card-bg:                rgba(255, 255, 255, 0.88);
-    --liquid-card-border:            rgba(0, 0, 0, 0.08);
-    --liquid-card-shadow:            0 4px 16px -2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
+    --shadow-sm:        0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md:        0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-lg:        0 10px 28px rgba(0, 0, 0, 0.08);
+    --shadow-card:      0 1px 3px rgba(0, 0, 0, 0.04);
+    --shadow-glass:     0 12px 32px -4px rgba(15, 23, 42, 0.10), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+
+    --glass-bg:         var(--surface-glass);
+    --glass-blur:       blur(20px) saturate(180%);
+    --glass-border:     1px solid rgba(0, 0, 0, 0.08);
+    --glass-highlight:  inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+    --glass-shadow:     var(--shadow-glass);
+
+    --liquid-bg:                 var(--bg);
+    --liquid-surface-1:          var(--surface);
+    --liquid-surface-1-grad:     var(--surface);
+    --liquid-surface-2:          var(--surface-2);
+    --liquid-surface-2-grad:     var(--surface-2);
+    --liquid-surface-3:          var(--surface-3);
+    --liquid-surface-elevated:   var(--surface-2);
+    --liquid-surface-overlay:    var(--surface-glass);
+    --liquid-surface-inset:      var(--surface-inset);
+    --liquid-border:             1px solid var(--border);
+    --liquid-border-subtle:      1px solid var(--border-subtle);
+    --liquid-border-highlight:   1px solid var(--border-light);
+    --liquid-border-interactive: 1px solid var(--border-focus);
+    --liquid-highlight-top:      inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+    --liquid-highlight-top-elevated: inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+    --liquid-highlight-top-subtle:   inset 0 1px 0 0 rgba(255, 255, 255, 0.7);
+    --liquid-highlight-inset:    inset 0 1px 2px rgba(0, 0, 0, 0.06);
+    --liquid-shadow-sm:          var(--shadow-sm);
+    --liquid-shadow-md:          var(--shadow-md);
+    --liquid-shadow-lg:          var(--shadow-lg);
+    --liquid-shadow-overlay:     var(--shadow-glass);
+    --liquid-card-bg:            var(--surface);
+    --liquid-card-border:        var(--border);
+    --liquid-card-shadow:        var(--shadow-card);
   }
 }

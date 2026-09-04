@@ -2866,8 +2866,12 @@ function renderExercisePickerGridHtml() {
 
   if (filtered.length === 0) {
     return `
-      <div class="library-empty-state" style="grid-column: 1 / -1; padding: 32px 16px; text-align:center;">
-        <p style="color:var(--text-muted); font-size:13px; margin:0;">No movements matched "${escapeHtml(query)}" in category "${filter}".</p>
+      <div class="empty-state" style="grid-column: 1 / -1; padding: 28px 16px;">
+        <div class="empty-state-icon">
+          <svg class="cx-icon cx-icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </div>
+        <div class="empty-state-title">No Movements Found</div>
+        <div class="empty-state-message">No movements matched "${escapeHtml(query)}" in category "${filter}".</div>
       </div>`;
   }
 

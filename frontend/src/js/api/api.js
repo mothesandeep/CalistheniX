@@ -74,7 +74,10 @@ const API_BASE = 'http://127.0.0.1:5001';
 
     // ─── Export / Import Backup Endpoints ───────────────────────────────────────
     getExportData: async () => await api('GET', '/export'),
-    importBackupData: async (backupJson) => await api('POST', '/import', backupJson)
+    importBackupData: async (backupJson) => await api('POST', '/import', backupJson),
+    seedDemoData: async () => await api('POST', '/demo/seed'),
+    resetDemoData: async () => await api('POST', '/demo/reset'),
+    resetEverything: async () => await api('POST', '/reset-everything')
   };
 
   if (typeof window !== 'undefined') {

@@ -225,6 +225,11 @@ def get_workout_sessions():
             d['cooldown_duration_sec'] = cooldown_dur
             d['warmup_status'] = warmup_st
             d['cooldown_status'] = cooldown_st
+            if raw and isinstance(raw, dict):
+                if 'exercises' in raw and 'exercises' not in d:
+                    d['exercises'] = raw['exercises']
+                if 'logs' in raw and 'logs' not in d:
+                    d['logs'] = raw['logs']
             results.append(d)
 
         return jsonify(results), 200

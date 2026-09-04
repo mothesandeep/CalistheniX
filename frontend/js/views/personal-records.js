@@ -157,10 +157,14 @@ function renderPrsView() {
     </div>`;
 
   const prGridHtml = filtered.length === 0
-    ? `<div class="empty-state" style="padding:48px 20px;">
-         <p>${records.length === 0 ? 'No personal records logged yet. Complete a workout session to log your first all-time best!' : 'No personal records match the current filter.'}</p>
-         <div style="margin-top:16px;">
-           <button class="btn btn-primary" onclick="switchView('home')">${renderIcon('zap', 'cx-icon cx-icon-inline')} Start Today's Workout</button>
+    ? `<div class="empty-state">
+         <div class="empty-state-icon">
+           <svg class="cx-icon cx-icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H8c-.55 0-1 .45-1 1v1c0 .55.45 1 1 1h8c.55 0 1-.45 1-1v-1c0-.55-.45-1-1-1h-1c-.55 0-1-.45-1-1v-2.34"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+         </div>
+         <div class="empty-state-title">${records.length === 0 ? 'No Personal Records Yet' : 'No Matching Records'}</div>
+         <div class="empty-state-message">${records.length === 0 ? 'Complete a workout session to log your first all-time personal best!' : 'No personal records match your selected filter.'}</div>
+         <div class="empty-state-actions">
+           <button class="btn btn-primary btn-sm" onclick="switchView('workout')">${renderIcon('zap', 'cx-icon cx-icon-inline')} Start Today's Workout</button>
          </div>
        </div>`
     : `<div class="prs-grid">

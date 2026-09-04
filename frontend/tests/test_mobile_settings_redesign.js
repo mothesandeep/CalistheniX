@@ -104,6 +104,7 @@ const mockDocument = {
     }
     return null;
   },
+  querySelectorAll: (sel) => [],
   createElement: (tag) => {
     const el = { id: '', className: '', innerHTML: '', style: {}, appendChild: () => {}, querySelectorAll: () => [] };
     return el;

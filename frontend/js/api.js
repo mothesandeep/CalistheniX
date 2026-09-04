@@ -174,7 +174,7 @@ const API_BASE = 'http://127.0.0.1:5001';
       invalidateCache(/\/exercises|\/workouts|\/splits|\/today|\/dashboard/);
     } else if (path.includes('/logs') || path.includes('/workout_sessions')) {
       invalidateCache(/\/workout_sessions|\/dashboard|\/today|\/exercises/);
-    } else if (path.includes('/import')) {
+    } else if (path.includes('/import') || path.includes('/demo') || path.includes('/reset')) {
       invalidateCache();
     }
   }
@@ -243,7 +243,10 @@ const API_BASE = 'http://127.0.0.1:5001';
 
     // ─── Export / Import Backup Endpoints ───────────────────────────────────────
     getExportData: async (opts) => await api('GET', '/export', null, opts),
-    importBackupData: async (backupJson) => await api('POST', '/import', backupJson)
+    importBackupData: async (backupJson) => await api('POST', '/import', backupJson),
+    seedDemoData: async () => await api('POST', '/demo/seed'),
+    resetDemoData: async () => await api('POST', '/demo/reset'),
+    resetEverything: async () => await api('POST', '/reset-everything')
   };
 
   if (typeof window !== 'undefined') {
